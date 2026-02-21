@@ -348,17 +348,26 @@
             <div id="store-pickup-section" class="hidden fade-in p-4 rounded-xl"
                 style="background:#f0faf0; border:1px solid #c8e6c9;">
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">🏪 取貨門市資訊</h3>
+                <!-- 選擇門市按鈕 -->
+                <div class="mb-3 text-center">
+                    <button onclick="openStoreMap()" class="store-select-btn">📍 選擇門市</button>
+                    <p class="text-xs text-gray-500 mt-1">點擊後將開啟綠界超商地圖選擇門市</p>
+                </div>
+                <!-- 已選門市資訊 -->
                 <div id="store-selected-info" class="hidden store-info-card mb-3">
                     <div class="flex justify-between items-start">
                         <div>
                             <p class="font-semibold" id="selected-store-name"></p>
                             <p class="text-sm text-gray-600" id="selected-store-address"></p>
+                            <p class="text-xs text-gray-400" id="selected-store-id"></p>
                         </div>
                         <button onclick="clearSelectedStore()" class="text-sm text-red-500 hover:text-red-700">✕
                             清除</button>
                     </div>
                 </div>
+                <!-- 手動輸入備用 -->
                 <div id="store-input-section">
+                    <p class="text-xs text-gray-500 mb-2">或者手動填寫門市資訊：</p>
                     <div class="mb-3">
                         <label class="block text-sm text-gray-600 mb-1">門市名稱</label>
                         <input type="text" id="store-name-input" class="input-field" placeholder="例：新竹光復門市">
@@ -368,6 +377,7 @@
                         <input type="text" id="store-address-input" class="input-field" placeholder="例：新竹市東區光復路一段100號">
                     </div>
                 </div>
+                <input type="hidden" id="store-id-input">
             </div>
         </div>
 
@@ -631,8 +641,84 @@
 
         function clearSelectedStore() {
             document.getElementById('store-selected-info').classList.add('hidden');
+            document.getElementById('store-input-section').classList.remove('hidden');
             document.getElementById('store-name-input').value = '';
             document.getElementById('store-address-input').value = '';
+            document.getElementById('store-id-input').value = '';
+            document.getElementById('selected-store-name').textContent = '';
+            document.getElementById('selected-store-address').textContent = '';
+            document.getElementById('selected-store-id').textContent = '';
+        }
+
+        // ============ 綠界門市地圖 ============
+        let storeMapToken = null;
+        let storeMapPollTimer = null;
+
+        async function openStoreMap() {
+            try {
+                const res = await fetch(`${API_URL}?action=getEcpayMap&deliveryMethod=${selectedDelivery}`);
+                const result = await res.json();
+                if (!result.success) { Swal.fire('錯誤', result.error, 'error'); return; }
+
+                storeMapToken = result.token;
+
+                // 用隱藏 form POST 方式開啟綠界電子地圖
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = result.mapUrl;
+                form.target = '_blank';
+                for (const [key, val] of Object.entries(result.mapParams)) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = String(val);
+                    form.appendChild(input);
+                }
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+
+                // 開始輪詢
+                Toast.fire({ icon: 'info', title: '請在新視窗中選擇門市...', timer: 4000 });
+                startStorePolling();
+            } catch (e) {
+                Swal.fire('錯誤', '無法開啟門市地圖：' + e.message, 'error');
+            }
+        }
+
+        function startStorePolling() {
+            if (storeMapPollTimer) clearInterval(storeMapPollTimer);
+            let attempts = 0;
+            const maxAttempts = 90; // 最多輪詢 3 分鐘
+            storeMapPollTimer = setInterval(async () => {
+                attempts++;
+                if (attempts > maxAttempts) {
+                    clearInterval(storeMapPollTimer);
+                    storeMapPollTimer = null;
+                    return;
+                }
+                try {
+                    const res = await fetch(`${API_URL}?action=getStoreResult&token=${storeMapToken}`);
+                    const result = await res.json();
+                    if (result.success) {
+                        clearInterval(storeMapPollTimer);
+                        storeMapPollTimer = null;
+                        applyStoreSelection(result);
+                    }
+                } catch { /* 繼續輪詢 */ }
+            }, 2000);
+        }
+
+        function applyStoreSelection(data) {
+            document.getElementById('selected-store-name').textContent = data.storeName;
+            document.getElementById('selected-store-address').textContent = data.storeAddress;
+            document.getElementById('selected-store-id').textContent = '門市代號：' + data.storeId;
+            document.getElementById('store-name-input').value = data.storeName;
+            document.getElementById('store-address-input').value = data.storeAddress;
+            document.getElementById('store-id-input').value = data.storeId;
+            document.getElementById('store-selected-info').classList.remove('hidden');
+            document.getElementById('store-input-section').classList.add('hidden');
+            Toast.fire({ icon: 'success', title: '已選擇門市：' + data.storeName });
         }
 
         // ============ 送出訂單 ============
@@ -672,7 +758,7 @@
                 const sName = document.getElementById('store-name-input').value.trim();
                 const sAddr = document.getElementById('store-address-input').value.trim();
                 if (!sName) { Swal.fire('錯誤', '請填寫取貨門市名稱', 'error'); return; }
-                deliveryInfo = { storeName: sName, storeAddress: sAddr };
+                deliveryInfo = { storeName: sName, storeAddress: sAddr, storeId: document.getElementById('store-id-input').value || '' };
             }
 
             // 配送方式文字

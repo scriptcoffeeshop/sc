@@ -437,7 +437,7 @@
                 const time = new Date(o.timestamp).toLocaleString('zh-TW');
                 const addrInfo = o.deliveryMethod === 'delivery'
                     ? `${o.city || ''}${o.district || ''} ${o.address || ''}`
-                    : `${o.storeName || ''}${o.storeAddress ? ' (' + o.storeAddress + ')' : ''}`;
+                    : `${o.storeName || ''}${o.storeId ? ' [' + o.storeId + ']' : ''}${o.storeAddress ? ' (' + o.storeAddress + ')' : ''}`;
                 return `
                 <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
                     <div class="flex justify-between items-center mb-2">
