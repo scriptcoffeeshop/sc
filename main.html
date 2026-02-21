@@ -513,24 +513,36 @@
 
         function loadDeliveryPrefs() {
             try {
-                const prefsStr = localStorage.getItem('coffee_delivery_prefs');
-                if (prefsStr) {
-                    const prefs = JSON.parse(prefsStr);
-                    if (prefs.method) {
-                        const btn = document.querySelector(`.delivery-btn[onclick="selectDelivery('${prefs.method}', this)"]`);
-                        if (btn) btn.click();
+                let prefs = {};
+                if (currentUser && currentUser.defaultDeliveryMethod) {
+                    prefs = {
+                        method: currentUser.defaultDeliveryMethod,
+                        city: currentUser.defaultCity,
+                        district: currentUser.defaultDistrict,
+                        address: currentUser.defaultAddress,
+                        storeId: currentUser.defaultStoreId,
+                        storeName: currentUser.defaultStoreName,
+                        storeAddress: currentUser.defaultStoreAddress
+                    };
+                } else {
+                    const prefsStr = localStorage.getItem('coffee_delivery_prefs');
+                    if (prefsStr) prefs = JSON.parse(prefsStr);
+                }
 
-                        if (prefs.method === 'delivery') {
-                            if (prefs.city) {
-                                document.getElementById('delivery-city').value = prefs.city;
-                                populateDistricts();
-                                if (prefs.district) document.getElementById('delivery-district').value = prefs.district;
-                            }
-                            if (prefs.address) document.getElementById('delivery-detail-address').value = prefs.address;
-                        } else {
-                            if (prefs.storeId) {
-                                applyStoreSelection({ storeId: prefs.storeId, storeName: prefs.storeName, storeAddress: prefs.storeAddress });
-                            }
+                if (prefs && prefs.method) {
+                    const btn = document.querySelector(`.delivery-btn[onclick="selectDelivery('${prefs.method}', this)"]`);
+                    if (btn) btn.click();
+
+                    if (prefs.method === 'delivery') {
+                        if (prefs.city) {
+                            document.getElementById('delivery-city').value = prefs.city;
+                            populateDistricts();
+                            if (prefs.district) document.getElementById('delivery-district').value = prefs.district;
+                        }
+                        if (prefs.address) document.getElementById('delivery-detail-address').value = prefs.address;
+                    } else {
+                        if (prefs.storeId) {
+                            applyStoreSelection({ storeId: prefs.storeId, storeName: prefs.storeName, storeAddress: prefs.storeAddress });
                         }
                     }
                 }

@@ -787,6 +787,9 @@
                     <td class="p-3">
                         <div class="font-medium text-gray-800">${esc(u.displayName)}</div>
                         <div class="text-xs text-gray-500">${esc(u.email || '')} ${u.phone ? '・' + esc(u.phone) : ''}</div>
+                        <div class="text-xs text-gray-500 mt-1">🏠 ${u.defaultDeliveryMethod === 'delivery' ? `宅配 (${esc(u.defaultCity)}${esc(u.defaultDistrict)} ${esc(u.defaultAddress)})` :
+                        u.defaultDeliveryMethod ? `${u.defaultDeliveryMethod === 'seven_eleven' ? '7-11' : '全家'} (${esc(u.defaultStoreName)})` : '尚未設定'
+                    }</div>
                         <div class="text-xs text-gray-400 font-mono mt-1 opacity-50">${esc(u.userId)}</div>
                     </td>
                     <td class="p-3">

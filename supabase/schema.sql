@@ -74,7 +74,12 @@ CREATE TABLE IF NOT EXISTS coffee_users (
   last_login TIMESTAMPTZ DEFAULT now(),
   phone TEXT DEFAULT '',
   default_city TEXT DEFAULT '',
+  default_district TEXT DEFAULT '',
   default_address TEXT DEFAULT '',
+  default_delivery_method TEXT DEFAULT '',
+  default_store_id TEXT DEFAULT '',
+  default_store_name TEXT DEFAULT '',
+  default_store_address TEXT DEFAULT '',
   email TEXT DEFAULT '',
   blacklist_reason TEXT DEFAULT '',
   blocked_at TIMESTAMPTZ

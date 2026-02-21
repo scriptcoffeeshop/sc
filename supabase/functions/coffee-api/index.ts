@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // @ts-ignore
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 // @ts-ignore
-import { SmtpClient } from 'https://deno.land/x/smtp@v0.7.0/mod.ts'
+import nodemailer from 'npm:nodemailer'
 
 // @ts-ignore
 declare const Deno: any;
@@ -147,6 +147,7 @@ serve(async (req: Request) => {
             case 'getBlacklist': result = await getBlacklist(data); break
             case 'addToBlacklist': result = await addToBlacklist(data); break
             case 'removeFromBlacklist': result = await removeFromBlacklist(data); break
+            case 'testEmail': result = await testEmail(data); break
 
             default: result = { success: false, error: '未知的操作' }
         }
@@ -246,6 +247,21 @@ async function registerOrUpdateUser(data: Record<string, string>) {
         .eq('line_user_id', data.userId)
         .single()
 
+    const mapToCamel = (u: any) => ({
+        userId: u.line_user_id,
+        displayName: u.display_name,
+        pictureUrl: u.picture_url,
+        phone: u.phone,
+        email: u.email,
+        defaultDeliveryMethod: u.default_delivery_method,
+        defaultCity: u.default_city,
+        defaultDistrict: u.default_district,
+        defaultAddress: u.default_address,
+        defaultStoreId: u.default_store_id,
+        defaultStoreName: u.default_store_name,
+        defaultStoreAddress: u.default_store_address,
+    })
+
     if (existing) {
         const updates: Record<string, unknown> = {
             display_name: data.displayName,
@@ -253,16 +269,34 @@ async function registerOrUpdateUser(data: Record<string, string>) {
         }
         if (data.pictureUrl) updates.picture_url = data.pictureUrl
         if (data.phone) updates.phone = data.phone
+        if (data.email) updates.email = data.email
+        if (data.deliveryMethod) updates.default_delivery_method = data.deliveryMethod
+        if (data.city) updates.default_city = data.city
+        if (data.district) updates.default_district = data.district
+        if (data.address) updates.default_address = data.address
+        if (data.storeId) updates.default_store_id = data.storeId
+        if (data.storeName) updates.default_store_name = data.storeName
+        if (data.storeAddress) updates.default_store_address = data.storeAddress
+
         await supabase.from('coffee_users').update(updates).eq('line_user_id', data.userId)
-        return { ...existing, ...updates, userId: data.userId, displayName: data.displayName, pictureUrl: data.pictureUrl || existing.picture_url, phone: existing.phone }
+        return mapToCamel({ ...existing, ...updates })
     } else {
-        await supabase.from('coffee_users').insert({
+        const newUser = {
             line_user_id: data.userId,
             display_name: data.displayName,
             picture_url: data.pictureUrl || '',
             phone: data.phone || '',
-        })
-        return data
+            email: data.email || '',
+            default_delivery_method: data.deliveryMethod || '',
+            default_city: data.city || '',
+            default_district: data.district || '',
+            default_address: data.address || '',
+            default_store_id: data.storeId || '',
+            default_store_name: data.storeName || '',
+            default_store_address: data.storeAddress || '',
+        }
+        await supabase.from('coffee_users').insert(newUser)
+        return mapToCamel(newUser)
     }
 }
 
@@ -383,26 +417,33 @@ function sanitize(str: unknown): string {
 async function sendEmail(to: string, subject: string, htmlContent: string) {
     if (!SMTP_USER || !SMTP_PASS || !to) return { success: false, error: 'SMTP or recipient config missing' }
     try {
-        const client = new SmtpClient()
-        await client.connectTLS({
-            hostname: 'smtp.gmail.com',
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
             port: 465,
-            username: SMTP_USER,
-            password: SMTP_PASS,
+            secure: true,
+            auth: {
+                user: SMTP_USER,
+                pass: SMTP_PASS,
+            },
         })
-        await client.send({
+        await transporter.sendMail({
             from: `"☕ 咖啡豆訂購系統" <${SMTP_USER}>`,
             to,
             subject,
-            content: 'Please view this email in an HTML-capable client.',
             html: htmlContent,
         })
-        await client.close()
         return { success: true }
     } catch (e: any) {
         console.error('Failed to send email:', e)
-        return { success: false, error: e.message }
+        return { success: false, error: e.message || String(e) }
     }
+}
+
+async function testEmail(data: Record<string, unknown>) {
+    const to = String(data.to || SMTP_USER);
+    if (!to || to === 'undefined') return { success: false, error: 'No recipient provided or SMTP_USER is not set' };
+    const res = await sendEmail(to, '測試信件 Test Email', '<h1>Hello</h1><p>這是來自 Supabase Edge Function 的測試信件</p>');
+    return res;
 }
 
 async function submitOrder(data: Record<string, unknown>) {
@@ -441,6 +482,22 @@ async function submitOrder(data: Record<string, unknown>) {
     }
 
     const now = new Date()
+
+    // 檢查一分鐘內是否重複送單
+    if (data.lineUserId || phone) {
+        const oneMinuteAgo = new Date(now.getTime() - 60000).toISOString()
+        let query = supabase.from('coffee_orders').select('id').gte('created_at', oneMinuteAgo)
+        if (data.lineUserId) {
+            query = query.eq('line_user_id', data.lineUserId)
+        } else {
+            query = query.eq('phone', phone)
+        }
+        const { data: recentOrders } = await query.limit(1)
+        if (recentOrders && recentOrders.length > 0) {
+            return { success: false, error: '送出訂單過於頻繁，請於一分鐘後再試' }
+        }
+    }
+
     const pad = (n: number) => String(n).padStart(2, '0')
     const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${pad(Math.floor(Math.random() * 100))}`
 
@@ -467,7 +524,7 @@ async function submitOrder(data: Record<string, unknown>) {
 
     if (error) return { success: false, error: error.message }
 
-    // 更新用戶電話與 Email
+    // 更新用戶電話、Email與偏好設定
     if (data.lineUserId) {
         try {
             await registerOrUpdateUser({
@@ -475,7 +532,14 @@ async function submitOrder(data: Record<string, unknown>) {
                 displayName: String(data.lineName),
                 pictureUrl: '',
                 phone,
-                email: String(data.email || '').trim()
+                email: String(data.email || '').trim(),
+                deliveryMethod,
+                city: String(data.city || ''),
+                district: String(data.district || ''),
+                address: String(data.address || ''),
+                storeId: String(data.storeId || ''),
+                storeName: String(data.storeName || ''),
+                storeAddress: String(data.storeAddress || ''),
             })
         } catch { /* ignore */ }
     }
@@ -499,8 +563,13 @@ async function submitOrder(data: Record<string, unknown>) {
         <p>備註：${sanitize(data.note) || '無'}</p>
         <br/><p>收到訂單後我們將盡速為您安排出貨！</p>
         `
-        // 不 await 等待寄送信件，讓 API 先回傳避免超時
-        sendEmail(String(data.email), `[咖啡訂購] 訂單編號 ${orderId} 成立確認信`, content)
+        // 必須 await 以免 Edge Function 終止導致信件未送出
+        await sendEmail(String(data.email), `[咖啡訂購] 訂單編號 ${orderId} 成立確認信`, content)
+
+        // 寄給管理員 (SMTP_USER)
+        if (SMTP_USER) {
+            await sendEmail(SMTP_USER, `[新訂單通知] 訂單編號 ${orderId} 成立`, content)
+        }
     }
 
     return { success: true, message: '訂單已送出', orderId }
@@ -552,7 +621,7 @@ async function updateOrderStatus(data: Record<string, unknown>) {
         <p><b>配送方式：</b> ${methodMap[orderData.delivery_method] || '一般配送'}</p>
         <br/><p>依據配送方式不同，商品預計於 1-3 個工作天內抵達（若是超商取貨，屆時將有手機簡訊通知取件）。</p>
         `
-        sendEmail(orderData.email, `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`, content)
+        await sendEmail(orderData.email, `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`, content)
     }
 
     return { success: true, message: '訂單狀態已更新' }
@@ -874,7 +943,13 @@ async function getUsers(data: Record<string, unknown>) {
         status: u.status || 'ACTIVE',
         lastLogin: u.last_login,
         phone: u.phone || '',
-        email: u.email || ''
+        email: u.email || '',
+        defaultDeliveryMethod: u.default_delivery_method || '',
+        defaultCity: u.default_city || '',
+        defaultDistrict: u.default_district || '',
+        defaultAddress: u.default_address || '',
+        defaultStoreName: u.default_store_name || '',
+        defaultStoreAddress: u.default_store_address || '',
     }))
     return { success: true, users: formatted }
 }
