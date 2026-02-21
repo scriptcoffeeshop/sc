@@ -617,6 +617,7 @@
         // ============ 配送方式 ============
         function selectDelivery(method, e) {
             selectedDelivery = method;
+            stopStoreMapPolling();
             document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('active'));
             e.currentTarget.classList.add('active');
 
@@ -654,11 +655,135 @@
             document.getElementById('selected-store-id').textContent = '';
         }
 
-        // ============ 綠界門市搜尋 ============
+        // ============ 綠界門市選擇 ============
         let allStores = [];
         let storeListLoaded = false;
+        let storeMapPollTimer = null;
 
         async function openStoreMap() {
+            if (selectedDelivery !== 'seven_eleven' && selectedDelivery !== 'family_mart') {
+                Swal.fire('錯誤', '請先選擇 7-11 或全家取貨', 'error');
+                return;
+            }
+
+            // 先同步開窗，降低瀏覽器 popup blocker 擋下機率
+            const popup = window.open('', 'ecpay_store_map', 'width=1024,height=760');
+            if (!popup) {
+                const choice = await Swal.fire({
+                    icon: 'warning',
+                    title: '瀏覽器封鎖彈出視窗',
+                    text: '請允許彈出視窗，或改用門市搜尋。',
+                    showCancelButton: true,
+                    confirmButtonText: '改用門市搜尋',
+                    cancelButtonText: '取消',
+                    confirmButtonColor: '#3C2415',
+                });
+                if (choice.isConfirmed) await openStoreSearchModal();
+                return;
+            }
+
+            popup.document.open();
+            popup.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>載入中...</title></head><body style="font-family:sans-serif;padding:20px;">正在開啟綠界門市地圖...</body></html>`);
+            popup.document.close();
+
+            Swal.fire({ title: '開啟綠界地圖中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${API_URL}?action=createStoreMapSession&deliveryMethod=${encodeURIComponent(selectedDelivery)}`);
+                const result = await res.json();
+                if (!result.success) throw new Error(result.error || '建立地圖會話失敗');
+
+                submitStoreMapForm(popup, result.mapUrl, result.params || {});
+                startStoreMapPolling(result.token, popup);
+                Swal.close();
+                Toast.fire({ icon: 'info', title: '請在新視窗選擇門市' });
+            } catch (e) {
+                if (!popup.closed) popup.close();
+                const choice = await Swal.fire({
+                    icon: 'error',
+                    title: '無法開啟綠界地圖',
+                    text: e.message || String(e),
+                    showCancelButton: true,
+                    confirmButtonText: '改用門市搜尋',
+                    cancelButtonText: '關閉',
+                    confirmButtonColor: '#3C2415',
+                });
+                if (choice.isConfirmed) await openStoreSearchModal();
+            }
+        }
+
+        function escapeAttr(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
+        function submitStoreMapForm(popup, mapUrl, params) {
+            const hiddenFields = Object.entries(params || {}).map(([k, v]) =>
+                `<input type="hidden" name="${escapeAttr(k)}" value="${escapeAttr(v)}">`
+            ).join('');
+
+            const html = `<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><title>前往綠界地圖</title></head>
+<body>
+  <form id="ecpay-map-form" method="post" action="${escapeAttr(mapUrl)}">
+    ${hiddenFields}
+  </form>
+  <script>document.getElementById('ecpay-map-form').submit();</script>
+</body>
+</html>`;
+
+            popup.document.open();
+            popup.document.write(html);
+            popup.document.close();
+        }
+
+        function stopStoreMapPolling() {
+            if (storeMapPollTimer) {
+                clearTimeout(storeMapPollTimer);
+                storeMapPollTimer = null;
+            }
+        }
+
+        async function startStoreMapPolling(token, popup) {
+            stopStoreMapPolling();
+            const startedAt = Date.now();
+            const timeoutMs = 3 * 60 * 1000;
+
+            const poll = async () => {
+                try {
+                    if (Date.now() - startedAt > timeoutMs) {
+                        stopStoreMapPolling();
+                        if (popup && !popup.closed) popup.close();
+                        Toast.fire({ icon: 'warning', title: '門市回傳逾時，請改用搜尋或手動輸入' });
+                        return;
+                    }
+
+                    const res = await fetch(`${API_URL}?action=getStoreSelection&token=${encodeURIComponent(token)}&_=${Date.now()}`);
+                    const result = await res.json();
+                    if (result.success && result.found) {
+                        stopStoreMapPolling();
+                        if (popup && !popup.closed) popup.close();
+                        applyStoreSelection({
+                            storeId: result.storeId,
+                            storeName: result.storeName,
+                            storeAddress: result.storeAddress,
+                        });
+                        return;
+                    }
+                } catch {
+                    // 忽略暫時性錯誤，持續輪詢
+                }
+                storeMapPollTimer = setTimeout(poll, 1500);
+            };
+
+            await poll();
+        }
+
+        async function openStoreSearchModal() {
             // 載入門市清單（第一次呼叫時從 API 取得）
             if (!storeListLoaded) {
                 Swal.fire({ title: '載入門市清單中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
