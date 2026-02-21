@@ -627,6 +627,10 @@
                 document.getElementById('delivery-address-section').classList.remove('hidden');
             } else {
                 document.getElementById('store-pickup-section').classList.remove('hidden');
+                // 切換超商時重新載入對應門市清單
+                storeListLoaded = false;
+                allStores = [];
+                clearSelectedStore();
             }
         }
 
@@ -650,63 +654,74 @@
             document.getElementById('selected-store-id').textContent = '';
         }
 
-        // ============ 綠界門市地圖 ============
-        let storeMapToken = null;
-        let storeMapPollTimer = null;
+        // ============ 綠界門市搜尋 ============
+        let allStores = [];
+        let storeListLoaded = false;
 
         async function openStoreMap() {
-            try {
-                const res = await fetch(`${API_URL}?action=getEcpayMap&deliveryMethod=${selectedDelivery}`);
-                const result = await res.json();
-                if (!result.success) { Swal.fire('錯誤', result.error, 'error'); return; }
-
-                storeMapToken = result.token;
-
-                // 用隱藏 form POST 方式開啟綠界電子地圖
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = result.mapUrl;
-                form.target = '_blank';
-                for (const [key, val] of Object.entries(result.mapParams)) {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = key;
-                    input.value = String(val);
-                    form.appendChild(input);
-                }
-                document.body.appendChild(form);
-                form.submit();
-                document.body.removeChild(form);
-
-                // 開始輪詢
-                Toast.fire({ icon: 'info', title: '請在新視窗中選擇門市...', timer: 4000 });
-                startStorePolling();
-            } catch (e) {
-                Swal.fire('錯誤', '無法開啟門市地圖：' + e.message, 'error');
-            }
-        }
-
-        function startStorePolling() {
-            if (storeMapPollTimer) clearInterval(storeMapPollTimer);
-            let attempts = 0;
-            const maxAttempts = 90; // 最多輪詢 3 分鐘
-            storeMapPollTimer = setInterval(async () => {
-                attempts++;
-                if (attempts > maxAttempts) {
-                    clearInterval(storeMapPollTimer);
-                    storeMapPollTimer = null;
+            // 載入門市清單（第一次呼叫時從 API 取得）
+            if (!storeListLoaded) {
+                Swal.fire({ title: '載入門市清單中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const cvsType = selectedDelivery === 'family_mart' ? 'FAMI' : 'UNIMART';
+                    const res = await fetch(`${API_URL}?action=getStoreList&cvsType=${cvsType}`);
+                    const result = await res.json();
+                    if (!result.success) { Swal.fire('錯誤', result.error || '取得門市清單失敗', 'error'); return; }
+                    allStores = result.stores || [];
+                    storeListLoaded = true;
+                    Swal.close();
+                } catch (e) {
+                    Swal.fire('錯誤', '無法載入門市清單：' + e.message, 'error');
                     return;
                 }
-                try {
-                    const res = await fetch(`${API_URL}?action=getStoreResult&token=${storeMapToken}`);
-                    const result = await res.json();
-                    if (result.success) {
-                        clearInterval(storeMapPollTimer);
-                        storeMapPollTimer = null;
-                        applyStoreSelection(result);
-                    }
-                } catch { /* 繼續輪詢 */ }
-            }, 2000);
+            }
+
+            // 開啟搜尋 Modal
+            const { value: selectedStore } = await Swal.fire({
+                title: '🔍 搜尋門市',
+                html: `
+                    <input id="store-search-input" class="swal2-input" placeholder="輸入門市名稱、地址或關鍵字" style="width:90%">
+                    <div id="store-search-results" style="max-height:300px; overflow-y:auto; margin-top:12px; text-align:left;"></div>
+                    <p id="store-search-hint" style="color:#999; font-size:12px; margin-top:8px;">共 ${allStores.length} 間門市，請輸入關鍵字搜尋</p>
+                `,
+                showConfirmButton: false,
+                showCloseButton: true,
+                width: 480,
+                didOpen: () => {
+                    const searchInput = document.getElementById('store-search-input');
+                    const resultsDiv = document.getElementById('store-search-results');
+                    const hintP = document.getElementById('store-search-hint');
+                    searchInput.focus();
+                    searchInput.addEventListener('input', () => {
+                        const kw = searchInput.value.trim().toLowerCase();
+                        if (kw.length < 1) { resultsDiv.innerHTML = ''; hintP.textContent = `共 ${allStores.length} 間門市，請輸入關鍵字搜尋`; return; }
+                        const matches = allStores.filter(s =>
+                            s.name.toLowerCase().includes(kw) || s.address.toLowerCase().includes(kw) || s.id.includes(kw)
+                        ).slice(0, 50);
+                        hintP.textContent = matches.length >= 50 ? `顯示前 50 筆，請輸入更精確的關鍵字` : `找到 ${matches.length} 間門市`;
+                        resultsDiv.innerHTML = matches.map(s => `
+                            <div class="store-result-item" data-id="${s.id}" data-name="${s.name}" data-addr="${s.address}"
+                                 style="padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; transition:background 0.2s;"
+                                 onmouseover="this.style.background='#f0faf0'" onmouseout="this.style.background=''"
+                                 onclick="selectStoreFromList(this)">
+                                <div style="font-weight:600; font-size:14px;">${s.name}</div>
+                                <div style="color:#666; font-size:12px;">${s.address}</div>
+                                <div style="color:#aaa; font-size:11px;">代號：${s.id}</div>
+                            </div>
+                        `).join('');
+                    });
+                },
+            });
+        }
+
+        function selectStoreFromList(el) {
+            const data = {
+                storeId: el.dataset.id,
+                storeName: el.dataset.name,
+                storeAddress: el.dataset.addr,
+            };
+            applyStoreSelection(data);
+            Swal.close();
         }
 
         function applyStoreSelection(data) {
