@@ -396,14 +396,24 @@
             <div id="in-store-section" class="hidden fade-in p-4 rounded-xl"
                 style="background:#fefdf8; border:1px solid #f0e6db; margin-top: 1rem;">
                 <h3 class="font-semibold mb-3 text-gray-800">🏪 門市資訊</h3>
-                <p class="text-sm text-gray-700 leading-relaxed mb-2">
-                    <strong>地址：</strong>新竹市東區光復路一段163巷15號<br>
+                <p class="text-sm text-gray-700 leading-relaxed mb-3">
+                    <strong>地址：</strong>新竹市東區建中路101號1樓<br>
+                    <strong>電話：</strong><a href="tel:035718460" class="hover:underline text-blue-600">03-5718460</a><br>
+                    <strong>官方 LINE：</strong><a href="https://lin.ee/aEiCEfh" target="_blank"
+                        class="hover:underline text-green-600 font-medium">@scriptcoffee</a><br>
                     <strong>營業時間：</strong>請以 Google 商家地圖上顯示的時間為準
                 </p>
-                <a href="https://maps.app.goo.gl/emnxgDhm3mRhCz5o7" target="_blank"
-                    class="inline-block text-sm font-medium" style="color:var(--primary); text-decoration:underline;">
-                    去 Google Maps 查看路線與營業時間 →
-                </a>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="https://maps.app.goo.gl/emnxgDhm3mRhCz5o7" target="_blank"
+                        class="inline-block text-sm font-medium hover:opacity-80 transition-opacity"
+                        style="color:var(--primary); text-decoration:underline;">
+                        📍 去 Google Maps 查看路線
+                    </a>
+                    <a href="https://lin.ee/aEiCEfh" target="_blank"
+                        class="inline-block text-sm font-medium text-green-600 hover:opacity-80 transition-opacity underline">
+                        💬 加入官方 LINE 帳號
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -986,7 +996,7 @@
                 if (!addr) { Swal.fire('錯誤', '請填寫詳細地址', 'error'); return; }
                 deliveryInfo = { city, district, address: addr };
             } else if (selectedDelivery === 'in_store') {
-                deliveryInfo = { storeName: '來店自取', storeAddress: '新竹市東區光復路一段163巷15號' };
+                deliveryInfo = { storeName: '來店自取', storeAddress: '新竹市東區建中路101號1樓' };
             } else {
                 const sName = document.getElementById('store-name-input').value.trim();
                 const sAddr = document.getElementById('store-address-input').value.trim();
