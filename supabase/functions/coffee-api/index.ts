@@ -452,7 +452,7 @@ async function submitOrder(data: Record<string, unknown>) {
     }
 
     const deliveryMethod = String(data.deliveryMethod || 'delivery')
-    const validMethods = ['delivery', 'seven_eleven', 'family_mart']
+    const validMethods = ['delivery', 'seven_eleven', 'family_mart', 'in_store']
     if (!validMethods.includes(deliveryMethod)) {
         return { success: false, error: '無效的配送方式' }
     }
