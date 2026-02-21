@@ -322,6 +322,12 @@
                     <div class="font-semibold">全家取貨付款</div>
                     <div class="text-xs text-gray-500 mt-1">超商門市取件</div>
                 </div>
+                <div class="delivery-option" onclick="selectDelivery('in_store', event)">
+                    <div class="check-mark">✓</div>
+                    <div class="text-2xl mb-2">🚶</div>
+                    <div class="font-semibold">來店取貨</div>
+                    <div class="text-xs text-gray-500 mt-1">省運費，至店面自取</div>
+                </div>
             </div>
 
             <!-- 宅配地址 -->
@@ -384,6 +390,20 @@
                     </div>
                 </div>
                 <input type="hidden" id="store-id-input">
+            </div>
+
+            <!-- 來店取貨資訊 -->
+            <div id="in-store-section" class="hidden fade-in p-4 rounded-xl"
+                style="background:#fefdf8; border:1px solid #f0e6db; margin-top: 1rem;">
+                <h3 class="font-semibold mb-3 text-gray-800">🏪 門市資訊</h3>
+                <p class="text-sm text-gray-700 leading-relaxed mb-2">
+                    <strong>地址：</strong>新竹市東區光復路一段163巷15號<br>
+                    <strong>營業時間：</strong>請以 Google 商家地圖上顯示的時間為準
+                </p>
+                <a href="https://maps.app.goo.gl/emnxgDhm3mRhCz5o7" target="_blank"
+                    class="inline-block text-sm font-medium" style="color:var(--primary); text-decoration:underline;">
+                    去 Google Maps 查看路線與營業時間 →
+                </a>
             </div>
         </div>
 
@@ -674,9 +694,12 @@
 
             document.getElementById('delivery-address-section').classList.add('hidden');
             document.getElementById('store-pickup-section').classList.add('hidden');
+            document.getElementById('in-store-section').classList.add('hidden');
 
             if (method === 'delivery') {
                 document.getElementById('delivery-address-section').classList.remove('hidden');
+            } else if (method === 'in_store') {
+                document.getElementById('in-store-section').classList.remove('hidden');
             } else {
                 document.getElementById('store-pickup-section').classList.remove('hidden');
                 // 切換超商時重新載入對應門市清單
@@ -962,6 +985,8 @@
                 if (!city) { Swal.fire('錯誤', '請選擇縣市', 'error'); return; }
                 if (!addr) { Swal.fire('錯誤', '請填寫詳細地址', 'error'); return; }
                 deliveryInfo = { city, district, address: addr };
+            } else if (selectedDelivery === 'in_store') {
+                deliveryInfo = { storeName: '來店自取', storeAddress: '新竹市東區光復路一段163巷15號' };
             } else {
                 const sName = document.getElementById('store-name-input').value.trim();
                 const sAddr = document.getElementById('store-address-input').value.trim();
@@ -970,10 +995,12 @@
             }
 
             // 配送方式文字
-            const methodText = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款' };
+            const methodText = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款', in_store: '來店取貨' };
             let addrText = selectedDelivery === 'delivery'
                 ? `${deliveryInfo.city}${deliveryInfo.district || ''} ${deliveryInfo.address}`
-                : `${deliveryInfo.storeName}${deliveryInfo.storeAddress ? ' (' + deliveryInfo.storeAddress + ')' : ''}`;
+                : selectedDelivery === 'in_store'
+                    ? `來店自取 (${deliveryInfo.storeAddress})`
+                    : `${deliveryInfo.storeName}${deliveryInfo.storeAddress ? ' (' + deliveryInfo.storeAddress + ')' : ''}`;
 
             const confirmHtml = `
                 <div style="text-align:left;font-size:0.95rem;">
