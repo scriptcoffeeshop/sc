@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>咖啡豆訂購</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #3C2415;
+            --primary-light: #5C3D2E;
+            --secondary: #D4A574;
+            --accent: #8B6914;
+            --bg-light: #F5F0EB;
+            --bg-card: rgba(255, 255, 255, 0.88);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #F5F0EB 0%, #E8DDD4 50%, #F0E6DB 100%);
+            min-height: 100vh;
+            margin: 0;
+            color: #3C2415;
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(60, 36, 21, 0.12);
+            border: 1px solid rgba(212, 165, 116, 0.2);
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(12px);
+            padding: 16px 24px;
+            box-shadow: 0 -4px 24px rgba(60, 36, 21, 0.1);
+            z-index: 50;
+            border-top: 1px solid rgba(212, 165, 116, 0.25);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3C2415, #5C3D2E);
+            color: white;
+            padding: 12px 32px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(60, 36, 21, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(60, 36, 21, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, #3C2415, #5C3D2E);
+            color: white;
+        }
+
+        .category-header th {
+            border: none !important;
+        }
+
+        .product-row {
+            transition: background 0.2s;
+        }
+
+        .product-row:hover {
+            background: rgba(212, 165, 116, 0.12);
+        }
+
+        .delivery-option {
+            border: 2px solid #e5ddd5;
+            border-radius: 14px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.25s;
+            position: relative;
+        }
+
+        .delivery-option:hover {
+            border-color: var(--secondary);
+        }
+
+        .delivery-option.active {
+            border-color: var(--primary);
+            background: rgba(60, 36, 21, 0.04);
+            box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.08);
+        }
+
+        .delivery-option .check-mark {
+            display: none;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 24px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 50%;
+            color: white;
+            font-size: 14px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delivery-option.active .check-mark {
+            display: flex;
+        }
+
+        .input-field {
+            border: 2px solid #e5ddd5;
+            border-radius: 10px;
+            padding: 10px 14px;
+            width: 100%;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.1);
+            outline: none;
+        }
+
+        select.input-field {
+            appearance: none;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233C2415' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;
+            padding-right: 36px;
+        }
+
+        .quantity-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f0e6db;
+            color: var(--primary);
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .quantity-btn:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .quantity-btn:active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .content-spacer {
+            height: 100px;
+        }
+
+        .store-select-btn {
+            background: linear-gradient(135deg, #2E7D32, #388E3C);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .store-select-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+        }
+
+        .store-info-card {
+            background: #f0faf0;
+            border: 1px solid #c8e6c9;
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-6">
+
+    <!-- 公告 -->
+    <div id="announcement-banner"
+        class="hidden max-w-3xl mx-auto mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 relative">
+        <button onclick="closeAnnouncement()"
+            class="absolute top-2 right-3 text-amber-500 hover:text-amber-700 text-xl">&times;</button>
+        <p id="announcement-text" class="pr-6"></p>
+    </div>
+
+    <div class="max-w-3xl mx-auto glass-card p-6 md:p-8">
+        <!-- Header -->
+        <div class="flex items-center gap-3 mb-6">
+            <span class="text-4xl">☕</span>
+            <div>
+                <h1 class="text-2xl font-bold" style="color:var(--primary)">咖啡豆訂購</h1>
+                <p class="text-sm text-gray-500">新鮮烘焙・產地直送</p>
+            </div>
+        </div>
+
+        <!-- LINE Login -->
+        <div id="login-section" class="mb-6 p-4 rounded-xl" style="background:#f0faf0; border:1px solid #c8e6c9;">
+            <div id="login-prompt" class="text-center">
+                <p class="text-gray-600 mb-3">請先使用 LINE 帳號登入以進行訂購</p>
+                <button onclick="loginWithLine()"
+                    class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                    </svg>
+                    使用 LINE 登入
+                </button>
+            </div>
+            <div id="user-info" class="hidden flex items-center gap-3">
+                <img id="user-avatar" src="" alt="" class="w-12 h-12 rounded-full border-2 border-green-300">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-500">已登入</p>
+                    <p id="user-display-name" class="font-semibold text-gray-700"></p>
+                </div>
+                <button onclick="showMyOrders()" class="text-sm font-medium" style="color:var(--primary)">📋
+                    我的訂單</button>
+                <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500">登出</button>
+            </div>
+        </div>
+        <input type="hidden" id="line-name">
+
+        <!-- 聯絡電話 -->
+        <div class="mb-6">
+            <label class="block font-medium mb-2" style="color:var(--primary)">📱 聯絡電話</label>
+            <input type="tel" id="contact-phone" class="input-field" placeholder="請輸入聯絡電話">
+        </div>
+
+        <!-- 商品列表 -->
+        <div class="mb-6">
+            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">🫘 咖啡豆選購</h2>
+            <div class="overflow-x-auto rounded-xl border" style="border-color:#e5ddd5;">
+                <table class="w-full" style="table-layout:fixed;">
+                    <tbody id="products-table">
+                        <tr>
+                            <td colspan="4" class="p-8 text-center text-gray-500">載入商品中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 配送方式 -->
+        <div class="mb-6">
+            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">🚚 配送方式</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <div class="delivery-option" onclick="selectDelivery('delivery', event)">
+                    <div class="check-mark">✓</div>
+                    <div class="text-2xl mb-2">🏠</div>
+                    <div class="font-semibold">宅配到府</div>
+                    <div class="text-xs text-gray-500 mt-1">限竹北市 / 新竹市</div>
+                </div>
+                <div class="delivery-option" onclick="selectDelivery('seven_eleven', event)">
+                    <div class="check-mark">✓</div>
+                    <div class="text-2xl mb-2">🏪</div>
+                    <div class="font-semibold">7-11 取貨付款</div>
+                    <div class="text-xs text-gray-500 mt-1">超商門市取件</div>
+                </div>
+                <div class="delivery-option" onclick="selectDelivery('family_mart', event)">
+                    <div class="check-mark">✓</div>
+                    <div class="text-2xl mb-2">🏬</div>
+                    <div class="font-semibold">全家取貨付款</div>
+                    <div class="text-xs text-gray-500 mt-1">超商門市取件</div>
+                </div>
+            </div>
+
+            <!-- 宅配地址 -->
+            <div id="delivery-address-section" class="hidden fade-in p-4 rounded-xl"
+                style="background:#faf6f2; border:1px solid #e5ddd5;">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">📍 配送地址</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">縣市</label>
+                        <select id="delivery-city" class="input-field" onchange="updateDistricts()">
+                            <option value="">請選擇</option>
+                            <option value="新竹市">新竹市</option>
+                            <option value="竹北市">竹北市</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">區域</label>
+                        <select id="delivery-district" class="input-field">
+                            <option value="">請先選擇縣市</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">詳細地址</label>
+                    <input type="text" id="delivery-detail-address" class="input-field" placeholder="路/街、巷、弄、號、樓">
+                </div>
+            </div>
+
+            <!-- 超商取貨 -->
+            <div id="store-pickup-section" class="hidden fade-in p-4 rounded-xl"
+                style="background:#f0faf0; border:1px solid #c8e6c9;">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">🏪 取貨門市資訊</h3>
+                <div id="store-selected-info" class="hidden store-info-card mb-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-semibold" id="selected-store-name"></p>
+                            <p class="text-sm text-gray-600" id="selected-store-address"></p>
+                        </div>
+                        <button onclick="clearSelectedStore()" class="text-sm text-red-500 hover:text-red-700">✕
+                            清除</button>
+                    </div>
+                </div>
+                <div id="store-input-section">
+                    <div class="mb-3">
+                        <label class="block text-sm text-gray-600 mb-1">門市名稱</label>
+                        <input type="text" id="store-name-input" class="input-field" placeholder="例：新竹光復門市">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">門市地址</label>
+                        <input type="text" id="store-address-input" class="input-field" placeholder="例：新竹市東區光復路一段100號">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 備註 -->
+        <div class="mb-6">
+            <label class="block font-medium mb-2" style="color:var(--primary)">📝 訂單備註</label>
+            <textarea id="order-note" class="input-field resize-none" rows="2" placeholder="如有特殊需求請在此備註..."></textarea>
+        </div>
+
+        <div class="content-spacer"></div>
+    </div>
+
+    <!-- 底部固定欄 -->
+    <div class="bottom-bar">
+        <div class="w-full max-w-3xl mx-auto flex items-center justify-between">
+            <div class="text-xl font-bold" style="color:var(--primary)" id="total-price">總金額: $0</div>
+            <button onclick="submitOrder()" class="btn-primary" id="submit-btn" disabled>🛒 送出訂單</button>
+        </div>
+    </div>
+
+    <!-- 我的訂單彈窗 -->
+    <div id="my-orders-modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold" style="color:var(--primary)">📋 我的訂單</h3>
+                <button onclick="document.getElementById('my-orders-modal').classList.add('hidden')"
+                    class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div id="my-orders-list" class="flex-1 overflow-y-auto p-4"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        //              系統設定區
+        // ==========================================
+
+        // 1️⃣ Supabase API 網址（部署後替換 YOUR_PROJECT_REF）
+        const API_URL = 'https://avnvsjyyeofivgmrchte.supabase.co/functions/v1/coffee-api';
+
+        // 2️⃣ LINE Login Redirect URI（部署後替換為你的 GitHub Pages 網址）
+        const LINE_LOGIN_REDIRECT_URI = 'https://scriptcoffeeshop.github.io/sc/main.html';
+
+        // ==========================================
+        //              以下請勿修改
+        // ==========================================
+
+        let products = [];
+        let categories = [];
+        let currentUser = null;
+        let selectedDelivery = '';
+        let isStoreOpen = true;
+
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+
+        // 區域資料
+        const districtData = {
+            '新竹市': ['東區', '北區', '香山區'],
+            '竹北市': ['竹北市'],
+        };
+
+        // ============ 初始化 ============
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            if (code) {
+                await handleLineCallback(code, state);
+            } else {
+                checkLoginStatus();
+            }
+            await loadInitData();
+            updateFormState();
+        });
+
+        // ============ LINE Login ============
+        async function loginWithLine() {
+            try {
+                const res = await fetch(`${API_URL}?action=getLineLoginUrl&redirectUri=${encodeURIComponent(LINE_LOGIN_REDIRECT_URI)}`);
+                const result = await res.json();
+                if (result.success) {
+                    localStorage.setItem('coffee_line_state', result.state);
+                    window.location.href = result.authUrl;
+                } else { throw new Error(result.error); }
+            } catch (e) { Swal.fire('錯誤', '無法啟動登入：' + e.message, 'error'); }
+        }
+
+        async function handleLineCallback(code, state) {
+            const saved = localStorage.getItem('coffee_line_state');
+            localStorage.removeItem('coffee_line_state');
+            if (!saved || state !== saved) {
+                Swal.fire('驗證失敗', '請重新登入', 'error');
+                window.history.replaceState({}, '', 'main.html');
+                return;
+            }
+            Swal.fire({ title: '登入中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`${API_URL}?action=customerLineLogin&code=${encodeURIComponent(code)}&redirectUri=${encodeURIComponent(LINE_LOGIN_REDIRECT_URI)}`);
+                const result = await res.json();
+                window.history.replaceState({}, '', 'main.html');
+                if (result.success) {
+                    currentUser = result.user;
+                    localStorage.setItem('coffee_user', JSON.stringify(currentUser));
+                    showUserInfo();
+                    Swal.close();
+                } else { throw new Error(result.error || '登入失敗'); }
+            } catch (e) { Swal.fire('登入失敗', e.message, 'error'); }
+        }
+
+        function checkLoginStatus() {
+            const saved = localStorage.getItem('coffee_user');
+            if (saved) { try { currentUser = JSON.parse(saved); showUserInfo(); } catch { localStorage.removeItem('coffee_user'); } }
+        }
+
+        function showUserInfo() {
+            document.getElementById('login-prompt').classList.add('hidden');
+            document.getElementById('user-info').classList.remove('hidden');
+            document.getElementById('user-display-name').textContent = currentUser.displayName || currentUser.display_name;
+            document.getElementById('user-avatar').src = currentUser.pictureUrl || currentUser.picture_url || 'https://via.placeholder.com/48';
+            document.getElementById('line-name').value = currentUser.displayName || currentUser.display_name;
+            if (currentUser.phone) document.getElementById('contact-phone').value = currentUser.phone;
+            updateFormState();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('coffee_user');
+            document.getElementById('login-prompt').classList.remove('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+            document.getElementById('line-name').value = '';
+            updateFormState();
+        }
+
+        function updateFormState() {
+            const btn = document.getElementById('submit-btn');
+            if (!currentUser) { btn.disabled = true; btn.title = '請先登入'; }
+            else if (!isStoreOpen) { btn.disabled = true; btn.title = '目前店家休息中'; }
+            else { btn.disabled = false; btn.title = ''; }
+        }
+
+        // ============ 載入資料 ============
+        async function loadInitData() {
+            try {
+                const res = await fetch(`${API_URL}?action=getInitData&_=${Date.now()}`);
+                const result = await res.json();
+                if (result.success) {
+                    products = (result.products || []).filter(p => p.enabled);
+                    categories = result.categories || [];
+                    applySettings(result.settings || {});
+                    renderProducts();
+                } else { throw new Error(result.error); }
+            } catch (e) {
+                document.getElementById('products-table').innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-600">載入失敗: ${e.message}<br><button onclick="loadInitData()" class="mt-3 btn-primary">重試</button></td></tr>`;
+            }
+        }
+
+        function applySettings(s) {
+            if (String(s.announcement_enabled) === 'true' && s.announcement) {
+                document.getElementById('announcement-text').textContent = s.announcement;
+                document.getElementById('announcement-banner').classList.remove('hidden');
+            }
+            // 檢查營業狀態
+            if (String(s.is_open) === 'false') {
+                isStoreOpen = false;
+                updateFormState();
+                document.getElementById('total-price').textContent = '🔒 目前休息中，暫停接單';
+            }
+        }
+        function closeAnnouncement() { document.getElementById('announcement-banner').classList.add('hidden'); }
+
+        // ============ 渲染商品 ============
+        function escapeHtml(s) { if (!s) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        function renderProducts() {
+            const tbody = document.getElementById('products-table');
+            if (!products.length) { tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-gray-500">目前沒有商品</td></tr>'; return; }
+
+            const grouped = {};
+            products.forEach(p => { if (!grouped[p.category]) grouped[p.category] = []; grouped[p.category].push(p); });
+            const catOrder = categories.map(c => c.name);
+            const sorted = Object.keys(grouped).sort((a, b) => {
+                const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+                if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib;
+            });
+
+            let html = '';
+            sorted.forEach(cat => {
+                html += `<tr class="category-header"><th class="p-2 pl-4 text-left font-semibold" colspan="4">${escapeHtml(cat)}</th></tr>`;
+                grouped[cat].forEach(p => {
+                    const desc = p.description ? `<span class="text-xs text-gray-500 block">${escapeHtml(p.description)}</span>` : '';
+                    const weight = p.weight ? `<span class="text-xs text-gray-400">${escapeHtml(p.weight)}</span>` : '';
+                    html += `
+                        <tr class="product-row border-b" style="border-color:#f0e6db;">
+                            <td class="p-3 text-left" style="width:45%">
+                                <div class="font-medium">${escapeHtml(p.name)}</div>
+                                ${desc}${weight}
+                            </td>
+                            <td class="p-3 text-center" style="width:25%">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button class="quantity-btn" onclick="updateQty(this,-1)">−</button>
+                                    <input type="tel" inputmode="numeric" class="quantity w-10 text-center bg-transparent border-0 font-medium text-lg"
+                                        data-price="${p.price}" data-name="${escapeHtml(p.name)}" value="0" min="0"
+                                        onfocus="this.select()" onblur="if(!this.value)this.value='0'" oninput="calcTotal()">
+                                    <button class="quantity-btn" onclick="updateQty(this,1)">+</button>
+                                </div>
+                            </td>
+                            <td class="p-3 text-center font-medium" style="width:15%;color:var(--primary)">$${p.price}</td>
+                            <td class="p-3 text-center font-semibold amount" style="width:15%;color:var(--accent)">$0</td>
+                        </tr>`;
+                });
+            });
+            tbody.innerHTML = html;
+        }
+
+        function updateQty(btn, delta) {
+            const input = btn.parentElement.querySelector('.quantity');
+            let v = parseInt(input.value) || 0;
+            v = Math.max(0, v + delta);
+            input.value = v;
+            calcTotal();
+        }
+
+        function calcTotal() {
+            let total = 0;
+            document.querySelectorAll('#products-table .quantity').forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                const price = parseInt(input.dataset.price) || 0;
+                const amount = qty * price;
+                input.closest('tr').querySelector('.amount').textContent = `$${amount}`;
+                total += amount;
+            });
+            document.getElementById('total-price').textContent = `總金額: $${total}`;
+            return total;
+        }
+
+        // ============ 配送方式 ============
+        function selectDelivery(method, e) {
+            selectedDelivery = method;
+            document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+
+            document.getElementById('delivery-address-section').classList.add('hidden');
+            document.getElementById('store-pickup-section').classList.add('hidden');
+
+            if (method === 'delivery') {
+                document.getElementById('delivery-address-section').classList.remove('hidden');
+            } else {
+                document.getElementById('store-pickup-section').classList.remove('hidden');
+            }
+        }
+
+        function updateDistricts() {
+            const city = document.getElementById('delivery-city').value;
+            const distSelect = document.getElementById('delivery-district');
+            distSelect.innerHTML = '<option value="">請選擇</option>';
+            if (city && districtData[city]) {
+                districtData[city].forEach(d => { distSelect.innerHTML += `<option value="${d}">${d}</option>`; });
+            }
+        }
+
+        function clearSelectedStore() {
+            document.getElementById('store-selected-info').classList.add('hidden');
+            document.getElementById('store-name-input').value = '';
+            document.getElementById('store-address-input').value = '';
+        }
+
+        // ============ 送出訂單 ============
+        async function submitOrder() {
+            if (!currentUser) { Swal.fire('請先登入', '使用 LINE 登入後再訂購', 'warning'); return; }
+
+            const phone = document.getElementById('contact-phone').value.trim();
+            if (!phone) { Swal.fire('錯誤', '請填寫聯絡電話', 'error'); return; }
+
+            if (!selectedDelivery) { Swal.fire('錯誤', '請選擇配送方式', 'error'); return; }
+
+            // 收集訂購品項
+            let orderLines = [];
+            let total = 0;
+            document.querySelectorAll('#products-table .quantity').forEach(input => {
+                const qty = parseInt(input.value) || 0;
+                if (qty > 0) {
+                    const price = parseInt(input.dataset.price);
+                    const name = input.dataset.name;
+                    const amt = qty * price;
+                    orderLines.push(`${name} x ${qty} (${amt}元)`);
+                    total += amt;
+                }
+            });
+            if (orderLines.length === 0) { Swal.fire('錯誤', '請至少選擇一項商品', 'error'); return; }
+
+            // 收集配送資訊
+            let deliveryInfo = {};
+            if (selectedDelivery === 'delivery') {
+                const city = document.getElementById('delivery-city').value;
+                const district = document.getElementById('delivery-district').value;
+                const addr = document.getElementById('delivery-detail-address').value.trim();
+                if (!city) { Swal.fire('錯誤', '請選擇縣市', 'error'); return; }
+                if (!addr) { Swal.fire('錯誤', '請填寫詳細地址', 'error'); return; }
+                deliveryInfo = { city, district, address: addr };
+            } else {
+                const sName = document.getElementById('store-name-input').value.trim();
+                const sAddr = document.getElementById('store-address-input').value.trim();
+                if (!sName) { Swal.fire('錯誤', '請填寫取貨門市名稱', 'error'); return; }
+                deliveryInfo = { storeName: sName, storeAddress: sAddr };
+            }
+
+            // 配送方式文字
+            const methodText = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款' };
+            let addrText = selectedDelivery === 'delivery'
+                ? `${deliveryInfo.city}${deliveryInfo.district || ''} ${deliveryInfo.address}`
+                : `${deliveryInfo.storeName}${deliveryInfo.storeAddress ? ' (' + deliveryInfo.storeAddress + ')' : ''}`;
+
+            const confirmHtml = `
+                <div style="text-align:left;font-size:0.95rem;">
+                <b>配送方式：</b>${methodText[selectedDelivery]}<br>
+                <b>取貨地點：</b>${escapeHtml(addrText)}<br><br>
+                <b>訂單內容：</b><br>${orderLines.join('<br>')}<br><br>
+                <b>總金額：</b>$${total}
+                </div>`;
+
+            const confirmResult = await Swal.fire({
+                title: '確認訂單', html: confirmHtml, icon: 'question',
+                showCancelButton: true, confirmButtonText: '確認送出', cancelButtonText: '取消',
+                confirmButtonColor: '#3C2415',
+            });
+            if (!confirmResult.isConfirmed) return;
+
+            Swal.fire({ title: '送出中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            try {
+                const res = await fetch(`${API_URL}?action=submitOrder`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lineName: currentUser.displayName || currentUser.display_name,
+                        phone,
+                        orders: orderLines.join('\n'),
+                        total,
+                        lineUserId: currentUser.userId || currentUser.line_user_id,
+                        deliveryMethod: selectedDelivery,
+                        note: document.getElementById('order-note').value.trim(),
+                        ...deliveryInfo,
+                    }),
+                });
+                const result = await res.json();
+                if (result.success) {
+                    Swal.fire({ icon: 'success', title: '訂單已送出！', text: `訂單編號：${result.orderId}`, confirmButtonColor: '#3C2415' }).then(() => {
+                        document.querySelectorAll('.quantity').forEach(i => i.value = '0');
+                        document.querySelectorAll('.amount').forEach(t => t.textContent = '$0');
+                        document.getElementById('total-price').textContent = '總金額: $0';
+                        document.getElementById('order-note').value = '';
+                    });
+                } else { throw new Error(result.error); }
+            } catch (e) {
+                Swal.fire('送出失敗', e.message === 'Failed to fetch' ? '網路連線失敗' : e.message, 'error');
+            }
+        }
+
+        // ============ 我的訂單 ============
+        async function showMyOrders() {
+            if (!currentUser) { Swal.fire('請先登入', '', 'info'); return; }
+            document.getElementById('my-orders-modal').classList.remove('hidden');
+            const list = document.getElementById('my-orders-list');
+            list.innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
+            try {
+                const uid = currentUser.userId || currentUser.line_user_id;
+                const res = await fetch(`${API_URL}?action=getMyOrders&lineUserId=${uid}&_=${Date.now()}`);
+                const result = await res.json();
+                if (!result.success || !result.orders?.length) { list.innerHTML = '<p class="text-center text-gray-500 py-8">尚無訂單</p>'; return; }
+
+                const statusMap = { pending: '⏳ 待處理', processing: '📦 處理中', shipped: '🚚 已出貨', completed: '✅ 已完成', cancelled: '❌ 已取消' };
+                const methodMap = { delivery: '🏠 宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家' };
+
+                list.innerHTML = result.orders.map(o => `
+                    <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-bold" style="color:var(--primary)">#${o.orderId}</span>
+                            <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700">${statusMap[o.status] || o.status}</span>
+                        </div>
+                        <div class="text-xs text-gray-500 mb-2">${methodMap[o.deliveryMethod] || o.deliveryMethod} ${o.storeName ? '・' + o.storeName : o.city ? '・' + o.city + (o.address || '') : ''}</div>
+                        <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${escapeHtml(o.items)}</div>
+                        <div class="text-right font-bold" style="color:var(--primary)">$${o.total}</div>
+                    </div>
+                `).join('');
+            } catch (e) { list.innerHTML = `<p class="text-center text-red-500 py-8">${e.message}</p>`; }
+        }
+    </script>
+</body>
+
+</html>
