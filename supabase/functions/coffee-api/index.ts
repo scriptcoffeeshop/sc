@@ -503,12 +503,14 @@ const CVS_TYPE_MAP: Record<string, string> = {
     family_mart: 'FAMI',
 }
 
-// 電子地圖用物流子類型（B2C）
+// 電子地圖用物流子類型（C2C）
 const MAP_SUBTYPE_MAP: Record<string, string> = {
-    seven_eleven: 'UNIMART',
-    family_mart: 'FAMI',
-    UNIMART: 'UNIMART',
-    FAMI: 'FAMI',
+    seven_eleven: 'UNIMARTC2C',
+    family_mart: 'FAMIC2C',
+    UNIMART: 'UNIMARTC2C',
+    FAMI: 'FAMIC2C',
+    UNIMARTC2C: 'UNIMARTC2C',
+    FAMIC2C: 'FAMIC2C',
 }
 
 // 產生 CheckMacValue（SHA256）
