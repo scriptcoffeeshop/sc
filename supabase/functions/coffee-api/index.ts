@@ -1,6 +1,13 @@
 // 咖啡豆訂購系統 — Supabase Edge Function
+// @ts-ignore
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-ignore
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+// @ts-ignore
+import { SmtpClient } from 'https://deno.land/x/smtp@v0.7.0/mod.ts'
+
+// @ts-ignore
+declare const Deno: any;
 
 // ============ 環境變數 ============
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -8,6 +15,10 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const LINE_LOGIN_CHANNEL_ID = Deno.env.get('LINE_LOGIN_CHANNEL_ID') || ''
 const LINE_LOGIN_CHANNEL_SECRET = Deno.env.get('LINE_LOGIN_CHANNEL_SECRET') || ''
 const LINE_ADMIN_USER_ID = Deno.env.get('LINE_ADMIN_USER_ID') || ''
+
+// SMTP 設定
+const SMTP_USER = Deno.env.get('SMTP_USER') || ''
+const SMTP_PASS = Deno.env.get('SMTP_PASS') || ''
 
 // 綠界 ECPay 物流設定
 // 測試環境預設使用 B2C 物流測試帳號，正式環境請設定 Secrets
@@ -90,7 +101,7 @@ async function parseRequestData(req: Request, url: URL): Promise<Record<string, 
 }
 
 // ============ 主路由 ============
-serve(async (req) => {
+serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
     }
@@ -360,6 +371,32 @@ function sanitize(str: unknown): string {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').trim()
 }
 
+// ============ Email 通知 ============
+async function sendEmail(to: string, subject: string, htmlContent: string) {
+    if (!SMTP_USER || !SMTP_PASS || !to) return { success: false, error: 'SMTP or recipient config missing' }
+    try {
+        const client = new SmtpClient()
+        await client.connectTLS({
+            hostname: 'smtp.gmail.com',
+            port: 465,
+            username: SMTP_USER,
+            password: SMTP_PASS,
+        })
+        await client.send({
+            from: `"☕ 咖啡豆訂購系統" <${SMTP_USER}>`,
+            to,
+            subject,
+            content: 'Please view this email in an HTML-capable client.',
+            html: htmlContent,
+        })
+        await client.close()
+        return { success: true }
+    } catch (e: any) {
+        console.error('Failed to send email:', e)
+        return { success: false, error: e.message }
+    }
+}
+
 async function submitOrder(data: Record<string, unknown>) {
     if (!data.lineName || !data.phone || !data.orders) {
         return { success: false, error: '缺少必要資訊' }
@@ -405,6 +442,7 @@ async function submitOrder(data: Record<string, unknown>) {
         line_user_id: data.lineUserId || '',
         line_name: String(data.lineName).trim(),
         phone,
+        email: String(data.email || '').trim(),
         items: String(data.orders).trim(),
         total: parseInt(String(data.total)) || 0,
         delivery_method: deliveryMethod,
@@ -421,7 +459,7 @@ async function submitOrder(data: Record<string, unknown>) {
 
     if (error) return { success: false, error: error.message }
 
-    // 更新用戶電話
+    // 更新用戶電話與 Email
     if (data.lineUserId) {
         try {
             await registerOrUpdateUser({
@@ -429,8 +467,32 @@ async function submitOrder(data: Record<string, unknown>) {
                 displayName: String(data.lineName),
                 pictureUrl: '',
                 phone,
+                email: String(data.email || '').trim()
             })
         } catch { /* ignore */ }
+    }
+
+    // 寄出訂單成立確認信
+    if (data.email) {
+        const methodMap: Record<string, string> = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款' }
+        const deliveryText = deliveryMethod === 'delivery'
+            ? `${data.city}${data.district} ${data.address}`
+            : `${data.storeName} (${data.storeAddress})`
+
+        const content = `
+        <h2>親愛的 ${sanitize(data.lineName)}，您的訂單已成立！</h2>
+        <p>感謝您的訂購，我們已收到您的訂單資訊。</p>
+        <p><b>訂單編號：</b> ${orderId}</p>
+        <p><b>配送方式：</b> ${methodMap[deliveryMethod]} - ${sanitize(deliveryText)}</p>
+        <hr/>
+        <h3>訂單內容：</h3>
+        <pre style="font-family: inherit;">${sanitize(data.orders)}</pre>
+        <h3>總金額：$${data.total}</h3>
+        <p>備註：${sanitize(data.note) || '無'}</p>
+        <br/><p>收到訂單後我們將盡速為您安排出貨！</p>
+        `
+        // 不 await 等待寄送信件，讓 API 先回傳避免超時
+        sendEmail(String(data.email), `[咖啡訂購] 訂單編號 ${orderId} 成立確認信`, content)
     }
 
     return { success: true, message: '訂單已送出', orderId }
@@ -441,7 +503,7 @@ async function getOrders(userId: string) {
     const { data, error } = await supabase.from('coffee_orders').select('*').order('created_at', { ascending: false })
     if (error) return { success: false, error: error.message }
     const orders = (data || []).map((r: Record<string, unknown>) => ({
-        orderId: r.id, timestamp: r.created_at, lineName: r.line_name, phone: r.phone,
+        orderId: r.id, timestamp: r.created_at, lineName: r.line_name, phone: r.phone, email: r.email,
         items: r.items, total: r.total, deliveryMethod: r.delivery_method,
         city: r.city, district: r.district, address: r.address,
         storeType: r.store_type, storeId: r.store_id, storeName: r.store_name,
@@ -465,8 +527,26 @@ async function getMyOrders(lineUserId: string) {
 
 async function updateOrderStatus(data: Record<string, unknown>) {
     if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+
+    // 取出訂單資訊以取得 email
+    const { data: orderData } = await supabase.from('coffee_orders').select('email, line_name, delivery_method').eq('id', data.orderId).single()
+
     const { error } = await supabase.from('coffee_orders').update({ status: data.status }).eq('id', data.orderId)
     if (error) return { success: false, error: error.message }
+
+    // 若狀態切換為已出貨，且該訂單有信箱，寄出出貨通知
+    if (data.status === 'shipped' && orderData?.email) {
+        const methodMap: Record<string, string> = { delivery: '宅配', seven_eleven: '7-11', family_mart: '全家' }
+        const content = `
+        <h2>親愛的 ${sanitize(orderData.line_name)}，您的訂單已出貨！</h2>
+        <p>您訂購的商品已經安排出貨！</p>
+        <p><b>訂單編號：</b> ${data.orderId}</p>
+        <p><b>配送方式：</b> ${methodMap[orderData.delivery_method] || '一般配送'}</p>
+        <br/><p>依據配送方式不同，商品預計於 1-3 個工作天內抵達（若是超商取貨，屆時將有手機簡訊通知取件）。</p>
+        `
+        sendEmail(orderData.email, `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`, content)
+    }
+
     return { success: true, message: '訂單狀態已更新' }
 }
 

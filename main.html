@@ -274,10 +274,16 @@
         </div>
         <input type="hidden" id="line-name">
 
-        <!-- 聯絡電話 -->
-        <div class="mb-6">
-            <label class="block font-medium mb-2" style="color:var(--primary)">📱 聯絡電話</label>
-            <input type="tel" id="contact-phone" class="input-field" placeholder="請輸入聯絡電話">
+        <!-- 聯絡資訊 -->
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block font-medium mb-2" style="color:var(--primary)">📱 聯絡電話</label>
+                <input type="tel" id="contact-phone" class="input-field" placeholder="請輸入聯絡電話">
+            </div>
+            <div>
+                <label class="block font-medium mb-2" style="color:var(--primary)">✉️ 電子郵件</label>
+                <input type="email" id="contact-email" class="input-field" placeholder="接收訂單確認信">
+            </div>
         </div>
 
         <!-- 商品列表 -->
@@ -500,6 +506,7 @@
             document.getElementById('user-avatar').src = currentUser.pictureUrl || currentUser.picture_url || 'https://via.placeholder.com/48';
             document.getElementById('line-name').value = currentUser.displayName || currentUser.display_name;
             if (currentUser.phone) document.getElementById('contact-phone').value = currentUser.phone;
+            if (currentUser.email) document.getElementById('contact-email').value = currentUser.email;
             updateFormState();
         }
 
@@ -868,6 +875,9 @@
             const phone = document.getElementById('contact-phone').value.trim();
             if (!phone) { Swal.fire('錯誤', '請填寫聯絡電話', 'error'); return; }
 
+            const email = document.getElementById('contact-email').value.trim();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Swal.fire('錯誤', '請填寫正確的電子郵件', 'error'); return; }
+
             if (!selectedDelivery) { Swal.fire('錯誤', '請選擇配送方式', 'error'); return; }
 
             // 收集訂購品項
@@ -931,6 +941,7 @@
                     body: JSON.stringify({
                         lineName: currentUser.displayName || currentUser.display_name,
                         phone,
+                        email,
                         orders: orderLines.join('\n'),
                         total,
                         lineUserId: currentUser.userId || currentUser.line_user_id,

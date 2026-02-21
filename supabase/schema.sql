@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   store_address TEXT DEFAULT '',
   -- 訂單狀態
   status TEXT DEFAULT 'pending',
-  note TEXT DEFAULT ''
+  note TEXT DEFAULT '',
+  email TEXT DEFAULT ''
 );
 
 -- 4. 系統設定 (Key-Value)
@@ -73,7 +74,8 @@ CREATE TABLE IF NOT EXISTS coffee_users (
   last_login TIMESTAMPTZ DEFAULT now(),
   phone TEXT DEFAULT '',
   default_city TEXT DEFAULT '',
-  default_address TEXT DEFAULT ''
+  default_address TEXT DEFAULT '',
+  email TEXT DEFAULT ''
 );
 
 -- 6. 門市選擇暫存表（ECPay 電子地圖回傳）

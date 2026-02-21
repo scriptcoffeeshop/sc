@@ -451,6 +451,7 @@
                     <div class="grid grid-cols-2 gap-2 text-sm mb-2">
                         <div><span class="text-gray-500">顧客：</span>${esc(o.lineName)}</div>
                         <div><span class="text-gray-500">電話：</span>${esc(o.phone)}</div>
+                        <div class="col-span-2"><span class="text-gray-500">信箱：</span>${o.email ? `<a href="mailto:${esc(o.email)}" class="text-blue-500">${esc(o.email)}</a>` : '無'}</div>
                         <div class="col-span-2"><span class="text-gray-500">地址/門市：</span>${esc(addrInfo)}</div>
                     </div>
                     <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${esc(o.items)}</div>
