@@ -225,6 +225,114 @@
         .fade-in {
             animation: fadeIn 0.3s ease;
         }
+
+        /* ========== RWD 響應式設計 ========== */
+
+        /* 手機 (< 640px) */
+        @media (max-width: 639px) {
+            body {
+                padding: 8px !important;
+            }
+
+            .glass-card {
+                border-radius: 14px;
+                padding: 16px !important;
+            }
+
+            h1 {
+                font-size: 1.35rem !important;
+            }
+
+            .bottom-bar {
+                padding: 10px 12px;
+            }
+
+            .bottom-bar .w-full {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            #total-price {
+                font-size: 1.1rem !important;
+            }
+
+            .btn-primary {
+                width: 100%;
+                padding: 14px 20px;
+                font-size: 1rem;
+                text-align: center;
+            }
+
+            .content-spacer {
+                height: 140px;
+            }
+
+            /* 配送選項 — 手機上一排兩個 */
+            .delivery-option {
+                padding: 12px 8px;
+                text-align: center;
+            }
+
+            .delivery-option .text-2xl {
+                font-size: 1.5rem;
+                margin-bottom: 4px;
+            }
+
+            .delivery-option .font-semibold {
+                font-size: 0.82rem;
+            }
+
+            .delivery-option .text-xs {
+                font-size: 0.65rem;
+            }
+
+            /* 商品表格 */
+            #products-table th,
+            #products-table td {
+                padding: 8px 4px;
+                font-size: 0.85rem;
+            }
+
+            .quantity-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 16px;
+            }
+
+            .quantity {
+                width: 32px !important;
+                font-size: 1rem !important;
+            }
+
+            /* 聯絡資訊 */
+            .input-field {
+                font-size: 16px;
+                /* 避免 iOS 自動放大 */
+            }
+
+            select.input-field {
+                font-size: 16px;
+            }
+
+            /* 彈窗 */
+            .swal2-popup {
+                font-size: 0.9rem !important;
+            }
+        }
+
+        /* 平板 (640px ~ 1023px) */
+        @media (min-width: 640px) and (max-width: 1023px) {
+            body {
+                padding: 16px !important;
+            }
+        }
+
+        /* 超寬螢幕 */
+        @media (min-width: 1280px) {
+            .max-w-3xl {
+                max-width: 56rem;
+            }
+        }
     </style>
 </head>
 
@@ -303,7 +411,7 @@
         <!-- 配送方式 -->
         <div class="mb-6">
             <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">🚚 配送方式</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 <div class="delivery-option" onclick="selectDelivery('in_store', event)">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">🚶</div>

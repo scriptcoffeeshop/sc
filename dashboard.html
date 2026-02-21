@@ -164,6 +164,117 @@
         .content-spacer {
             height: 80px;
         }
+
+        /* ========== RWD 響應式設計 ========== */
+
+        /* 手機 (< 640px) */
+        @media (max-width: 639px) {
+            body {
+                padding: 8px !important;
+            }
+
+            h1 {
+                font-size: 1.2rem !important;
+            }
+
+            h2 {
+                font-size: 1rem !important;
+            }
+
+            .glass-card {
+                border-radius: 14px;
+                padding: 14px !important;
+            }
+
+            /* Header */
+            #admin-page>.flex:first-child {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            /* Tabs 頁籤 — 可水平捲動 */
+            #admin-page>.flex.gap-2 {
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+
+            #admin-page>.flex.gap-2::-webkit-scrollbar {
+                display: none;
+            }
+
+            #admin-page>.flex.gap-2 button {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            /* 用戶管理搜尋欄 */
+            #users-section .flex.justify-between {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #users-section .flex.gap-2.items-center {
+                width: 100%;
+            }
+
+            #user-search {
+                flex: 1;
+            }
+
+            /* 訂單管理篩選 */
+            #orders-section .flex.justify-between {
+                flex-direction: column;
+                gap: 8px;
+                align-items: flex-start;
+            }
+
+            /* 表格文字 */
+            table {
+                font-size: 0.78rem;
+            }
+
+            table th,
+            table td {
+                padding: 8px 4px !important;
+            }
+
+            /* 底部固定欄 */
+            .bottom-bar {
+                padding: 10px 12px;
+            }
+
+            /* 彈窗 */
+            .modal-content {
+                padding: 16px;
+                border-radius: 14px;
+            }
+
+            .btn-primary {
+                padding: 10px 16px;
+                font-size: 0.88rem;
+            }
+
+            /* 輸入欄位避免 iOS 自動放大 */
+            .input-field {
+                font-size: 16px;
+            }
+
+            select.input-field {
+                font-size: 16px;
+            }
+
+            .swal2-popup {
+                font-size: 0.9rem !important;
+            }
+        }
+
+        /* 平板 (640px ~ 1023px) */
+        @media (min-width: 640px) and (max-width: 1023px) {
+            body {
+                padding: 16px !important;
+            }
+        }
     </style>
 </head>
 
