@@ -876,9 +876,23 @@
             if (!phone) { Swal.fire('錯誤', '請填寫聯絡電話', 'error'); return; }
 
             const email = document.getElementById('contact-email').value.trim();
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Swal.fire('錯誤', '請填寫正確的電子郵件', 'error'); return; }
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Swal.fire('錯誤', '請填寫正確的電子郵件', 'error'); return; }
 
             if (!selectedDelivery) { Swal.fire('錯誤', '請選擇配送方式', 'error'); return; }
+
+            // 如果沒有填寫電子郵件，顯示提醒確認框
+            if (!email) {
+                const proceed = await Swal.fire({
+                    title: '未填寫電子郵件',
+                    text: '您沒有填寫電子郵件，將無法接收到訂單成立與出貨通知信。確定要繼續送出訂單嗎？',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '繼續送出',
+                    cancelButtonText: '返回填寫',
+                    confirmButtonColor: '#3C2415'
+                });
+                if (!proceed.isConfirmed) return;
+            }
 
             // 收集訂購品項
             let orderLines = [];
@@ -952,6 +966,10 @@
                 });
                 const result = await res.json();
                 if (result.success) {
+                    if (email) {
+                        currentUser.email = email;
+                        localStorage.setItem('coffee_user', JSON.stringify(currentUser));
+                    }
                     Swal.fire({ icon: 'success', title: '訂單已送出！', text: `訂單編號：${result.orderId}`, confirmButtonColor: '#3C2415' }).then(() => {
                         document.querySelectorAll('.quantity').forEach(i => i.value = '0');
                         document.querySelectorAll('.amount').forEach(t => t.textContent = '$0');
