@@ -76,6 +76,17 @@ CREATE TABLE IF NOT EXISTS coffee_users (
   default_address TEXT DEFAULT ''
 );
 
+-- 6. 門市選擇暫存表（ECPay 電子地圖回傳）
+CREATE TABLE IF NOT EXISTS coffee_store_selections (
+  token TEXT PRIMARY KEY,
+  cvs_store_id TEXT DEFAULT '',
+  cvs_store_name TEXT DEFAULT '',
+  cvs_address TEXT DEFAULT '',
+  logistics_sub_type TEXT DEFAULT '',
+  extra_data TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
 -- ============================================
 -- 索引
 -- ============================================
@@ -94,7 +105,10 @@ ALTER TABLE coffee_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coffee_orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coffee_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coffee_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coffee_store_selections ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow anon read coffee_products" ON coffee_products FOR SELECT USING (true);
 CREATE POLICY "Allow anon read coffee_categories" ON coffee_categories FOR SELECT USING (true);
 CREATE POLICY "Allow anon read coffee_settings" ON coffee_settings FOR SELECT USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_store_selections_created ON coffee_store_selections(created_at);

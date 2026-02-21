@@ -10,9 +10,11 @@ const LINE_LOGIN_CHANNEL_SECRET = Deno.env.get('LINE_LOGIN_CHANNEL_SECRET') || '
 const LINE_ADMIN_USER_ID = Deno.env.get('LINE_ADMIN_USER_ID') || ''
 
 // 綠界 ECPay 物流設定
-const ECPAY_MERCHANT_ID = Deno.env.get('ECPAY_MERCHANT_ID') || ''
-const ECPAY_HASH_KEY = Deno.env.get('ECPAY_HASH_KEY') || ''
-const ECPAY_HASH_IV = Deno.env.get('ECPAY_HASH_IV') || ''
+// 測試環境預設使用 B2C 物流測試帳號，正式環境請設定 Secrets
+const ECPAY_MERCHANT_ID = Deno.env.get('ECPAY_MERCHANT_ID') || '2000132'
+const ECPAY_HASH_KEY = Deno.env.get('ECPAY_HASH_KEY') || '5294y06JbISpM5x9'
+const ECPAY_HASH_IV = Deno.env.get('ECPAY_HASH_IV') || 'v77hoKGq4kWxNNIS'
+const ECPAY_IS_STAGE = Deno.env.get('ECPAY_IS_STAGE') !== 'false' // 預設使用測試環境
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -30,6 +32,63 @@ function jsonResponse(data: unknown, status = 200) {
     })
 }
 
+function htmlResponse(html: string, status = 200) {
+    return new Response(html, {
+        status,
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    })
+}
+
+async function parseRequestData(req: Request, url: URL): Promise<Record<string, unknown>> {
+    const data: Record<string, unknown> = {}
+    url.searchParams.forEach((v, k) => { data[k] = v })
+
+    if (req.method !== 'POST') return data
+
+    const contentType = req.headers.get('content-type') || ''
+    try {
+        if (contentType.includes('application/json')) {
+            const body = await req.json()
+            if (body && typeof body === 'object' && !Array.isArray(body)) {
+                Object.assign(data, body as Record<string, unknown>)
+            }
+            return data
+        }
+
+        if (contentType.includes('application/x-www-form-urlencoded')) {
+            const raw = await req.text()
+            const form = new URLSearchParams(raw)
+            form.forEach((v, k) => { data[k] = v })
+            return data
+        }
+
+        if (contentType.includes('multipart/form-data')) {
+            const formData = await req.formData()
+            for (const [k, v] of formData.entries()) {
+                data[k] = typeof v === 'string' ? v : v.name
+            }
+            return data
+        }
+
+        const raw = await req.text()
+        if (!raw) return data
+
+        try {
+            const body = JSON.parse(raw)
+            if (body && typeof body === 'object' && !Array.isArray(body)) {
+                Object.assign(data, body as Record<string, unknown>)
+            }
+        } catch {
+            const form = new URLSearchParams(raw)
+            form.forEach((v, k) => { data[k] = v })
+        }
+    } catch {
+        // 忽略 body 解析錯誤，保留 query 參數
+    }
+
+    return data
+}
+
 // ============ 主路由 ============
 serve(async (req) => {
     if (req.method === 'OPTIONS') {
@@ -38,17 +97,7 @@ serve(async (req) => {
 
     const url = new URL(req.url)
     const action = url.searchParams.get('action') || 'getProducts'
-
-    let data: Record<string, unknown> = {}
-    if (req.method === 'POST') {
-        try {
-            data = await req.json()
-        } catch {
-            url.searchParams.forEach((v, k) => { data[k] = v })
-        }
-    } else {
-        url.searchParams.forEach((v, k) => { data[k] = v })
-    }
+    const data = await parseRequestData(req, url)
 
     let result: unknown
     try {
@@ -64,6 +113,9 @@ serve(async (req) => {
             case 'getMyOrders': result = await getMyOrders(data.lineUserId as string); break
             case 'getOrders': result = await getOrders(data.userId as string); break
             case 'verifyAdmin': result = await verifyAdmin(data.userId as string); break
+            case 'getStoreList': result = await getStoreList(data.cvsType as string); break
+            case 'createStoreMapSession': result = await createStoreMapSession(data.deliveryMethod as string, url); break
+            case 'getStoreSelection': result = await getStoreSelection(data.token as string); break
             // POST
             case 'submitOrder': result = await submitOrder(data); break
             case 'addProduct': result = await addProduct(data); break
@@ -76,13 +128,14 @@ serve(async (req) => {
             case 'updateSettings': result = await updateSettingsAction(data); break
             case 'updateOrderStatus': result = await updateOrderStatus(data); break
             case 'deleteOrder': result = await deleteOrder(data); break
-            case 'getEcpayMap': result = getEcpayMapUrl(data); break
+            case 'storeMapCallback': result = await handleStoreMapCallback(data); break
             default: result = { success: false, error: '未知的操作' }
         }
     } catch (error) {
         result = { success: false, error: String(error) }
     }
 
+    if (result instanceof Response) return result
     return jsonResponse(result)
 })
 
@@ -442,18 +495,267 @@ async function updateSettingsAction(data: Record<string, unknown>) {
     return { success: true, message: '設定已更新' }
 }
 
-// ============ 綠界門市地圖 ============
-function getEcpayMapUrl(data: Record<string, unknown>) {
-    const subType = data.subType as string // UNIMARTC2C or FAMIC2C
-    const serverReplyURL = data.serverReplyURL as string || ''
-    if (!ECPAY_MERCHANT_ID) {
-        return { success: false, error: '尚未設定綠界商家 ID' }
+// ============ 綠界門市清單 API ============
+
+// 超商類型對照
+const CVS_TYPE_MAP: Record<string, string> = {
+    seven_eleven: 'UNIMART',
+    family_mart: 'FAMI',
+}
+
+// 電子地圖用物流子類型（B2C）
+const MAP_SUBTYPE_MAP: Record<string, string> = {
+    seven_eleven: 'UNIMART',
+    family_mart: 'FAMI',
+    UNIMART: 'UNIMART',
+    FAMI: 'FAMI',
+}
+
+// 產生 CheckMacValue（SHA256）
+async function generateCheckMacValue(params: Record<string, string>): Promise<string> {
+    // 1. 排除 CheckMacValue，按 key 排序
+    const sorted = Object.keys(params)
+        .filter(k => k !== 'CheckMacValue')
+        .sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+
+    // 2. 串接為 key=value&key=value
+    const paramStr = sorted.map(k => `${k}=${params[k]}`).join('&')
+
+    // 3. 前後加入 HashKey 和 HashIV
+    const raw = `HashKey=${ECPAY_HASH_KEY}&${paramStr}&HashIV=${ECPAY_HASH_IV}`
+
+    // 4. URL encode（.NET 相容）
+    let encoded = encodeURIComponent(raw)
+    // .NET 相容替換
+    encoded = encoded.replace(/%20/g, '+')
+        .replace(/%2d/gi, '-')
+        .replace(/%5f/gi, '_')
+        .replace(/%2e/gi, '.')
+        .replace(/%21/g, '!')
+        .replace(/%2a/g, '*')
+        .replace(/%28/g, '(')
+        .replace(/%29/g, ')')
+
+    // 5. 轉小寫
+    encoded = encoded.toLowerCase()
+
+    // 6. SHA256 雜湊
+    const msgBuffer = new TextEncoder().encode(encoded)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    // 7. 轉大寫
+    return hashHex.toUpperCase()
+}
+
+// 門市清單快取（每小時更新一次）
+const storeCache: Record<string, { data: unknown; timestamp: number }> = {}
+const CACHE_TTL = 60 * 60 * 1000 // 1 小時
+
+function genStoreMapToken() {
+    return crypto.randomUUID().replace(/-/g, '').slice(0, 20)
+}
+
+function getDataValue(data: Record<string, unknown>, keys: string[]) {
+    for (const k of keys) {
+        const v = data[k]
+        if (typeof v === 'string' && v.trim()) return v.trim()
     }
-    // 綠界門市電子地圖 URL
-    const mapUrl = 'https://logistics.ecpay.com.tw/Express/map?' +
-        'IsCollection=N&' +
-        'LogisticsSubType=' + (subType || 'UNIMARTC2C') + '&' +
-        'MerchantID=' + ECPAY_MERCHANT_ID + '&' +
-        'ServerReplyURL=' + encodeURIComponent(serverReplyURL)
-    return { success: true, mapUrl }
+    return ''
+}
+
+function escapeHtml(text: string) {
+    return text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+}
+
+async function cleanupOldStoreSelections() {
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    await supabase.from('coffee_store_selections').delete().lt('created_at', cutoff)
+}
+
+async function getStoreList(cvsType: string) {
+    const mappedType = CVS_TYPE_MAP[cvsType] || cvsType || 'UNIMART'
+    const validTypes = ['UNIMART', 'FAMI', 'HILIFE', 'OKMART', 'All']
+    if (!validTypes.includes(mappedType)) {
+        return { success: false, error: '不支援的超商類型' }
+    }
+
+    // 檢查快取
+    const cacheKey = mappedType
+    if (storeCache[cacheKey] && (Date.now() - storeCache[cacheKey].timestamp) < CACHE_TTL) {
+        return storeCache[cacheKey].data
+    }
+
+    const params: Record<string, string> = {
+        MerchantID: ECPAY_MERCHANT_ID,
+        CvsType: mappedType,
+    }
+    params.CheckMacValue = await generateCheckMacValue(params)
+
+    const apiUrl = ECPAY_IS_STAGE
+        ? 'https://logistics-stage.ecpay.com.tw/Helper/GetStoreList'
+        : 'https://logistics.ecpay.com.tw/Helper/GetStoreList'
+
+    try {
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(params).toString(),
+        })
+        const result = await res.json()
+
+        if (result.RtnCode === 1) {
+            // 整理門市清單
+            const stores: Array<{ id: string; name: string; address: string; phone: string; type: string }> = []
+            for (const group of (result.StoreList || [])) {
+                for (const s of (group.StoreInfo || [])) {
+                    stores.push({
+                        id: s.StoreId,
+                        name: s.StoreName,
+                        address: s.StoreAddr,
+                        phone: s.StorePhone || '',
+                        type: group.CvsType,
+                    })
+                }
+            }
+            const response = { success: true, stores, total: stores.length }
+            // 存入快取
+            storeCache[cacheKey] = { data: response, timestamp: Date.now() }
+            return response
+        } else {
+            return { success: false, error: result.RtnMsg || '取得門市清單失敗' }
+        }
+    } catch (e) {
+        return { success: false, error: '呼叫綠界 API 失敗: ' + String(e) }
+    }
+}
+
+async function createStoreMapSession(deliveryMethod: string, reqUrl: URL) {
+    const subType = MAP_SUBTYPE_MAP[deliveryMethod] || MAP_SUBTYPE_MAP[String(deliveryMethod || '').toUpperCase()]
+    if (!subType) return { success: false, error: '請先選擇 7-11 或全家取貨' }
+
+    const token = genStoreMapToken()
+    const callbackUrl = `${reqUrl.origin}${reqUrl.pathname}?action=storeMapCallback`
+
+    const params: Record<string, string> = {
+        MerchantID: ECPAY_MERCHANT_ID,
+        LogisticsType: 'CVS',
+        LogisticsSubType: subType,
+        IsCollection: 'Y',
+        ServerReplyURL: callbackUrl,
+        ExtraData: token,
+        Device: '1',
+    }
+    params.CheckMacValue = await generateCheckMacValue(params)
+
+    try {
+        await cleanupOldStoreSelections()
+    } catch {
+        // 不阻斷主流程
+    }
+
+    const { error } = await supabase.from('coffee_store_selections').upsert({
+        token,
+        cvs_store_id: '',
+        cvs_store_name: '',
+        cvs_address: '',
+        logistics_sub_type: subType,
+        extra_data: '',
+        created_at: new Date().toISOString(),
+    })
+    if (error) return { success: false, error: '建立門市地圖會話失敗：' + error.message }
+
+    const mapUrl = ECPAY_IS_STAGE
+        ? 'https://logistics-stage.ecpay.com.tw/Express/map'
+        : 'https://logistics.ecpay.com.tw/Express/map'
+
+    return { success: true, token, mapUrl, params }
+}
+
+async function getStoreSelection(token: string) {
+    if (!token) return { success: false, error: '缺少 token' }
+
+    const { data, error } = await supabase
+        .from('coffee_store_selections')
+        .select('token, cvs_store_id, cvs_store_name, cvs_address, logistics_sub_type')
+        .eq('token', token)
+        .maybeSingle()
+
+    if (error) return { success: false, error: error.message }
+    if (!data || !data.cvs_store_id) return { success: true, found: false }
+
+    // 取到資料即刪除，避免重複選取舊資料
+    await supabase.from('coffee_store_selections').delete().eq('token', token)
+
+    return {
+        success: true,
+        found: true,
+        storeId: data.cvs_store_id || '',
+        storeName: data.cvs_store_name || '',
+        storeAddress: data.cvs_address || '',
+        logisticsSubType: data.logistics_sub_type || '',
+    }
+}
+
+async function handleStoreMapCallback(data: Record<string, unknown>) {
+    const token = getDataValue(data, ['ExtraData', 'extraData', 'token'])
+    const storeId = getDataValue(data, ['CVSStoreID', 'CvsStoreID', 'StoreID', 'StoreId'])
+    const storeName = getDataValue(data, ['CVSStoreName', 'CvsStoreName', 'StoreName'])
+    const storeAddress = getDataValue(data, ['CVSAddress', 'CvsAddress', 'StoreAddress'])
+    const logisticsSubType = getDataValue(data, ['LogisticsSubType', 'logisticsSubType'])
+
+    if (!token) {
+        return htmlResponse(`<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>缺少會話識別碼（ExtraData）。</p></body></html>`, 400)
+    }
+
+    const { error } = await supabase.from('coffee_store_selections').upsert({
+        token,
+        cvs_store_id: storeId,
+        cvs_store_name: storeName,
+        cvs_address: storeAddress,
+        logistics_sub_type: logisticsSubType,
+        extra_data: JSON.stringify(data),
+        created_at: new Date().toISOString(),
+    })
+
+    if (error) {
+        return htmlResponse(`<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>${escapeHtml(error.message)}</p></body></html>`, 500)
+    }
+
+    const safeName = escapeHtml(storeName || '（未提供門市名稱）')
+    const safeAddr = escapeHtml(storeAddress || '（未提供門市地址）')
+
+    return htmlResponse(`<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>門市選擇完成</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #f6f9f6; color: #1f2937; }
+    .card { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+    h3 { margin: 0 0 12px; color: #0f5132; }
+    p { margin: 8px 0; line-height: 1.5; }
+    .hint { color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>門市選擇成功</h3>
+    <p><strong>門市：</strong>${safeName}</p>
+    <p><strong>地址：</strong>${safeAddr}</p>
+    <p class="hint">此視窗會自動關閉，請回到訂購頁面。</p>
+  </div>
+  <script>
+    setTimeout(function () {
+      if (window.opener) window.close();
+    }, 400);
+  </script>
+</body>
+</html>`)
 }
