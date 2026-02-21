@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS coffee_products (
   weight TEXT DEFAULT '',
   origin TEXT DEFAULT '',
   roast_level TEXT DEFAULT '',
+  specs TEXT DEFAULT '',
   image_url TEXT DEFAULT '',
   enabled BOOLEAN DEFAULT true,
   sort_order INT DEFAULT 0

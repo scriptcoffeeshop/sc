@@ -480,18 +480,17 @@
                         id="pm-name" class="input-field" required></div>
                 <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">說明</label><input type="text"
                         id="pm-desc" class="input-field" placeholder="風味描述"></div>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div><label class="block text-sm text-gray-600 mb-1">價格 *</label><input type="number" id="pm-price"
-                            class="input-field" required min="0"></div>
-                    <div><label class="block text-sm text-gray-600 mb-1">重量</label><input type="text" id="pm-weight"
-                            class="input-field" placeholder="例：227g"></div>
+                <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">烘焙度</label><input type="text"
+                        id="pm-roast" class="input-field" placeholder="例：中淺焙"></div>
+
+                <!-- 規格與價格 -->
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-600 mb-2 font-semibold">📦 規格與價格</label>
+                    <div id="specs-container" class="space-y-2"></div>
+                    <button type="button" onclick="addSpecRow()" class="mt-2 text-sm font-medium hover:underline"
+                        style="color:var(--primary)">+ 新增規格</button>
                 </div>
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div><label class="block text-sm text-gray-600 mb-1">產地</label><input type="text" id="pm-origin"
-                            class="input-field" placeholder="例：衣索比亞"></div>
-                    <div><label class="block text-sm text-gray-600 mb-1">烘焙度</label><input type="text" id="pm-roast"
-                            class="input-field" placeholder="例：中淺焙"></div>
-                </div>
+
                 <div class="mb-4"><label class="flex items-center gap-2"><input type="checkbox" id="pm-enabled" checked
                             class="w-4 h-4"> 啟用販售</label></div>
                 <div class="flex gap-3">
@@ -675,18 +674,75 @@
             if (!products.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">尚無商品</td></tr>'; return; }
             productsMap = {};
             products.forEach(p => { productsMap[p.id] = p; });
-            tbody.innerHTML = products.map(p => `
+            tbody.innerHTML = products.map(p => {
+                let priceDisplay = `$${p.price}`;
+                try {
+                    const specs = p.specs ? JSON.parse(p.specs) : [];
+                    const enabled = specs.filter(s => s.enabled);
+                    if (enabled.length) {
+                        priceDisplay = enabled.map(s => `<div class="text-xs">${esc(s.label)}: $${s.price}</div>`).join('');
+                    }
+                } catch { }
+                return `
                 <tr class="border-b" style="border-color:#f0e6db;">
                     <td class="p-3 text-sm">${esc(p.category)}</td>
-                    <td class="p-3"><div class="font-medium">${esc(p.name)}</div><div class="text-xs text-gray-500">${esc(p.description || '')} ${p.weight ? '・' + p.weight : ''} ${p.origin ? '・' + p.origin : ''}</div></td>
-                    <td class="p-3 text-right font-medium">$${p.price}</td>
+                    <td class="p-3"><div class="font-medium">${esc(p.name)}</div><div class="text-xs text-gray-500">${esc(p.description || '')} ${p.roastLevel ? '・' + p.roastLevel : ''}</div></td>
+                    <td class="p-3 text-right font-medium">${priceDisplay}</td>
                     <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
                     <td class="p-3 text-center">
                         <button onclick="editProduct(${p.id})" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
                         <button onclick="delProduct(${p.id})" class="text-sm text-red-500">刪除</button>
                     </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
+        }
+
+        // ======== 預設規格模板 ========
+        const defaultSpecs = [
+            { key: 'quarter', label: '1/4磅', price: 0, enabled: true },
+            { key: 'half', label: '半磅', price: 0, enabled: true },
+            { key: 'drip_bag', label: '單包耳掛', price: 0, enabled: true },
+        ];
+
+        function addSpecRow(specData) {
+            const container = document.getElementById('specs-container');
+            const idx = container.children.length;
+            const s = specData || { key: '', label: '', price: 0, enabled: true };
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 p-2 rounded-lg border';
+            div.style.borderColor = '#e5ddd5';
+            div.innerHTML = `
+                <label class="flex items-center"><input type="checkbox" class="spec-enabled w-4 h-4" ${s.enabled ? 'checked' : ''}></label>
+                <input type="text" class="spec-label input-field text-sm py-1" value="${esc(s.label)}" placeholder="規格名稱" style="width:90px">
+                <span class="text-gray-500 text-sm">$</span>
+                <input type="number" class="spec-price input-field text-sm py-1" value="${s.price || ''}" placeholder="價格" min="0" style="width:80px">
+                <button type="button" onclick="this.closest('div').remove()" class="text-red-400 hover:text-red-600 text-lg font-bold">&times;</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function getSpecsFromForm() {
+            const rows = document.querySelectorAll('#specs-container > div');
+            const specs = [];
+            rows.forEach(row => {
+                const label = row.querySelector('.spec-label').value.trim();
+                const price = parseInt(row.querySelector('.spec-price').value) || 0;
+                const enabled = row.querySelector('.spec-enabled').checked;
+                if (label) {
+                    const key = label.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, '_').toLowerCase() || `spec_${Date.now()}`;
+                    specs.push({ key, label, price, enabled });
+                }
+            });
+            return specs;
+        }
+
+        function loadSpecsToForm(specsStr) {
+            const container = document.getElementById('specs-container');
+            container.innerHTML = '';
+            let specs = [];
+            try { if (specsStr) specs = JSON.parse(specsStr); } catch { }
+            if (!specs.length) specs = JSON.parse(JSON.stringify(defaultSpecs));
+            specs.forEach(s => addSpecRow(s));
         }
 
         function showProductModal() {
@@ -695,6 +751,7 @@
             document.getElementById('pm-id').value = '';
             document.getElementById('pm-enabled').checked = true;
             updateCategorySelect();
+            loadSpecsToForm('');
             document.getElementById('product-modal').classList.remove('hidden');
         }
 
@@ -707,11 +764,9 @@
             document.getElementById('pm-category').value = p.category;
             document.getElementById('pm-name').value = p.name;
             document.getElementById('pm-desc').value = p.description || '';
-            document.getElementById('pm-price').value = p.price;
-            document.getElementById('pm-weight').value = p.weight || '';
-            document.getElementById('pm-origin').value = p.origin || '';
             document.getElementById('pm-roast').value = p.roastLevel || '';
             document.getElementById('pm-enabled').checked = p.enabled;
+            loadSpecsToForm(p.specs || '');
             document.getElementById('product-modal').classList.remove('hidden');
         }
 
@@ -725,11 +780,18 @@
         async function saveProduct(e) {
             e.preventDefault();
             const id = document.getElementById('pm-id').value;
+            const specs = getSpecsFromForm();
+            const enabledSpecs = specs.filter(s => s.enabled);
+            if (!enabledSpecs.length) { Swal.fire('錯誤', '請至少啟用一個規格', 'error'); return; }
+            const hasZeroPrice = enabledSpecs.some(s => !s.price || s.price <= 0);
+            if (hasZeroPrice) { Swal.fire('錯誤', '已啟用的規格必須設定價格', 'error'); return; }
+
             const payload = {
                 userId: getAuthUserId(), category: document.getElementById('pm-category').value,
                 name: document.getElementById('pm-name').value, description: document.getElementById('pm-desc').value,
-                price: document.getElementById('pm-price').value, weight: document.getElementById('pm-weight').value,
-                origin: document.getElementById('pm-origin').value, roastLevel: document.getElementById('pm-roast').value,
+                price: enabledSpecs[0]?.price || 0,
+                roastLevel: document.getElementById('pm-roast').value,
+                specs: JSON.stringify(specs),
                 enabled: document.getElementById('pm-enabled').checked,
             };
             if (id) payload.id = parseInt(id);

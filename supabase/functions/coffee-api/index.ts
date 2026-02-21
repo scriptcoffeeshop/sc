@@ -318,7 +318,8 @@ async function getProducts() {
     const products = (data || []).map((r: Record<string, unknown>) => ({
         id: r.id, category: r.category, name: r.name, description: r.description || '',
         price: r.price, weight: r.weight || '', origin: r.origin || '',
-        roastLevel: r.roast_level || '', imageUrl: r.image_url || '',
+        roastLevel: r.roast_level || '', specs: r.specs || '',
+        imageUrl: r.image_url || '',
         enabled: r.enabled !== false, sortOrder: r.sort_order || 0,
     }))
     return { success: true, products }
@@ -328,8 +329,9 @@ async function addProduct(data: Record<string, unknown>) {
     if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
     const { data: ins, error } = await supabase.from('coffee_products').insert({
         category: data.category, name: data.name, description: data.description || '',
-        price: parseInt(String(data.price)), weight: data.weight || '', origin: data.origin || '',
-        roast_level: data.roastLevel || '', image_url: data.imageUrl || '',
+        price: parseInt(String(data.price)) || 0, weight: data.weight || '', origin: data.origin || '',
+        roast_level: data.roastLevel || '', specs: data.specs || '',
+        image_url: data.imageUrl || '',
         enabled: data.enabled === false || data.enabled === 'false' ? false : true,
     }).select('id').single()
     if (error) return { success: false, error: error.message }
@@ -340,8 +342,9 @@ async function updateProduct(data: Record<string, unknown>) {
     if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
     const { error } = await supabase.from('coffee_products').update({
         category: data.category, name: data.name, description: data.description || '',
-        price: parseInt(String(data.price)), weight: data.weight || '', origin: data.origin || '',
-        roast_level: data.roastLevel || '', image_url: data.imageUrl || '',
+        price: parseInt(String(data.price)) || 0, weight: data.weight || '', origin: data.origin || '',
+        roast_level: data.roastLevel || '', specs: data.specs || '',
+        image_url: data.imageUrl || '',
         enabled: data.enabled === true || data.enabled === 'true',
     }).eq('id', data.id)
     if (error) return { success: false, error: error.message }
