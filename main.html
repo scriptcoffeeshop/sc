@@ -530,8 +530,11 @@
                 }
 
                 if (prefs && prefs.method) {
-                    const btn = document.querySelector(`.delivery-btn[onclick="selectDelivery('${prefs.method}', this)"]`);
-                    if (btn) btn.click();
+                    const btn = document.querySelector(`.delivery-option[onclick*="selectDelivery('${prefs.method}'"]`);
+                    if (btn) {
+                        // Create a fake event object to pass to selectDelivery since calling click() directly might have issues
+                        selectDelivery(prefs.method, { currentTarget: btn });
+                    }
 
                     if (prefs.method === 'delivery') {
                         if (prefs.city) {
