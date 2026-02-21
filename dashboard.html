@@ -211,6 +211,12 @@
             <button id="tab-settings" onclick="showTab('settings')"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">⚙️
                 系統設定</button>
+            <button id="tab-users" onclick="showTab('users')"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">👥
+                用戶管理</button>
+            <button id="tab-blacklist" onclick="showTab('blacklist')"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">🚫
+                黑名單</button>
         </div>
 
         <!-- ===== 訂單管理 ===== -->
@@ -270,6 +276,56 @@
                 <button onclick="addCategory()" class="btn-primary text-sm">新增</button>
             </div>
             <div id="categories-list"></div>
+        </div>
+
+        <!-- ===== 用戶管理 ===== -->
+        <div id="users-section" class="glass-card p-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold" style="color:var(--primary)">用戶管理</h2>
+                <div class="flex gap-2 items-center">
+                    <input type="text" id="user-search" class="input-field text-sm py-1" placeholder="搜尋名稱/手機/Email"
+                        onkeyup="if(event.key==='Enter') loadUsers()">
+                    <button onclick="loadUsers()" class="btn-primary text-sm py-1 px-4">搜尋</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2" style="border-color:var(--secondary)">
+                            <th class="p-3 text-left w-12" style="color:var(--primary)">頭像</th>
+                            <th class="p-3 text-left" style="color:var(--primary)">用戶資訊</th>
+                            <th class="p-3 text-left" style="color:var(--primary)">角色與狀態</th>
+                            <th class="p-3 text-right" style="color:var(--primary)">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table">
+                        <tr>
+                            <td colspan="4" class="text-center py-8 text-gray-500">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ===== 黑名單 ===== -->
+        <div id="blacklist-section" class="glass-card p-6 hidden">
+            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">黑名單</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2" style="border-color:var(--secondary)">
+                            <th class="p-3 text-left" style="color:var(--primary)">用戶名稱</th>
+                            <th class="p-3 text-left" style="color:var(--primary)">封鎖時間與原因</th>
+                            <th class="p-3 text-right" style="color:var(--primary)">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blacklist-table">
+                        <tr>
+                            <td colspan="3" class="text-center py-8 text-gray-500">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- ===== 系統設定 ===== -->
@@ -352,6 +408,8 @@
         let products = [];
         let categories = [];
         let orders = [];
+        let users = [];
+        let blacklist = [];
 
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
 
@@ -402,7 +460,7 @@
         }
 
         function showTab(tab) {
-            ['orders', 'products', 'categories', 'settings'].forEach(t => {
+            ['orders', 'products', 'categories', 'settings', 'users', 'blacklist'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.remove('tab-active');
                 document.getElementById(`tab-${t}`).classList.add('bg-white', 'text-gray-600');
                 document.getElementById(`${t}-section`).classList.add('hidden');
@@ -413,6 +471,8 @@
             if (tab === 'orders') loadOrders();
             else if (tab === 'settings') loadSettings();
             else if (tab === 'categories') renderCategories();
+            else if (tab === 'users') loadUsers();
+            else if (tab === 'blacklist') loadBlacklist();
         }
 
         // ============ 訂單管理 ============
@@ -684,6 +744,126 @@
                 if (d.success) Toast.fire({ icon: 'success', title: '設定已儲存' });
                 else throw new Error(d.error);
             } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+        }
+
+        // ============ 用戶管理 ============
+        async function loadUsers() {
+            try {
+                const search = document.getElementById('user-search').value;
+                Swal.fire({ title: '載入中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const r = await fetch(`${API_URL}?action=getUsers&userId=${getAuthUserId()}&search=${encodeURIComponent(search)}&_=${Date.now()}`);
+                const d = await r.json();
+                if (d.success) { users = d.users; renderUsers(); Swal.close(); }
+                else { Swal.fire('錯誤', d.error, 'error'); }
+            } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('users-table');
+            if (!users.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">無符合條件的用戶</td></tr>'; return; }
+            const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.userId === 'U7cd3c1e2d837eed20fdcaed7ac6a4fa9'; // TODO: replace with exact validation if needed
+
+            tbody.innerHTML = users.map(u => {
+                const isUserSuperAdmin = u.role === 'SUPER_ADMIN';
+                const isAdmin = u.role === 'ADMIN' || u.role === 'SUPER_ADMIN';
+                const isBlocked = u.status === 'BLACKLISTED';
+                const lastLogin = u.lastLogin ? new Date(u.lastLogin).toLocaleString('zh-TW') : '無紀錄';
+
+                let actions = '';
+                if (isBlocked) {
+                    actions += `<button onclick="toggleUserBlacklist('${esc(u.userId)}', false)" class="text-green-600 hover:text-green-800 text-sm font-medium mr-3">解除封鎖</button>`;
+                } else {
+                    actions += `<button onclick="toggleUserBlacklist('${esc(u.userId)}', true)" class="text-red-500 hover:text-red-700 text-sm font-medium mr-3">封鎖</button>`;
+                }
+
+                if (isSuperAdmin && !isUserSuperAdmin) {
+                    if (isAdmin) actions += `<button onclick="toggleUserRole('${esc(u.userId)}', 'USER')" class="text-red-600 hover:text-red-800 text-sm font-medium">移除管理員</button>`;
+                    else actions += `<button onclick="toggleUserRole('${esc(u.userId)}', 'ADMIN')" class="text-purple-600 hover:text-purple-800 text-sm font-medium">設為管理員</button>`;
+                }
+
+                return `
+                <tr class="border-b" style="border-color:#f0e6db;">
+                    <td class="p-3"><img src="${esc(u.pictureUrl) || 'https://via.placeholder.com/40'}" class="w-10 h-10 rounded-full border"></td>
+                    <td class="p-3">
+                        <div class="font-medium text-gray-800">${esc(u.displayName)}</div>
+                        <div class="text-xs text-gray-500">${esc(u.email || '')} ${u.phone ? '・' + esc(u.phone) : ''}</div>
+                        <div class="text-xs text-gray-400 font-mono mt-1 opacity-50">${esc(u.userId)}</div>
+                    </td>
+                    <td class="p-3">
+                        <div>${isAdmin ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-800">管理員</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">用戶</span>'}</div>
+                        <div class="mt-1">${isBlocked ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">黑名單</span>' : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">正常</span>'}</div>
+                        <div class="text-xs text-gray-400 mt-1">登入：${lastLogin}</div>
+                    </td>
+                    <td class="p-3 text-right">${actions}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function toggleUserRole(targetUserId, newRole) {
+            const c = await Swal.fire({ title: `設為 ${newRole === 'ADMIN' ? '管理員' : '一般用戶'}？`, icon: 'warning', showCancelButton: true, confirmButtonText: '確定' });
+            if (!c.isConfirmed) return;
+            try {
+                Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const r = await fetch(`${API_URL}?action=updateUserRole`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), targetUserId, newRole }) });
+                const d = await r.json();
+                if (d.success) { Toast.fire({ icon: 'success', title: '權限已更新' }); loadUsers(); }
+                else throw new Error(d.error);
+            } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+        }
+
+        async function toggleUserBlacklist(targetUserId, isBlocked) {
+            if (isBlocked) {
+                const { value: reason } = await Swal.fire({ title: '封鎖用戶', input: 'text', inputPlaceholder: '請輸入封鎖原因（例如惡意棄單）', showCancelButton: true, confirmButtonText: '封鎖' });
+                if (reason === undefined) return;
+                try {
+                    Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const r = await fetch(`${API_URL}?action=addToBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId, reason }) });
+                    const d = await r.json();
+                    if (d.success) { Toast.fire({ icon: 'success', title: '已加入黑名單' }); loadUsers(); if (document.getElementById('tab-blacklist').classList.contains('tab-active')) loadBlacklist(); }
+                    else throw new Error(d.error);
+                } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+            } else {
+                const c = await Swal.fire({ title: '解除封鎖？', icon: 'question', showCancelButton: true, confirmButtonText: '確定解除' });
+                if (!c.isConfirmed) return;
+                try {
+                    Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const r = await fetch(`${API_URL}?action=removeFromBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId }) });
+                    const d = await r.json();
+                    if (d.success) { Toast.fire({ icon: 'success', title: '已解除封鎖' }); loadUsers(); if (document.getElementById('tab-blacklist').classList.contains('tab-active')) loadBlacklist(); }
+                    else throw new Error(d.error);
+                } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+            }
+        }
+
+        // ============ 黑名單 ============
+        async function loadBlacklist() {
+            try {
+                const r = await fetch(`${API_URL}?action=getBlacklist&userId=${getAuthUserId()}&_=${Date.now()}`);
+                const d = await r.json();
+                if (d.success) { blacklist = d.blacklist; renderBlacklist(); }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderBlacklist() {
+            const tbody = document.getElementById('blacklist-table');
+            if (!blacklist.length) { tbody.innerHTML = '<tr><td colspan="3" class="text-center py-8 text-gray-500">目前沒有封鎖名單</td></tr>'; return; }
+            tbody.innerHTML = blacklist.map(b => {
+                const dt = b.blockedAt ? new Date(b.blockedAt).toLocaleString('zh-TW') : '無紀錄';
+                return `
+                <tr class="border-b" style="border-color:#f0e6db;">
+                    <td class="p-3">
+                        <div class="font-medium">${esc(b.displayName)}</div>
+                        <div class="text-xs text-gray-400 font-mono">${esc(b.lineUserId)}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="text-sm">${dt}</div>
+                        <div class="text-xs text-red-500 mt-1">${esc(b.reason) || '(無原因)'}</div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="toggleUserBlacklist('${esc(b.lineUserId)}', false)" class="text-green-600 hover:text-green-800 text-sm font-medium">解除封鎖</button>
+                    </td>
+                </tr>`;
+            }).join('');
         }
 
         function esc(s) { if (!s) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }

@@ -140,6 +140,14 @@ serve(async (req: Request) => {
             case 'updateOrderStatus': result = await updateOrderStatus(data); break
             case 'deleteOrder': result = await deleteOrder(data); break
             case 'storeMapCallback': result = await handleStoreMapCallback(data); break
+
+            // 使用者與黑名單管理
+            case 'getUsers': result = await getUsers(data); break
+            case 'updateUserRole': result = await updateUserRole(data); break
+            case 'getBlacklist': result = await getBlacklist(data); break
+            case 'addToBlacklist': result = await addToBlacklist(data); break
+            case 'removeFromBlacklist': result = await removeFromBlacklist(data); break
+
             default: result = { success: false, error: '未知的操作' }
         }
     } catch (error) {
@@ -840,4 +848,82 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
   </script>
 </body>
 </html>`)
+}
+
+// ============ 用戶與黑名單管理 ============
+async function getUsers(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+    const { data: users, error } = await supabase.from('coffee_users').select('*').order('last_login', { ascending: false })
+    if (error) return { success: false, error: error.message }
+
+    const search = String(data.search || '').toLowerCase()
+    let filtered = users
+    if (search) {
+        filtered = users.filter((u: any) =>
+            (u.display_name && u.display_name.toLowerCase().includes(search)) ||
+            (u.line_user_id && u.line_user_id.toLowerCase().includes(search)) ||
+            (u.phone && u.phone.includes(search)) ||
+            (u.email && u.email.includes(search))
+        )
+    }
+    const formatted = filtered.map((u: any) => ({
+        userId: u.line_user_id,
+        displayName: u.display_name,
+        pictureUrl: u.picture_url,
+        role: u.line_user_id === LINE_ADMIN_USER_ID ? 'SUPER_ADMIN' : u.role || 'USER',
+        status: u.status || 'ACTIVE',
+        lastLogin: u.last_login,
+        phone: u.phone || '',
+        email: u.email || ''
+    }))
+    return { success: true, users: formatted }
+}
+
+async function updateUserRole(data: Record<string, unknown>) {
+    const auth = await verifyAdmin(data.userId as string)
+    if (auth.role !== 'SUPER_ADMIN') return { success: false, error: '僅 SUPER_ADMIN 具備權限' }
+
+    const targetUserId = data.targetUserId as string
+    const newRole = data.newRole as string
+    if (targetUserId === LINE_ADMIN_USER_ID) return { success: false, error: '無法更改 SUPER_ADMIN 的權限' }
+
+    const { error } = await supabase.from('coffee_users').update({ role: newRole }).eq('line_user_id', targetUserId)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: `已將用戶權限設為 ${newRole}` }
+}
+
+async function getBlacklist(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+    const { data: users, error } = await supabase.from('coffee_users').select('*').eq('status', 'BLACKLISTED').order('blocked_at', { ascending: false })
+    if (error) return { success: false, error: error.message }
+
+    const blacklist = users.map((u: any) => ({
+        lineUserId: u.line_user_id,
+        displayName: u.display_name,
+        blockedAt: u.blocked_at || u.last_login,
+        reason: u.blacklist_reason || ''
+    }))
+    return { success: true, blacklist }
+}
+
+async function addToBlacklist(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+    const { error } = await supabase.from('coffee_users').update({
+        status: 'BLACKLISTED',
+        blacklist_reason: String(data.reason || ''),
+        blocked_at: new Date().toISOString()
+    }).eq('line_user_id', data.lineUserId)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '已加入黑名單' }
+}
+
+async function removeFromBlacklist(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+    const { error } = await supabase.from('coffee_users').update({
+        status: 'ACTIVE',
+        blacklist_reason: '',
+        blocked_at: null
+    }).eq('line_user_id', data.lineUserId)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '已解除黑名單' }
 }
