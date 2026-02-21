@@ -642,7 +642,8 @@ async function createStoreMapSession(deliveryMethod: string, reqUrl: URL) {
     if (!subType) return { success: false, error: '請先選擇 7-11 或全家取貨' }
 
     const token = genStoreMapToken()
-    const callbackUrl = `${reqUrl.origin}${reqUrl.pathname}?action=storeMapCallback`
+    const origin = reqUrl.origin.replace(/^http:\/\//i, 'https://')
+    const callbackUrl = `${origin}${reqUrl.pathname}?action=storeMapCallback`
 
     const params: Record<string, string> = {
         MerchantID: ECPAY_MERCHANT_ID,
