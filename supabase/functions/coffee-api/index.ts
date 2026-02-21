@@ -11,10 +11,10 @@ const LINE_ADMIN_USER_ID = Deno.env.get('LINE_ADMIN_USER_ID') || ''
 
 // 綠界 ECPay 物流設定
 // 測試環境預設使用 B2C 物流測試帳號，正式環境請設定 Secrets
-const ECPAY_MERCHANT_ID = '2000132'
-const ECPAY_HASH_KEY = '5294y06JbISpM5x9'
-const ECPAY_HASH_IV = 'v77hoKGq4kWxNNIS'
-const ECPAY_IS_STAGE = true
+const ECPAY_MERCHANT_ID = '3339283'
+const ECPAY_HASH_KEY = 'Dbxpzi6EQdrOM46j'
+const ECPAY_HASH_IV = 'OqMti7T9ZMs1OvLD'
+const ECPAY_IS_STAGE = false
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
