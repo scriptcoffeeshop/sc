@@ -454,6 +454,7 @@
                         <div class="col-span-2"><span class="text-gray-500">地址/門市：</span>${esc(addrInfo)}</div>
                     </div>
                     <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${esc(o.items)}</div>
+                    ${o.note ? `<div class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2">📝 ${esc(o.note)}</div>` : ''}
                     <div class="flex justify-between items-center">
                         <span class="font-bold" style="color:var(--accent)">$${o.total}</span>
                         <div class="flex gap-2">
@@ -587,9 +588,12 @@
             } catch (e) { console.error(e); }
         }
 
+        let categoriesMap = {};
         function renderCategories() {
             const container = document.getElementById('categories-list');
             if (!categories.length) { container.innerHTML = '<p class="text-center text-gray-500 py-4">尚無分類</p>'; return; }
+            categoriesMap = {};
+            categories.forEach(c => { categoriesMap[c.id] = c; });
             container.innerHTML = categories.map((c, i) => `
                 <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;">
                     <div class="flex items-center gap-2">
@@ -598,7 +602,7 @@
                         <span class="font-medium">${esc(c.name)}</span>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="editCategory(${c.id},'${c.name.replace(/'/g, "\\'")}')" class="text-sm" style="color:var(--primary)">編輯</button>
+                        <button onclick="editCategory(${c.id})" class="text-sm" style="color:var(--primary)">編輯</button>
                         <button onclick="delCategory(${c.id})" class="text-sm text-red-500">刪除</button>
                     </div>
                 </div>
@@ -616,7 +620,10 @@
             } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
         }
 
-        async function editCategory(id, oldName) {
+        async function editCategory(id) {
+            const cat = categoriesMap[id];
+            if (!cat) { Swal.fire('錯誤', '找不到分類', 'error'); return; }
+            const oldName = cat.name;
             const { value } = await Swal.fire({ title: '修改分類', input: 'text', inputValue: oldName, showCancelButton: true, confirmButtonText: '更新', cancelButtonText: '取消' });
             if (value && value !== oldName) {
                 try {
