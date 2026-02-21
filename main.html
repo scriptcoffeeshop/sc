@@ -303,12 +303,12 @@
         <!-- 配送方式 -->
         <div class="mb-6">
             <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">🚚 配送方式</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                <div class="delivery-option" onclick="selectDelivery('delivery', event)">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                <div class="delivery-option" onclick="selectDelivery('in_store', event)">
                     <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🏠</div>
-                    <div class="font-semibold">宅配到府</div>
-                    <div class="text-xs text-gray-500 mt-1">限竹北市 / 新竹市</div>
+                    <div class="text-2xl mb-2">🚶</div>
+                    <div class="font-semibold">來店取貨</div>
+                    <div class="text-xs text-gray-500 mt-1">省運費，至店面自取</div>
                 </div>
                 <div class="delivery-option" onclick="selectDelivery('seven_eleven', event)">
                     <div class="check-mark">✓</div>
@@ -322,11 +322,11 @@
                     <div class="font-semibold">全家取貨付款</div>
                     <div class="text-xs text-gray-500 mt-1">超商門市取件</div>
                 </div>
-                <div class="delivery-option" onclick="selectDelivery('in_store', event)">
+                <div class="delivery-option" onclick="selectDelivery('delivery', event)">
                     <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🚶</div>
-                    <div class="font-semibold">來店取貨</div>
-                    <div class="text-xs text-gray-500 mt-1">省運費，至店面自取</div>
+                    <div class="text-2xl mb-2">🏠</div>
+                    <div class="font-semibold">宅配到府</div>
+                    <div class="text-xs text-gray-500 mt-1">限竹北市 / 新竹市</div>
                 </div>
             </div>
 
