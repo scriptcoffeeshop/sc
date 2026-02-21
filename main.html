@@ -508,6 +508,33 @@
             if (currentUser.phone) document.getElementById('contact-phone').value = currentUser.phone;
             if (currentUser.email) document.getElementById('contact-email').value = currentUser.email;
             updateFormState();
+            setTimeout(loadDeliveryPrefs, 100);
+        }
+
+        function loadDeliveryPrefs() {
+            try {
+                const prefsStr = localStorage.getItem('coffee_delivery_prefs');
+                if (prefsStr) {
+                    const prefs = JSON.parse(prefsStr);
+                    if (prefs.method) {
+                        const btn = document.querySelector(`.delivery-btn[onclick="selectDelivery('${prefs.method}', this)"]`);
+                        if (btn) btn.click();
+
+                        if (prefs.method === 'delivery') {
+                            if (prefs.city) {
+                                document.getElementById('delivery-city').value = prefs.city;
+                                populateDistricts();
+                                if (prefs.district) document.getElementById('delivery-district').value = prefs.district;
+                            }
+                            if (prefs.address) document.getElementById('delivery-detail-address').value = prefs.address;
+                        } else {
+                            if (prefs.storeId) {
+                                applyStoreSelection({ storeId: prefs.storeId, storeName: prefs.storeName, storeAddress: prefs.storeAddress });
+                            }
+                        }
+                    }
+                }
+            } catch (e) { console.error('載入配送偏好失敗', e); }
         }
 
         function logout() {
@@ -516,6 +543,8 @@
             document.getElementById('login-prompt').classList.remove('hidden');
             document.getElementById('user-info').classList.add('hidden');
             document.getElementById('line-name').value = '';
+            document.getElementById('contact-phone').value = '';
+            document.getElementById('contact-email').value = '';
             updateFormState();
         }
 
@@ -966,10 +995,12 @@
                 });
                 const result = await res.json();
                 if (result.success) {
-                    if (email) {
-                        currentUser.email = email;
-                        localStorage.setItem('coffee_user', JSON.stringify(currentUser));
-                    }
+                    if (email) currentUser.email = email;
+                    if (phone) currentUser.phone = phone;
+                    localStorage.setItem('coffee_user', JSON.stringify(currentUser));
+
+                    try { localStorage.setItem('coffee_delivery_prefs', JSON.stringify({ method: selectedDelivery, ...deliveryInfo })); } catch (e) { }
+
                     Swal.fire({ icon: 'success', title: '訂單已送出！', text: `訂單編號：${result.orderId}`, confirmButtonColor: '#3C2415' }).then(() => {
                         document.querySelectorAll('.quantity').forEach(i => i.value = '0');
                         document.querySelectorAll('.amount').forEach(t => t.textContent = '$0');
