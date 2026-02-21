@@ -948,6 +948,7 @@ async function getUsers(data: Record<string, unknown>) {
         defaultCity: u.default_city || '',
         defaultDistrict: u.default_district || '',
         defaultAddress: u.default_address || '',
+        defaultStoreId: u.default_store_id || '',
         defaultStoreName: u.default_store_name || '',
         defaultStoreAddress: u.default_store_address || '',
     }))
