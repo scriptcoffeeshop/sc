@@ -244,27 +244,25 @@
             }
 
             .bottom-bar {
-                padding: 10px 12px;
+                padding: 8px 10px;
             }
 
             .bottom-bar .w-full {
-                flex-direction: column;
-                gap: 8px;
+                gap: 6px;
             }
 
             #total-price {
-                font-size: 1.1rem !important;
+                font-size: 0.95rem !important;
             }
 
             .btn-primary {
-                width: 100%;
-                padding: 14px 20px;
-                font-size: 1rem;
+                padding: 10px 16px;
+                font-size: 0.88rem;
                 text-align: center;
             }
 
             .content-spacer {
-                height: 140px;
+                height: 100px;
             }
 
             /* 配送選項 — 手機上一排兩個 */
@@ -792,7 +790,7 @@
         }
 
         function updateCartUI() {
-            // 更新 badge
+            // 更新購物車 badge
             const totalItems = cart.reduce((s, c) => s + c.qty, 0);
             const badge = document.getElementById('cart-badge');
             if (totalItems > 0) { badge.textContent = totalItems; badge.classList.remove('hidden'); }
@@ -802,6 +800,22 @@
             const total = cart.reduce((s, c) => s + c.qty * c.unitPrice, 0);
             document.getElementById('total-price').textContent = `總金額: $${total}`;
             document.getElementById('cart-total').textContent = `$${total}`;
+
+            // 更新規格按鈕上的數量 badge
+            document.querySelectorAll('button[data-pid][data-spec]').forEach(btn => {
+                const pid = parseInt(btn.dataset.pid);
+                const specKey = btn.dataset.spec;
+                const cartItem = cart.find(c => c.productId === pid && c.specKey === specKey);
+                const specBadge = btn.querySelector('.spec-badge');
+                if (specBadge) {
+                    if (cartItem && cartItem.qty > 0) {
+                        specBadge.textContent = cartItem.qty;
+                        specBadge.classList.remove('hidden');
+                    } else {
+                        specBadge.classList.add('hidden');
+                    }
+                }
+            });
 
             // 渲染購物車清單
             const container = document.getElementById('cart-items');
@@ -874,9 +888,10 @@
                     let specBtns = '';
                     if (enabledSpecs.length) {
                         specBtns = enabledSpecs.map(s => `
-                            <button onclick="addToCart(${p.id}, '${s.key}')"
-                                class="flex-1 min-w-[80px] text-xs sm:text-sm py-2 px-2 rounded-lg border-2 font-medium transition-all hover:shadow-md active:scale-95"
+                            <button onclick="addToCart(${p.id}, '${s.key}')" data-pid="${p.id}" data-spec="${s.key}"
+                                class="relative flex-1 min-w-[80px] text-xs sm:text-sm py-2 px-2 rounded-lg border-2 font-medium transition-all hover:shadow-md active:scale-95"
                                 style="border-color:var(--secondary); color:var(--primary); background:#fefdf8;">
+                                <span class="spec-badge hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">0</span>
                                 ${escapeHtml(s.label)}<br><span class="font-bold">$${s.price}</span>
                             </button>
                         `).join('');
