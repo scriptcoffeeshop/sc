@@ -183,11 +183,6 @@ function applySettings(s) {
     state.linePayEnabled = String(s.linepay_enabled) === 'true';
     state.transferEnabled = String(s.transfer_enabled) === 'true';
 
-    // 顯示付款區塊（至少有一個非 COD 方式啟用才顯示）
-    const paySection = document.getElementById('payment-method-section');
-    if (state.linePayEnabled || state.transferEnabled) {
-        paySection.classList.remove('hidden');
-    }
     if (state.linePayEnabled) {
         document.getElementById('linepay-option').classList.remove('hidden');
     }
@@ -206,8 +201,8 @@ function updateFormState() {
 // ============ 付款方式選擇 ============
 function selectPayment(method) {
     state.selectedPayment = method;
-    document.querySelectorAll('#payment-options .delivery-option').forEach(el => el.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
+    document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
+    event.currentTarget.classList.add('active');
 
     // 顯示/隱藏轉帳資訊
     const transferSection = document.getElementById('transfer-info-section');

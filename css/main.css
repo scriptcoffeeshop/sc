@@ -57,6 +57,44 @@
     display: flex;
 }
 
+.payment-option {
+    border: 2px solid #e5ddd5;
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+}
+
+.payment-option:hover {
+    border-color: var(--secondary);
+}
+
+.payment-option.active {
+    border-color: var(--primary);
+    background: rgba(60, 36, 21, 0.04);
+    box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.08);
+}
+
+.payment-option .check-mark {
+    display: none;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    background: var(--primary);
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+}
+
+.payment-option.active .check-mark {
+    display: flex;
+}
+
 .store-select-btn {
     background: linear-gradient(135deg, #2E7D32, #388E3C);
     color: white;
@@ -109,6 +147,24 @@
     }
 
     .delivery-option .text-xs {
+        font-size: 0.65rem;
+    }
+
+    .payment-option {
+        padding: 12px 8px;
+        text-align: center;
+    }
+
+    .payment-option .text-2xl {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+
+    .payment-option .font-semibold {
+        font-size: 0.82rem;
+    }
+
+    .payment-option .text-xs {
         font-size: 0.65rem;
     }
 

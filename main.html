@@ -181,22 +181,22 @@
         </div>
 
         <!-- 付款方式 -->
-        <div id="payment-method-section" class="mb-6 hidden">
+        <div id="payment-method-section" class="mb-6 fade-in">
             <h2 class="text-lg font-bold mb-4" style="color:var(--primary)" id="payment-section-title">💳 付款方式</h2>
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4" id="payment-options">
-                <div class="delivery-option selected" onclick="selectPayment('cod')">
+                <div class="payment-option active" onclick="selectPayment('cod')">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">💵</div>
-                    <div class="font-semibold">貨到付款</div>
-                    <div class="text-xs text-gray-500 mt-1">取貨時付現</div>
+                    <div class="font-semibold">取件 / 到付</div>
+                    <div class="text-xs text-gray-500 mt-1">取貨時付現或宅配到付</div>
                 </div>
-                <div class="delivery-option hidden" id="linepay-option" onclick="selectPayment('linepay')">
+                <div class="payment-option hidden" id="linepay-option" onclick="selectPayment('linepay')">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">💚</div>
                     <div class="font-semibold">LINE Pay</div>
                     <div class="text-xs text-gray-500 mt-1">線上安全付款</div>
                 </div>
-                <div class="delivery-option hidden" id="transfer-option" onclick="selectPayment('transfer')">
+                <div class="payment-option hidden" id="transfer-option" onclick="selectPayment('transfer')">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">🏦</div>
                     <div class="font-semibold">線上轉帳</div>
@@ -211,8 +211,8 @@
                 <div id="bank-accounts-list" class="mb-3"></div>
                 <div class="mt-3">
                     <label class="block text-sm text-gray-600 mb-1">您的匯款帳號末 5 碼（供對帳用）</label>
-                    <input type="text" id="transfer-last5" class="input-field" placeholder="請輸入帳號末5碼"
-                        maxlength="5" pattern="\d{5}" inputmode="numeric">
+                    <input type="text" id="transfer-last5" class="input-field" placeholder="請輸入帳號末5碼" maxlength="5"
+                        pattern="\d{5}" inputmode="numeric">
                 </div>
             </div>
         </div>
