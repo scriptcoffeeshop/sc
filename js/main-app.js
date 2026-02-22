@@ -203,7 +203,10 @@ function updateFormState() {
 function selectPayment(method) {
     state.selectedPayment = method;
     document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+
+    // 改以 method 尋找對應的按鈕，避免 event.currentTarget 在程式呼叫時不存在的問題
+    const activeBtn = document.querySelector(`.payment-option[onclick*="'${method}'"]`);
+    if (activeBtn) activeBtn.classList.add('active');
 
     // 顯示/隱藏轉帳資訊
     const transferSection = document.getElementById('transfer-info-section');

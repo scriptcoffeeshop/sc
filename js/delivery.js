@@ -13,7 +13,14 @@ let storeListLoaded = false;
 export function selectDelivery(method, e) {
     state.selectedDelivery = method;
     document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('active'));
-    e.currentTarget.classList.add('active');
+
+    // 如果有傳入 event 則使用目前的 target，否則透過 method 尋找對應的選項元素
+    if (e && e.currentTarget && typeof e.currentTarget.classList !== 'undefined') {
+        e.currentTarget.classList.add('active');
+    } else {
+        const btn = document.querySelector(`.delivery-option[onclick*="'${method}'"]`);
+        if (btn) btn.classList.add('active');
+    }
 
     document.getElementById('delivery-address-section').classList.add('hidden');
     document.getElementById('store-pickup-section').classList.add('hidden');
@@ -37,14 +44,7 @@ export function selectDelivery(method, e) {
             paySection.classList.add('hidden');
             // 強制選回取件/到付
             if (window.selectPayment) {
-                // 使用假 event 防止 undefined error
-                const codBtn = document.querySelector('.payment-option[onclick*="cod"]');
-                if (codBtn) {
-                    const originalEvent = window.event;
-                    window.event = { currentTarget: codBtn };
-                    window.selectPayment('cod');
-                    window.event = originalEvent;
-                }
+                window.selectPayment('cod');
             }
         } else {
             // 店取、宅配才顯示付款選單
