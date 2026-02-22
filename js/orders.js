@@ -72,11 +72,19 @@ export async function submitOrder() {
 
     // 付款方式驗證
     const paymentMethod = state.selectedPayment || 'cod';
+    let transferTargetAccountInfo = '';
+
     if (paymentMethod === 'transfer') {
+        if (!state.selectedBankAccountId) {
+            Swal.fire('錯誤', '請選擇您要匯入的目標帳號', 'error'); return;
+        }
         const last5 = document.getElementById('transfer-last5')?.value?.trim() || '';
         if (!last5 || last5.length !== 5 || !/^\d{5}$/.test(last5)) {
             Swal.fire('錯誤', '請輸入正確的匯款帳號末5碼', 'error'); return;
         }
+
+        const b = state.bankAccounts.find(x => String(x.id) === String(state.selectedBankAccountId));
+        if (b) transferTargetAccountInfo = `${b.bankName} (${b.bankCode}) ${b.accountNumber}`;
     }
 
     // 組合自訂欄位（排除 phone / email，轉為 JSON）
@@ -104,6 +112,7 @@ export async function submitOrder() {
         <b>總金額：</b>$${total}
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ''}
         <br><br><b>付款方式：</b>${{ cod: '貨到付款', linepay: 'LINE Pay', transfer: '線上轉帳' }[paymentMethod]}
+        ${paymentMethod === 'transfer' && transferTargetAccountInfo ? `<br><span style="color:#2E7D32; font-size:0.85rem">└ 匯入：${escapeHtml(transferTargetAccountInfo)}</span>` : ''}
         </div>`;
 
     const confirmResult = await Swal.fire({
@@ -127,6 +136,7 @@ export async function submitOrder() {
                 note,
                 customFields: customFieldsJson,
                 paymentMethod,
+                transferTargetAccount: transferTargetAccountInfo,
                 transferAccountLast5: paymentMethod === 'transfer' ? (document.getElementById('transfer-last5')?.value?.trim() || '') : '',
                 ...deliveryInfo,
             }),

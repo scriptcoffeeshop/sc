@@ -148,8 +148,11 @@ function renderOrders() {
         const payBadge = pm !== 'cod'
             ? `<span class="text-xs px-2 py-0.5 rounded-full ${ps === 'paid' ? 'bg-green-50 text-green-700' : ps === 'refunded' ? 'bg-purple-50 text-purple-700' : ps === 'pending' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-600'}">${payMethodLabel[pm] || pm} ${payStatusLabel[ps] || ps}</span>`
             : '';
-        const transferInfo = pm === 'transfer' && o.transferAccountLast5
-            ? `<div class="text-xs text-blue-600 mt-1">🏦 匯款末5碼: <b>${esc(o.transferAccountLast5)}</b></div>`
+        const transferInfo = pm === 'transfer'
+            ? `<div class="text-xs text-blue-800 mt-2 bg-blue-50 p-2 rounded">
+                 <div>🏦 <b>顧客匯出末5碼:</b> ${esc(o.transferAccountLast5 || '未提供')}</div>
+                 <div class="mt-1 pb-1">⬇️ <b>匯入目標帳號:</b> ${esc(o.paymentId || '未提供 (舊版訂單)')}</div>
+               </div>`
             : '';
         const refundBtn = pm === 'linepay' && ps === 'paid'
             ? `<button onclick="linePayRefundOrder('${esc(o.orderId)}')" class="text-xs text-purple-600 hover:text-purple-800">↩️ 退款</button>`

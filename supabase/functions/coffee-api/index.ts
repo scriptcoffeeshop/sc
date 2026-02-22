@@ -793,6 +793,7 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
         payment_method: paymentMethod,
         payment_status: paymentMethod === 'cod' ? '' : 'pending',
         transfer_account_last5: paymentMethod === 'transfer' ? String(data.transferAccountLast5 || '') : '',
+        payment_id: paymentMethod === 'transfer' ? String(data.transferTargetAccount || '') : '',
     })
 
     if (error) return { success: false, error: error.message }
