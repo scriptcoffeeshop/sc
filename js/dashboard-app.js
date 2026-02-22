@@ -47,6 +47,7 @@ window.deleteFormField = deleteFormField;
 window.toggleFieldEnabled = toggleFieldEnabled;
 window.previewIcon = previewIcon;
 window.uploadSiteIcon = uploadSiteIcon;
+window.resetSectionTitle = resetSectionTitle;
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', () => {
@@ -494,10 +495,35 @@ async function loadSettings() {
             }
             // 區塊標題
             document.getElementById('s-products-title').value = s.products_section_title || '';
+            document.getElementById('s-products-color').value = s.products_section_color || '#6F4E37';
+            document.getElementById('s-products-size').value = s.products_section_size || 'text-lg';
+            document.getElementById('s-products-bold').checked = String(s.products_section_bold) !== 'false';
+
             document.getElementById('s-delivery-title').value = s.delivery_section_title || '';
+            document.getElementById('s-delivery-color').value = s.delivery_section_color || '#6F4E37';
+            document.getElementById('s-delivery-size').value = s.delivery_section_size || 'text-lg';
+            document.getElementById('s-delivery-bold').checked = String(s.delivery_section_bold) !== 'false';
+
             document.getElementById('s-notes-title').value = s.notes_section_title || '';
+            document.getElementById('s-notes-color').value = s.notes_section_color || '#6F4E37';
+            document.getElementById('s-notes-size').value = s.notes_section_size || 'text-base';
+            document.getElementById('s-notes-bold').checked = String(s.notes_section_bold) !== 'false';
         }
     } catch (e) { console.error(e); }
+}
+
+function resetSectionTitle(section) {
+    const defaults = {
+        products: { title: '🪶 咖啡豆選購', color: '#6F4E37', size: 'text-lg', bold: true },
+        delivery: { title: '🚚 配送方式', color: '#6F4E37', size: 'text-lg', bold: true },
+        notes: { title: '📝 訂單備註', color: '#6F4E37', size: 'text-base', bold: true }
+    };
+    const d = defaults[section];
+    if (!d) return;
+    document.getElementById(`s-${section}-title`).value = d.title;
+    document.getElementById(`s-${section}-color`).value = d.color;
+    document.getElementById(`s-${section}-size`).value = d.size;
+    document.getElementById(`s-${section}-bold`).checked = d.bold;
 }
 
 async function saveSettings() {
@@ -512,9 +538,21 @@ async function saveSettings() {
                     site_title: document.getElementById('s-site-title').value.trim(),
                     site_subtitle: document.getElementById('s-site-subtitle').value.trim(),
                     site_icon_emoji: document.getElementById('s-site-emoji').value.trim(),
+
                     products_section_title: document.getElementById('s-products-title').value.trim(),
+                    products_section_color: document.getElementById('s-products-color').value,
+                    products_section_size: document.getElementById('s-products-size').value,
+                    products_section_bold: String(document.getElementById('s-products-bold').checked),
+
                     delivery_section_title: document.getElementById('s-delivery-title').value.trim(),
+                    delivery_section_color: document.getElementById('s-delivery-color').value,
+                    delivery_section_size: document.getElementById('s-delivery-size').value,
+                    delivery_section_bold: String(document.getElementById('s-delivery-bold').checked),
+
                     notes_section_title: document.getElementById('s-notes-title').value.trim(),
+                    notes_section_color: document.getElementById('s-notes-color').value,
+                    notes_section_size: document.getElementById('s-notes-size').value,
+                    notes_section_bold: String(document.getElementById('s-notes-bold').checked),
                 }
             })
         });

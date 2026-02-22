@@ -158,19 +158,43 @@ export function applyBranding(settings) {
 
     // 商品區塊標題
     const productsTitleEl = document.getElementById('products-section-title');
-    if (productsTitleEl && settings.products_section_title) {
-        productsTitleEl.textContent = settings.products_section_title;
+    if (productsTitleEl) {
+        if (settings.products_section_title) productsTitleEl.textContent = settings.products_section_title;
+        if (settings.products_section_color) productsTitleEl.style.color = settings.products_section_color;
+        if (settings.products_section_size) {
+            productsTitleEl.classList.remove('text-base', 'text-lg', 'text-xl', 'text-2xl');
+            productsTitleEl.classList.add(settings.products_section_size);
+        }
+        if (settings.products_section_bold) {
+            productsTitleEl.classList.toggle('font-bold', String(settings.products_section_bold) !== 'false');
+        }
     }
 
     // 配送區塊標題
     const deliveryTitleEl = document.getElementById('delivery-section-title');
-    if (deliveryTitleEl && settings.delivery_section_title) {
-        deliveryTitleEl.textContent = settings.delivery_section_title;
+    if (deliveryTitleEl) {
+        if (settings.delivery_section_title) deliveryTitleEl.textContent = settings.delivery_section_title;
+        if (settings.delivery_section_color) deliveryTitleEl.style.color = settings.delivery_section_color;
+        if (settings.delivery_section_size) {
+            deliveryTitleEl.classList.remove('text-base', 'text-lg', 'text-xl', 'text-2xl');
+            deliveryTitleEl.classList.add(settings.delivery_section_size);
+        }
+        if (settings.delivery_section_bold) {
+            deliveryTitleEl.classList.toggle('font-bold', String(settings.delivery_section_bold) !== 'false');
+        }
     }
 
     // 備註區塊標題
     const notesTitleEl = document.getElementById('notes-section-title');
-    if (notesTitleEl && settings.notes_section_title) {
-        notesTitleEl.textContent = settings.notes_section_title;
+    if (notesTitleEl) {
+        if (settings.notes_section_title) notesTitleEl.textContent = settings.notes_section_title;
+        if (settings.notes_section_color) notesTitleEl.style.color = settings.notes_section_color;
+        if (settings.notes_section_size) {
+            notesTitleEl.classList.remove('text-base', 'text-lg', 'text-xl', 'text-2xl');
+            notesTitleEl.classList.add(settings.notes_section_size);
+        }
+        if (settings.notes_section_bold) {
+            notesTitleEl.classList.toggle('font-bold', String(settings.notes_section_bold) !== 'false');
+        }
     }
 }

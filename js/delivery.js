@@ -84,10 +84,6 @@ export async function checkStoreToken(token) {
 
             applyStoreSelection({ storeId: result.storeId, storeName: result.storeName, storeAddress: result.storeAddress });
 
-            // Open cart drawer
-            document.getElementById('cart-drawer').classList.remove('translate-x-full');
-            document.getElementById('cart-overlay').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
             Toast.fire({ icon: 'success', title: '門市選擇成功' });
         } else {
             Swal.fire('提示', '門市資訊已過期或不存在，請重新選擇', 'warning');
