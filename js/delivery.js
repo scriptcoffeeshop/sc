@@ -99,9 +99,21 @@ export async function checkStoreToken(token) {
     }
 }
 
+/** 偵測是否為 LINE 內建瀏覽器或其他 In-App WebView */
+function isInAppBrowser() {
+    const ua = navigator.userAgent || '';
+    return /Line\//i.test(ua) || /FBAN|FBAV/i.test(ua) || /Instagram/i.test(ua) || /MicroMessenger/i.test(ua);
+}
+
 export async function openStoreMap() {
     if (state.selectedDelivery !== 'seven_eleven' && state.selectedDelivery !== 'family_mart') {
         Swal.fire('錯誤', '請先選擇 7-11 或全家取貨', 'error');
+        return;
+    }
+
+    // LINE 等 In-App 瀏覽器不支援綠界地圖，直接改用門市搜尋
+    if (isInAppBrowser()) {
+        await openStoreSearchModal();
         return;
     }
 
