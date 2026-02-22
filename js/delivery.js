@@ -29,6 +29,28 @@ export function selectDelivery(method, e) {
         allStores = [];
         clearSelectedStore();
     }
+
+    // 處理超商取貨時隱藏付款選項 (強制為貨到付款)
+    const paySection = document.getElementById('payment-method-section');
+    if (paySection) {
+        if (method === 'seven_eleven' || method === 'family_mart') {
+            paySection.classList.add('hidden');
+            // 強制選回取件/到付
+            if (window.selectPayment) {
+                // 使用假 event 防止 undefined error
+                const codBtn = document.querySelector('.payment-option[onclick*="cod"]');
+                if (codBtn) {
+                    const originalEvent = window.event;
+                    window.event = { currentTarget: codBtn };
+                    window.selectPayment('cod');
+                    window.event = originalEvent;
+                }
+            }
+        } else {
+            // 店取、宅配才顯示付款選單
+            paySection.classList.remove('hidden');
+        }
+    }
 }
 
 /** 更新地區下拉 */

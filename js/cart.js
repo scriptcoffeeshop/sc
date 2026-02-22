@@ -76,6 +76,12 @@ export function updateCartUI() {
     document.getElementById('total-price').textContent = `總金額: $${total}`;
     document.getElementById('cart-total').textContent = `$${total}`;
 
+    // 更新匯款資訊的應付總金額
+    const transferTotalEl = document.getElementById('transfer-total-amount');
+    if (transferTotalEl) {
+        transferTotalEl.textContent = `$${total}`;
+    }
+
     // 更新規格按鈕上的數量 badge
     document.querySelectorAll('button[data-pid][data-spec]').forEach(btn => {
         const pid = parseInt(btn.dataset.pid);

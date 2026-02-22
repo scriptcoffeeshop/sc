@@ -33,6 +33,7 @@ window.clearSelectedStore = clearSelectedStore;
 window.submitOrder = submitOrder;
 window.showMyOrders = showMyOrders;
 window.selectPayment = selectPayment;
+window.copyTransferAccount = copyTransferAccount;
 window.loginWithLine = () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state');
 window.closeAnnouncement = () => document.getElementById('announcement-banner').classList.add('hidden');
 
@@ -217,12 +218,58 @@ function renderBankAccounts() {
     const container = document.getElementById('bank-accounts-list');
     if (!container || !state.bankAccounts.length) return;
     container.innerHTML = state.bankAccounts.map(b => `
-        <div class="p-3 rounded-lg mb-2" style="background:white; border:1px solid #d1dce5;">
+        <div class="p-3 rounded-lg mb-2 relative" style="background:white; border:1px solid #d1dce5;">
+            <button onclick="copyTransferAccount(this, '${escapeHtml(b.accountNumber)}')" class="absolute top-3 right-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors" title="複製帳號">
+                📋 複製
+            </button>
             <div class="font-semibold">${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</div>
-            <div class="text-lg font-mono mt-1" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</div>
+            <div class="text-lg font-mono mt-1 pr-14" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</div>
             ${b.accountName ? `<div class="text-sm text-gray-500">戶名: ${escapeHtml(b.accountName)}</div>` : ''}
         </div>
     `).join('');
+}
+
+function copyTransferAccount(btn, account) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(account).then(() => {
+            showCopySuccess(btn);
+        }).catch(err => {
+            console.error('複製失敗:', err);
+            fallbackCopyTextToClipboard(account, btn);
+        });
+    } else {
+        fallbackCopyTextToClipboard(account, btn);
+    }
+}
+
+function fallbackCopyTextToClipboard(text, btn) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    // 隱藏元素，不影響畫面排版
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) showCopySuccess(btn);
+    } catch (err) {
+        console.error('Fallback 複製失敗:', err);
+    }
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess(btn) {
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '✅ 已複製';
+    btn.classList.add('bg-green-100', 'text-green-700');
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('bg-green-100', 'text-green-700');
+    }, 2000);
 }
 
 // ============ LINE Pay 回調 ============
