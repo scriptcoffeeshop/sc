@@ -125,7 +125,13 @@ serve(async (req: Request) => {
             case 'getOrders': result = await getOrders(data.userId as string); break
             case 'verifyAdmin': result = await verifyAdmin(data.userId as string); break
             case 'getStoreList': result = await getStoreList(data.cvsType as string); break
-            case 'createStoreMapSession': result = await createStoreMapSession(data.deliveryMethod as string, url); break
+            case 'createStoreMapSession':
+                result = await createStoreMapSession(
+                    data.deliveryMethod as string || url.searchParams.get('deliveryMethod') || '',
+                    url,
+                    data.clientUrl as string || url.searchParams.get('clientUrl') || ''
+                );
+                break
             case 'getStoreSelection': result = await getStoreSelection(data.token as string); break
             // POST
             case 'submitOrder': result = await submitOrder(data); break
@@ -881,7 +887,7 @@ async function getStoreList(cvsType: string) {
     }
 }
 
-async function createStoreMapSession(deliveryMethod: string, reqUrl: URL) {
+async function createStoreMapSession(deliveryMethod: string, reqUrl: URL, clientUrl: string = '') {
     const subType = MAP_SUBTYPE_MAP[deliveryMethod] || MAP_SUBTYPE_MAP[String(deliveryMethod || '').toUpperCase()]
     if (!subType) return { success: false, error: '請先選擇 7-11 或全家取貨' }
 
@@ -911,7 +917,7 @@ async function createStoreMapSession(deliveryMethod: string, reqUrl: URL) {
         cvs_store_name: '',
         cvs_address: '',
         logistics_sub_type: subType,
-        extra_data: '',
+        extra_data: clientUrl,
         created_at: new Date().toISOString(),
     })
     if (error) return { success: false, error: '建立門市地圖會話失敗：' + error.message }
@@ -959,15 +965,20 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
         return htmlResponse(`<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>缺少會話識別碼（ExtraData）。</p></body></html>`, 400)
     }
 
-    const { error } = await supabase.from('coffee_store_selections').upsert({
-        token,
+    // 取得建立時存入的 clientUrl
+    let clientUrl = ''
+    const { data: selection } = await supabase.from('coffee_store_selections').select('extra_data').eq('token', token).maybeSingle()
+    if (selection && selection.extra_data) {
+        clientUrl = selection.extra_data
+    }
+
+    // 更新門市資訊
+    const { error } = await supabase.from('coffee_store_selections').update({
         cvs_store_id: storeId,
         cvs_store_name: storeName,
         cvs_address: storeAddress,
         logistics_sub_type: logisticsSubType,
-        extra_data: JSON.stringify(data),
-        created_at: new Date().toISOString(),
-    })
+    }).eq('token', token)
 
     if (error) {
         return htmlResponse(`<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>${escapeHtml(error.message)}</p></body></html>`, 500)
@@ -975,6 +986,9 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
 
     const safeName = escapeHtml(storeName || '（未提供門市名稱）')
     const safeAddr = escapeHtml(storeAddress || '（未提供門市地址）')
+    const redirectScript = clientUrl
+        ? `window.location.replace("${clientUrl}?store_token=${token}");`
+        : `alert('選擇完成，請手動返回原網頁');`;
 
     return htmlResponse(`<!doctype html>
 <html lang="zh-Hant">
@@ -995,12 +1009,15 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
     <h3>門市選擇成功</h3>
     <p><strong>門市：</strong>${safeName}</p>
     <p><strong>地址：</strong>${safeAddr}</p>
-    <p class="hint">此視窗會自動關閉，請回到訂購頁面。</p>
+    <p class="hint">正在將您導回訂購頁面...</p>
   </div>
   <script>
-    setTimeout(function () {
-      if (window.opener) window.close();
-    }, 400);
+    if (window.opener && window.opener !== window) {
+      window.opener.postMessage('store_selected', '*');
+      window.close();
+    } else {
+      ${redirectScript}
+    }
   </script>
 </body>
 </html>`)

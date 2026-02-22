@@ -8,6 +8,17 @@ import { state } from './state.js';
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
 
+function saveCart() {
+    localStorage.setItem('coffee_cart', JSON.stringify(cart));
+}
+
+export function loadCart() {
+    try {
+        const d = localStorage.getItem('coffee_cart');
+        if (d) { cart = JSON.parse(d); updateCartUI(); }
+    } catch { }
+}
+
 /** 加入購物車 */
 export function addToCart(productId, specKey) {
     const p = state.products.find(x => x.id === productId);
@@ -23,6 +34,7 @@ export function addToCart(productId, specKey) {
     } else {
         cart.push({ productId, productName: p.name, specKey, specLabel: spec.label, qty: 1, unitPrice: spec.price });
     }
+    saveCart();
     updateCartUI();
     Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1200 })
         .fire({ icon: 'success', title: `已加入 ${p.name} (${spec.label})` });
@@ -33,18 +45,21 @@ export function updateCartItemQty(idx, delta) {
     if (!cart[idx]) return;
     cart[idx].qty += delta;
     if (cart[idx].qty <= 0) cart.splice(idx, 1);
+    saveCart();
     updateCartUI();
 }
 
 /** 移除購物車品項 */
 export function removeCartItem(idx) {
     cart.splice(idx, 1);
+    saveCart();
     updateCartUI();
 }
 
 /** 清空購物車 */
 export function clearCart() {
     cart.length = 0;
+    saveCart();
     updateCartUI();
 }
 

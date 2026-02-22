@@ -6,9 +6,9 @@ import { API_URL, LINE_REDIRECT } from './config.js';
 import { Toast } from './utils.js';
 import { loginWithLine } from './auth.js';
 import { state } from './state.js';
-import { addToCart, updateCartItemQty, removeCartItem, toggleCart } from './cart.js';
+import { addToCart, updateCartItemQty, removeCartItem, toggleCart, loadCart } from './cart.js';
 import { renderProducts } from './products.js';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, stopStoreMapPolling } from './delivery.js';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, stopStoreMapPolling, checkStoreToken } from './delivery.js';
 import { submitOrder, showMyOrders } from './orders.js';
 
 // ============ 全域函式掛載 (HTML onclick 呼叫) ============
@@ -42,8 +42,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
         checkLoginStatus();
     }
+    loadCart(); // 載入購物車
     await loadInitData();
     updateFormState();
+
+    const storeToken = urlParams.get('store_token');
+    if (storeToken) {
+        window.history.replaceState({}, '', 'main.html');
+        await checkStoreToken(storeToken);
+    }
 });
 
 // ============ LINE Login 回呼 ============
