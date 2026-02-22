@@ -7,6 +7,7 @@
     <title>咖啡訂購 — 後台管理</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/dashboard.css">
 </head>
@@ -91,9 +92,10 @@
                 <button onclick="showProductModal()" class="btn-primary text-sm">+ 新增商品</button>
             </div>
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full" id="products-main-table">
                     <thead>
                         <tr class="border-b-2" style="border-color:var(--secondary)">
+                            <th class="p-3 text-left w-10" style="color:var(--primary)">排序</th>
                             <th class="p-3 text-left" style="color:var(--primary)">分類</th>
                             <th class="p-3 text-left" style="color:var(--primary)">品名</th>
                             <th class="p-3 text-right" style="color:var(--primary)">價格</th>

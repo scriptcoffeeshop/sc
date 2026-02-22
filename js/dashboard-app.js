@@ -177,8 +177,16 @@ async function loadProducts() {
 
 let productsMap = {};
 function renderProducts() {
-    const tbody = document.getElementById('products-table');
-    if (!products.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">尚無商品</td></tr>'; return; }
+    const table = document.getElementById('products-main-table');
+    table.querySelectorAll('tbody').forEach(el => el.remove());
+
+    if (!products.length) {
+        const tbody = document.createElement('tbody');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-500">尚無商品</td></tr>';
+        table.appendChild(tbody);
+        return;
+    }
+
     productsMap = {};
     products.forEach(p => { productsMap[p.id] = p; });
 
@@ -190,9 +198,13 @@ function renderProducts() {
         if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib;
     });
 
-    let html = '';
     sortedCats.forEach(cat => {
         const catProds = grouped[cat];
+        const tbody = document.createElement('tbody');
+        tbody.className = 'sortable-tbody';
+        tbody.dataset.cat = cat;
+
+        let html = '';
         catProds.forEach((p, i) => {
             let priceDisplay = `$${p.price}`;
             try {
@@ -203,15 +215,14 @@ function renderProducts() {
                 }
             } catch { }
             html += `
-            <tr class="border-b" style="border-color:#f0e6db;">
+            <tr class="border-b" style="border-color:#f0e6db;" data-id="${p.id}">
+                <td class="p-3 text-center">
+                    <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">☰</span>
+                </td>
                 <td class="p-3 text-sm">${esc(p.category)}</td>
                 <td class="p-3">
-                    <div class="flex items-center gap-2 mb-1">
-                        <button onclick="moveProduct(${p.id},'up')" class="text-gray-400 hover:text-amber-700 ${i === 0 ? 'opacity-30' : ''}" ${i === 0 ? 'disabled' : ''}>▲</button>
-                        <button onclick="moveProduct(${p.id},'down')" class="text-gray-400 hover:text-amber-700 ${i === catProds.length - 1 ? 'opacity-30' : ''}" ${i === catProds.length - 1 ? 'disabled' : ''}>▼</button>
-                        <span class="font-medium">${esc(p.name)}</span>
-                    </div>
-                    <div class="text-xs text-gray-500 ml-10">${esc(p.description || '')} ${p.roastLevel ? '・' + p.roastLevel : ''}</div>
+                    <div class="font-medium mb-1">${esc(p.name)}</div>
+                    <div class="text-xs text-gray-500">${esc(p.description || '')} ${p.roastLevel ? '・' + p.roastLevel : ''}</div>
                 </td>
                 <td class="p-3 text-right font-medium">${priceDisplay}</td>
                 <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
@@ -221,17 +232,47 @@ function renderProducts() {
                 </td>
             </tr>`;
         });
+        tbody.innerHTML = html;
+        table.appendChild(tbody);
+
+        if (typeof Sortable !== 'undefined') {
+            Sortable.create(tbody, {
+                handle: '.drag-handle',
+                animation: 150,
+                onEnd: async function (evt) {
+                    if (evt.oldIndex === evt.newIndex) return;
+                    const ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(tr => parseInt(tr.dataset.id));
+                    await updateProductOrders(ids);
+                }
+            });
+        }
     });
-    tbody.innerHTML = html;
 }
 
 async function moveProduct(id, dir) {
+    // 保留這個 function 防止舊有代碼出錯，但不再被介面呼叫
     try {
         const r = await fetch(`${API_URL}?action=reorderProduct`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
         const d = await r.json();
         if (d.success) loadProducts();
         else throw new Error(d.error);
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+async function updateProductOrders(ids) {
+    try {
+        const r = await fetch(`${API_URL}?action=reorderProductsBulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), ids })
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error);
+        // 不強制重新 load products，保持畫面順暢，除非發生錯誤
+    } catch (e) {
+        Swal.fire('錯誤', e.message, 'error');
+        loadProducts(); // 錯誤時重新載入以恢復原狀
+    }
 }
 
 // ======== 預設規格模板 ========

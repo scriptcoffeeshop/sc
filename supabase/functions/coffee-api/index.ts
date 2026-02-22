@@ -133,6 +133,7 @@ serve(async (req: Request) => {
             case 'updateProduct': result = await updateProduct(data); break
             case 'deleteProduct': result = await deleteProduct(data); break
             case 'reorderProduct': result = await reorderProduct(data); break
+            case 'reorderProductsBulk': result = await reorderProductsBulk(data); break
             case 'addCategory': result = await addCategory(data); break
             case 'updateCategory': result = await updateCategory(data); break
             case 'deleteCategory': result = await deleteCategory(data); break
@@ -388,6 +389,18 @@ async function reorderProduct(data: Record<string, unknown>) {
         await supabase.from('coffee_products').update({ sort_order: i * 10 }).eq('id', items[i].id)
     }
     return { success: true, message: '排序已更新' }
+}
+
+async function reorderProductsBulk(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+    const ids = data.ids as number[]
+    if (!Array.isArray(ids)) return { success: false, error: '資料格式錯誤' }
+
+    // Batch update sort order
+    for (let i = 0; i < ids.length; i++) {
+        await supabase.from('coffee_products').update({ sort_order: i * 10 }).eq('id', ids[i])
+    }
+    return { success: true, message: '批量排序已更新' }
 }
 
 // ============ 分類 ============
