@@ -56,13 +56,15 @@ export async function submitOrder() {
         deliveryInfo = { storeName: sName, storeAddress: sAddr, storeId: document.getElementById('store-id-input').value || '' };
     }
 
+    const note = document.getElementById('order-note').value.trim();
+
     // 配送方式文字
     const methodText = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款', in_store: '來店取貨' };
     let addrText = state.selectedDelivery === 'delivery'
         ? `${deliveryInfo.city}${deliveryInfo.district || ''} ${deliveryInfo.address}`
         : state.selectedDelivery === 'in_store'
             ? `來店自取 (${deliveryInfo.storeAddress})`
-            : `${deliveryInfo.storeName}${deliveryInfo.storeAddress ? ' (' + deliveryInfo.storeAddress + ')' : ''}`;
+            : `${deliveryInfo.storeName} [店號：${deliveryInfo.storeId}]${deliveryInfo.storeAddress ? ' (' + deliveryInfo.storeAddress + ')' : ''}`;
 
     const confirmHtml = `
         <div style="text-align:left;font-size:0.95rem;">
@@ -70,6 +72,7 @@ export async function submitOrder() {
         <b>取貨地點：</b>${escapeHtml(addrText)}<br><br>
         <b>訂單內容：</b><br>${orderLines.join('<br>')}<br><br>
         <b>總金額：</b>$${total}
+        ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ''}
         </div>`;
 
     const confirmResult = await Swal.fire({

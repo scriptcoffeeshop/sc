@@ -29,6 +29,7 @@ window.editProduct = editProduct;
 window.closeProductModal = closeProductModal;
 window.saveProduct = saveProduct;
 window.delProduct = delProduct;
+window.moveProduct = moveProduct;
 window.addSpecRow = addSpecRow;
 window.addCategory = addCategory;
 window.editCategory = editCategory;
@@ -180,27 +181,57 @@ function renderProducts() {
     if (!products.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">尚無商品</td></tr>'; return; }
     productsMap = {};
     products.forEach(p => { productsMap[p.id] = p; });
-    tbody.innerHTML = products.map(p => {
-        let priceDisplay = `$${p.price}`;
-        try {
-            const specs = p.specs ? JSON.parse(p.specs) : [];
-            const enabled = specs.filter(s => s.enabled);
-            if (enabled.length) {
-                priceDisplay = enabled.map(s => `<div class="text-xs">${esc(s.label)}: $${s.price}</div>`).join('');
-            }
-        } catch { }
-        return `
-        <tr class="border-b" style="border-color:#f0e6db;">
-            <td class="p-3 text-sm">${esc(p.category)}</td>
-            <td class="p-3"><div class="font-medium">${esc(p.name)}</div><div class="text-xs text-gray-500">${esc(p.description || '')} ${p.roastLevel ? '・' + p.roastLevel : ''}</div></td>
-            <td class="p-3 text-right font-medium">${priceDisplay}</td>
-            <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
-            <td class="p-3 text-center">
-                <button onclick="editProduct(${p.id})" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                <button onclick="delProduct(${p.id})" class="text-sm text-red-500">刪除</button>
-            </td>
-        </tr>`;
-    }).join('');
+
+    const grouped = {};
+    products.forEach(p => { if (!grouped[p.category]) grouped[p.category] = []; grouped[p.category].push(p); });
+    const catOrder = categories.map(c => c.name);
+    const sortedCats = Object.keys(grouped).sort((a, b) => {
+        const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+        if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib;
+    });
+
+    let html = '';
+    sortedCats.forEach(cat => {
+        const catProds = grouped[cat];
+        catProds.forEach((p, i) => {
+            let priceDisplay = `$${p.price}`;
+            try {
+                const specs = p.specs ? JSON.parse(p.specs) : [];
+                const enabled = specs.filter(s => s.enabled);
+                if (enabled.length) {
+                    priceDisplay = enabled.map(s => `<div class="text-xs">${esc(s.label)}: $${s.price}</div>`).join('');
+                }
+            } catch { }
+            html += `
+            <tr class="border-b" style="border-color:#f0e6db;">
+                <td class="p-3 text-sm">${esc(p.category)}</td>
+                <td class="p-3">
+                    <div class="flex items-center gap-2 mb-1">
+                        <button onclick="moveProduct(${p.id},'up')" class="text-gray-400 hover:text-amber-700 ${i === 0 ? 'opacity-30' : ''}" ${i === 0 ? 'disabled' : ''}>▲</button>
+                        <button onclick="moveProduct(${p.id},'down')" class="text-gray-400 hover:text-amber-700 ${i === catProds.length - 1 ? 'opacity-30' : ''}" ${i === catProds.length - 1 ? 'disabled' : ''}>▼</button>
+                        <span class="font-medium">${esc(p.name)}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 ml-10">${esc(p.description || '')} ${p.roastLevel ? '・' + p.roastLevel : ''}</div>
+                </td>
+                <td class="p-3 text-right font-medium">${priceDisplay}</td>
+                <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
+                <td class="p-3 text-center">
+                    <button onclick="editProduct(${p.id})" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
+                    <button onclick="delProduct(${p.id})" class="text-sm text-red-500">刪除</button>
+                </td>
+            </tr>`;
+        });
+    });
+    tbody.innerHTML = html;
+}
+
+async function moveProduct(id, dir) {
+    try {
+        const r = await fetch(`${API_URL}?action=reorderProduct`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
+        const d = await r.json();
+        if (d.success) loadProducts();
+        else throw new Error(d.error);
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
 }
 
 // ======== 預設規格模板 ========

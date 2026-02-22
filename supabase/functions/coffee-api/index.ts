@@ -132,6 +132,7 @@ serve(async (req: Request) => {
             case 'addProduct': result = await addProduct(data); break
             case 'updateProduct': result = await updateProduct(data); break
             case 'deleteProduct': result = await deleteProduct(data); break
+            case 'reorderProduct': result = await reorderProduct(data); break
             case 'addCategory': result = await addCategory(data); break
             case 'updateCategory': result = await updateCategory(data); break
             case 'deleteCategory': result = await deleteCategory(data); break
@@ -356,6 +357,37 @@ async function deleteProduct(data: Record<string, unknown>) {
     const { error } = await supabase.from('coffee_products').delete().eq('id', data.id)
     if (error) return { success: false, error: error.message }
     return { success: true, message: '商品已刪除' }
+}
+
+async function reorderProduct(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+    const { data: allProds, error } = await supabase.from('coffee_products').select('*').order('sort_order').order('id')
+    if (error || !allProds) return { success: false, error: '讀取失敗' }
+
+    // 取出相同分類的商品進行排序
+    const targetProd = allProds.find((p: Record<string, unknown>) => String(p.id) === String(data.id))
+    if (!targetProd) return { success: false, error: '找不到商品' }
+
+    const curCategory = targetProd.category
+    const catProds = allProds.filter((p: Record<string, unknown>) => p.category === curCategory)
+
+    const idx = catProds.findIndex((p: Record<string, unknown>) => String(p.id) === String(data.id))
+    if (idx === -1) return { success: false, error: '找不到商品' }
+
+    const dir = data.direction as string
+    const items = [...catProds]
+    const [moved] = items.splice(idx, 1)
+
+    if (dir === 'top') items.unshift(moved)
+    else if (dir === 'bottom') items.push(moved)
+    else if (dir === 'up' && idx > 0) items.splice(idx - 1, 0, moved)
+    else if (dir === 'down' && idx < catProds.length - 1) items.splice(idx + 1, 0, moved)
+    else items.splice(idx, 0, moved)
+
+    for (let i = 0; i < items.length; i++) {
+        await supabase.from('coffee_products').update({ sort_order: i * 10 }).eq('id', items[i].id)
+    }
+    return { success: true, message: '排序已更新' }
 }
 
 // ============ 分類 ============
