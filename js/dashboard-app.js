@@ -587,7 +587,7 @@ async function loadUsers() {
 function renderUsers() {
     const tbody = document.getElementById('users-table');
     if (!users.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-500">無符合條件的用戶</td></tr>'; return; }
-    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.userId === 'U7cd3c1e2d837eed20fdcaed7ac6a4fa9';
+    const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
     tbody.innerHTML = users.map(u => {
         const isUserSuperAdmin = u.role === 'SUPER_ADMIN';

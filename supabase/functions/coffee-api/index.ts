@@ -15,7 +15,10 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const LINE_LOGIN_CHANNEL_ID = Deno.env.get('LINE_LOGIN_CHANNEL_ID') || ''
 const LINE_LOGIN_CHANNEL_SECRET = Deno.env.get('LINE_LOGIN_CHANNEL_SECRET') || ''
 const LINE_ADMIN_USER_ID = Deno.env.get('LINE_ADMIN_USER_ID') || ''
-const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'CHANGE_ME_IN_PRODUCTION'
+const JWT_SECRET = Deno.env.get('JWT_SECRET')
+if (!JWT_SECRET || JWT_SECRET === 'CHANGE_ME_IN_PRODUCTION') {
+    throw new Error('嚴重錯誤: 尚未設定安全的 JWT_SECRET 環境變數！啟動已被中止。')
+}
 
 // SMTP 設定
 const SMTP_USER = Deno.env.get('SMTP_USER') || ''
@@ -27,10 +30,9 @@ const ECPAY_HASH_KEY = Deno.env.get('ECPAY_HASH_KEY') || ''
 const ECPAY_HASH_IV = Deno.env.get('ECPAY_HASH_IV') || ''
 const ECPAY_IS_STAGE = Deno.env.get('ECPAY_IS_STAGE') === 'true'
 
-// 允許的跳轉域名（防 open redirect）
 const ALLOWED_REDIRECT_ORIGINS = [
     'https://scriptcoffeeshop.github.io',
-    Deno.env.get('ALLOWED_ORIGIN') || '',
+    Deno.env.get('ALLOWED_REDIRECT_ORIGINS') || Deno.env.get('ALLOWED_ORIGIN') || '',
 ].filter(Boolean)
 
 // 訂單狀態白名單
@@ -254,6 +256,9 @@ serve(async (req: Request) => {
         }
     } catch (error) {
         const msg = String(error).replace(/^Error:\s*/, '')
+        if (msg.includes('登入') || msg.includes('權限') || msg.includes('Token') || msg.includes('無效')) {
+            return jsonResponse({ success: false, error: msg }, 401)
+        }
         result = { success: false, error: msg }
     }
 
@@ -634,15 +639,19 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
 
         let unitPrice = product.price
         let specLabel = ''
-        if (item.specKey && product.specs) {
+        if (product.specs) {
+            if (!item.specKey) return { success: false, error: `商品「${product.name}」必須選擇規格` }
             try {
                 const specs = typeof product.specs === 'string' ? JSON.parse(product.specs) : product.specs
-                const spec = Array.isArray(specs) ? specs.find((s: any) => s.key === item.specKey || s.label === item.specKey) : null
-                if (spec) {
-                    unitPrice = spec.price ?? product.price
-                    specLabel = spec.label || item.specKey
-                }
-            } catch { specLabel = item.specKey }
+                const specList = Array.isArray(specs) ? specs : []
+                const spec = specList.find((s: any) => s.key === item.specKey || s.label === item.specKey)
+                if (!spec) return { success: false, error: `商品「${product.name}」的規格「${item.specKey}」不存在` }
+                if (!spec.enabled) return { success: false, error: `商品「${product.name}」的規格「${item.specKey}」已停止供應` }
+                unitPrice = spec.price ?? product.price
+                specLabel = spec.label || item.specKey
+            } catch { return { success: false, error: `商品「${product.name}」規格解析失敗` } }
+        } else {
+            if (item.specKey) return { success: false, error: `商品「${product.name}」無可選規格，請重新整理商品列表` }
         }
 
         const qty = Math.max(1, Math.floor(Number(item.qty) || 1))
@@ -1220,11 +1229,20 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
     const isSuccess = data.LogisticsSubType === 'UNIMARTC2C' || data.LogisticsSubType === 'FAMIC2C'
         || data.CVSStoreID || data.CVSStoreName
 
-    const token = data.ExtraData
+    const token = String(data.ExtraData || '')
     if (!token) return new Response('Miss Token', { status: 400 })
 
-    // 安全驗證：綠界 CheckMacValue 檢查（依據文件需自行組建字串 + HASHKey/IV 進行 SHA256）
-    // 注意：因 Deno/Edge Function 完整驗證較複雜，建議前端信任狀態庫，但最至少 callback 的 clientUrl 必須防護
+    // 安全驗證：綠界 CheckMacValue 檢查
+    const macValue = String(data.CheckMacValue || '')
+    if (!macValue) return new Response('0|CheckMacValue Error', { status: 400 })
+
+    // 建立用於驗證的 params (轉為 string)
+    const checkParams: Record<string, string> = {}
+    for (const [k, v] of Object.entries(data)) {
+        if (k !== 'CheckMacValue') checkParams[k] = String(v)
+    }
+    const generatedMac = await generateCheckMacValue(checkParams)
+    if (macValue !== generatedMac) return new Response('0|CheckMacValue Error', { status: 400 })
 
     let clientUrl = ''
     const { data: selection } = await supabase.from('coffee_store_selections').select('extra_data').eq('token', token).maybeSingle()
