@@ -1232,17 +1232,8 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
     const token = String(data.ExtraData || '')
     if (!token) return new Response('Miss Token', { status: 400 })
 
-    // 安全驗證：綠界 CheckMacValue 檢查
-    const macValue = String(data.CheckMacValue || '')
-    if (!macValue) return new Response('0|CheckMacValue Error', { status: 400 })
-
-    // 建立用於驗證的 params (轉為 string)
-    const checkParams: Record<string, string> = {}
-    for (const [k, v] of Object.entries(data)) {
-        if (k !== 'CheckMacValue') checkParams[k] = String(v)
-    }
-    const generatedMac = await generateCheckMacValue(checkParams)
-    if (macValue !== generatedMac) return new Response('0|CheckMacValue Error', { status: 400 })
+    // 綠界電子地圖 Callback (ServerReplyURL) 不提供可供雙向驗證的 CheckMacValue
+    // 我們的安全性依賴於自己隨機產生的 Token (ExtraData) 進行對應，以及限定 clientUrl 跳轉的 ALLOWED_REDIRECT_ORIGINS
 
     let clientUrl = ''
     const { data: selection } = await supabase.from('coffee_store_selections').select('extra_data').eq('token', token).maybeSingle()
