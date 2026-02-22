@@ -661,11 +661,19 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
     const auth = await extractAuth(req)
     const lineUserId = auth?.userId || ''
 
-    // 黑名單檢查
-    if (lineUserId) {
-        const { data: userRow } = await supabase.from('coffee_users').select('status').eq('line_user_id', lineUserId).maybeSingle()
-        if (userRow?.status === 'BLACKLISTED') {
-            return { success: false, error: '您的帳號已被停權，無法下單' }
+    // 取得手機號碼（若有傳入）
+    const phoneNum = String(data.phone || '').replace(/[\s-]/g, '')
+
+    // 黑名單 / 停權檢查
+    if (lineUserId || phoneNum) {
+        let q = supabase.from('coffee_users').select('status, blocked_at, blacklist_reason')
+        if (lineUserId) q = q.eq('line_user_id', lineUserId)
+        else q = q.eq('phone', phoneNum)
+
+        const { data: userRow } = await q.maybeSingle()
+        if (userRow && (userRow.status === 'BLACKLISTED' || userRow.blocked_at)) {
+            const reason = userRow.blacklist_reason || '違反系統使用規範'
+            return { success: false, error: `帳號已被停權，原因：${reason}` }
         }
     }
 
