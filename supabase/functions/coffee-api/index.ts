@@ -826,8 +826,32 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
     }
 
     if (data.email) {
-        const methodMap: Record<string, string> = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款', in_store: '來店自取' }
+        const methodMap: Record<string, string> = { delivery: '宅配到府', seven_eleven: '7-11 取貨/取貨付款', family_mart: '全家取貨/取貨付款', in_store: '來店自取' }
+        const paymentMap: Record<string, string> = { cod: '貨到付款', linepay: 'LINE Pay', transfer: '銀行轉帳' }
         const deliveryText = deliveryMethod === 'delivery' ? `${data.city}${data.district} ${data.address}` : `${data.storeName} (${data.storeAddress})`
+        const paymentText = paymentMap[paymentMethod] || paymentMethod
+        let transferHtml = ''
+        if (paymentMethod === 'transfer') {
+            const targetAccount = sanitize(String(data.transferTargetAccount || ''))
+            const last5 = sanitize(String(data.transferAccountLast5 || ''))
+            transferHtml = `<br><span style="color: #D32F2F; font-size: 14px; display: inline-block; margin-top: 4px;">請匯款至：${targetAccount}<br>您的帳號後五碼：${last5}</span>`
+        }
+
+        let customFieldsHtml = ''
+        if (data.customFields && typeof data.customFields === 'string') {
+            try {
+                const parsedFields = JSON.parse(data.customFields)
+                if (Object.keys(parsedFields).length > 0) {
+                    customFieldsHtml = '<h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 20px;">其他資訊</h3>'
+                    for (const [key, val] of Object.entries(parsedFields)) {
+                        customFieldsHtml += `<p style="margin: 0 0 5px 0;"><strong>${sanitize(key)}：</strong> ${sanitize(String(val))}</p>`
+                    }
+                }
+            } catch {
+                customFieldsHtml = `<p style="margin: 10px 0 0 0;"><strong>其他資訊：</strong> ${sanitize(data.customFields)}</p>`
+            }
+        }
+
         const content = `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
@@ -838,9 +862,12 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
     <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
+      <p style="margin: 0 0 10px 0;"><strong>聯絡電話：</strong> ${sanitize(phone)}</p>
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${methodMap[deliveryMethod] || deliveryMethod}<br><span style="color: #666; font-size: 14px;">${sanitize(deliveryText)}</span></p>
+      <p style="margin: 0 0 10px 0;"><strong>付款方式：</strong> ${paymentText}${transferHtml}</p>
       <p style="margin: 0;"><strong>訂單備註：</strong> ${sanitize(data.note) || '無'}</p>
     </div>
+    ${customFieldsHtml}
     <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
     <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${sanitize(ordersText)}</pre>
     <div style="text-align: right; margin-top: 20px;">
@@ -945,8 +972,8 @@ async function updateOrderStatus(data: Record<string, unknown>, req: Request) {
         updates.payment_status = String(data.paymentStatus)
     }
 
-    // 取出訂單資訊以取得 email
-    const { data: orderData } = await supabase.from('coffee_orders').select('email, line_name, delivery_method').eq('id', data.orderId).single()
+    // 取出訂單資訊以取得 email 及相關配送/付款資訊
+    const { data: orderData } = await supabase.from('coffee_orders').select('email, line_name, delivery_method, city, district, address, store_name, store_address, payment_method, payment_status').eq('id', data.orderId).single()
 
     const { error } = await supabase.from('coffee_orders').update(updates).eq('id', data.orderId)
     if (error) return { success: false, error: error.message }
@@ -954,11 +981,27 @@ async function updateOrderStatus(data: Record<string, unknown>, req: Request) {
     // 若狀態切換為已出貨，且該訂單有信箱，寄出出貨通知
     if (data.status === 'shipped' && orderData?.email) {
         const methodMap: Record<string, string> = {
-            delivery: '宅配',
-            seven_eleven: '7-11',
-            family_mart: '全家',
+            delivery: '宅配到府',
+            seven_eleven: '7-11 取貨/取貨付款',
+            family_mart: '全家 取貨/取貨付款',
             in_store: '來店自取'
         }
+
+        const paymentMap: Record<string, string> = { cod: '貨到付款', linepay: 'LINE Pay', transfer: '銀行轉帳' }
+
+        const isDelivery = orderData.delivery_method === 'delivery'
+        const isInStore = orderData.delivery_method === 'in_store'
+        let deliveryText = ''
+        if (isDelivery) {
+            deliveryText = `${orderData.city || ''}${orderData.district || ''} ${orderData.address || ''}`
+        } else if (!isInStore) {
+            deliveryText = `${orderData.store_name || ''} (${orderData.store_address || ''})`
+        }
+
+        const paymentText = paymentMap[orderData.payment_method] || orderData.payment_method
+        const paymentStatusText = orderData.payment_status === 'paid' ? '已付款' : (orderData.payment_method === 'cod' ? '貨到付款' : '未付款')
+        const paymentStatusColor = orderData.payment_status === 'paid' ? '#2e7d32' : (orderData.payment_method === 'cod' ? '#0288d1' : '#d32f2f')
+
         const content = `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
@@ -970,7 +1013,8 @@ async function updateOrderStatus(data: Record<string, unknown>, req: Request) {
     
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${data.orderId}</p>
-      <p style="margin: 0;"><strong>配送方式：</strong> ${methodMap[orderData.delivery_method] || '一般配送'}</p>
+      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${methodMap[orderData.delivery_method] || '一般配送'}<br><span style="color: #666; font-size: 14px;">${sanitize(deliveryText)}</span></p>
+      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatusColor}; font-weight: bold;">(${paymentStatusText})</span></p>
     </div>
     
     <p style="margin-top: 30px; color: #555;">依據配送方式不同，商品預計於 1-3 個工作天內抵達。<br>若是超商取貨，屆時將有手機簡訊通知取件，請留意您的手機訊息。</p>
@@ -980,7 +1024,7 @@ async function updateOrderStatus(data: Record<string, unknown>, req: Request) {
   </div>
 </div>
         `
-        await sendEmail(orderData.email, `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`, content)
+        await sendEmail(String(orderData.email), `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`, content)
     }
 
     return { success: true, message: '訂單狀態已更新' }
