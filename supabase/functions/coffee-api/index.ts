@@ -594,22 +594,42 @@ async function submitOrder(data: Record<string, unknown>) {
 
     // 寄出訂單成立確認信
     if (data.email) {
-        const methodMap: Record<string, string> = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款' }
+        const methodMap: Record<string, string> = {
+            delivery: '宅配到府',
+            seven_eleven: '7-11 取貨付款',
+            family_mart: '全家取貨付款',
+            in_store: '來店自取'
+        }
         const deliveryText = deliveryMethod === 'delivery'
             ? `${data.city}${data.district} ${data.address}`
             : `${data.storeName} (${data.storeAddress})`
 
         const content = `
-        <h2>親愛的 ${sanitize(data.lineName)}，您的訂單已成立！</h2>
-        <p>感謝您的訂購，我們已收到您的訂單資訊。</p>
-        <p><b>訂單編號：</b> ${orderId}</p>
-        <p><b>配送方式：</b> ${methodMap[deliveryMethod]} - ${sanitize(deliveryText)}</p>
-        <hr/>
-        <h3>訂單內容：</h3>
-        <pre style="font-family: inherit;">${sanitize(data.orders)}</pre>
-        <h3>總金額：$${data.total}</h3>
-        <p>備註：${sanitize(data.note) || '無'}</p>
-        <br/><p>收到訂單後我們將盡速為您安排出貨！</p>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
+    <h1 style="margin: 0; font-size: 24px;">☕ 咖啡訂購確認</h1>
+  </div>
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${sanitize(data.lineName)}，您的訂單已成立！</h2>
+    <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
+    
+    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
+      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${methodMap[deliveryMethod] || deliveryMethod}<br><span style="color: #666; font-size: 14px;">${sanitize(deliveryText)}</span></p>
+      <p style="margin: 0;"><strong>訂單備註：</strong> ${sanitize(data.note) || '無'}</p>
+    </div>
+
+    <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
+    <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${sanitize(data.orders)}</pre>
+    
+    <div style="text-align: right; margin-top: 20px;">
+      <h3 style="color: #e63946; font-size: 22px; margin: 0;">總金額：$${data.total}</h3>
+    </div>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
         `
         // 必須 await 以免 Edge Function 終止導致信件未送出
         await sendEmail(String(data.email), `[咖啡訂購] 訂單編號 ${orderId} 成立確認信`, content)
@@ -661,13 +681,32 @@ async function updateOrderStatus(data: Record<string, unknown>) {
 
     // 若狀態切換為已出貨，且該訂單有信箱，寄出出貨通知
     if (data.status === 'shipped' && orderData?.email) {
-        const methodMap: Record<string, string> = { delivery: '宅配', seven_eleven: '7-11', family_mart: '全家' }
+        const methodMap: Record<string, string> = {
+            delivery: '宅配',
+            seven_eleven: '7-11',
+            family_mart: '全家',
+            in_store: '來店自取'
+        }
         const content = `
-        <h2>親愛的 ${sanitize(orderData.line_name)}，您的訂單已出貨！</h2>
-        <p>您訂購的商品已經安排出貨！</p>
-        <p><b>訂單編號：</b> ${data.orderId}</p>
-        <p><b>配送方式：</b> ${methodMap[orderData.delivery_method] || '一般配送'}</p>
-        <br/><p>依據配送方式不同，商品預計於 1-3 個工作天內抵達（若是超商取貨，屆時將有手機簡訊通知取件）。</p>
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
+    <h1 style="margin: 0; font-size: 24px;">📦 訂單出貨通知</h1>
+  </div>
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${sanitize(orderData.line_name)}，您的訂單已出貨！</h2>
+    <p>這封信是要通知您，您所訂購的商品已經安排出貨！</p>
+    
+    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${data.orderId}</p>
+      <p style="margin: 0;"><strong>配送方式：</strong> ${methodMap[orderData.delivery_method] || '一般配送'}</p>
+    </div>
+    
+    <p style="margin-top: 30px; color: #555;">依據配送方式不同，商品預計於 1-3 個工作天內抵達。<br>若是超商取貨，屆時將有手機簡訊通知取件，請留意您的手機訊息。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
         `
         await sendEmail(orderData.email, `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`, content)
     }
