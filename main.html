@@ -25,10 +25,10 @@
     <div class="max-w-3xl mx-auto glass-card p-6 md:p-8">
         <!-- Header -->
         <div class="flex items-center gap-3 mb-6">
-            <span class="text-4xl">☕</span>
+            <span class="text-4xl" id="site-icon">☕</span>
             <div>
-                <h1 class="text-2xl font-bold" style="color:var(--primary)">咖啡豆訂購</h1>
-                <p class="text-sm text-gray-500">新鮮烘焙・產地直送</p>
+                <h1 class="text-2xl font-bold" style="color:var(--primary)" id="site-title">咖啡豆訂購</h1>
+                <p class="text-sm text-gray-500" id="site-subtitle">新鮮烘焙・產地直送</p>
             </div>
         </div>
 
@@ -58,21 +58,12 @@
         </div>
         <input type="hidden" id="line-name">
 
-        <!-- 聯絡資訊 -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-                <label class="block font-medium mb-2" style="color:var(--primary)">📱 聯絡電話</label>
-                <input type="tel" id="contact-phone" class="input-field" placeholder="請輸入聯絡電話">
-            </div>
-            <div>
-                <label class="block font-medium mb-2" style="color:var(--primary)">✉️ 電子郵件</label>
-                <input type="email" id="contact-email" class="input-field" placeholder="接收訂單確認信">
-            </div>
-        </div>
+        <!-- 動態表單欄位 -->
+        <div id="dynamic-fields-container"></div>
 
         <!-- 商品列表 -->
         <div class="mb-6">
-            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">🫘 咖啡豆選購</h2>
+            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)" id="products-section-title">🪶 咖啡豆選購</h2>
             <div id="products-container">
                 <p class="text-center text-gray-500 py-8">載入商品中...</p>
             </div>
@@ -80,7 +71,7 @@
 
         <!-- 配送方式 -->
         <div class="mb-6">
-            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)">🚚 配送方式</h2>
+            <h2 class="text-lg font-bold mb-4" style="color:var(--primary)" id="delivery-section-title">🚚 配送方式</h2>
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 <div class="delivery-option" onclick="selectDelivery('in_store', event)">
                     <div class="check-mark">✓</div>
@@ -191,7 +182,7 @@
 
         <!-- 備註 -->
         <div class="mb-6">
-            <label class="block font-medium mb-2" style="color:var(--primary)">📝 訂單備註</label>
+            <label class="block font-medium mb-2" style="color:var(--primary)" id="notes-section-title">📝 訂單備註</label>
             <textarea id="order-note" class="input-field resize-none" rows="2" placeholder="如有特殊需求請在此備註..."></textarea>
         </div>
 

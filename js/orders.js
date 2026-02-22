@@ -6,26 +6,37 @@ import { API_URL } from './config.js';
 import { escapeHtml, Toast } from './utils.js';
 import { state } from './state.js';
 import { cart, clearCart, updateCartUI } from './cart.js';
+import { collectDynamicFields } from './form-renderer.js';
 
 /** 送出訂單 */
 export async function submitOrder() {
     const u = state.currentUser;
     if (!u) { Swal.fire('請先登入', '使用 LINE 登入後再訂購', 'warning'); return; }
 
-    const phone = document.getElementById('contact-phone').value.trim();
-    if (!phone) { Swal.fire('錯誤', '請填寫聯絡電話', 'error'); return; }
+    // 動態欄位驗證
+    const fieldsResult = collectDynamicFields(state.formFields);
+    if (!fieldsResult.valid) {
+        Swal.fire('錯誤', fieldsResult.error, 'error');
+        return;
+    }
 
-    const email = document.getElementById('contact-email').value.trim();
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Swal.fire('錯誤', '請填寫正確的電子郵件', 'error'); return; }
+    // 從動態欄位取值（相容舊的 phone / email）
+    const phone = fieldsResult.data.phone || '';
+    const email = fieldsResult.data.email || '';
 
     if (!state.selectedDelivery) { Swal.fire('錯誤', '請選擇配送方式', 'error'); return; }
 
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { Swal.fire('錯誤', '請填寫正確的電子郵件', 'error'); return; }
+
     if (!email) {
-        const proceed = await Swal.fire({
-            title: '未填寫電子郵件', text: '您沒有填寫電子郵件，將無法接收到訂單成立與出貨通知信。確定要繼續送出訂單嗎？',
-            icon: 'warning', showCancelButton: true, confirmButtonText: '繼續送出', cancelButtonText: '返回填寫', confirmButtonColor: '#3C2415',
-        });
-        if (!proceed.isConfirmed) return;
+        const emailField = state.formFields.find(f => f.field_key === 'email');
+        if (emailField && emailField.enabled) {
+            const proceed = await Swal.fire({
+                title: '未填寫電子郵件', text: '您沒有填寫電子郵件，將無法接收到訂單成立與出貨通知信。確定要繼續送出訂單嗎？',
+                icon: 'warning', showCancelButton: true, confirmButtonText: '繼續送出', cancelButtonText: '返回填寫', confirmButtonColor: '#3C2415',
+            });
+            if (!proceed.isConfirmed) return;
+        }
     }
 
     // 收集訂購品項（從購物車）
@@ -57,6 +68,15 @@ export async function submitOrder() {
     }
 
     const note = document.getElementById('order-note').value.trim();
+
+    // 組合自訂欄位（排除 phone / email，轉為 JSON）
+    const customFieldsData = {};
+    for (const [k, v] of Object.entries(fieldsResult.data)) {
+        if (k !== 'phone' && k !== 'email') {
+            customFieldsData[k] = v;
+        }
+    }
+    const customFieldsJson = Object.keys(customFieldsData).length > 0 ? JSON.stringify(customFieldsData) : '';
 
     // 配送方式文字
     const methodText = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款', in_store: '來店取貨' };
@@ -94,7 +114,8 @@ export async function submitOrder() {
                 total,
                 lineUserId: u.userId || u.line_user_id,
                 deliveryMethod: state.selectedDelivery,
-                note: document.getElementById('order-note').value.trim(),
+                note,
+                customFields: customFieldsJson,
                 ...deliveryInfo,
             }),
         });
@@ -129,7 +150,7 @@ export async function showMyOrders() {
         if (!result.success || !result.orders?.length) { list.innerHTML = '<p class="text-center text-gray-500 py-8">尚無訂單</p>'; return; }
 
         const statusMap = { pending: '⏳ 待處理', processing: '📦 處理中', shipped: '🚚 已出貨', completed: '✅ 已完成', cancelled: '❌ 已取消' };
-        const methodMap = { delivery: '🏠 宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家' };
+        const methodMap = { delivery: '🏠 宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家', in_store: '🚶 來店取貨' };
 
         list.innerHTML = result.orders.map(o => `
             <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">

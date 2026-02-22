@@ -5,6 +5,7 @@
 export const state = {
     products: [],
     categories: [],
+    formFields: [],
     currentUser: null,
     selectedDelivery: '',
     isStoreOpen: true,

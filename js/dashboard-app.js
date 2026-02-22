@@ -41,6 +41,12 @@ window.toggleUserRole = toggleUserRole;
 window.toggleUserBlacklist = toggleUserBlacklist;
 window.loadBlacklist = loadBlacklist;
 window.esc = esc;
+window.showAddFieldModal = showAddFieldModal;
+window.editFormField = editFormField;
+window.deleteFormField = deleteFormField;
+window.toggleFieldEnabled = toggleFieldEnabled;
+window.previewIcon = previewIcon;
+window.uploadSiteIcon = uploadSiteIcon;
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', () => {
@@ -78,10 +84,11 @@ async function showAdmin() {
 }
 
 function showTab(tab) {
-    ['orders', 'products', 'categories', 'settings', 'users', 'blacklist'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.remove('tab-active');
-        document.getElementById(`tab-${t}`).classList.add('bg-white', 'text-gray-600');
-        document.getElementById(`${t}-section`).classList.add('hidden');
+    ['orders', 'products', 'categories', 'settings', 'users', 'blacklist', 'formfields'].forEach(t => {
+        const tabBtn = document.getElementById(`tab-${t}`);
+        const section = document.getElementById(`${t}-section`);
+        if (tabBtn) { tabBtn.classList.remove('tab-active'); tabBtn.classList.add('bg-white', 'text-gray-600'); }
+        if (section) section.classList.add('hidden');
     });
     document.getElementById(`tab-${tab}`).classList.add('tab-active');
     document.getElementById(`tab-${tab}`).classList.remove('bg-white', 'text-gray-600');
@@ -91,6 +98,7 @@ function showTab(tab) {
     else if (tab === 'categories') renderCategories();
     else if (tab === 'users') loadUsers();
     else if (tab === 'blacklist') loadBlacklist();
+    else if (tab === 'formfields') loadFormFields();
 }
 
 // ============ 訂單管理 ============
@@ -474,6 +482,20 @@ async function loadSettings() {
             document.getElementById('s-announcement').value = s.announcement || '';
             const isOpen = String(s.is_open) !== 'false';
             document.querySelector(`input[name="s-open"][value="${isOpen}"]`).checked = true;
+            // 品牌設定
+            document.getElementById('s-site-title').value = s.site_title || '';
+            document.getElementById('s-site-subtitle').value = s.site_subtitle || '';
+            document.getElementById('s-site-emoji').value = s.site_icon_emoji || '';
+            // Icon 預覽
+            if (s.site_icon_url) {
+                document.getElementById('s-icon-preview').src = s.site_icon_url;
+                document.getElementById('s-icon-preview').classList.remove('hidden');
+                document.getElementById('s-icon-url-display').textContent = s.site_icon_url;
+            }
+            // 區塊標題
+            document.getElementById('s-products-title').value = s.products_section_title || '';
+            document.getElementById('s-delivery-title').value = s.delivery_section_title || '';
+            document.getElementById('s-notes-title').value = s.notes_section_title || '';
         }
     } catch (e) { console.error(e); }
 }
@@ -487,6 +509,12 @@ async function saveSettings() {
                     announcement_enabled: String(document.getElementById('s-ann-enabled').checked),
                     announcement: document.getElementById('s-announcement').value,
                     is_open: document.querySelector('input[name="s-open"]:checked')?.value || 'true',
+                    site_title: document.getElementById('s-site-title').value.trim(),
+                    site_subtitle: document.getElementById('s-site-subtitle').value.trim(),
+                    site_icon_emoji: document.getElementById('s-site-emoji').value.trim(),
+                    products_section_title: document.getElementById('s-products-title').value.trim(),
+                    delivery_section_title: document.getElementById('s-delivery-title').value.trim(),
+                    notes_section_title: document.getElementById('s-notes-title').value.trim(),
                 }
             })
         });
@@ -619,3 +647,265 @@ function renderBlacklist() {
         </tr>`;
     }).join('');
 }
+
+// ============ 表單欄位管理 ============
+let formFields = [];
+
+async function loadFormFields() {
+    try {
+        const r = await fetch(`${API_URL}?action=getFormFieldsAdmin&_=${Date.now()}`);
+        const d = await r.json();
+        if (d.success) { formFields = d.fields || []; renderFormFields(); }
+    } catch (e) { console.error(e); }
+}
+
+const FIELD_TYPE_LABELS = {
+    text: '文字', email: 'Email', tel: '電話', number: '數字',
+    select: '下拉選單', checkbox: '勾選框', textarea: '多行文字',
+    section_title: '區塊標題',
+};
+
+function renderFormFields() {
+    const container = document.getElementById('formfields-list');
+    if (!formFields.length) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">尚無自訂欄位</p>';
+        return;
+    }
+    container.innerHTML = `
+        <div class="space-y-2" id="formfields-sortable">
+            ${formFields.map(f => {
+        const typeBadge = FIELD_TYPE_LABELS[f.field_type] || f.field_type;
+        const requiredBadge = f.required ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">必填</span>' : '';
+        const enabledClass = f.enabled ? '' : 'opacity-50';
+        const protectedKeys = ['phone', 'email'];
+        const isProtected = protectedKeys.includes(f.field_key);
+        return `
+                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${f.id}">
+                    <span class="cursor-grab text-gray-400 drag-handle">⠿</span>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-medium">${esc(f.label)}</span>
+                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${typeBadge}</span>
+                            ${requiredBadge}
+                            ${!f.enabled ? '<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">已停用</span>' : ''}
+                            ${isProtected ? '<span class="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">🔒 系統</span>' : ''}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1">key: ${esc(f.field_key)} ${f.placeholder ? '・' + esc(f.placeholder) : ''}</div>
+                    </div>
+                    <div class="flex gap-1 items-center">
+                        <button onclick="toggleFieldEnabled(${f.id}, ${!f.enabled})" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${f.enabled ? '停用' : '啟用'}">${f.enabled ? '🟢' : '⚪'}</button>
+                        <button onclick="editFormField(${f.id})" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">✏️</button>
+                        ${!isProtected ? `<button onclick="deleteFormField(${f.id})" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">🗑</button>` : ''}
+                    </div>
+                </div>`;
+    }).join('')}
+        </div>`;
+
+    // 拖拽排序
+    if (typeof Sortable !== 'undefined') {
+        new Sortable(document.getElementById('formfields-sortable'), {
+            handle: '.drag-handle',
+            animation: 150,
+            onEnd: async () => {
+                const ids = [...document.querySelectorAll('#formfields-sortable [data-field-id]')].map(el => parseInt(el.dataset.fieldId));
+                try {
+                    await fetch(`${API_URL}?action=reorderFormFields`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: getAuthUserId(), ids }),
+                    });
+                    Toast.fire({ icon: 'success', title: '排序已更新' });
+                } catch (e) { console.error(e); }
+            },
+        });
+    }
+}
+
+async function showAddFieldModal() {
+    const { value: formValues } = await Swal.fire({
+        title: '新增欄位',
+        html: `
+            <div style="text-align:left;">
+                <label class="block text-sm mb-1 font-medium">欄位識別碼 (英文，唯一)</label>
+                <input id="swal-fk" class="swal2-input" placeholder="例：receipt_type" style="margin:0 0 12px 0;width:100%">
+                <label class="block text-sm mb-1 font-medium">顯示名稱</label>
+                <input id="swal-fl" class="swal2-input" placeholder="例：📄 開立收據" style="margin:0 0 12px 0;width:100%">
+                <label class="block text-sm mb-1 font-medium">類型</label>
+                <select id="swal-ft" class="swal2-select" style="margin:0 0 12px 0;width:100%">
+                    <option value="text">文字</option>
+                    <option value="email">Email</option>
+                    <option value="tel">電話</option>
+                    <option value="number">數字</option>
+                    <option value="select">下拉選單</option>
+                    <option value="checkbox">勾選框</option>
+                    <option value="textarea">多行文字</option>
+                </select>
+                <label class="block text-sm mb-1 font-medium">提示文字 (placeholder)</label>
+                <input id="swal-fp" class="swal2-input" placeholder="例：請選擇" style="margin:0 0 12px 0;width:100%">
+                <label class="block text-sm mb-1 font-medium">選項 (僅下拉選單，逗號分隔)</label>
+                <input id="swal-fo" class="swal2-input" placeholder="例：二聯式,三聯式,免開" style="margin:0 0 12px 0;width:100%">
+                <label class="flex items-center gap-2 cursor-pointer mt-2">
+                    <input type="checkbox" id="swal-fr"> <span class="text-sm">必填</span>
+                </label>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '新增',
+        cancelButtonText: '取消',
+        confirmButtonColor: '#3C2415',
+        preConfirm: () => {
+            const fieldKey = document.getElementById('swal-fk').value.trim();
+            const label = document.getElementById('swal-fl').value.trim();
+            if (!fieldKey || !label) { Swal.showValidationMessage('識別碼和名稱為必填'); return false; }
+            const fieldType = document.getElementById('swal-ft').value;
+            const placeholder = document.getElementById('swal-fp').value.trim();
+            const optionsRaw = document.getElementById('swal-fo').value.trim();
+            const options = optionsRaw ? JSON.stringify(optionsRaw.split(',').map(s => s.trim()).filter(Boolean)) : '';
+            const required = document.getElementById('swal-fr').checked;
+            return { fieldKey, label, fieldType, placeholder, options, required };
+        },
+    });
+
+    if (!formValues) return;
+
+    try {
+        Swal.fire({ title: '新增中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const r = await fetch(`${API_URL}?action=addFormField`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), ...formValues }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '欄位已新增' }); loadFormFields(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+async function editFormField(id) {
+    const f = formFields.find(x => x.id === id);
+    if (!f) return;
+
+    const optionsStr = (() => { try { return JSON.parse(f.options || '[]').join(','); } catch { return ''; } })();
+
+    const { value: formValues } = await Swal.fire({
+        title: '編輯欄位',
+        html: `
+            <div style="text-align:left;">
+                <label class="block text-sm mb-1 font-medium">顯示名稱</label>
+                <input id="swal-fl" class="swal2-input" value="${esc(f.label)}" style="margin:0 0 12px 0;width:100%">
+                <label class="block text-sm mb-1 font-medium">類型</label>
+                <select id="swal-ft" class="swal2-select" style="margin:0 0 12px 0;width:100%">
+                    ${Object.entries(FIELD_TYPE_LABELS).map(([k, v]) => `<option value="${k}" ${k === f.field_type ? 'selected' : ''}>${v}</option>`).join('')}
+                </select>
+                <label class="block text-sm mb-1 font-medium">提示文字</label>
+                <input id="swal-fp" class="swal2-input" value="${esc(f.placeholder || '')}" style="margin:0 0 12px 0;width:100%">
+                <label class="block text-sm mb-1 font-medium">選項 (下拉選單，逗號分隔)</label>
+                <input id="swal-fo" class="swal2-input" value="${esc(optionsStr)}" style="margin:0 0 12px 0;width:100%">
+                <label class="flex items-center gap-2 cursor-pointer mt-2">
+                    <input type="checkbox" id="swal-fr" ${f.required ? 'checked' : ''}> <span class="text-sm">必填</span>
+                </label>
+            </div>`,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: '儲存',
+        cancelButtonText: '取消',
+        confirmButtonColor: '#3C2415',
+        preConfirm: () => {
+            const label = document.getElementById('swal-fl').value.trim();
+            if (!label) { Swal.showValidationMessage('名稱為必填'); return false; }
+            const fieldType = document.getElementById('swal-ft').value;
+            const placeholder = document.getElementById('swal-fp').value.trim();
+            const optionsRaw = document.getElementById('swal-fo').value.trim();
+            const options = optionsRaw ? JSON.stringify(optionsRaw.split(',').map(s => s.trim()).filter(Boolean)) : '';
+            const required = document.getElementById('swal-fr').checked;
+            return { label, fieldType, placeholder, options, required };
+        },
+    });
+
+    if (!formValues) return;
+
+    try {
+        const r = await fetch(`${API_URL}?action=updateFormField`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), id, ...formValues }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '已更新' }); loadFormFields(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+async function deleteFormField(id) {
+    const f = formFields.find(x => x.id === id);
+    const confirm = await Swal.fire({
+        title: '確認刪除', text: `確定要刪除「${f?.label || ''}」欄位嗎？`, icon: 'warning',
+        showCancelButton: true, confirmButtonText: '刪除', cancelButtonText: '取消', confirmButtonColor: '#ef4444',
+    });
+    if (!confirm.isConfirmed) return;
+
+    try {
+        const r = await fetch(`${API_URL}?action=deleteFormField`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), id }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '已刪除' }); loadFormFields(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+async function toggleFieldEnabled(id, enabled) {
+    try {
+        const r = await fetch(`${API_URL}?action=updateFormField`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), id, enabled }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: enabled ? '已啟用' : '已停用' }); loadFormFields(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+// ============ Icon 上傳 ============
+function previewIcon(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        document.getElementById('s-icon-preview').src = e.target.result;
+        document.getElementById('s-icon-preview').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+}
+
+async function uploadSiteIcon() {
+    const input = document.getElementById('s-icon-file');
+    const file = input.files[0];
+    if (!file) { Swal.fire('提示', '請先選擇圖片檔案', 'info'); return; }
+    if (file.size > 500 * 1024) { Swal.fire('錯誤', '圖片大小不能超過 500KB', 'error'); return; }
+
+    Swal.fire({ title: '上傳中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]); // 去掉 data:image/...;base64, 前綴
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+
+        const r = await fetch(`${API_URL}?action=uploadSiteIcon`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: getAuthUserId(),
+                fileData: base64,
+                fileName: file.name,
+                contentType: file.type,
+            }),
+        });
+        const d = await r.json();
+        if (d.success) {
+            document.getElementById('s-icon-url-display').textContent = d.url;
+            Toast.fire({ icon: 'success', title: '圖示已上傳並套用' });
+        } else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+

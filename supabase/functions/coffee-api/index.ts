@@ -118,6 +118,8 @@ serve(async (req: Request) => {
             case 'getCategories': result = await getCategories(); break
             case 'getSettings': result = await getSettings(); break
             case 'getInitData': result = await getInitData(); break
+            case 'getFormFields': result = await getFormFields(false); break
+            case 'getFormFieldsAdmin': result = await getFormFields(true); break
             case 'getLineLoginUrl': result = getLineLoginUrl(data.redirectUri as string); break
             case 'customerLineLogin': result = await customerLineLogin(data.code as string, data.redirectUri as string); break
             case 'lineLogin': result = await handleAdminLogin(data.code as string, data.redirectUri as string); break
@@ -157,6 +159,13 @@ serve(async (req: Request) => {
             case 'removeFromBlacklist': result = await removeFromBlacklist(data); break
             case 'testEmail': result = await testEmail(data); break
 
+            // 表單欄位管理
+            case 'addFormField': result = await addFormField(data); break
+            case 'updateFormField': result = await updateFormField(data); break
+            case 'deleteFormField': result = await deleteFormField(data); break
+            case 'reorderFormFields': result = await reorderFormFields(data); break
+            case 'uploadSiteIcon': result = await uploadSiteIcon(data); break
+
             default: result = { success: false, error: '未知的操作' }
         }
     } catch (error) {
@@ -169,12 +178,13 @@ serve(async (req: Request) => {
 
 // ============ 初始化資料 ============
 async function getInitData() {
-    const [p, c, s] = await Promise.all([getProducts(), getCategories(), getSettings()])
+    const [p, c, s, f] = await Promise.all([getProducts(), getCategories(), getSettings(), getFormFields(false)])
     return {
         success: true,
         products: p.success ? p.products : [],
         categories: c.success ? c.categories : [],
         settings: s.success ? s.settings : {},
+        formFields: f.success ? f.fields : [],
     }
 }
 
@@ -574,6 +584,7 @@ async function submitOrder(data: Record<string, unknown>) {
         store_address: data.storeAddress || '',
         status: 'pending',
         note: data.note || '',
+        custom_fields: data.customFields || '',
     })
 
     if (error) return { success: false, error: error.message }
@@ -743,6 +754,126 @@ async function updateSettingsAction(data: Record<string, unknown>) {
         await supabase.from('coffee_settings').upsert({ key, value: String(value) })
     }
     return { success: true, message: '設定已更新' }
+}
+
+// ============ 表單欄位管理 ============
+async function getFormFields(includeDisabled: boolean) {
+    let query = supabase.from('coffee_form_fields').select('*').order('sort_order', { ascending: true })
+    if (!includeDisabled) {
+        query = query.eq('enabled', true)
+    }
+    const { data, error } = await query
+    if (error) return { success: false, error: error.message }
+    return { success: true, fields: data || [] }
+}
+
+async function addFormField(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+
+    const fieldKey = String(data.fieldKey || '').trim()
+    if (!fieldKey) return { success: false, error: '欄位識別碼不能為空' }
+
+    // 取得目前最大排序
+    const { data: maxRow } = await supabase.from('coffee_form_fields').select('sort_order').order('sort_order', { ascending: false }).limit(1)
+    const nextOrder = (maxRow && maxRow[0]) ? maxRow[0].sort_order + 1 : 1
+
+    const { data: inserted, error } = await supabase.from('coffee_form_fields').insert({
+        section: String(data.section || 'contact'),
+        field_key: fieldKey,
+        label: String(data.label || ''),
+        field_type: String(data.fieldType || 'text'),
+        placeholder: String(data.placeholder || ''),
+        options: String(data.options || ''),
+        required: Boolean(data.required),
+        enabled: data.enabled !== false,
+        sort_order: nextOrder,
+    }).select().single()
+
+    if (error) return { success: false, error: error.message }
+    return { success: true, field: inserted }
+}
+
+async function updateFormField(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+
+    const id = parseInt(String(data.id))
+    if (!id) return { success: false, error: '缺少欄位 ID' }
+
+    const updates: Record<string, unknown> = {}
+    if (data.label !== undefined) updates.label = String(data.label)
+    if (data.fieldType !== undefined) updates.field_type = String(data.fieldType)
+    if (data.placeholder !== undefined) updates.placeholder = String(data.placeholder)
+    if (data.options !== undefined) updates.options = String(data.options)
+    if (data.required !== undefined) updates.required = Boolean(data.required)
+    if (data.enabled !== undefined) updates.enabled = Boolean(data.enabled)
+    if (data.section !== undefined) updates.section = String(data.section)
+
+    const { error } = await supabase.from('coffee_form_fields').update(updates).eq('id', id)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '欄位已更新' }
+}
+
+async function deleteFormField(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+
+    const id = parseInt(String(data.id))
+    if (!id) return { success: false, error: '缺少欄位 ID' }
+
+    // 保護預設欄位
+    const { data: field } = await supabase.from('coffee_form_fields').select('field_key').eq('id', id).single()
+    const protectedKeys = ['phone', 'email']
+    if (field && protectedKeys.includes(field.field_key)) {
+        return { success: false, error: '此為系統預設欄位，無法刪除（可停用）' }
+    }
+
+    const { error } = await supabase.from('coffee_form_fields').delete().eq('id', id)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '欄位已刪除' }
+}
+
+async function reorderFormFields(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+
+    const ids = data.ids as number[]
+    if (!Array.isArray(ids)) return { success: false, error: '缺少排序資料' }
+
+    for (let i = 0; i < ids.length; i++) {
+        await supabase.from('coffee_form_fields').update({ sort_order: i + 1 }).eq('id', ids[i])
+    }
+    return { success: true, message: '排序已更新' }
+}
+
+async function uploadSiteIcon(data: Record<string, unknown>) {
+    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+
+    const base64Data = String(data.fileData || '')
+    const fileName = String(data.fileName || 'icon.png')
+    const contentType = String(data.contentType || 'image/png')
+
+    if (!base64Data) return { success: false, error: '沒有檔案資料' }
+
+    // Base64 解碼為 Uint8Array
+    const binaryStr = atob(base64Data)
+    const bytes = new Uint8Array(binaryStr.length)
+    for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i)
+    }
+
+    const storagePath = `icons/${Date.now()}-${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+        .from('site-assets')
+        .upload(storagePath, bytes, { contentType, upsert: true })
+
+    if (uploadError) return { success: false, error: '上傳失敗: ' + uploadError.message }
+
+    const { data: urlData } = supabase.storage.from('site-assets').getPublicUrl(storagePath)
+    const publicUrl = urlData?.publicUrl || ''
+
+    // 儲存到 settings
+    await supabase.from('coffee_settings').upsert({ key: 'site_icon_url', value: publicUrl })
+
+    return { success: true, url: publicUrl, message: '圖示已上傳' }
 }
 
 // ============ 綠界門市清單 API ============

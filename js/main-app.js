@@ -10,6 +10,7 @@ import { addToCart, updateCartItemQty, removeCartItem, toggleCart, loadCart } fr
 import { renderProducts } from './products.js';
 import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js';
 import { submitOrder, showMyOrders } from './orders.js';
+import { renderDynamicFields, applyBranding } from './form-renderer.js';
 
 // ============ 全域函式掛載 (HTML onclick 呼叫) ============
 window._cart = { addToCart, updateCartItemQty, removeCartItem, toggleCart };
@@ -87,8 +88,11 @@ function showUserInfo() {
     document.getElementById('user-display-name').textContent = state.currentUser.displayName || state.currentUser.display_name;
     document.getElementById('user-avatar').src = state.currentUser.pictureUrl || state.currentUser.picture_url || 'https://via.placeholder.com/48';
     document.getElementById('line-name').value = state.currentUser.displayName || state.currentUser.display_name;
-    if (state.currentUser.phone) document.getElementById('contact-phone').value = state.currentUser.phone;
-    if (state.currentUser.email) document.getElementById('contact-email').value = state.currentUser.email;
+    // 回填動態欄位: phone / email
+    const phoneEl = document.getElementById('field-phone');
+    const emailEl = document.getElementById('field-email');
+    if (phoneEl && state.currentUser.phone) phoneEl.value = state.currentUser.phone;
+    if (emailEl && state.currentUser.email) emailEl.value = state.currentUser.email;
     updateFormState();
     setTimeout(loadDeliveryPrefs, 100);
 }
@@ -99,8 +103,11 @@ window.logout = function () {
     document.getElementById('login-prompt').classList.remove('hidden');
     document.getElementById('user-info').classList.add('hidden');
     document.getElementById('line-name').value = '';
-    document.getElementById('contact-phone').value = '';
-    document.getElementById('contact-email').value = '';
+    // 清除動態欄位
+    const phoneEl = document.getElementById('field-phone');
+    const emailEl = document.getElementById('field-email');
+    if (phoneEl) phoneEl.value = '';
+    if (emailEl) emailEl.value = '';
     updateFormState();
 };
 
@@ -112,8 +119,20 @@ async function loadInitData() {
         if (result.success) {
             state.products = (result.products || []).filter(p => p.enabled);
             state.categories = result.categories || [];
+            state.formFields = result.formFields || [];
+
             applySettings(result.settings || {});
+            applyBranding(result.settings || {});
+            renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'));
             renderProducts();
+
+            // 登入後再回填一次（因為渲染完才有欄位）
+            if (state.currentUser) {
+                const phoneEl = document.getElementById('field-phone');
+                const emailEl = document.getElementById('field-email');
+                if (phoneEl && state.currentUser.phone) phoneEl.value = state.currentUser.phone;
+                if (emailEl && state.currentUser.email) emailEl.value = state.currentUser.email;
+            }
         } else { throw new Error(result.error); }
     } catch (e) {
         document.getElementById('products-container').innerHTML = `<p class="p-8 text-center text-red-600">載入失敗: ${e.message}<br><button onclick="location.reload()" class="mt-3 btn-primary">重試</button></p>`;

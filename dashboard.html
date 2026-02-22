@@ -56,6 +56,9 @@
             <button id="tab-settings" onclick="showTab('settings')"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">⚙️
                 系統設定</button>
+            <button id="tab-formfields" onclick="showTab('formfields')"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">📝
+                表單管理</button>
             <button id="tab-users" onclick="showTab('users')"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">👥
                 用戶管理</button>
@@ -177,6 +180,58 @@
         <!-- ===== 系統設定 ===== -->
         <div id="settings-section" class="glass-card p-6 hidden">
             <h2 class="text-lg font-bold mb-6" style="color:var(--primary)">系統設定</h2>
+
+            <!-- 品牌設定 -->
+            <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">☕ 品牌設定</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">網站標題</label>
+                        <input type="text" id="s-site-title" class="input-field" placeholder="咖啡豆訂購">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">副標題</label>
+                        <input type="text" id="s-site-subtitle" class="input-field" placeholder="新鮮烘焙・產地直送">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">預設 Emoji 圖示</label>
+                        <input type="text" id="s-site-emoji" class="input-field" placeholder="☕">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">上傳自訂 Icon（將取代 Emoji）</label>
+                        <div class="flex gap-2 items-center">
+                            <input type="file" id="s-icon-file" accept="image/*" class="text-sm"
+                                onchange="previewIcon(this)">
+                            <img id="s-icon-preview" src="" alt="" class="w-8 h-8 rounded hidden object-cover">
+                            <button onclick="uploadSiteIcon()" class="btn-primary text-xs py-1 px-3">上傳</button>
+                        </div>
+                        <p id="s-icon-url-display" class="text-xs text-gray-400 mt-1 truncate"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 區塊標題 -->
+            <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">🏷️ 區塊標題</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">商品區塊</label>
+                        <input type="text" id="s-products-title" class="input-field" placeholder="🪶 咖啡豆選購">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">配送區塊</label>
+                        <input type="text" id="s-delivery-title" class="input-field" placeholder="🚚 配送方式">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">備註區塊</label>
+                        <input type="text" id="s-notes-title" class="input-field" placeholder="📝 訂單備註">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 公告 -->
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">📢 公告設定</h3>
                 <label class="flex items-center gap-2 mb-3 cursor-pointer">
@@ -184,6 +239,8 @@
                 </label>
                 <textarea id="s-announcement" class="input-field resize-none" rows="3" placeholder="公告內容..."></textarea>
             </div>
+
+            <!-- 營業狀態 -->
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">🏪 營業狀態</h3>
                 <div class="flex gap-4">
@@ -193,8 +250,31 @@
                             value="false" class="w-4 h-4"> 休息中</label>
                 </div>
             </div>
+
+            <!-- 金流設定（預留） -->
+            <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">💳 金流設定（預留）</h3>
+                <p class="text-sm text-gray-500 mb-3">此區塊將於未來串接金流服務時啟用</p>
+                <label class="flex items-center gap-2 mb-3 cursor-pointer">
+                    <input type="checkbox" id="s-payment-enabled" class="w-4 h-4" disabled> <span
+                        class="text-gray-400">啟用線上付款（尚未開放）</span>
+                </label>
+            </div>
+
             <div class="text-center">
                 <button onclick="saveSettings()" class="btn-primary">儲存設定</button>
+            </div>
+        </div>
+
+        <!-- ===== 表單管理 ===== -->
+        <div id="formfields-section" class="glass-card p-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold" style="color:var(--primary)">表單欄位管理</h2>
+                <button onclick="showAddFieldModal()" class="btn-primary text-sm">+ 新增欄位</button>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">管理前台訂購表單的自訂欄位（如聯絡電話、電子郵件、開立收據等）。可拖拽排序、設定必填、啟用/停用。</p>
+            <div id="formfields-list">
+                <p class="text-center text-gray-500 py-8">載入中...</p>
             </div>
         </div>
 
@@ -237,7 +317,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/dashboard-app.js?v=2"></script>
+    <script type="module" src="js/dashboard-app.js?v=3"></script>
 </body>
 
 </html>
