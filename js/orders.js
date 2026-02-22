@@ -162,13 +162,13 @@ export async function submitOrder() {
 
             // 線上轉帳: 顯示匯款確認
             if (paymentMethod === 'transfer') {
-                const bankHtml = state.bankAccounts.map(b =>
-                    `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
+                const b = state.bankAccounts.find(x => String(x.id) === String(state.selectedBankAccountId));
+                const bankHtml = b ? `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
                         <b>${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</b><br>
                         <span style="font-size:1.1em;font-family:monospace;">${escapeHtml(b.accountNumber)}</span>
                         ${b.accountName ? '<br><span style="color:#666">戶名: ' + escapeHtml(b.accountName) + '</span>' : ''}
-                    </div>`
-                ).join('');
+                    </div>` : '';
+
                 Swal.fire({
                     icon: 'success', title: '訂單已成立',
                     html: `<p>訂單編號：<b>${result.orderId}</b></p>
