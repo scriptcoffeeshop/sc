@@ -221,13 +221,15 @@ function renderBankAccounts() {
     const container = document.getElementById('bank-accounts-list');
     if (!container || !state.bankAccounts.length) return;
     container.innerHTML = state.bankAccounts.map(b => `
-        <div class="p-3 rounded-lg mb-2 relative" style="background:white; border:1px solid #d1dce5;">
-            <button onclick="copyTransferAccount(this, '${escapeHtml(b.accountNumber)}')" class="absolute top-3 right-3 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors" title="複製帳號">
-                📋 複製
-            </button>
+        <div class="p-3 rounded-lg mb-2" style="background:white; border:1px solid #d1dce5;">
             <div class="font-semibold">${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</div>
-            <div class="text-lg font-mono mt-1 pr-14" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</div>
-            ${b.accountName ? `<div class="text-sm text-gray-500">戶名: ${escapeHtml(b.accountName)}</div>` : ''}
+            <div class="flex items-center gap-2 mt-1">
+                <span class="text-lg font-mono" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</span>
+                <button onclick="copyTransferAccount(this, '${escapeHtml(b.accountNumber)}')" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition-colors" title="複製帳號">
+                    📋 複製
+                </button>
+            </div>
+            ${b.accountName ? `<div class="text-sm text-gray-500 mt-1">戶名: ${escapeHtml(b.accountName)}</div>` : ''}
         </div>
     `).join('');
 }
