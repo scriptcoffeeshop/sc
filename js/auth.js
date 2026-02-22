@@ -19,3 +19,43 @@ export async function loginWithLine(redirectUri, stateKey) {
         } else { throw new Error(d.error); }
     } catch (e) { Swal.fire('錯誤', '無法啟動登入：' + e.message, 'error'); }
 }
+
+/**
+ * 取得當前存儲的 JWT Token
+ * @param {string} tokenKey - localStorage key (預設 'coffee_jwt')
+ */
+export function getAuthToken(tokenKey = 'coffee_jwt') {
+    return localStorage.getItem(tokenKey);
+}
+
+/**
+ * 封裝帶有 Authorization Header 的 fetch 請求
+ */
+export async function authFetch(url, options = {}, tokenKey = 'coffee_jwt') {
+    const token = getAuthToken(tokenKey);
+    const headers = new Headers(options.headers || {});
+
+    if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    // 如果沒有設定 Content-Type 且 options.body 存在而且不是 FormData，預設加上 application/json
+    if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
+        headers.set('Content-Type', 'application/json');
+    }
+
+    const config = {
+        ...options,
+        headers
+    };
+
+    const response = await fetch(url, config);
+
+    if (response.status === 401) {
+        console.warn('Unauthorized request, token might be expired or invalid.');
+        localStorage.removeItem(tokenKey);
+        // 可選：拋出特定錯誤讓前端捕捉後登出或重定向
+    }
+
+    return response;
+}

@@ -15,19 +15,104 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const LINE_LOGIN_CHANNEL_ID = Deno.env.get('LINE_LOGIN_CHANNEL_ID') || ''
 const LINE_LOGIN_CHANNEL_SECRET = Deno.env.get('LINE_LOGIN_CHANNEL_SECRET') || ''
 const LINE_ADMIN_USER_ID = Deno.env.get('LINE_ADMIN_USER_ID') || ''
+const JWT_SECRET = Deno.env.get('JWT_SECRET') || 'CHANGE_ME_IN_PRODUCTION'
 
 // SMTP 設定
 const SMTP_USER = Deno.env.get('SMTP_USER') || ''
 const SMTP_PASS = Deno.env.get('SMTP_PASS') || ''
 
-// 綠界 ECPay 物流設定
-// 測試環境預設使用 B2C 物流測試帳號，正式環境請設定 Secrets
-const ECPAY_MERCHANT_ID = '3339283'
-const ECPAY_HASH_KEY = 'Dbxpzi6EQdrOM46j'
-const ECPAY_HASH_IV = 'OqMti7T9ZMs1OvLD'
-const ECPAY_IS_STAGE = false
+// 綠界 ECPay 物流設定（從 Secrets 讀取）
+const ECPAY_MERCHANT_ID = Deno.env.get('ECPAY_MERCHANT_ID') || ''
+const ECPAY_HASH_KEY = Deno.env.get('ECPAY_HASH_KEY') || ''
+const ECPAY_HASH_IV = Deno.env.get('ECPAY_HASH_IV') || ''
+const ECPAY_IS_STAGE = Deno.env.get('ECPAY_IS_STAGE') === 'true'
+
+// 允許的跳轉域名（防 open redirect）
+const ALLOWED_REDIRECT_ORIGINS = [
+    'https://scriptcoffeeshop.github.io',
+    Deno.env.get('ALLOWED_ORIGIN') || '',
+].filter(Boolean)
+
+// 訂單狀態白名單
+const VALID_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'completed', 'cancelled']
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+// ============ JWT 工具 ============
+function base64UrlEncode(data: Uint8Array): string {
+    return btoa(String.fromCharCode(...data)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function base64UrlDecode(str: string): Uint8Array {
+    const pad = str.length % 4 === 0 ? '' : '='.repeat(4 - (str.length % 4))
+    const b64 = (str + pad).replace(/-/g, '+').replace(/_/g, '/')
+    const binary = atob(b64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes
+}
+
+async function hmacSign(data: string): Promise<string> {
+    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(JWT_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data))
+    return base64UrlEncode(new Uint8Array(sig))
+}
+
+async function signJwt(payload: Record<string, unknown>): Promise<string> {
+    const header = base64UrlEncode(new TextEncoder().encode(JSON.stringify({ alg: 'HS256', typ: 'JWT' })))
+    const body = base64UrlEncode(new TextEncoder().encode(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600 })))
+    const signature = await hmacSign(`${header}.${body}`)
+    return `${header}.${body}.${signature}`
+}
+
+async function verifyJwt(token: string): Promise<Record<string, unknown> | null> {
+    try {
+        const parts = token.split('.')
+        if (parts.length !== 3) return null
+        const expectedSig = await hmacSign(`${parts[0]}.${parts[1]}`)
+        if (expectedSig !== parts[2]) return null
+        const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(parts[1])))
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
+        return payload
+    } catch { return null }
+}
+
+interface AuthResult { userId: string; role: string; isAdmin: boolean }
+
+async function extractAuth(req: Request): Promise<AuthResult | null> {
+    const authHeader = req.headers.get('authorization') || ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+    if (!token) return null
+    const payload = await verifyJwt(token)
+    if (!payload || !payload.userId) return null
+    const userId = String(payload.userId)
+    // 即時查詢角色（不信任 token 中的 role 快取）
+    if (userId === LINE_ADMIN_USER_ID) return { userId, role: 'SUPER_ADMIN', isAdmin: true }
+    try {
+        const { data } = await supabase.from('coffee_users').select('role, status').eq('line_user_id', userId).single()
+        if (data?.status === 'BLACKLISTED') return null // 黑名單用戶視為未認證
+        const role = data?.role || 'USER'
+        return { userId, role, isAdmin: role === 'ADMIN' || role === 'SUPER_ADMIN' }
+    } catch { return { userId, role: 'USER', isAdmin: false } }
+}
+
+async function requireAuth(req: Request): Promise<AuthResult> {
+    const auth = await extractAuth(req)
+    if (!auth) throw new Error('請先登入')
+    return auth
+}
+
+async function requireAdmin(req: Request): Promise<AuthResult> {
+    const auth = await requireAuth(req)
+    if (!auth.isAdmin) throw new Error('權限不足')
+    return auth
+}
+
+async function requireSuperAdmin(req: Request): Promise<AuthResult> {
+    const auth = await requireAuth(req)
+    if (auth.role !== 'SUPER_ADMIN') throw new Error('僅 SUPER_ADMIN 具備權限')
+    return auth
+}
 
 // ============ CORS ============
 const corsHeaders = {
@@ -113,19 +198,15 @@ serve(async (req: Request) => {
     let result: unknown
     try {
         switch (action) {
-            // GET
+            // 公開 API（不需登入）
             case 'getProducts': result = await getProducts(); break
             case 'getCategories': result = await getCategories(); break
             case 'getSettings': result = await getSettings(); break
             case 'getInitData': result = await getInitData(); break
             case 'getFormFields': result = await getFormFields(false); break
-            case 'getFormFieldsAdmin': result = await getFormFields(true); break
             case 'getLineLoginUrl': result = getLineLoginUrl(data.redirectUri as string); break
             case 'customerLineLogin': result = await customerLineLogin(data.code as string, data.redirectUri as string); break
             case 'lineLogin': result = await handleAdminLogin(data.code as string, data.redirectUri as string); break
-            case 'getMyOrders': result = await getMyOrders(data.lineUserId as string); break
-            case 'getOrders': result = await getOrders(data.userId as string); break
-            case 'verifyAdmin': result = await verifyAdmin(data.userId as string); break
             case 'getStoreList': result = await getStoreList(data.cvsType as string); break
             case 'createStoreMapSession':
                 result = await createStoreMapSession(
@@ -135,41 +216,45 @@ serve(async (req: Request) => {
                 );
                 break
             case 'getStoreSelection': result = await getStoreSelection(data.token as string); break
-            // POST
-            case 'submitOrder': result = await submitOrder(data); break
-            case 'addProduct': result = await addProduct(data); break
-            case 'updateProduct': result = await updateProduct(data); break
-            case 'deleteProduct': result = await deleteProduct(data); break
-            case 'reorderProduct': result = await reorderProduct(data); break
-            case 'reorderProductsBulk': result = await reorderProductsBulk(data); break
-            case 'addCategory': result = await addCategory(data); break
-            case 'updateCategory': result = await updateCategory(data); break
-            case 'deleteCategory': result = await deleteCategory(data); break
-            case 'reorderCategory': result = await reorderCategory(data); break
-            case 'updateSettings': result = await updateSettingsAction(data); break
-            case 'updateOrderStatus': result = await updateOrderStatus(data); break
-            case 'deleteOrder': result = await deleteOrder(data); break
             case 'storeMapCallback': result = await handleStoreMapCallback(data); break
 
-            // 使用者與黑名單管理
-            case 'getUsers': result = await getUsers(data); break
-            case 'updateUserRole': result = await updateUserRole(data); break
-            case 'getBlacklist': result = await getBlacklist(data); break
-            case 'addToBlacklist': result = await addToBlacklist(data); break
-            case 'removeFromBlacklist': result = await removeFromBlacklist(data); break
-            case 'testEmail': result = await testEmail(data); break
+            // 需登入（JWT）
+            case 'submitOrder': result = await submitOrder(data, req); break
+            case 'getMyOrders': result = await getMyOrders(req); break
+            case 'verifyAdmin': { const a = await extractAuth(req); result = a ? { success: true, isAdmin: a.isAdmin, role: a.role, message: 'OK' } : { success: false, isAdmin: false, message: '請先登入' }; break }
 
-            // 表單欄位管理
-            case 'addFormField': result = await addFormField(data); break
-            case 'updateFormField': result = await updateFormField(data); break
-            case 'deleteFormField': result = await deleteFormField(data); break
-            case 'reorderFormFields': result = await reorderFormFields(data); break
-            case 'uploadSiteIcon': result = await uploadSiteIcon(data); break
+            // 需管理員（JWT + admin）
+            case 'getFormFieldsAdmin': result = await getFormFieldsAdmin(req); break
+            case 'getOrders': result = await getOrders(req); break
+            case 'addProduct': result = await addProduct(data, req); break
+            case 'updateProduct': result = await updateProduct(data, req); break
+            case 'deleteProduct': result = await deleteProduct(data, req); break
+            case 'reorderProduct': result = await reorderProduct(data, req); break
+            case 'reorderProductsBulk': result = await reorderProductsBulk(data, req); break
+            case 'addCategory': result = await addCategory(data, req); break
+            case 'updateCategory': result = await updateCategory(data, req); break
+            case 'deleteCategory': result = await deleteCategory(data, req); break
+            case 'reorderCategory': result = await reorderCategory(data, req); break
+            case 'updateSettings': result = await updateSettingsAction(data, req); break
+            case 'updateOrderStatus': result = await updateOrderStatus(data, req); break
+            case 'deleteOrder': result = await deleteOrder(data, req); break
+            case 'getUsers': result = await getUsers(data, req); break
+            case 'updateUserRole': result = await updateUserRole(data, req); break
+            case 'getBlacklist': result = await getBlacklist(req); break
+            case 'addToBlacklist': result = await addToBlacklist(data, req); break
+            case 'removeFromBlacklist': result = await removeFromBlacklist(data, req); break
+            case 'testEmail': result = await testEmail(data, req); break
+            case 'addFormField': result = await addFormField(data, req); break
+            case 'updateFormField': result = await updateFormField(data, req); break
+            case 'deleteFormField': result = await deleteFormField(data, req); break
+            case 'reorderFormFields': result = await reorderFormFields(data, req); break
+            case 'uploadSiteIcon': result = await uploadSiteIcon(data, req); break
 
             default: result = { success: false, error: '未知的操作' }
         }
     } catch (error) {
-        result = { success: false, error: String(error) }
+        const msg = String(error).replace(/^Error:\s*/, '')
+        result = { success: false, error: msg }
     }
 
     if (result instanceof Response) return result
@@ -234,7 +319,8 @@ async function customerLineLogin(code: string, redirectUri: string) {
             pictureUrl: profile.pictureUrl || '',
         }
         const updated = await registerOrUpdateUser(userData)
-        return { success: true, user: updated || userData }
+        const token = await signJwt({ userId: profile.userId, displayName: profile.displayName })
+        return { success: true, user: updated || userData, token }
     } catch (error) {
         return { success: false, error: String(error) }
     }
@@ -250,13 +336,22 @@ async function handleAdminLogin(code: string, redirectUri: string) {
             pictureUrl: profile.pictureUrl || '',
         }
         await registerOrUpdateUser(userData)
-        const auth = await verifyAdmin(profile.userId)
-        if (!auth.isAdmin) return { success: false, error: '您沒有管理員權限' }
-        return { success: true, isAdmin: true, role: auth.role, user: userData }
+        // 檢查管理員權限
+        let isAdmin = false, role = 'USER'
+        if (profile.userId === LINE_ADMIN_USER_ID) {
+            isAdmin = true; role = 'SUPER_ADMIN'
+        } else {
+            const { data } = await supabase.from('coffee_users').select('role').eq('line_user_id', profile.userId).single()
+            if (data?.role === 'ADMIN') { isAdmin = true; role = 'ADMIN' }
+        }
+        if (!isAdmin) return { success: false, error: '您沒有管理員權限' }
+        const token = await signJwt({ userId: profile.userId, displayName: profile.displayName })
+        return { success: true, isAdmin: true, role, user: userData, token }
     } catch (error) {
         return { success: false, error: String(error) }
     }
 }
+
 
 async function registerOrUpdateUser(data: Record<string, string>) {
     const { data: existing } = await supabase
@@ -318,16 +413,6 @@ async function registerOrUpdateUser(data: Record<string, string>) {
     }
 }
 
-async function verifyAdmin(userId: string): Promise<{ success: boolean; isAdmin: boolean; role?: string; message: string }> {
-    if (userId === LINE_ADMIN_USER_ID) {
-        return { success: true, isAdmin: true, role: 'SUPER_ADMIN', message: 'OK' }
-    }
-    try {
-        const { data } = await supabase.from('coffee_users').select('role').eq('line_user_id', userId).single()
-        if (data?.role === 'ADMIN') return { success: true, isAdmin: true, role: 'ADMIN', message: 'OK' }
-    } catch { /* ignore */ }
-    return { success: false, isAdmin: false, message: '非管理員' }
-}
 
 // ============ 商品 ============
 async function getProducts() {
@@ -343,8 +428,8 @@ async function getProducts() {
     return { success: true, products }
 }
 
-async function addProduct(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function addProduct(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { data: ins, error } = await supabase.from('coffee_products').insert({
         category: data.category, name: data.name, description: data.description || '',
         price: parseInt(String(data.price)) || 0, weight: data.weight || '', origin: data.origin || '',
@@ -356,8 +441,8 @@ async function addProduct(data: Record<string, unknown>) {
     return { success: true, message: '商品已新增', id: ins.id }
 }
 
-async function updateProduct(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function updateProduct(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { error } = await supabase.from('coffee_products').update({
         category: data.category, name: data.name, description: data.description || '',
         price: parseInt(String(data.price)) || 0, weight: data.weight || '', origin: data.origin || '',
@@ -369,15 +454,15 @@ async function updateProduct(data: Record<string, unknown>) {
     return { success: true, message: '商品已更新' }
 }
 
-async function deleteProduct(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function deleteProduct(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { error } = await supabase.from('coffee_products').delete().eq('id', data.id)
     if (error) return { success: false, error: error.message }
     return { success: true, message: '商品已刪除' }
 }
 
-async function reorderProduct(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function reorderProduct(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { data: allProds, error } = await supabase.from('coffee_products').select('*').order('sort_order').order('id')
     if (error || !allProds) return { success: false, error: '讀取失敗' }
 
@@ -407,8 +492,8 @@ async function reorderProduct(data: Record<string, unknown>) {
     return { success: true, message: '排序已更新' }
 }
 
-async function reorderProductsBulk(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function reorderProductsBulk(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const ids = data.ids as number[]
     if (!Array.isArray(ids)) return { success: false, error: '資料格式錯誤' }
 
@@ -426,15 +511,15 @@ async function getCategories() {
     return { success: true, categories: (data || []).map((r: Record<string, unknown>) => ({ id: r.id, name: r.name })) }
 }
 
-async function addCategory(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function addCategory(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { data: ins, error } = await supabase.from('coffee_categories').insert({ name: data.name }).select('id').single()
     if (error) return { success: false, error: error.message }
     return { success: true, message: '分類已新增', id: ins.id }
 }
 
-async function updateCategory(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function updateCategory(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { data: old } = await supabase.from('coffee_categories').select('name').eq('id', data.id).single()
     const { error } = await supabase.from('coffee_categories').update({ name: data.name }).eq('id', data.id)
     if (error) return { success: false, error: error.message }
@@ -444,15 +529,15 @@ async function updateCategory(data: Record<string, unknown>) {
     return { success: true, message: '分類已更新' }
 }
 
-async function deleteCategory(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function deleteCategory(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { error } = await supabase.from('coffee_categories').delete().eq('id', data.id)
     if (error) return { success: false, error: error.message }
     return { success: true, message: '分類已刪除' }
 }
 
-async function reorderCategory(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function reorderCategory(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { data: allCats, error } = await supabase.from('coffee_categories').select('*').order('sort_order').order('id')
     if (error || !allCats) return { success: false, error: '讀取失敗' }
     const idx = allCats.findIndex((c: Record<string, unknown>) => String(c.id) === String(data.id))
@@ -503,17 +588,70 @@ async function sendEmail(to: string, subject: string, htmlContent: string) {
     }
 }
 
-async function testEmail(data: Record<string, unknown>) {
+async function testEmail(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const to = String(data.to || SMTP_USER);
     if (!to || to === 'undefined') return { success: false, error: 'No recipient provided or SMTP_USER is not set' };
     const res = await sendEmail(to, '測試信件 Test Email', '<h1>Hello</h1><p>這是來自 Supabase Edge Function 的測試信件</p>');
     return res;
 }
 
-async function submitOrder(data: Record<string, unknown>) {
-    if (!data.lineName || !data.phone || !data.orders) {
+async function submitOrder(data: Record<string, unknown>, req: Request) {
+    // 從 JWT 取得用戶身分（可選，未登入也可下單）
+    const auth = await extractAuth(req)
+    const lineUserId = auth?.userId || ''
+
+    // 黑名單檢查
+    if (lineUserId) {
+        const { data: userRow } = await supabase.from('coffee_users').select('status').eq('line_user_id', lineUserId).maybeSingle()
+        if (userRow?.status === 'BLACKLISTED') {
+            return { success: false, error: '您的帳號已被停權，無法下單' }
+        }
+    }
+
+    if (!data.lineName || !data.phone) {
         return { success: false, error: '缺少必要資訊' }
     }
+
+    // 後端金額重算
+    const cartItems = data.items as Array<{ productId: number, specKey: string, qty: number }>
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        return { success: false, error: '購物車是空的' }
+    }
+
+    const productIds = [...new Set(cartItems.map(c => c.productId))]
+    const { data: products, error: pErr } = await supabase.from('coffee_products').select('id, name, price, specs, enabled').in('id', productIds)
+    if (pErr || !products) return { success: false, error: '無法讀取商品資料' }
+
+    const productMap = new Map<number, any>(products.map((p: any) => [p.id, p]))
+    let total = 0
+    const orderLines: string[] = []
+
+    for (const item of cartItems) {
+        const product = productMap.get(item.productId)
+        if (!product) return { success: false, error: `商品 ID ${item.productId} 不存在` }
+        if (product.enabled === false) return { success: false, error: `商品「${product.name}」已下架` }
+
+        let unitPrice = product.price
+        let specLabel = ''
+        if (item.specKey && product.specs) {
+            try {
+                const specs = typeof product.specs === 'string' ? JSON.parse(product.specs) : product.specs
+                const spec = Array.isArray(specs) ? specs.find((s: any) => s.key === item.specKey || s.label === item.specKey) : null
+                if (spec) {
+                    unitPrice = spec.price ?? product.price
+                    specLabel = spec.label || item.specKey
+                }
+            } catch { specLabel = item.specKey }
+        }
+
+        const qty = Math.max(1, Math.floor(Number(item.qty) || 1))
+        const lineTotal = qty * unitPrice
+        total += lineTotal
+        orderLines.push(`${product.name}${specLabel ? ` (${specLabel})` : ''} x ${qty} (${lineTotal}元)`)
+    }
+
+    const ordersText = orderLines.join('\n')
 
     const deliveryMethod = String(data.deliveryMethod || 'delivery')
     const validMethods = ['delivery', 'seven_eleven', 'family_mart', 'in_store']
@@ -521,7 +659,6 @@ async function submitOrder(data: Record<string, unknown>) {
         return { success: false, error: '無效的配送方式' }
     }
 
-    // 配送地址驗證
     if (deliveryMethod === 'delivery') {
         const city = String(data.city || '')
         if (!['竹北市', '新竹市'].includes(city)) {
@@ -532,14 +669,12 @@ async function submitOrder(data: Record<string, unknown>) {
         }
     }
 
-    // 超商取貨驗證
     if (deliveryMethod === 'seven_eleven' || deliveryMethod === 'family_mart') {
         if (!data.storeName) {
             return { success: false, error: '請選擇取貨門市' }
         }
     }
 
-    // 電話驗證（允許含 - 分隔）
     const phone = String(data.phone).replace(/[\s-]/g, '')
     if (!/^(09\d{8}|0[2-8]\d{7,8})$/.test(phone)) {
         return { success: false, error: '電話格式不正確' }
@@ -548,11 +683,11 @@ async function submitOrder(data: Record<string, unknown>) {
     const now = new Date()
 
     // 檢查一分鐘內是否重複送單
-    if (data.lineUserId || phone) {
+    if (lineUserId || phone) {
         const oneMinuteAgo = new Date(now.getTime() - 60000).toISOString()
         let query = supabase.from('coffee_orders').select('id').gte('created_at', oneMinuteAgo)
-        if (data.lineUserId) {
-            query = query.eq('line_user_id', data.lineUserId)
+        if (lineUserId) {
+            query = query.eq('line_user_id', lineUserId)
         } else {
             query = query.eq('phone', phone)
         }
@@ -568,12 +703,12 @@ async function submitOrder(data: Record<string, unknown>) {
     const { error } = await supabase.from('coffee_orders').insert({
         id: orderId,
         created_at: now.toISOString(),
-        line_user_id: data.lineUserId || '',
+        line_user_id: lineUserId,
         line_name: String(data.lineName).trim(),
         phone,
         email: String(data.email || '').trim(),
-        items: String(data.orders).trim(),
-        total: parseInt(String(data.total)) || 0,
+        items: ordersText,
+        total,
         delivery_method: deliveryMethod,
         city: data.city || '',
         district: data.district || '',
@@ -589,11 +724,10 @@ async function submitOrder(data: Record<string, unknown>) {
 
     if (error) return { success: false, error: error.message }
 
-    // 更新用戶電話、Email與偏好設定
-    if (data.lineUserId) {
+    if (lineUserId) {
         try {
             await registerOrUpdateUser({
-                userId: String(data.lineUserId),
+                userId: lineUserId,
                 displayName: String(data.lineName),
                 pictureUrl: '',
                 phone,
@@ -609,18 +743,9 @@ async function submitOrder(data: Record<string, unknown>) {
         } catch { /* ignore */ }
     }
 
-    // 寄出訂單成立確認信
     if (data.email) {
-        const methodMap: Record<string, string> = {
-            delivery: '宅配到府',
-            seven_eleven: '7-11 取貨付款',
-            family_mart: '全家取貨付款',
-            in_store: '來店自取'
-        }
-        const deliveryText = deliveryMethod === 'delivery'
-            ? `${data.city}${data.district} ${data.address}`
-            : `${data.storeName} (${data.storeAddress})`
-
+        const methodMap: Record<string, string> = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款', in_store: '來店自取' }
+        const deliveryText = deliveryMethod === 'delivery' ? `${data.city}${data.district} ${data.address}` : `${data.storeName} (${data.storeAddress})`
         const content = `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
@@ -629,39 +754,32 @@ async function submitOrder(data: Record<string, unknown>) {
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${sanitize(data.lineName)}，您的訂單已成立！</h2>
     <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
-    
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${methodMap[deliveryMethod] || deliveryMethod}<br><span style="color: #666; font-size: 14px;">${sanitize(deliveryText)}</span></p>
       <p style="margin: 0;"><strong>訂單備註：</strong> ${sanitize(data.note) || '無'}</p>
     </div>
-
     <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
-    <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${sanitize(data.orders)}</pre>
-    
+    <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${sanitize(ordersText)}</pre>
     <div style="text-align: right; margin-top: 20px;">
-      <h3 style="color: #e63946; font-size: 22px; margin: 0;">總金額：$${data.total}</h3>
+      <h3 style="color: #e63946; font-size: 22px; margin: 0;">總金額：$${total}</h3>
     </div>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
   </div>
-</div>
-        `
-        // 必須 await 以免 Edge Function 終止導致信件未送出
+</div>`
         await sendEmail(String(data.email), `[咖啡訂購] 訂單編號 ${orderId} 成立確認信`, content)
-
-        // 寄給管理員 (SMTP_USER)
-        if (SMTP_USER) {
-            await sendEmail(SMTP_USER, `[新訂單通知] 訂單編號 ${orderId} 成立`, content)
-        }
+        if (SMTP_USER) { await sendEmail(SMTP_USER, `[新訂單通知] 訂單編號 ${orderId} 成立`, content) }
     }
 
-    return { success: true, message: '訂單已送出', orderId }
+    return { success: true, message: '訂單已送出', orderId, total }
 }
 
-async function getOrders(userId: string) {
-    if (!(await verifyAdmin(userId)).isAdmin) return { success: false, error: '權限不足' }
+
+
+async function getOrders(req: Request) {
+    await requireAdmin(req)
     const { data, error } = await supabase.from('coffee_orders').select('*').order('created_at', { ascending: false })
     if (error) return { success: false, error: error.message }
     const orders = (data || []).map((r: Record<string, unknown>) => ({
@@ -675,9 +793,9 @@ async function getOrders(userId: string) {
     return { success: true, orders }
 }
 
-async function getMyOrders(lineUserId: string) {
-    if (!lineUserId) return { success: false, error: '缺少用戶 ID' }
-    const { data } = await supabase.from('coffee_orders').select('*').eq('line_user_id', lineUserId).order('created_at', { ascending: false })
+async function getMyOrders(req: Request) {
+    const auth = await requireAuth(req)
+    const { data } = await supabase.from('coffee_orders').select('*').eq('line_user_id', auth.userId).order('created_at', { ascending: false })
     const orders = (data || []).map((r: Record<string, unknown>) => ({
         orderId: r.id, timestamp: r.created_at, items: r.items, total: r.total,
         deliveryMethod: r.delivery_method, status: r.status,
@@ -687,8 +805,13 @@ async function getMyOrders(lineUserId: string) {
     return { success: true, orders }
 }
 
-async function updateOrderStatus(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function updateOrderStatus(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+
+    const newStatus = String(data.status)
+    if (!VALID_ORDER_STATUSES.includes(newStatus)) {
+        return { success: false, error: '無效的訂單狀態，允許值：' + VALID_ORDER_STATUSES.join(', ') }
+    }
 
     // 取出訂單資訊以取得 email
     const { data: orderData } = await supabase.from('coffee_orders').select('email, line_name, delivery_method').eq('id', data.orderId).single()
@@ -731,8 +854,8 @@ async function updateOrderStatus(data: Record<string, unknown>) {
     return { success: true, message: '訂單狀態已更新' }
 }
 
-async function deleteOrder(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function deleteOrder(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { error } = await supabase.from('coffee_orders').delete().eq('id', data.orderId)
     if (error) return { success: false, error: error.message }
     return { success: true, message: '訂單已刪除' }
@@ -747,8 +870,8 @@ async function getSettings() {
     return { success: true, settings }
 }
 
-async function updateSettingsAction(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function updateSettingsAction(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const settings = data.settings as Record<string, string>
     for (const [key, value] of Object.entries(settings)) {
         await supabase.from('coffee_settings').upsert({ key, value: String(value) })
@@ -767,8 +890,16 @@ async function getFormFields(includeDisabled: boolean) {
     return { success: true, fields: data || [] }
 }
 
-async function addFormField(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function getFormFieldsAdmin(req: Request) {
+    await requireAdmin(req)
+    let query = supabase.from('coffee_form_fields').select('*').order('sort_order', { ascending: true }).order('id')
+    const { data, error } = await query
+    if (error) return { success: false, error: error.message }
+    return { success: true, fields: data || [] }
+}
+
+async function addFormField(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
 
     const fieldKey = String(data.fieldKey || '').trim()
     if (!fieldKey) return { success: false, error: '欄位識別碼不能為空' }
@@ -793,8 +924,8 @@ async function addFormField(data: Record<string, unknown>) {
     return { success: true, field: inserted }
 }
 
-async function updateFormField(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function updateFormField(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
 
     const id = parseInt(String(data.id))
     if (!id) return { success: false, error: '缺少欄位 ID' }
@@ -813,8 +944,8 @@ async function updateFormField(data: Record<string, unknown>) {
     return { success: true, message: '欄位已更新' }
 }
 
-async function deleteFormField(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function deleteFormField(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
 
     const id = parseInt(String(data.id))
     if (!id) return { success: false, error: '缺少欄位 ID' }
@@ -831,8 +962,8 @@ async function deleteFormField(data: Record<string, unknown>) {
     return { success: true, message: '欄位已刪除' }
 }
 
-async function reorderFormFields(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function reorderFormFields(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
 
     const ids = data.ids as number[]
     if (!Array.isArray(ids)) return { success: false, error: '缺少排序資料' }
@@ -843,8 +974,8 @@ async function reorderFormFields(data: Record<string, unknown>) {
     return { success: true, message: '排序已更新' }
 }
 
-async function uploadSiteIcon(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function uploadSiteIcon(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
 
     const base64Data = String(data.fileData || '')
     const fileName = String(data.fileName || 'icon.png')
@@ -1086,22 +1217,35 @@ async function getStoreSelection(token: string) {
 }
 
 async function handleStoreMapCallback(data: Record<string, unknown>) {
-    const token = getDataValue(data, ['ExtraData', 'extraData', 'token'])
-    const storeId = getDataValue(data, ['CVSStoreID', 'CvsStoreID', 'StoreID', 'StoreId'])
-    const storeName = getDataValue(data, ['CVSStoreName', 'CvsStoreName', 'StoreName'])
-    const storeAddress = getDataValue(data, ['CVSAddress', 'CvsAddress', 'StoreAddress'])
-    const logisticsSubType = getDataValue(data, ['LogisticsSubType', 'logisticsSubType'])
+    const isSuccess = data.LogisticsSubType === 'UNIMARTC2C' || data.LogisticsSubType === 'FAMIC2C'
+        || data.CVSStoreID || data.CVSStoreName
 
-    if (!token) {
-        return htmlResponse(`<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>缺少會話識別碼（ExtraData）。</p></body></html>`, 400)
-    }
+    const token = data.ExtraData
+    if (!token) return new Response('Miss Token', { status: 400 })
 
-    // 取得建立時存入的 clientUrl
+    // 安全驗證：綠界 CheckMacValue 檢查（依據文件需自行組建字串 + HASHKey/IV 進行 SHA256）
+    // 注意：因 Deno/Edge Function 完整驗證較複雜，建議前端信任狀態庫，但最至少 callback 的 clientUrl 必須防護
+
     let clientUrl = ''
     const { data: selection } = await supabase.from('coffee_store_selections').select('extra_data').eq('token', token).maybeSingle()
     if (selection && selection.extra_data) {
         clientUrl = selection.extra_data
     }
+
+    // 防護 Open Redirect
+    if (clientUrl) {
+        try {
+            let u = new URL(clientUrl)
+            if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
+                clientUrl = '' // 非允許的來源
+            }
+        } catch { clientUrl = '' }
+    }
+
+    const storeId = getDataValue(data, ['CVSStoreID', 'CvsStoreID', 'StoreID', 'StoreId'])
+    const storeName = getDataValue(data, ['CVSStoreName', 'CvsStoreName', 'StoreName'])
+    const storeAddress = getDataValue(data, ['CVSAddress', 'CvsAddress', 'StoreAddress'])
+    const logisticsSubType = getDataValue(data, ['LogisticsSubType', 'logisticsSubType'])
 
     // 更新門市資訊
     const { error } = await supabase.from('coffee_store_selections').update({
@@ -1155,8 +1299,8 @@ async function handleStoreMapCallback(data: Record<string, unknown>) {
 }
 
 // ============ 用戶與黑名單管理 ============
-async function getUsers(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function getUsers(data: Record<string, unknown>, req: Request) {
+    await requireSuperAdmin(req)
     const { data: users, error } = await supabase.from('coffee_users').select('*').order('last_login', { ascending: false })
     if (error) return { success: false, error: error.message }
 
@@ -1190,21 +1334,20 @@ async function getUsers(data: Record<string, unknown>) {
     return { success: true, users: formatted }
 }
 
-async function updateUserRole(data: Record<string, unknown>) {
-    const auth = await verifyAdmin(data.userId as string)
-    if (auth.role !== 'SUPER_ADMIN') return { success: false, error: '僅 SUPER_ADMIN 具備權限' }
+async function updateUserRole(data: Record<string, unknown>, req: Request) {
+    const auth = await requireSuperAdmin(req)
 
     const targetUserId = data.targetUserId as string
     const newRole = data.newRole as string
-    if (targetUserId === LINE_ADMIN_USER_ID) return { success: false, error: '無法更改 SUPER_ADMIN 的權限' }
+    if (targetUserId === auth.userId) return { success: false, error: '無法更改自己的權限' }
 
     const { error } = await supabase.from('coffee_users').update({ role: newRole }).eq('line_user_id', targetUserId)
     if (error) return { success: false, error: error.message }
     return { success: true, message: `已將用戶權限設為 ${newRole}` }
 }
 
-async function getBlacklist(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function getBlacklist(req: Request) {
+    await requireAdmin(req)
     const { data: users, error } = await supabase.from('coffee_users').select('*').eq('status', 'BLACKLISTED').order('blocked_at', { ascending: false })
     if (error) return { success: false, error: error.message }
 
@@ -1217,8 +1360,8 @@ async function getBlacklist(data: Record<string, unknown>) {
     return { success: true, blacklist }
 }
 
-async function addToBlacklist(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function addToBlacklist(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { error } = await supabase.from('coffee_users').update({
         status: 'BLACKLISTED',
         blacklist_reason: String(data.reason || ''),
@@ -1228,8 +1371,8 @@ async function addToBlacklist(data: Record<string, unknown>) {
     return { success: true, message: '已加入黑名單' }
 }
 
-async function removeFromBlacklist(data: Record<string, unknown>) {
-    if (!(await verifyAdmin(data.userId as string)).isAdmin) return { success: false, error: '權限不足' }
+async function removeFromBlacklist(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
     const { error } = await supabase.from('coffee_users').update({
         status: 'ACTIVE',
         blacklist_reason: '',

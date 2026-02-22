@@ -71,6 +71,9 @@ async function handleLineCallback(code, stateParam) {
         if (result.success) {
             state.currentUser = result.user;
             localStorage.setItem('coffee_user', JSON.stringify(state.currentUser));
+            if (result.token) {
+                localStorage.setItem('coffee_jwt', result.token);
+            }
             showUserInfo();
             Swal.close();
         } else { throw new Error(result.error || '登入失敗'); }
@@ -79,7 +82,19 @@ async function handleLineCallback(code, stateParam) {
 
 function checkLoginStatus() {
     const saved = localStorage.getItem('coffee_user');
-    if (saved) { try { state.currentUser = JSON.parse(saved); showUserInfo(); } catch { localStorage.removeItem('coffee_user'); } }
+    const token = localStorage.getItem('coffee_jwt');
+    if (saved && token) {
+        try {
+            state.currentUser = JSON.parse(saved);
+            showUserInfo();
+        } catch {
+            localStorage.removeItem('coffee_user');
+            localStorage.removeItem('coffee_jwt');
+        }
+    } else {
+        localStorage.removeItem('coffee_user');
+        localStorage.removeItem('coffee_jwt');
+    }
 }
 
 function showUserInfo() {
@@ -100,6 +115,7 @@ function showUserInfo() {
 window.logout = function () {
     state.currentUser = null;
     localStorage.removeItem('coffee_user');
+    localStorage.removeItem('coffee_jwt');
     document.getElementById('login-prompt').classList.remove('hidden');
     document.getElementById('user-info').classList.add('hidden');
     document.getElementById('line-name').value = '';

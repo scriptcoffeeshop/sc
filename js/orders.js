@@ -3,6 +3,7 @@
 // ============================================
 
 import { API_URL } from './config.js';
+import { authFetch } from './auth.js';
 import { escapeHtml, Toast } from './utils.js';
 import { state } from './state.js';
 import { cart, clearCart, updateCartUI } from './cart.js';
@@ -103,16 +104,15 @@ export async function submitOrder() {
 
     Swal.fire({ title: '送出中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
+    const payloadItems = cart.map(c => ({ productId: c.productId, specKey: c.specKey, qty: c.qty }));
+
     try {
-        const res = await fetch(`${API_URL}?action=submitOrder`, {
+        const res = await authFetch(`${API_URL}?action=submitOrder`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 lineName: u.displayName || u.display_name,
                 phone, email,
-                orders: orderLines.join('\n'),
-                total,
-                lineUserId: u.userId || u.line_user_id,
+                items: payloadItems,
                 deliveryMethod: state.selectedDelivery,
                 note,
                 customFields: customFieldsJson,
@@ -144,8 +144,7 @@ export async function showMyOrders() {
     const list = document.getElementById('my-orders-list');
     list.innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
     try {
-        const uid = u.userId || u.line_user_id;
-        const res = await fetch(`${API_URL}?action=getMyOrders&lineUserId=${uid}&_=${Date.now()}`);
+        const res = await authFetch(`${API_URL}?action=getMyOrders&_=${Date.now()}`);
         const result = await res.json();
         if (!result.success || !result.orders?.length) { list.innerHTML = '<p class="text-center text-gray-500 py-8">尚無訂單</p>'; return; }
 

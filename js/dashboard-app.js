@@ -4,7 +4,7 @@
 
 import { API_URL, LINE_REDIRECT } from './config.js';
 import { esc, Toast } from './utils.js';
-import { loginWithLine } from './auth.js';
+import { loginWithLine, authFetch } from './auth.js';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -63,18 +63,28 @@ async function handleLineCallback(code, state) {
     if (!saved || state !== saved) { Swal.fire('驗證失敗', '請重新登入', 'error'); window.history.replaceState({}, '', 'dashboard.html'); return; }
     Swal.fire({ title: '登入中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
-        const r = await fetch(`${API_URL}?action=lineLogin&code=${encodeURIComponent(code)}&redirectUri=${encodeURIComponent(LINE_REDIRECT.dashboard)}`);
+        const r = await authFetch(`${API_URL}?action=lineLogin&code=${encodeURIComponent(code)}&redirectUri=${encodeURIComponent(LINE_REDIRECT.dashboard)}`);
         const d = await r.json();
         window.history.replaceState({}, '', 'dashboard.html');
         if (d.success && d.isAdmin) {
             currentUser = d.user; localStorage.setItem('coffee_admin', JSON.stringify(currentUser));
+            if (d.token) localStorage.setItem('coffee_jwt', d.token);
             Swal.close(); showAdmin();
         } else { Swal.fire('錯誤', d.error || '無管理員權限', 'error'); }
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
 }
 
-function checkLogin() { const s = localStorage.getItem('coffee_admin'); if (s) { try { currentUser = JSON.parse(s); showAdmin(); } catch { localStorage.removeItem('coffee_admin'); } } }
-function logout() { localStorage.removeItem('coffee_admin'); currentUser = null; document.getElementById('login-page').classList.remove('hidden'); document.getElementById('admin-page').classList.add('hidden'); }
+function checkLogin() {
+    const s = localStorage.getItem('coffee_admin');
+    const t = localStorage.getItem('coffee_jwt');
+    if (s && t) {
+        try { currentUser = JSON.parse(s); showAdmin(); }
+        catch { localStorage.removeItem('coffee_admin'); localStorage.removeItem('coffee_jwt'); }
+    } else {
+        localStorage.removeItem('coffee_admin'); localStorage.removeItem('coffee_jwt');
+    }
+}
+function logout() { localStorage.removeItem('coffee_admin'); localStorage.removeItem('coffee_jwt'); currentUser = null; document.getElementById('login-page').classList.remove('hidden'); document.getElementById('admin-page').classList.add('hidden'); }
 
 async function showAdmin() {
     document.getElementById('login-page').classList.add('hidden');
@@ -105,7 +115,7 @@ function showTab(tab) {
 // ============ 訂單管理 ============
 async function loadOrders() {
     try {
-        const r = await fetch(`${API_URL}?action=getOrders&userId=${getAuthUserId()}&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getOrders&userId=${getAuthUserId()}&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) { orders = d.orders; renderOrders(); }
     } catch (e) { console.error(e); }
@@ -158,7 +168,7 @@ function renderOrders() {
 
 async function changeOrderStatus(orderId, status) {
     try {
-        const r = await fetch(`${API_URL}?action=updateOrderStatus`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), orderId, status }) });
+        const r = await authFetch(`${API_URL}?action=updateOrderStatus`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), orderId, status }) });
         const d = await r.json();
         if (d.success) { Toast.fire({ icon: 'success', title: '狀態已更新' }); loadOrders(); }
         else throw new Error(d.error);
@@ -169,7 +179,7 @@ async function deleteOrderById(orderId) {
     const c = await Swal.fire({ title: '刪除訂單？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '刪除', cancelButtonText: '取消' });
     if (!c.isConfirmed) return;
     try {
-        const r = await fetch(`${API_URL}?action=deleteOrder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), orderId }) });
+        const r = await authFetch(`${API_URL}?action=deleteOrder`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), orderId }) });
         const d = await r.json();
         if (d.success) { Toast.fire({ icon: 'success', title: '已刪除' }); loadOrders(); }
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
@@ -178,7 +188,7 @@ async function deleteOrderById(orderId) {
 // ============ 商品管理 ============
 async function loadProducts() {
     try {
-        const r = await fetch(`${API_URL}?action=getProducts&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getProducts&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) { products = d.products; renderProducts(); }
     } catch (e) { console.error(e); }
@@ -261,7 +271,7 @@ function renderProducts() {
 async function moveProduct(id, dir) {
     // 保留這個 function 防止舊有代碼出錯，但不再被介面呼叫
     try {
-        const r = await fetch(`${API_URL}?action=reorderProduct`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
+        const r = await authFetch(`${API_URL}?action=reorderProduct`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
         const d = await r.json();
         if (d.success) loadProducts();
         else throw new Error(d.error);
@@ -270,7 +280,7 @@ async function moveProduct(id, dir) {
 
 async function updateProductOrders(ids) {
     try {
-        const r = await fetch(`${API_URL}?action=reorderProductsBulk`, {
+        const r = await authFetch(`${API_URL}?action=reorderProductsBulk`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: getAuthUserId(), ids })
@@ -382,7 +392,7 @@ async function saveProduct(e) {
     };
     if (id) payload.id = parseInt(id);
     try {
-        const r = await fetch(`${API_URL}?action=${id ? 'updateProduct' : 'addProduct'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const r = await authFetch(`${API_URL}?action=${id ? 'updateProduct' : 'addProduct'}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const d = await r.json();
         if (d.success) { Toast.fire({ icon: 'success', title: id ? '已更新' : '已新增' }); closeProductModal(); loadProducts(); }
         else throw new Error(d.error);
@@ -393,7 +403,7 @@ async function delProduct(id) {
     const c = await Swal.fire({ title: '刪除商品？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '刪除', cancelButtonText: '取消' });
     if (!c.isConfirmed) return;
     try {
-        const r = await fetch(`${API_URL}?action=deleteProduct`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id }) });
+        const r = await authFetch(`${API_URL}?action=deleteProduct`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id }) });
         const d = await r.json();
         if (d.success) { Toast.fire({ icon: 'success', title: '已刪除' }); loadProducts(); }
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
@@ -402,7 +412,7 @@ async function delProduct(id) {
 // ============ 分類管理 ============
 async function loadCategories() {
     try {
-        const r = await fetch(`${API_URL}?action=getCategories&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getCategories&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) { categories = d.categories; renderCategories(); }
     } catch (e) { console.error(e); }
@@ -433,7 +443,7 @@ async function addCategory() {
     const name = document.getElementById('new-cat-name').value.trim();
     if (!name) return;
     try {
-        const r = await fetch(`${API_URL}?action=addCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), name }) });
+        const r = await authFetch(`${API_URL}?action=addCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), name }) });
         const d = await r.json();
         if (d.success) { document.getElementById('new-cat-name').value = ''; Toast.fire({ icon: 'success', title: '已新增' }); loadCategories(); }
         else throw new Error(d.error);
@@ -447,7 +457,7 @@ async function editCategory(id) {
     const { value } = await Swal.fire({ title: '修改分類', input: 'text', inputValue: oldName, showCancelButton: true, confirmButtonText: '更新', cancelButtonText: '取消' });
     if (value && value !== oldName) {
         try {
-            const r = await fetch(`${API_URL}?action=updateCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, name: value }) });
+            const r = await authFetch(`${API_URL}?action=updateCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, name: value }) });
             const d = await r.json();
             if (d.success) { loadCategories(); loadProducts(); }
         } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
@@ -458,7 +468,7 @@ async function delCategory(id) {
     const c = await Swal.fire({ title: '刪除分類？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '刪除', cancelButtonText: '取消' });
     if (!c.isConfirmed) return;
     try {
-        const r = await fetch(`${API_URL}?action=deleteCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id }) });
+        const r = await authFetch(`${API_URL}?action=deleteCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id }) });
         const d = await r.json();
         if (d.success) { loadCategories(); }
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
@@ -466,7 +476,7 @@ async function delCategory(id) {
 
 async function moveCategory(id, dir) {
     try {
-        const r = await fetch(`${API_URL}?action=reorderCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
+        const r = await authFetch(`${API_URL}?action=reorderCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
         const d = await r.json();
         if (d.success) loadCategories();
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
@@ -475,7 +485,7 @@ async function moveCategory(id, dir) {
 // ============ 設定 ============
 async function loadSettings() {
     try {
-        const r = await fetch(`${API_URL}?action=getSettings&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getSettings&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) {
             const s = d.settings;
@@ -528,7 +538,7 @@ function resetSectionTitle(section) {
 
 async function saveSettings() {
     try {
-        const r = await fetch(`${API_URL}?action=updateSettings`, {
+        const r = await authFetch(`${API_URL}?action=updateSettings`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                 userId: getAuthUserId(),
                 settings: {
@@ -567,7 +577,7 @@ async function loadUsers() {
     try {
         const search = document.getElementById('user-search').value;
         Swal.fire({ title: '載入中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const r = await fetch(`${API_URL}?action=getUsers&userId=${getAuthUserId()}&search=${encodeURIComponent(search)}&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getUsers&userId=${getAuthUserId()}&search=${encodeURIComponent(search)}&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) { users = d.users; renderUsers(); Swal.close(); }
         else { Swal.fire('錯誤', d.error, 'error'); }
@@ -624,7 +634,7 @@ async function toggleUserRole(targetUserId, newRole) {
     if (!c.isConfirmed) return;
     try {
         Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const r = await fetch(`${API_URL}?action=updateUserRole`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), targetUserId, newRole }) });
+        const r = await authFetch(`${API_URL}?action=updateUserRole`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), targetUserId, newRole }) });
         const d = await r.json();
         if (d.success) { Toast.fire({ icon: 'success', title: '權限已更新' }); loadUsers(); }
         else throw new Error(d.error);
@@ -637,7 +647,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
         if (reason === undefined) return;
         try {
             Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const r = await fetch(`${API_URL}?action=addToBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId, reason }) });
+            const r = await authFetch(`${API_URL}?action=addToBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId, reason }) });
             const d = await r.json();
             if (d.success) { Toast.fire({ icon: 'success', title: '已加入黑名單' }); loadUsers(); if (document.getElementById('tab-blacklist').classList.contains('tab-active')) loadBlacklist(); }
             else throw new Error(d.error);
@@ -647,7 +657,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
         if (!c.isConfirmed) return;
         try {
             Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const r = await fetch(`${API_URL}?action=removeFromBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId }) });
+            const r = await authFetch(`${API_URL}?action=removeFromBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId }) });
             const d = await r.json();
             if (d.success) { Toast.fire({ icon: 'success', title: '已解除封鎖' }); loadUsers(); if (document.getElementById('tab-blacklist').classList.contains('tab-active')) loadBlacklist(); }
             else throw new Error(d.error);
@@ -658,7 +668,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
 // ============ 黑名單 ============
 async function loadBlacklist() {
     try {
-        const r = await fetch(`${API_URL}?action=getBlacklist&userId=${getAuthUserId()}&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getBlacklist&userId=${getAuthUserId()}&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) { blacklist = d.blacklist; renderBlacklist(); }
     } catch (e) { console.error(e); }
@@ -691,7 +701,7 @@ let formFields = [];
 
 async function loadFormFields() {
     try {
-        const r = await fetch(`${API_URL}?action=getFormFieldsAdmin&_=${Date.now()}`);
+        const r = await authFetch(`${API_URL}?action=getFormFieldsAdmin&_=${Date.now()}`);
         const d = await r.json();
         if (d.success) { formFields = d.fields || []; renderFormFields(); }
     } catch (e) { console.error(e); }
@@ -747,7 +757,7 @@ function renderFormFields() {
             onEnd: async () => {
                 const ids = [...document.querySelectorAll('#formfields-sortable [data-field-id]')].map(el => parseInt(el.dataset.fieldId));
                 try {
-                    await fetch(`${API_URL}?action=reorderFormFields`, {
+                    await authFetch(`${API_URL}?action=reorderFormFields`, {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ userId: getAuthUserId(), ids }),
                     });
@@ -807,7 +817,7 @@ async function showAddFieldModal() {
 
     try {
         Swal.fire({ title: '新增中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const r = await fetch(`${API_URL}?action=addFormField`, {
+        const r = await authFetch(`${API_URL}?action=addFormField`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: getAuthUserId(), ...formValues }),
         });
@@ -861,7 +871,7 @@ async function editFormField(id) {
     if (!formValues) return;
 
     try {
-        const r = await fetch(`${API_URL}?action=updateFormField`, {
+        const r = await authFetch(`${API_URL}?action=updateFormField`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: getAuthUserId(), id, ...formValues }),
         });
@@ -880,7 +890,7 @@ async function deleteFormField(id) {
     if (!confirm.isConfirmed) return;
 
     try {
-        const r = await fetch(`${API_URL}?action=deleteFormField`, {
+        const r = await authFetch(`${API_URL}?action=deleteFormField`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: getAuthUserId(), id }),
         });
@@ -892,7 +902,7 @@ async function deleteFormField(id) {
 
 async function toggleFieldEnabled(id, enabled) {
     try {
-        const r = await fetch(`${API_URL}?action=updateFormField`, {
+        const r = await authFetch(`${API_URL}?action=updateFormField`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: getAuthUserId(), id, enabled }),
         });
@@ -930,7 +940,7 @@ async function uploadSiteIcon() {
             reader.readAsDataURL(file);
         });
 
-        const r = await fetch(`${API_URL}?action=uploadSiteIcon`, {
+        const r = await authFetch(`${API_URL}?action=uploadSiteIcon`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 userId: getAuthUserId(),

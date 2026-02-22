@@ -30,10 +30,11 @@
 ### 1.2 建立資料庫
 
 1. 進入 Supabase Dashboard → **SQL Editor**
-2. 複製 `supabase/schema.sql` 的完整內容貼上執行
-3. 確認已建立 5 張表：
+2. 複製 `supabase/schema_full.sql` 的完整內容貼上執行
+3. 確認已建立 7 張表：
    - `coffee_categories`、`coffee_products`、`coffee_orders`
    - `coffee_settings`、`coffee_users`
+   - `coffee_store_selections`、`coffee_form_fields`
 
 ### 1.3 設定環境變數 (Secrets)
 
@@ -44,6 +45,11 @@
 | `LINE_LOGIN_CHANNEL_ID` | LINE Login Channel ID | `1234567890` |
 | `LINE_LOGIN_CHANNEL_SECRET` | LINE Login Channel Secret | `abcdef1234567890` |
 | `LINE_ADMIN_USER_ID` | 管理員的 LINE User ID | `U1234567890abcdef...` |
+| `JWT_SECRET` | JWT 簽章秘鑰 (安全長字串) | `my_super_secret_jwt_key_32_chars` |
+| `ECPAY_MERCHANT_ID` | 綠界特店編號 | `3339283` (測試環境) |
+| `ECPAY_HASH_KEY` | 綠界 Hash Key | `Dbxpzi6EQdrOM46j` (測試環境) |
+| `ECPAY_HASH_IV` | 綠界 Hash IV | `OqMti7T9ZMs1OvLD` (測試環境) |
+| `ALLOWED_REDIRECT_ORIGINS`| 允許跳轉的來源網域 (防護) | `https://your-github-account.github.io` |
 
 > ⚠️ `SUPABASE_URL` 和 `SUPABASE_SERVICE_ROLE_KEY` 為 Edge Function 內建變數，**無需手動設定**。
 
@@ -166,7 +172,7 @@ git push -u origin main
 ├── dashboard.html         # 後台：管理員管理頁面
 ├── DEPLOY.md              # 本部署指南
 └── supabase/
-    ├── schema.sql          # 資料庫建表語句
+    ├── schema_full.sql     # 資料庫完整建表語句 (含所有表與安全設定)
     └── functions/
         └── coffee-api/
             └── index.ts    # Edge Function 主程式
