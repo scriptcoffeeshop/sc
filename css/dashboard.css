@@ -1,0 +1,150 @@
+/* ============================================
+   dashboard.css — 後台頁專屬樣式
+   ============================================ */
+
+.tab-active {
+    background: linear-gradient(135deg, #3C2415, #5C3D2E) !important;
+    color: white !important;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.status-processing {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.status-shipped {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+.status-completed {
+    background: #E5E7EB;
+    color: #374151;
+}
+
+.status-cancelled {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.delivery-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.delivery-delivery {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.delivery-seven_eleven {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.delivery-family_mart {
+    background: #D1FAE5;
+    color: #065F46;
+}
+
+/* ========== 後台 RWD ========== */
+@media (max-width: 639px) {
+    h2 {
+        font-size: 1rem !important;
+    }
+
+    /* Header */
+    #admin-page>.flex:first-child {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    /* Tabs 頁籤 — 可水平捲動 */
+    #admin-page>.flex.gap-2 {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    #admin-page>.flex.gap-2::-webkit-scrollbar {
+        display: none;
+    }
+
+    #admin-page>.flex.gap-2 button {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* 用戶管理搜尋欄 */
+    #users-section .flex.justify-between {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #users-section .flex.gap-2.items-center {
+        width: 100%;
+    }
+
+    #user-search {
+        flex: 1;
+    }
+
+    /* 訂單管理篩選 */
+    #orders-section .flex.justify-between {
+        flex-direction: column;
+        gap: 8px;
+        align-items: flex-start;
+    }
+
+    /* 表格文字 */
+    table {
+        font-size: 0.78rem;
+    }
+
+    table th,
+    table td {
+        padding: 8px 4px !important;
+    }
+
+    .modal-content {
+        padding: 16px;
+        border-radius: 14px;
+    }
+}

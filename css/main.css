@@ -1,0 +1,125 @@
+/* ============================================
+   main.css — 訂購頁專屬樣式
+   ============================================ */
+
+.category-header {
+    background: linear-gradient(135deg, #3C2415, #5C3D2E);
+    color: white;
+}
+
+.category-header th {
+    border: none !important;
+}
+
+.product-row {
+    transition: background 0.2s;
+}
+
+.product-row:hover {
+    background: rgba(212, 165, 116, 0.12);
+}
+
+.delivery-option {
+    border: 2px solid #e5ddd5;
+    border-radius: 14px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+}
+
+.delivery-option:hover {
+    border-color: var(--secondary);
+}
+
+.delivery-option.active {
+    border-color: var(--primary);
+    background: rgba(60, 36, 21, 0.04);
+    box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.08);
+}
+
+.delivery-option .check-mark {
+    display: none;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 24px;
+    height: 24px;
+    background: var(--primary);
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    align-items: center;
+    justify-content: center;
+}
+
+.delivery-option.active .check-mark {
+    display: flex;
+}
+
+.store-select-btn {
+    background: linear-gradient(135deg, #2E7D32, #388E3C);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.store-select-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.store-info-card {
+    background: #f0faf0;
+    border: 1px solid #c8e6c9;
+    border-radius: 10px;
+    padding: 12px 16px;
+}
+
+/* ========== 訂購頁 RWD ========== */
+@media (max-width: 639px) {
+    .bottom-bar .w-full {
+        gap: 6px;
+    }
+
+    #total-price {
+        font-size: 0.95rem !important;
+    }
+
+    .btn-primary {
+        text-align: center;
+    }
+
+    .delivery-option {
+        padding: 12px 8px;
+        text-align: center;
+    }
+
+    .delivery-option .text-2xl {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+
+    .delivery-option .font-semibold {
+        font-size: 0.82rem;
+    }
+
+    .delivery-option .text-xs {
+        font-size: 0.65rem;
+    }
+
+    #products-table th,
+    #products-table td {
+        padding: 8px 4px;
+        font-size: 0.85rem;
+    }
+
+    .quantity {
+        width: 32px !important;
+        font-size: 1rem !important;
+    }
+}
