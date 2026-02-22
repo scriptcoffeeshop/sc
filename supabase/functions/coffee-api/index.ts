@@ -30,6 +30,10 @@ const ECPAY_HASH_KEY = Deno.env.get('ECPAY_HASH_KEY') || ''
 const ECPAY_HASH_IV = Deno.env.get('ECPAY_HASH_IV') || ''
 const ECPAY_IS_STAGE = Deno.env.get('ECPAY_IS_STAGE') === 'true'
 
+// LINE Pay 設定（從 Secrets 讀取）
+const LINEPAY_CHANNEL_ID = Deno.env.get('LINEPAY_CHANNEL_ID') || ''
+const LINEPAY_CHANNEL_SECRET = Deno.env.get('LINEPAY_CHANNEL_SECRET') || ''
+
 const ALLOWED_REDIRECT_ORIGINS = [
     'https://scriptcoffeeshop.github.io',
     Deno.env.get('ALLOWED_REDIRECT_ORIGINS') || Deno.env.get('ALLOWED_ORIGIN') || '',
@@ -187,6 +191,47 @@ async function parseRequestData(req: Request, url: URL): Promise<Record<string, 
     return data
 }
 
+// ============ LINE Pay API 工具 ============
+async function linePaySign(channelSecret: string, apiPath: string, body: string, nonce: string): Promise<string> {
+    const message = channelSecret + apiPath + body + nonce
+    const key = await crypto.subtle.importKey(
+        'raw', new TextEncoder().encode(channelSecret),
+        { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    )
+    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message))
+    return btoa(String.fromCharCode(...new Uint8Array(sig)))
+}
+
+async function requestLinePayAPI(method: string, apiPath: string, data: unknown = null): Promise<any> {
+    // 判斷 sandbox 模式
+    const { data: sandboxSetting } = await supabase.from('coffee_settings').select('value').eq('key', 'linepay_sandbox').maybeSingle()
+    const isSandbox = !sandboxSetting || String(sandboxSetting.value) !== 'false'
+    const baseUrl = isSandbox ? 'https://sandbox-api-pay.line.me' : 'https://api-pay.line.me'
+
+    const nonce = crypto.randomUUID()
+    const bodyStr = data ? JSON.stringify(data) : ''
+    const signature = await linePaySign(LINEPAY_CHANNEL_SECRET, apiPath, bodyStr, nonce)
+
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-LINE-ChannelId': LINEPAY_CHANNEL_ID,
+        'X-LINE-Authorization-Nonce': nonce,
+        'X-LINE-Authorization': signature,
+    }
+
+    const url = `${baseUrl}${apiPath}`
+    const res = await fetch(url, {
+        method,
+        headers,
+        body: bodyStr || null,
+    })
+
+    const text = await res.text()
+    // LINE Pay transactionId 可能超過 JS Number 精度，以字串處理
+    const processed = text.replace(/("transactionId"\s*:\s*)(\d+)/g, '$1"$2"')
+    return JSON.parse(processed)
+}
+
 // ============ 主路由 ============
 serve(async (req: Request) => {
     if (req.method === 'OPTIONS') {
@@ -219,10 +264,14 @@ serve(async (req: Request) => {
                 break
             case 'getStoreSelection': result = await getStoreSelection(data.token as string); break
             case 'storeMapCallback': result = await handleStoreMapCallback(data); break
+            case 'getBankAccounts': result = await getBankAccounts(); break
+            case 'linePayConfirm': result = await linePayConfirm(data); break
+            case 'linePayCancel': result = await linePayCancel(data); break
 
             // 需登入（JWT）
             case 'submitOrder': result = await submitOrder(data, req); break
             case 'getMyOrders': result = await getMyOrders(req); break
+            case 'updateTransferInfo': result = await updateTransferInfo(data, req); break
             case 'verifyAdmin': { const a = await extractAuth(req); result = a ? { success: true, isAdmin: a.isAdmin, role: a.role, message: 'OK' } : { success: false, isAdmin: false, message: '請先登入' }; break }
 
             // 需管理員（JWT + admin）
@@ -251,6 +300,10 @@ serve(async (req: Request) => {
             case 'deleteFormField': result = await deleteFormField(data, req); break
             case 'reorderFormFields': result = await reorderFormFields(data, req); break
             case 'uploadSiteIcon': result = await uploadSiteIcon(data, req); break
+            case 'linePayRefund': result = await linePayRefund(data, req); break
+            case 'addBankAccount': result = await addBankAccount(data, req); break
+            case 'updateBankAccount': result = await updateBankAccount(data, req); break
+            case 'deleteBankAccount': result = await deleteBankAccount(data, req); break
 
             default: result = { success: false, error: '未知的操作' }
         }
@@ -268,13 +321,15 @@ serve(async (req: Request) => {
 
 // ============ 初始化資料 ============
 async function getInitData() {
-    const [p, c, s, f] = await Promise.all([getProducts(), getCategories(), getSettings(), getFormFields(false)])
+    const [p, c, s, f, b] = await Promise.all([getProducts(), getCategories(), getSettings(), getFormFields(false), getBankAccounts()])
+    const settings = s.success ? s.settings : {}
     return {
         success: true,
         products: p.success ? p.products : [],
         categories: c.success ? c.categories : [],
-        settings: s.success ? s.settings : {},
+        settings,
         formFields: f.success ? f.fields : [],
+        bankAccounts: b.success ? b.accounts : [],
     }
 }
 
@@ -668,6 +723,12 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
         return { success: false, error: '無效的配送方式' }
     }
 
+    const paymentMethod = String(data.paymentMethod || 'cod')
+    const validPayments = ['cod', 'linepay', 'transfer']
+    if (!validPayments.includes(paymentMethod)) {
+        return { success: false, error: '無效的付款方式' }
+    }
+
     if (deliveryMethod === 'delivery') {
         const city = String(data.city || '')
         if (!['竹北市', '新竹市'].includes(city)) {
@@ -729,6 +790,9 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
         status: 'pending',
         note: data.note || '',
         custom_fields: data.customFields || '',
+        payment_method: paymentMethod,
+        payment_status: paymentMethod === 'cod' ? '' : 'pending',
+        transfer_account_last5: paymentMethod === 'transfer' ? String(data.transferAccountLast5 || '') : '',
     })
 
     if (error) return { success: false, error: error.message }
@@ -782,6 +846,45 @@ async function submitOrder(data: Record<string, unknown>, req: Request) {
         if (SMTP_USER) { await sendEmail(SMTP_USER, `[新訂單通知] 訂單編號 ${orderId} 成立`, content) }
     }
 
+    // LINE Pay: 建立付款請求
+    if (paymentMethod === 'linepay') {
+        try {
+            const confirmUrl = `https://scriptcoffeeshop.github.io/sc/main.html?lpAction=confirm&orderId=${orderId}`
+            const cancelUrl = `https://scriptcoffeeshop.github.io/sc/main.html?lpAction=cancel&orderId=${orderId}`
+
+            const reqBody = {
+                amount: total,
+                currency: 'TWD',
+                orderId: orderId,
+                packages: [{
+                    id: '1',
+                    amount: total,
+                    products: [{ name: `咖啡訂單 ${orderId}`, quantity: 1, price: total }],
+                }],
+                redirectUrls: { confirmUrl, cancelUrl },
+            }
+
+            const lpRes = await requestLinePayAPI('POST', '/v3/payments/request', reqBody)
+
+            if (lpRes.returnCode === '0000' && lpRes.info) {
+                const transactionId = String(lpRes.info.transactionId)
+                await supabase.from('coffee_orders').update({ payment_id: transactionId }).eq('id', orderId)
+                return {
+                    success: true, orderId, total,
+                    paymentUrl: lpRes.info.paymentUrl?.web || lpRes.info.paymentUrl?.app || '',
+                    transactionId,
+                }
+            } else {
+                // LINE Pay 請求失敗，但訂單已建立
+                await supabase.from('coffee_orders').update({ payment_status: 'failed' }).eq('id', orderId)
+                return { success: false, error: `LINE Pay 請求失敗: ${lpRes.returnMessage || lpRes.returnCode}`, orderId }
+            }
+        } catch (e) {
+            await supabase.from('coffee_orders').update({ payment_status: 'failed' }).eq('id', orderId)
+            return { success: false, error: 'LINE Pay 付款請求失敗: ' + String(e), orderId }
+        }
+    }
+
     return { success: true, message: '訂單已送出', orderId, total }
 }
 
@@ -798,6 +901,10 @@ async function getOrders(req: Request) {
         storeType: r.store_type, storeId: r.store_id, storeName: r.store_name,
         storeAddress: r.store_address, status: r.status, note: r.note,
         lineUserId: r.line_user_id,
+        paymentMethod: r.payment_method || 'cod',
+        paymentStatus: r.payment_status || '',
+        paymentId: r.payment_id || '',
+        transferAccountLast5: r.transfer_account_last5 || '',
     }))
     return { success: true, orders }
 }
@@ -810,6 +917,8 @@ async function getMyOrders(req: Request) {
         deliveryMethod: r.delivery_method, status: r.status,
         storeName: r.store_name, storeAddress: r.store_address,
         city: r.city, address: r.address,
+        paymentMethod: r.payment_method || 'cod',
+        paymentStatus: r.payment_status || '',
     }))
     return { success: true, orders }
 }
@@ -822,10 +931,15 @@ async function updateOrderStatus(data: Record<string, unknown>, req: Request) {
         return { success: false, error: '無效的訂單狀態，允許值：' + VALID_ORDER_STATUSES.join(', ') }
     }
 
+    const updates: Record<string, unknown> = { status: newStatus }
+    if (data.paymentStatus) {
+        updates.payment_status = String(data.paymentStatus)
+    }
+
     // 取出訂單資訊以取得 email
     const { data: orderData } = await supabase.from('coffee_orders').select('email, line_name, delivery_method').eq('id', data.orderId).single()
 
-    const { error } = await supabase.from('coffee_orders').update({ status: data.status }).eq('id', data.orderId)
+    const { error } = await supabase.from('coffee_orders').update(updates).eq('id', data.orderId)
     if (error) return { success: false, error: error.message }
 
     // 若狀態切換為已出貨，且該訂單有信箱，寄出出貨通知
@@ -1389,4 +1503,141 @@ async function removeFromBlacklist(data: Record<string, unknown>, req: Request) 
     }).eq('line_user_id', data.lineUserId)
     if (error) return { success: false, error: error.message }
     return { success: true, message: '已解除黑名單' }
+}
+
+// ============ LINE Pay 確認 / 取消 / 退款 ============
+async function linePayConfirm(data: Record<string, unknown>) {
+    const transactionId = String(data.transactionId || '')
+    const orderId = String(data.orderId || '')
+    if (!transactionId || !orderId) return { success: false, error: '缺少交易參數' }
+
+    // 驗證訂單
+    const { data: order, error: oErr } = await supabase.from('coffee_orders').select('id, total, payment_id, payment_status, payment_method').eq('id', orderId).maybeSingle()
+    if (oErr || !order) return { success: false, error: '找不到訂單' }
+    if (order.payment_method !== 'linepay') return { success: false, error: '此訂單非 LINE Pay 付款' }
+    if (order.payment_status === 'paid') return { success: true, message: '已完成付款', orderId }
+    if (String(order.payment_id) !== transactionId) return { success: false, error: '交易 ID 不匹配' }
+
+    try {
+        const confirmRes = await requestLinePayAPI('POST', `/v3/payments/${transactionId}/confirm`, {
+            amount: order.total,
+            currency: 'TWD',
+        })
+
+        if (confirmRes.returnCode === '0000') {
+            await supabase.from('coffee_orders').update({ payment_status: 'paid' }).eq('id', orderId)
+            return { success: true, message: '付款成功', orderId }
+        } else {
+            await supabase.from('coffee_orders').update({ payment_status: 'failed' }).eq('id', orderId)
+            return { success: false, error: `LINE Pay 確認失敗: ${confirmRes.returnMessage || confirmRes.returnCode}`, orderId }
+        }
+    } catch (e) {
+        return { success: false, error: 'LINE Pay 確認失敗: ' + String(e) }
+    }
+}
+
+async function linePayCancel(data: Record<string, unknown>) {
+    const orderId = String(data.orderId || '')
+    if (!orderId) return { success: false, error: '缺少訂單編號' }
+
+    const { data: order } = await supabase.from('coffee_orders').select('payment_status').eq('id', orderId).maybeSingle()
+    if (order && order.payment_status === 'pending') {
+        await supabase.from('coffee_orders').update({ payment_status: 'cancelled' }).eq('id', orderId)
+    }
+    return { success: true, message: '付款已取消', orderId }
+}
+
+async function linePayRefund(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const orderId = String(data.orderId || '')
+    const refundAmount = data.refundAmount ? parseInt(String(data.refundAmount)) : 0
+    if (!orderId) return { success: false, error: '缺少訂單編號' }
+
+    const { data: order, error: oErr } = await supabase.from('coffee_orders').select('payment_id, total, payment_status, payment_method').eq('id', orderId).maybeSingle()
+    if (oErr || !order) return { success: false, error: '找不到訂單' }
+    if (order.payment_method !== 'linepay') return { success: false, error: '此訂單非 LINE Pay 付款，無法線上退款' }
+    if (order.payment_status !== 'paid') return { success: false, error: '此訂單尚未付款，無法退款' }
+
+    const transactionId = String(order.payment_id)
+    if (!transactionId) return { success: false, error: '找不到交易 ID' }
+
+    try {
+        const refundBody = refundAmount > 0 ? { refundAmount } : null
+        const refundRes = await requestLinePayAPI('POST', `/v3/payments/${transactionId}/refund`, refundBody)
+
+        if (refundRes.returnCode === '0000') {
+            await supabase.from('coffee_orders').update({ payment_status: 'refunded' }).eq('id', orderId)
+            return { success: true, message: '退款成功', orderId, refundTransactionId: refundRes.info?.refundTransactionId }
+        } else {
+            return { success: false, error: `退款失敗: ${refundRes.returnMessage || refundRes.returnCode}` }
+        }
+    } catch (e) {
+        return { success: false, error: '退款失敗: ' + String(e) }
+    }
+}
+
+// ============ 匯款帳號管理 ============
+async function getBankAccounts() {
+    const { data, error } = await supabase.from('coffee_bank_accounts').select('*').eq('enabled', true).order('sort_order', { ascending: true })
+    if (error) return { success: false, error: error.message }
+    return { success: true, accounts: (data || []).map((r: any) => ({ id: r.id, bankCode: r.bank_code, bankName: r.bank_name, accountNumber: r.account_number, accountName: r.account_name || '' })) }
+}
+
+async function addBankAccount(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const { data: maxRow } = await supabase.from('coffee_bank_accounts').select('sort_order').order('sort_order', { ascending: false }).limit(1)
+    const nextOrder = (maxRow && maxRow[0]) ? maxRow[0].sort_order + 1 : 1
+    const { data: ins, error } = await supabase.from('coffee_bank_accounts').insert({
+        bank_code: String(data.bankCode || ''),
+        bank_name: String(data.bankName || ''),
+        account_number: String(data.accountNumber || ''),
+        account_name: String(data.accountName || ''),
+        enabled: true,
+        sort_order: nextOrder,
+    }).select('id').single()
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '帳號已新增', id: ins.id }
+}
+
+async function updateBankAccount(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const id = parseInt(String(data.id))
+    if (!id) return { success: false, error: '缺少帳號 ID' }
+    const updates: Record<string, unknown> = {}
+    if (data.bankCode !== undefined) updates.bank_code = String(data.bankCode)
+    if (data.bankName !== undefined) updates.bank_name = String(data.bankName)
+    if (data.accountNumber !== undefined) updates.account_number = String(data.accountNumber)
+    if (data.accountName !== undefined) updates.account_name = String(data.accountName)
+    if (data.enabled !== undefined) updates.enabled = Boolean(data.enabled)
+    const { error } = await supabase.from('coffee_bank_accounts').update(updates).eq('id', id)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '帳號已更新' }
+}
+
+async function deleteBankAccount(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const id = parseInt(String(data.id))
+    if (!id) return { success: false, error: '缺少帳號 ID' }
+    const { error } = await supabase.from('coffee_bank_accounts').delete().eq('id', id)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '帳號已刪除' }
+}
+
+// ============ 線上轉帳：提交匯款帳號末5碼 ============
+async function updateTransferInfo(data: Record<string, unknown>, req: Request) {
+    const auth = await requireAuth(req)
+    const orderId = String(data.orderId || '')
+    const last5 = String(data.last5 || '').trim()
+    if (!orderId) return { success: false, error: '缺少訂單編號' }
+    if (!last5 || last5.length !== 5 || !/^\d{5}$/.test(last5)) return { success: false, error: '請輸入正確的5位數字帳號末碼' }
+
+    // 驗證訂單屬於當前用戶
+    const { data: order } = await supabase.from('coffee_orders').select('line_user_id, payment_method').eq('id', orderId).maybeSingle()
+    if (!order) return { success: false, error: '找不到訂單' }
+    if (order.line_user_id !== auth.userId) return { success: false, error: '無權操作此訂單' }
+    if (order.payment_method !== 'transfer') return { success: false, error: '此訂單非線上轉帳付款' }
+
+    const { error } = await supabase.from('coffee_orders').update({ transfer_account_last5: last5 }).eq('id', orderId)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '匯款資訊已更新' }
 }

@@ -70,6 +70,15 @@ export async function submitOrder() {
 
     const note = document.getElementById('order-note').value.trim();
 
+    // 付款方式驗證
+    const paymentMethod = state.selectedPayment || 'cod';
+    if (paymentMethod === 'transfer') {
+        const last5 = document.getElementById('transfer-last5')?.value?.trim() || '';
+        if (!last5 || last5.length !== 5 || !/^\d{5}$/.test(last5)) {
+            Swal.fire('錯誤', '請輸入正確的匯款帳號末5碼', 'error'); return;
+        }
+    }
+
     // 組合自訂欄位（排除 phone / email，轉為 JSON）
     const customFieldsData = {};
     for (const [k, v] of Object.entries(fieldsResult.data)) {
@@ -94,6 +103,7 @@ export async function submitOrder() {
         <b>訂單內容：</b><br>${orderLines.join('<br>')}<br><br>
         <b>總金額：</b>$${total}
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ''}
+        <br><br><b>付款方式：</b>${{ cod: '貨到付款', linepay: 'LINE Pay', transfer: '線上轉帳' }[paymentMethod]}
         </div>`;
 
     const confirmResult = await Swal.fire({
@@ -116,6 +126,8 @@ export async function submitOrder() {
                 deliveryMethod: state.selectedDelivery,
                 note,
                 customFields: customFieldsJson,
+                paymentMethod,
+                transferAccountLast5: paymentMethod === 'transfer' ? (document.getElementById('transfer-last5')?.value?.trim() || '') : '',
                 ...deliveryInfo,
             }),
         });
@@ -125,6 +137,41 @@ export async function submitOrder() {
             if (phone) u.phone = phone;
             localStorage.setItem('coffee_user', JSON.stringify(u));
             try { localStorage.setItem('coffee_delivery_prefs', JSON.stringify({ method: state.selectedDelivery, ...deliveryInfo })); } catch { }
+
+            // LINE Pay: 跳轉到付款頁面
+            if (result.paymentUrl) {
+                Swal.fire({
+                    icon: 'info', title: '跳轉至 LINE Pay',
+                    text: '即將跳轉至 LINE Pay 付款頁面...',
+                    timer: 2000, timerProgressBar: true, showConfirmButton: false,
+                }).then(() => {
+                    window.location.href = result.paymentUrl;
+                });
+                return;
+            }
+
+            // 線上轉帳: 顯示匯款確認
+            if (paymentMethod === 'transfer') {
+                const bankHtml = state.bankAccounts.map(b =>
+                    `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
+                        <b>${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</b><br>
+                        <span style="font-size:1.1em;font-family:monospace;">${escapeHtml(b.accountNumber)}</span>
+                        ${b.accountName ? '<br><span style="color:#666">戶名: ' + escapeHtml(b.accountName) + '</span>' : ''}
+                    </div>`
+                ).join('');
+                Swal.fire({
+                    icon: 'success', title: '訂單已成立',
+                    html: `<p>訂單編號：<b>${result.orderId}</b></p>
+                           <p>請匯款 <b style="color:#e63946">$${result.total}</b> 至以下帳號：</p>
+                           ${bankHtml}
+                           <p style="color:#666;font-size:0.9em;">(您的匯款末5碼已記錄，將用於對帳)</p>`,
+                    confirmButtonColor: '#3C2415',
+                }).then(() => {
+                    clearCart();
+                    document.getElementById('order-note').value = '';
+                });
+                return;
+            }
 
             Swal.fire({ icon: 'success', title: '訂單已送出！', text: `訂單編號：${result.orderId}`, confirmButtonColor: '#3C2415' }).then(() => {
                 clearCart();
@@ -150,17 +197,26 @@ export async function showMyOrders() {
 
         const statusMap = { pending: '⏳ 待處理', processing: '📦 處理中', shipped: '🚚 已出貨', completed: '✅ 已完成', cancelled: '❌ 已取消' };
         const methodMap = { delivery: '🏠 宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家', in_store: '🚶 來店取貨' };
+        const payMethodMap = { cod: '💵 貨到付款', linepay: '💚 LINE Pay', transfer: '🏦 線上轉帳' };
+        const payStatusMap = { pending: '⚓ 待付款', paid: '✅ 已付款', failed: '❌ 付款失敗', cancelled: '❌ 已取消', refunded: '↩️ 已退款' };
 
-        list.innerHTML = result.orders.map(o => `
+        list.innerHTML = result.orders.map(o => {
+            const payBadge = o.paymentMethod && o.paymentMethod !== 'cod'
+                ? `<span class="text-xs px-2 py-0.5 rounded-full ${o.paymentStatus === 'paid' ? 'bg-green-50 text-green-700' : o.paymentStatus === 'pending' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-600'}">${payMethodMap[o.paymentMethod] || ''} ${payStatusMap[o.paymentStatus] || ''}</span>`
+                : '';
+            return `
             <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-sm font-bold" style="color:var(--primary)">#${o.orderId}</span>
                     <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700">${statusMap[o.status] || o.status}</span>
                 </div>
-                <div class="text-xs text-gray-500 mb-2">${methodMap[o.deliveryMethod] || o.deliveryMethod} ${o.storeName ? '・' + o.storeName : o.city ? '・' + o.city + (o.address || '') : ''}</div>
+                <div class="text-xs text-gray-500 mb-2 flex flex-wrap gap-1 items-center">
+                    ${methodMap[o.deliveryMethod] || o.deliveryMethod} ${o.storeName ? '・' + o.storeName : o.city ? '・' + o.city + (o.address || '') : ''}
+                    ${payBadge}
+                </div>
                 <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${escapeHtml(o.items)}</div>
                 <div class="text-right font-bold" style="color:var(--primary)">$${o.total}</div>
             </div>
-        `).join('');
+        `}).join('');
     } catch (e) { list.innerHTML = `<p class="text-center text-red-500 py-8">${e.message}</p>`; }
 }

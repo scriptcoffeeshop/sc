@@ -9,4 +9,8 @@ export const state = {
     currentUser: null,
     selectedDelivery: '',
     isStoreOpen: true,
+    selectedPayment: 'cod',
+    bankAccounts: [],
+    linePayEnabled: false,
+    transferEnabled: false,
 };

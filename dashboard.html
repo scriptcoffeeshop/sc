@@ -309,14 +309,29 @@
                 </div>
             </div>
 
-            <!-- 金流設定（預留） -->
+            <!-- 金流設定 -->
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
-                <h3 class="font-semibold mb-3" style="color:var(--primary)">💳 金流設定（預留）</h3>
-                <p class="text-sm text-gray-500 mb-3">此區塊將於未來串接金流服務時啟用</p>
-                <label class="flex items-center gap-2 mb-3 cursor-pointer">
-                    <input type="checkbox" id="s-payment-enabled" class="w-4 h-4" disabled> <span
-                        class="text-gray-400">啟用線上付款（尚未開放）</span>
-                </label>
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">💳 付款方式設定</h3>
+                <div class="space-y-3">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="s-linepay-enabled" class="w-4 h-4"> <span>啟用 LINE Pay 付款</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="s-linepay-sandbox" class="w-4 h-4"> <span>LINE Pay Sandbox
+                            模式（測試用）</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="s-transfer-enabled" class="w-4 h-4"> <span>啟用線上轉帳付款</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 匯款帳號管理 -->
+            <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">🏦 匯款帳號管理</h3>
+                <div id="bank-accounts-admin-list" class="mb-3"></div>
+                <button onclick="showAddBankAccountModal()" class="text-sm font-medium hover:underline"
+                    style="color:var(--primary)">+ 新增匯款帳號</button>
             </div>
 
             <div class="text-center">

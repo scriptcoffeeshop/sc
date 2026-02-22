@@ -13,6 +13,7 @@ let categories = [];
 let orders = [];
 let users = [];
 let blacklist = [];
+let bankAccounts = [];
 
 function getAuthUserId() { if (!currentUser?.userId) throw new Error('請先登入'); return currentUser.userId; }
 
@@ -48,6 +49,10 @@ window.toggleFieldEnabled = toggleFieldEnabled;
 window.previewIcon = previewIcon;
 window.uploadSiteIcon = uploadSiteIcon;
 window.resetSectionTitle = resetSectionTitle;
+window.linePayRefundOrder = linePayRefundOrder;
+window.showAddBankAccountModal = showAddBankAccountModal;
+window.editBankAccount = editBankAccount;
+window.deleteBankAccount = deleteBankAccount;
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', () => {
@@ -129,19 +134,38 @@ function renderOrders() {
 
     const statusLabel = { pending: '待處理', processing: '處理中', shipped: '已出貨', completed: '已完成', cancelled: '已取消' };
     const methodLabel = { delivery: '🏠 宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家' };
+    const payMethodLabel = { cod: '💵 貨到付款', linepay: '💚 LINE Pay', transfer: '🏦 轉帳' };
+    const payStatusLabel = { pending: '⚓ 待付款', paid: '✅ 已付款', failed: '❌ 失敗', cancelled: '❌ 取消', refunded: '↩️ 已退款' };
 
     container.innerHTML = filtered.map(o => {
         const time = new Date(o.timestamp).toLocaleString('zh-TW');
         const addrInfo = o.deliveryMethod === 'delivery'
             ? `${o.city || ''}${o.district || ''} ${o.address || ''}`
             : `${o.storeName || ''}${o.storeId ? ' [' + o.storeId + ']' : ''}${o.storeAddress ? ' (' + o.storeAddress + ')' : ''}`;
+
+        const pm = o.paymentMethod || 'cod';
+        const ps = o.paymentStatus || '';
+        const payBadge = pm !== 'cod'
+            ? `<span class="text-xs px-2 py-0.5 rounded-full ${ps === 'paid' ? 'bg-green-50 text-green-700' : ps === 'refunded' ? 'bg-purple-50 text-purple-700' : ps === 'pending' ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-600'}">${payMethodLabel[pm] || pm} ${payStatusLabel[ps] || ps}</span>`
+            : '';
+        const transferInfo = pm === 'transfer' && o.transferAccountLast5
+            ? `<div class="text-xs text-blue-600 mt-1">🏦 匯款末5碼: <b>${esc(o.transferAccountLast5)}</b></div>`
+            : '';
+        const refundBtn = pm === 'linepay' && ps === 'paid'
+            ? `<button onclick="linePayRefundOrder('${esc(o.orderId)}')" class="text-xs text-purple-600 hover:text-purple-800">↩️ 退款</button>`
+            : '';
+        const confirmPayBtn = pm === 'transfer' && ps === 'pending'
+            ? `<button onclick="confirmTransferPayment('${esc(o.orderId)}')" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
+            : '';
+
         return `
         <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
             <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <span class="font-bold text-sm" style="color:var(--primary)">#${o.orderId}</span>
                     <span class="delivery-tag delivery-${o.deliveryMethod}">${methodLabel[o.deliveryMethod] || o.deliveryMethod}</span>
                     <span class="status-badge status-${o.status}">${statusLabel[o.status] || o.status}</span>
+                    ${payBadge}
                 </div>
                 <span class="text-xs text-gray-500">${time}</span>
             </div>
@@ -150,12 +174,15 @@ function renderOrders() {
                 <div><span class="text-gray-500">電話：</span>${esc(o.phone)}</div>
                 <div class="col-span-2"><span class="text-gray-500">信箱：</span>${o.email ? `<a href="mailto:${esc(o.email)}" class="text-blue-500">${esc(o.email)}</a>` : '無'}</div>
                 <div class="col-span-2"><span class="text-gray-500">地址/門市：</span>${esc(addrInfo)}</div>
+                ${transferInfo}
             </div>
             <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${esc(o.items)}</div>
             ${o.note ? `<div class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2">📝 ${esc(o.note)}</div>` : ''}
             <div class="flex justify-between items-center">
                 <span class="font-bold" style="color:var(--accent)">$${o.total}</span>
                 <div class="flex gap-2">
+                    ${refundBtn}
+                    ${confirmPayBtn}
                     <select onchange="changeOrderStatus('${esc(o.orderId)}',this.value)" class="text-xs border rounded px-2 py-1">
                         ${['pending', 'processing', 'shipped', 'completed', 'cancelled'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${statusLabel[s]}</option>`).join('')}
                     </select>
@@ -518,6 +545,14 @@ async function loadSettings() {
             document.getElementById('s-notes-color').value = s.notes_section_color || '#6F4E37';
             document.getElementById('s-notes-size').value = s.notes_section_size || 'text-base';
             document.getElementById('s-notes-bold').checked = String(s.notes_section_bold) !== 'false';
+
+            // 付款設定
+            document.getElementById('s-linepay-enabled').checked = String(s.linepay_enabled) === 'true';
+            document.getElementById('s-linepay-sandbox').checked = String(s.linepay_sandbox) !== 'false';
+            document.getElementById('s-transfer-enabled').checked = String(s.transfer_enabled) === 'true';
+
+            // 載入匯款帳號
+            await loadBankAccountsAdmin();
         }
     } catch (e) { console.error(e); }
 }
@@ -563,6 +598,10 @@ async function saveSettings() {
                     notes_section_color: document.getElementById('s-notes-color').value,
                     notes_section_size: document.getElementById('s-notes-size').value,
                     notes_section_bold: String(document.getElementById('s-notes-bold').checked),
+
+                    linepay_enabled: String(document.getElementById('s-linepay-enabled').checked),
+                    linepay_sandbox: String(document.getElementById('s-linepay-sandbox').checked),
+                    transfer_enabled: String(document.getElementById('s-transfer-enabled').checked),
                 }
             })
         });
@@ -957,3 +996,151 @@ async function uploadSiteIcon() {
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
 }
 
+// ============ LINE Pay 退款 ============
+async function linePayRefundOrder(orderId) {
+    const c = await Swal.fire({
+        title: 'LINE Pay 退款', text: `確定要對訂單 #${orderId} 進行退款嗎？`,
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#7c3aed',
+        confirmButtonText: '確認退款', cancelButtonText: '取消',
+    });
+    if (!c.isConfirmed) return;
+
+    Swal.fire({ title: '退款處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    try {
+        const r = await authFetch(`${API_URL}?action=linePayRefund`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), orderId }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '退款成功' }); loadOrders(); }
+        else { Swal.fire('退款失敗', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+// ============ 轉帳確認收款 ============
+window.confirmTransferPayment = async function (orderId) {
+    const c = await Swal.fire({
+        title: '確認收款', text: `確認已收到訂單 #${orderId} 的匯款？`,
+        icon: 'question', showCancelButton: true, confirmButtonText: '確認已收款', cancelButtonText: '取消',
+    });
+    if (!c.isConfirmed) return;
+    try {
+        const r = await authFetch(`${API_URL}?action=updateOrderStatus`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), orderId, status: 'processing', paymentStatus: 'paid' }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '已確認收款' }); loadOrders(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+};
+
+// ============ 匯款帳號管理 ============
+async function loadBankAccountsAdmin() {
+    try {
+        const r = await authFetch(`${API_URL}?action=getBankAccounts&_=${Date.now()}`);
+        const d = await r.json();
+        if (d.success) { bankAccounts = d.accounts || []; renderBankAccountsAdmin(); }
+    } catch (e) { console.error(e); }
+}
+
+function renderBankAccountsAdmin() {
+    const container = document.getElementById('bank-accounts-admin-list');
+    if (!container) return;
+    if (!bankAccounts.length) { container.innerHTML = '<p class="text-sm text-gray-500">尚無匯款帳號</p>'; return; }
+    container.innerHTML = bankAccounts.map(b => `
+        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;">
+            <div>
+                <div class="font-medium">${esc(b.bankName)} (${esc(b.bankCode)})</div>
+                <div class="text-sm font-mono text-gray-600">${esc(b.accountNumber)}</div>
+                ${b.accountName ? `<div class="text-xs text-gray-400">戶名: ${esc(b.accountName)}</div>` : ''}
+            </div>
+            <div class="flex gap-2">
+                <button onclick="editBankAccount(${b.id})" class="text-sm" style="color:var(--primary)">編輯</button>
+                <button onclick="deleteBankAccount(${b.id})" class="text-sm text-red-500">刪除</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function showAddBankAccountModal() {
+    const { value: formValues } = await Swal.fire({
+        title: '新增匯款帳號',
+        html: `<div style="text-align:left;">
+            <label class="block text-sm mb-1 font-medium">銀行代碼</label>
+            <input id="swal-bc" class="swal2-input" placeholder="例：013" style="margin:0 0 12px 0;width:100%">
+            <label class="block text-sm mb-1 font-medium">銀行名稱</label>
+            <input id="swal-bn" class="swal2-input" placeholder="例：國泰世華" style="margin:0 0 12px 0;width:100%">
+            <label class="block text-sm mb-1 font-medium">帳號</label>
+            <input id="swal-an" class="swal2-input" placeholder="帳號號碼" style="margin:0 0 12px 0;width:100%">
+            <label class="block text-sm mb-1 font-medium">戶名（選填）</label>
+            <input id="swal-am" class="swal2-input" placeholder="戶名" style="margin:0 0 12px 0;width:100%">
+        </div>`,
+        focusConfirm: false, showCancelButton: true, confirmButtonText: '新增', cancelButtonText: '取消',
+        preConfirm: () => ({
+            bankCode: document.getElementById('swal-bc').value.trim(),
+            bankName: document.getElementById('swal-bn').value.trim(),
+            accountNumber: document.getElementById('swal-an').value.trim(),
+            accountName: document.getElementById('swal-am').value.trim(),
+        }),
+    });
+    if (!formValues || !formValues.bankCode || !formValues.accountNumber) return;
+    try {
+        const r = await authFetch(`${API_URL}?action=addBankAccount`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), ...formValues }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '帳號已新增' }); loadBankAccountsAdmin(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+async function editBankAccount(id) {
+    const b = bankAccounts.find(a => a.id === id);
+    if (!b) return;
+    const { value: formValues } = await Swal.fire({
+        title: '編輯匯款帳號',
+        html: `<div style="text-align:left;">
+            <label class="block text-sm mb-1 font-medium">銀行代碼</label>
+            <input id="swal-bc" class="swal2-input" value="${esc(b.bankCode)}" style="margin:0 0 12px 0;width:100%">
+            <label class="block text-sm mb-1 font-medium">銀行名稱</label>
+            <input id="swal-bn" class="swal2-input" value="${esc(b.bankName)}" style="margin:0 0 12px 0;width:100%">
+            <label class="block text-sm mb-1 font-medium">帳號</label>
+            <input id="swal-an" class="swal2-input" value="${esc(b.accountNumber)}" style="margin:0 0 12px 0;width:100%">
+            <label class="block text-sm mb-1 font-medium">戶名（選填）</label>
+            <input id="swal-am" class="swal2-input" value="${esc(b.accountName || '')}" style="margin:0 0 12px 0;width:100%">
+        </div>`,
+        focusConfirm: false, showCancelButton: true, confirmButtonText: '更新', cancelButtonText: '取消',
+        preConfirm: () => ({
+            bankCode: document.getElementById('swal-bc').value.trim(),
+            bankName: document.getElementById('swal-bn').value.trim(),
+            accountNumber: document.getElementById('swal-an').value.trim(),
+            accountName: document.getElementById('swal-am').value.trim(),
+        }),
+    });
+    if (!formValues) return;
+    try {
+        const r = await authFetch(`${API_URL}?action=updateBankAccount`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), id, ...formValues }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '帳號已更新' }); loadBankAccountsAdmin(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+
+async function deleteBankAccount(id) {
+    const c = await Swal.fire({ title: '刪除帳號？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '刪除', cancelButtonText: '取消' });
+    if (!c.isConfirmed) return;
+    try {
+        const r = await authFetch(`${API_URL}?action=deleteBankAccount`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: getAuthUserId(), id }),
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '帳號已刪除' }); loadBankAccountsAdmin(); }
+        else { Swal.fire('錯誤', d.error, 'error'); }
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}

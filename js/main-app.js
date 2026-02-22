@@ -11,6 +11,8 @@ import { renderProducts } from './products.js';
 import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js';
 import { submitOrder, showMyOrders } from './orders.js';
 import { renderDynamicFields, applyBranding } from './form-renderer.js';
+import { authFetch } from './auth.js';
+import { escapeHtml } from './utils.js';
 
 // ============ 全域函式掛載 (HTML onclick 呼叫) ============
 window._cart = { addToCart, updateCartItemQty, removeCartItem, toggleCart };
@@ -30,6 +32,7 @@ window.selectStoreFromList = selectStoreFromList;
 window.clearSelectedStore = clearSelectedStore;
 window.submitOrder = submitOrder;
 window.showMyOrders = showMyOrders;
+window.selectPayment = selectPayment;
 window.loginWithLine = () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state');
 window.closeAnnouncement = () => document.getElementById('announcement-banner').classList.add('hidden');
 
@@ -38,12 +41,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const stateParam = urlParams.get('state');
+
+    // LINE Pay 回調處理
+    const lpAction = urlParams.get('lpAction');
+    if (lpAction) {
+        window.history.replaceState({}, '', 'main.html');
+        await handleLinePayCallback(lpAction, urlParams);
+    }
+
     if (code) {
         await handleLineCallback(code, stateParam);
     } else {
         checkLoginStatus();
     }
-    loadCart(); // 載入購物車
+    loadCart();
     await loadInitData();
     updateFormState();
 
@@ -136,11 +147,13 @@ async function loadInitData() {
             state.products = (result.products || []).filter(p => p.enabled);
             state.categories = result.categories || [];
             state.formFields = result.formFields || [];
+            state.bankAccounts = result.bankAccounts || [];
 
             applySettings(result.settings || {});
             applyBranding(result.settings || {});
             renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'));
             renderProducts();
+            renderBankAccounts();
 
             // 登入後再回填一次（因為渲染完才有欄位）
             if (state.currentUser) {
@@ -165,6 +178,22 @@ function applySettings(s) {
         updateFormState();
         document.getElementById('total-price').textContent = '🔒 目前休息中，暫停接單';
     }
+
+    // 付款方式設定
+    state.linePayEnabled = String(s.linepay_enabled) === 'true';
+    state.transferEnabled = String(s.transfer_enabled) === 'true';
+
+    // 顯示付款區塊（至少有一個非 COD 方式啟用才顯示）
+    const paySection = document.getElementById('payment-method-section');
+    if (state.linePayEnabled || state.transferEnabled) {
+        paySection.classList.remove('hidden');
+    }
+    if (state.linePayEnabled) {
+        document.getElementById('linepay-option').classList.remove('hidden');
+    }
+    if (state.transferEnabled) {
+        document.getElementById('transfer-option').classList.remove('hidden');
+    }
 }
 
 function updateFormState() {
@@ -172,4 +201,58 @@ function updateFormState() {
     const open = state.isStoreOpen;
     const submitBtn = document.getElementById('submit-btn');
     submitBtn.disabled = !loggedIn || !open;
+}
+
+// ============ 付款方式選擇 ============
+function selectPayment(method) {
+    state.selectedPayment = method;
+    document.querySelectorAll('#payment-options .delivery-option').forEach(el => el.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+
+    // 顯示/隱藏轉帳資訊
+    const transferSection = document.getElementById('transfer-info-section');
+    if (method === 'transfer') {
+        transferSection.classList.remove('hidden');
+    } else {
+        transferSection.classList.add('hidden');
+    }
+}
+
+function renderBankAccounts() {
+    const container = document.getElementById('bank-accounts-list');
+    if (!container || !state.bankAccounts.length) return;
+    container.innerHTML = state.bankAccounts.map(b => `
+        <div class="p-3 rounded-lg mb-2" style="background:white; border:1px solid #d1dce5;">
+            <div class="font-semibold">${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</div>
+            <div class="text-lg font-mono mt-1" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</div>
+            ${b.accountName ? `<div class="text-sm text-gray-500">戶名: ${escapeHtml(b.accountName)}</div>` : ''}
+        </div>
+    `).join('');
+}
+
+// ============ LINE Pay 回調 ============
+async function handleLinePayCallback(lpAction, params) {
+    const transactionId = params.get('transactionId') || '';
+    const orderId = params.get('orderId') || '';
+
+    if (lpAction === 'confirm' && transactionId && orderId) {
+        Swal.fire({ title: '確認付款中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const res = await fetch(`${API_URL}?action=linePayConfirm&transactionId=${transactionId}&orderId=${orderId}`);
+            const result = await res.json();
+            if (result.success) {
+                Swal.fire({ icon: 'success', title: '付款成功！', text: `訂單編號：${orderId}`, confirmButtonColor: '#3C2415' });
+            } else {
+                Swal.fire('付款失敗', result.error || '請聯繫店家', 'error');
+            }
+        } catch (e) {
+            Swal.fire('錯誤', '付款確認失敗: ' + e.message, 'error');
+        }
+    } else if (lpAction === 'cancel') {
+        // 通知後端取消
+        if (orderId) {
+            try { await fetch(`${API_URL}?action=linePayCancel&orderId=${orderId}`); } catch { }
+        }
+        Swal.fire({ icon: 'info', title: '付款已取消', text: '您已取消 LINE Pay 付款', confirmButtonColor: '#3C2415' });
+    }
 }

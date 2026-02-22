@@ -50,7 +50,9 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   email TEXT DEFAULT '',
   custom_fields TEXT DEFAULT '',
   payment_status TEXT DEFAULT '',
-  payment_id TEXT DEFAULT ''
+  payment_id TEXT DEFAULT '',
+  payment_method TEXT DEFAULT 'cod',
+  transfer_account_last5 TEXT DEFAULT ''
 );
 
 -- 4. 系統設定 (Key-Value)
@@ -77,7 +79,10 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('payment_provider', ''),
   ('payment_merchant_id', ''),
   ('payment_hash_key', ''),
-  ('payment_hash_iv', '')
+  ('payment_hash_iv', ''),
+  ('linepay_enabled', 'false'),
+  ('linepay_sandbox', 'true'),
+  ('transfer_enabled', 'false')
 ON CONFLICT (key) DO NOTHING;
 
 -- 5. 用戶表
@@ -130,6 +135,21 @@ INSERT INTO coffee_form_fields (section, field_key, label, field_type, placehold
   ('contact', 'phone', '📱 聯絡電話', 'tel', '請輸入聯絡電話', true, true, 1),
   ('contact', 'email', '✉️ 電子郵件', 'email', '接收訂單確認信', false, true, 2)
 ON CONFLICT (field_key) DO NOTHING;
+
+-- 8. 匯款帳號管理表
+CREATE TABLE IF NOT EXISTS coffee_bank_accounts (
+  id SERIAL PRIMARY KEY,
+  bank_code TEXT NOT NULL DEFAULT '',
+  bank_name TEXT NOT NULL DEFAULT '',
+  account_number TEXT NOT NULL DEFAULT '',
+  account_name TEXT DEFAULT '',
+  enabled BOOLEAN DEFAULT true,
+  sort_order INT DEFAULT 0
+);
+
+INSERT INTO coffee_bank_accounts (bank_code, bank_name, account_number, account_name, enabled, sort_order) VALUES
+  ('013', '國泰世華', '699506138462', '', true, 1)
+ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- 索引
