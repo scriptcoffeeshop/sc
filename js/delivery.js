@@ -8,12 +8,10 @@ import { state } from './state.js';
 
 let allStores = [];
 let storeListLoaded = false;
-let storeMapPollTimer = null;
 
 /** 選擇配送方式 */
 export function selectDelivery(method, e) {
     state.selectedDelivery = method;
-    stopStoreMapPolling();
     document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('active'));
     e.currentTarget.classList.add('active');
 
