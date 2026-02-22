@@ -8,7 +8,7 @@ import { loginWithLine } from './auth.js';
 import { state } from './state.js';
 import { addToCart, updateCartItemQty, removeCartItem, toggleCart, loadCart } from './cart.js';
 import { renderProducts } from './products.js';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, stopStoreMapPolling, checkStoreToken } from './delivery.js';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js';
 import { submitOrder, showMyOrders } from './orders.js';
 
 // ============ 全域函式掛載 (HTML onclick 呼叫) ============
