@@ -10,9 +10,8 @@ let allStores = [];
 let storeListLoaded = false;
 let citySelectorInstance = null; // 用來儲存 tw-city-selector 實體
 
-// 確保 DOM 載入後初始化 tw-city-selector
-document.addEventListener('DOMContentLoaded', () => {
-    if (typeof TwCitySelector !== 'undefined') {
+function initCitySelector() {
+    if (typeof TwCitySelector !== 'undefined' && !citySelectorInstance) {
         citySelectorInstance = new TwCitySelector({
             el: '[role="tw-city-selector"]',
             elCounty: '.county',
@@ -20,7 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
             elZipcode: '.zipcode'
         });
     }
-});
+}
+
+// 由於 ES module (type="module") 預設為 defer 執行，DOMContentLoaded 可能已經觸發
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCitySelector);
+} else {
+    initCitySelector();
+}
 
 /** 選擇配送方式 */
 export function selectDelivery(method, e) {
