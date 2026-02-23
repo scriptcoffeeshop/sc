@@ -133,7 +133,7 @@ function renderOrders() {
     if (!filtered.length) { container.innerHTML = '<p class="text-center text-gray-500 py-8">沒有符合的訂單</p>'; return; }
 
     const statusLabel = { pending: '待處理', processing: '處理中', shipped: '已出貨', completed: '已完成', cancelled: '已取消' };
-    const methodLabel = { delivery: '🏠 宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家' };
+    const methodLabel = { delivery: '🏠 配送到府', home_delivery: '📦 全台宅配', seven_eleven: '🏪 7-11', family_mart: '🏬 全家', in_store: '🚶 來店取貨' };
     const payMethodLabel = { cod: '💵 貨到付款', linepay: '💚 LINE Pay', transfer: '🏦 轉帳' };
     const payStatusLabel = { pending: '⚓ 待付款', paid: '✅ 已付款', failed: '❌ 失敗', cancelled: '❌ 取消', refunded: '↩️ 已退款' };
 

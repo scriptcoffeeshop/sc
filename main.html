@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/tw-city-selector@2.1.1/dist/tw-city-selector.min.js"></script>
 </head>
 
 <body class="p-4 md:p-6">
@@ -72,37 +73,43 @@
         <!-- 配送方式 -->
         <div class="mb-6">
             <h2 class="text-lg font-bold mb-4" style="color:var(--primary)" id="delivery-section-title">🚚 配送方式</h2>
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
                 <div class="delivery-option" onclick="selectDelivery('in_store', event)">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">🚶</div>
-                    <div class="font-semibold">來店取貨</div>
-                    <div class="text-xs text-gray-500 mt-1">營業時間內，到店自取</div>
+                    <div class="font-semibold" style="font-size: 0.95rem;">來店取貨</div>
+                    <div class="text-xs text-gray-500 mt-1">到店自取</div>
                 </div>
                 <div class="delivery-option" onclick="selectDelivery('delivery', event)">
                     <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🏠</div>
-                    <div class="font-semibold">配送到府</div>
-                    <div class="text-xs text-gray-500 mt-1">限竹北市 / 新竹市</div>
+                    <div class="text-2xl mb-2">🛵</div>
+                    <div class="font-semibold" style="font-size: 0.95rem;">配送到府</div>
+                    <div class="text-xs text-gray-500 mt-1">新竹限區送</div>
                 </div>
                 <div class="delivery-option" onclick="selectDelivery('seven_eleven', event)">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">🏪</div>
-                    <div class="font-semibold">7-11 取貨付款</div>
-                    <div class="text-xs text-gray-500 mt-1">超商門市取件</div>
+                    <div class="font-semibold" style="font-size: 0.95rem;">7-11 取件</div>
+                    <div class="text-xs text-gray-500 mt-1">超商門市</div>
                 </div>
                 <div class="delivery-option" onclick="selectDelivery('family_mart', event)">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2">🏬</div>
-                    <div class="font-semibold">全家取貨付款</div>
-                    <div class="text-xs text-gray-500 mt-1">超商門市取件</div>
+                    <div class="font-semibold" style="font-size: 0.95rem;">全家取件</div>
+                    <div class="text-xs text-gray-500 mt-1">超商門市</div>
+                </div>
+                <div class="delivery-option" onclick="selectDelivery('home_delivery', event)">
+                    <div class="check-mark">✓</div>
+                    <div class="text-2xl mb-2">📦</div>
+                    <div class="font-semibold" style="font-size: 0.95rem;">全台宅配</div>
+                    <div class="text-xs text-gray-500 mt-1">宅配到府</div>
                 </div>
             </div>
 
-            <!-- 宅配地址 -->
+            <!-- 配送到府地址 (限竹北/新竹) -->
             <div id="delivery-address-section" class="hidden fade-in p-4 rounded-xl"
                 style="background:#faf6f2; border:1px solid #e5ddd5;">
-                <h3 class="font-semibold mb-3" style="color:var(--primary)">📍 配送地址</h3>
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">📍 配送地址 (限新竹)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">縣市</label>
@@ -122,6 +129,32 @@
                 <div>
                     <label class="block text-sm text-gray-600 mb-1">詳細地址</label>
                     <input type="text" id="delivery-detail-address" class="input-field" placeholder="路/街、巷、弄、號、樓">
+                </div>
+            </div>
+
+            <!-- 全台宅配地址 -->
+            <div id="home-delivery-section" class="hidden fade-in p-4 rounded-xl"
+                style="background:#f4f1ee; border:1px solid #dcd3cb;">
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">📦 全台宅配地址</h3>
+
+                <!-- tw-city-selector 容器 -->
+                <div role="tw-city-selector" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">縣市 <span class="text-red-500">*</span></label>
+                        <select class="county input-field"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">區域 <span class="text-red-500">*</span></label>
+                        <select class="district input-field"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-600 mb-1">郵遞區號</label>
+                        <input class="zipcode input-field bg-gray-100" type="text" readonly placeholder="自動帶入">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-600 mb-1">詳細地址 <span class="text-red-500">*</span></label>
+                    <input type="text" id="home-delivery-detail" class="input-field" placeholder="路/街、巷、弄、號、樓">
                 </div>
             </div>
 

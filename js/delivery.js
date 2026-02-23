@@ -8,6 +8,19 @@ import { state } from './state.js';
 
 let allStores = [];
 let storeListLoaded = false;
+let citySelectorInstance = null; // 用來儲存 tw-city-selector 實體
+
+// 確保 DOM 載入後初始化 tw-city-selector
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof TwCitySelector !== 'undefined') {
+        citySelectorInstance = new TwCitySelector({
+            el: '[role="tw-city-selector"]',
+            elCounty: '.county',
+            elDistrict: '.district',
+            elZipcode: '.zipcode'
+        });
+    }
+});
 
 /** 選擇配送方式 */
 export function selectDelivery(method, e) {
@@ -25,9 +38,12 @@ export function selectDelivery(method, e) {
     document.getElementById('delivery-address-section').classList.add('hidden');
     document.getElementById('store-pickup-section').classList.add('hidden');
     document.getElementById('in-store-section').classList.add('hidden');
+    document.getElementById('home-delivery-section').classList.add('hidden');
 
     if (method === 'delivery') {
         document.getElementById('delivery-address-section').classList.remove('hidden');
+    } else if (method === 'home_delivery') {
+        document.getElementById('home-delivery-section').classList.remove('hidden');
     } else if (method === 'in_store') {
         document.getElementById('in-store-section').classList.remove('hidden');
     } else {
@@ -53,7 +69,7 @@ export function selectDelivery(method, e) {
     }
 }
 
-/** 更新地區下拉 */
+/** 更新地區下拉 (限新竹使用) */
 export function updateDistricts() {
     const city = document.getElementById('delivery-city').value;
     const distSelect = document.getElementById('delivery-district');

@@ -59,6 +59,18 @@ export async function submitOrder() {
         if (!city) { Swal.fire('錯誤', '請選擇縣市', 'error'); return; }
         if (!addr) { Swal.fire('錯誤', '請填寫詳細地址', 'error'); return; }
         deliveryInfo = { city, district, address: addr };
+    } else if (state.selectedDelivery === 'home_delivery') {
+        // 全台宅配處理
+        const cityObj = document.querySelector('.county');
+        const distObj = document.querySelector('.district');
+        const zipObj = document.querySelector('.zipcode');
+        const city = cityObj ? cityObj.value : '';
+        const district = distObj ? distObj.value : '';
+        const zip = zipObj ? zipObj.value : '';
+        const addr = document.getElementById('home-delivery-detail').value.trim();
+        if (!city || !district) { Swal.fire('錯誤', '請選擇全台宅配的縣市及區域', 'error'); return; }
+        if (!addr) { Swal.fire('錯誤', '請填寫全台宅配的詳細地址', 'error'); return; }
+        deliveryInfo = { city, district: `${zip} ${district}`.trim(), address: addr };
     } else if (state.selectedDelivery === 'in_store') {
         deliveryInfo = { storeName: '來店自取', storeAddress: '新竹市東區建中路101號1樓' };
     } else {
@@ -97,8 +109,8 @@ export async function submitOrder() {
     const customFieldsJson = Object.keys(customFieldsData).length > 0 ? JSON.stringify(customFieldsData) : '';
 
     // 配送方式文字
-    const methodText = { delivery: '宅配到府', seven_eleven: '7-11 取貨付款', family_mart: '全家取貨付款', in_store: '來店取貨' };
-    let addrText = state.selectedDelivery === 'delivery'
+    const methodText = { delivery: '配送到府(限新竹)', home_delivery: '全台宅配(含郵遞區號)', seven_eleven: '7-11 取件', family_mart: '全家取件', in_store: '來店取貨' };
+    let addrText = (state.selectedDelivery === 'delivery' || state.selectedDelivery === 'home_delivery')
         ? `${deliveryInfo.city}${deliveryInfo.district || ''} ${deliveryInfo.address}`
         : state.selectedDelivery === 'in_store'
             ? `來店自取 (${deliveryInfo.storeAddress})`
