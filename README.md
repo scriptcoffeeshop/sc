@@ -8,3 +8,6 @@
    - 若有修改 Supabase Edge Functions (`supabase/functions/coffee-api/index.ts` 等），必須自動部署到 Supabase。**每次推送都需要加上 `--no-verify-jwt` 參數**（例如：`supabase functions deploy coffee-api --no-verify-jwt`）。
 2. **使用語言**：
    - 所有的回應和您的內部推理過程（思考過程）都必須以繁體中文（Traditional Chinese）顯示。
+3. **文字說明修改規定**：
+   - 撰寫程式的過程中，程式呈現的文字說明部分，若沒有明確提及需要修改，則**嚴格禁止擅自修改**。
+   - 若認為有修改必要，必須在修改前先經過我的同意。
