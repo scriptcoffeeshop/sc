@@ -190,21 +190,21 @@
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4" id="payment-options">
                 <div class="payment-option active" id="cod-option" onclick="selectPayment('cod')">
                     <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">💵</div>
-                    <div class="font-semibold">取件 / 到付</div>
-                    <div class="text-xs text-gray-500 mt-1">取貨時付現或宅配到付</div>
+                    <div class="text-2xl mb-2" id="po-cod-icon-display">💵</div>
+                    <div class="font-semibold" id="po-cod-name-display">取件 / 到付</div>
+                    <div class="text-xs text-gray-500 mt-1" id="po-cod-desc-display">取貨時付現或宅配到付</div>
                 </div>
                 <div class="payment-option hidden" id="linepay-option" onclick="selectPayment('linepay')">
                     <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">💚</div>
-                    <div class="font-semibold">LINE Pay</div>
-                    <div class="text-xs text-gray-500 mt-1">線上安全付款</div>
+                    <div class="text-2xl mb-2" id="po-linepay-icon-display">💚</div>
+                    <div class="font-semibold text-[#06C755]" id="po-linepay-name-display">LINE Pay</div>
+                    <div class="text-xs text-gray-500 mt-1" id="po-linepay-desc-display">線上安全付款</div>
                 </div>
                 <div class="payment-option hidden" id="transfer-option" onclick="selectPayment('transfer')">
                     <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🏦</div>
-                    <div class="font-semibold">線上轉帳</div>
-                    <div class="text-xs text-gray-500 mt-1">ATM / 網銀匯款</div>
+                    <div class="text-2xl mb-2" id="po-transfer-icon-display">🏦</div>
+                    <div class="font-semibold text-blue-600" id="po-transfer-name-display">線上轉帳</div>
+                    <div class="text-xs text-gray-500 mt-1" id="po-transfer-desc-display">ATM / 網銀匯款</div>
                 </div>
             </div>
 

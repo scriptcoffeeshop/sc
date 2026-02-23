@@ -647,6 +647,25 @@ async function loadSettings() {
 
             document.getElementById('s-linepay-sandbox').checked = String(s.linepay_sandbox) !== 'false';
 
+            // 金流選項顯示設定載入
+            const paymentOptionsStr = s.payment_options_config || '';
+            let paymentOptions = {};
+            if (paymentOptionsStr) {
+                try { paymentOptions = JSON.parse(paymentOptionsStr); } catch (e) { }
+            }
+
+            document.getElementById('po-cod-icon').value = paymentOptions.cod?.icon || '💵';
+            document.getElementById('po-cod-name').value = paymentOptions.cod?.name || '取件 / 到付';
+            document.getElementById('po-cod-desc').value = paymentOptions.cod?.description || '取貨時付現或宅配到付';
+
+            document.getElementById('po-linepay-icon').value = paymentOptions.linepay?.icon || '💚';
+            document.getElementById('po-linepay-name').value = paymentOptions.linepay?.name || 'LINE Pay';
+            document.getElementById('po-linepay-desc').value = paymentOptions.linepay?.description || '線上安全付款';
+
+            document.getElementById('po-transfer-icon').value = paymentOptions.transfer?.icon || '🏦';
+            document.getElementById('po-transfer-name').value = paymentOptions.transfer?.name || '線上轉帳';
+            document.getElementById('po-transfer-desc').value = paymentOptions.transfer?.description || 'ATM / 網銀匯款';
+
             // 載入匯款帳號
             await loadBankAccountsAdmin();
         }
@@ -809,6 +828,24 @@ async function saveSettings() {
         });
 
         payload.settings.delivery_options_config = JSON.stringify(deliveryConfig);
+
+        payload.settings.payment_options_config = JSON.stringify({
+            cod: {
+                icon: document.getElementById('po-cod-icon').value.trim(),
+                name: document.getElementById('po-cod-name').value.trim(),
+                description: document.getElementById('po-cod-desc').value.trim()
+            },
+            linepay: {
+                icon: document.getElementById('po-linepay-icon').value.trim(),
+                name: document.getElementById('po-linepay-name').value.trim(),
+                description: document.getElementById('po-linepay-desc').value.trim()
+            },
+            transfer: {
+                icon: document.getElementById('po-transfer-icon').value.trim(),
+                name: document.getElementById('po-transfer-name').value.trim(),
+                description: document.getElementById('po-transfer-desc').value.trim()
+            }
+        });
 
         const r = await authFetch(`${API_URL}?action=updateSettings`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)

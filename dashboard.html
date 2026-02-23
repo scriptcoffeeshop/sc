@@ -351,6 +351,82 @@
                 </div>
             </div>
 
+            <!-- 金流選項顯示設定 -->
+            <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
+                <h3 class="font-semibold text-lg mb-3" style="color:var(--primary)">💵 金流選項顯示設定</h3>
+                <p class="text-sm text-gray-500 mb-4">
+                    您可以自訂前台三種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。</p>
+                <div class="overflow-x-auto border rounded" style="border-color:#e5ddd5">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 border-b" style="border-color:#e5ddd5">
+                            <tr>
+                                <th class="p-3 font-medium text-gray-700 w-24 whitespace-nowrap">系統代碼</th>
+                                <th class="p-3 font-medium text-gray-700">圖示與名稱 / 說明</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payment-options-table">
+                            <!-- 貨到付款 -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3 font-mono text-gray-500 text-center">cod</td>
+                                <td class="p-3">
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="po-cod-icon"
+                                                class="border rounded p-1 w-12 text-center text-xl" value="💵"
+                                                placeholder="圖示">
+                                            <input type="text" id="po-cod-name"
+                                                class="border rounded p-1 flex-1 min-w-[120px]" value="取件 / 到付"
+                                                placeholder="顯示名稱">
+                                        </div>
+                                        <input type="text" id="po-cod-desc"
+                                            class="border rounded p-1 w-full text-xs text-gray-600" value="取貨時付現或宅配到付"
+                                            placeholder="簡短說明">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- LINE Pay -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3 font-mono text-gray-500 text-center">linepay</td>
+                                <td class="p-3">
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="po-linepay-icon"
+                                                class="border rounded p-1 w-12 text-center text-xl" value="💚"
+                                                placeholder="圖示">
+                                            <input type="text" id="po-linepay-name"
+                                                class="border rounded p-1 flex-1 min-w-[120px]" value="LINE Pay"
+                                                placeholder="顯示名稱">
+                                        </div>
+                                        <input type="text" id="po-linepay-desc"
+                                            class="border rounded p-1 w-full text-xs text-gray-600" value="線上安全付款"
+                                            placeholder="簡短說明">
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- 線上轉帳 -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3 font-mono text-gray-500 text-center">transfer</td>
+                                <td class="p-3">
+                                    <div class="flex flex-col gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <input type="text" id="po-transfer-icon"
+                                                class="border rounded p-1 w-12 text-center text-xl" value="🏦"
+                                                placeholder="圖示">
+                                            <input type="text" id="po-transfer-name"
+                                                class="border rounded p-1 flex-1 min-w-[120px]" value="線上轉帳"
+                                                placeholder="顯示名稱">
+                                        </div>
+                                        <input type="text" id="po-transfer-desc"
+                                            class="border rounded p-1 w-full text-xs text-gray-600" value="ATM / 網銀匯款"
+                                            placeholder="簡短說明">
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- 匯款帳號管理 -->
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">🏦 匯款帳號管理</h3>

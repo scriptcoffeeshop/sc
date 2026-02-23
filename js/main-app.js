@@ -183,6 +183,38 @@ function applySettings(s) {
     // 將設定保存給其他模組使用
     window.appSettings = s;
 
+    // 套用金流自訂名稱與說明
+    const paymentOptionsStr = s.payment_options_config || '';
+    let paymentOptions = {};
+    if (paymentOptionsStr) {
+        try { paymentOptions = JSON.parse(paymentOptionsStr); } catch (e) { }
+    }
+
+    if (paymentOptions.cod) {
+        const iconEl = document.getElementById('po-cod-icon-display');
+        const nameEl = document.getElementById('po-cod-name-display');
+        const descEl = document.getElementById('po-cod-desc-display');
+        if (iconEl) iconEl.textContent = paymentOptions.cod.icon;
+        if (nameEl) nameEl.textContent = paymentOptions.cod.name;
+        if (descEl) descEl.textContent = paymentOptions.cod.description;
+    }
+    if (paymentOptions.linepay) {
+        const iconEl = document.getElementById('po-linepay-icon-display');
+        const nameEl = document.getElementById('po-linepay-name-display');
+        const descEl = document.getElementById('po-linepay-desc-display');
+        if (iconEl) iconEl.textContent = paymentOptions.linepay.icon;
+        if (nameEl) nameEl.textContent = paymentOptions.linepay.name;
+        if (descEl) descEl.textContent = paymentOptions.linepay.description;
+    }
+    if (paymentOptions.transfer) {
+        const iconEl = document.getElementById('po-transfer-icon-display');
+        const nameEl = document.getElementById('po-transfer-name-display');
+        const descEl = document.getElementById('po-transfer-desc-display');
+        if (iconEl) iconEl.textContent = paymentOptions.transfer.icon;
+        if (nameEl) nameEl.textContent = paymentOptions.transfer.name;
+        if (descEl) descEl.textContent = paymentOptions.transfer.description;
+    }
+
     // 取出最新的物流選項
     const deliveryConfigStr = window.appSettings.delivery_options_config || '';
     let deliveryConfig = [];
