@@ -60,19 +60,9 @@ export function selectDelivery(method, e) {
         clearSelectedStore();
     }
 
-    // 處理超商取貨時隱藏付款選項 (強制為貨到付款)
-    const paySection = document.getElementById('payment-method-section');
-    if (paySection) {
-        if (method === 'seven_eleven' || method === 'family_mart') {
-            paySection.classList.add('hidden');
-            // 強制選回取件/到付
-            if (window.selectPayment) {
-                window.selectPayment('cod');
-            }
-        } else {
-            // 店取、宅配才顯示付款選單
-            paySection.classList.remove('hidden');
-        }
+    // 處理付款方式選項（根據新版矩陣設定動態更新顯示與選取）
+    if (typeof window.updatePaymentOptionsState === 'function') {
+        window.updatePaymentOptionsState();
     }
 }
 

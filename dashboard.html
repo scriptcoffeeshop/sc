@@ -311,17 +311,95 @@
 
             <!-- 金流設定 -->
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
-                <h3 class="font-semibold mb-3" style="color:var(--primary)">💳 付款方式設定</h3>
-                <div class="space-y-3">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="s-linepay-enabled" class="w-4 h-4"> <span>啟用 LINE Pay 付款</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="s-linepay-sandbox" class="w-4 h-4"> <span>LINE Pay Sandbox
-                            模式（測試用）</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="s-transfer-enabled" class="w-4 h-4"> <span>啟用線上轉帳付款</span>
+                <h3 class="font-semibold mb-3" style="color:var(--primary)">💳 取貨與付款方式對應設定</h3>
+                <p class="text-sm text-gray-500 mb-4">請勾選各項取貨方式所允許的付款選項。</p>
+                <div class="overflow-x-auto mb-4 border rounded" style="border-color:#e5ddd5">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 border-b" style="border-color:#e5ddd5">
+                            <tr>
+                                <th class="p-3 font-medium text-gray-700">取貨方式</th>
+                                <th class="p-3 font-medium text-gray-700 text-center border-l"
+                                    style="border-color:#e5ddd5">貨到/取貨付款</th>
+                                <th class="p-3 font-medium text-gray-700 text-center border-l"
+                                    style="border-color:#e5ddd5">LINE Pay</th>
+                                <th class="p-3 font-medium text-gray-700 text-center border-l"
+                                    style="border-color:#e5ddd5">線上轉帳</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 來店自取 -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3">🚶 來店自取</td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="in_store" data-payment="cod">
+                                </td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="in_store"
+                                        data-payment="linepay"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="in_store"
+                                        data-payment="transfer"></td>
+                            </tr>
+                            <!-- 配送到府 -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3">🛵 配送到府 (限新竹)</td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="delivery" data-payment="cod">
+                                </td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="delivery"
+                                        data-payment="linepay"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="delivery"
+                                        data-payment="transfer"></td>
+                            </tr>
+                            <!-- 全台宅配 -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3">📦 全台宅配</td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="home_delivery"
+                                        data-payment="cod"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="home_delivery"
+                                        data-payment="linepay"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="home_delivery"
+                                        data-payment="transfer"></td>
+                            </tr>
+                            <!-- 7-11 取件 -->
+                            <tr class="border-b" style="border-color:#e5ddd5">
+                                <td class="p-3">🏪 7-11 取件</td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="seven_eleven"
+                                        data-payment="cod"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="seven_eleven"
+                                        data-payment="linepay"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="seven_eleven"
+                                        data-payment="transfer"></td>
+                            </tr>
+                            <!-- 全家取件 -->
+                            <tr>
+                                <td class="p-3">🏬 全家取件</td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="family_mart"
+                                        data-payment="cod"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="family_mart"
+                                        data-payment="linepay"></td>
+                                <td class="p-3 text-center border-l" style="border-color:#e5ddd5"><input type="checkbox"
+                                        class="w-4 h-4 payment-routing-cb" data-delivery="family_mart"
+                                        data-payment="transfer"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="space-y-3 mt-4">
+                    <label class="flex items-center gap-2 cursor-pointer text-sm">
+                        <input type="checkbox" id="s-linepay-sandbox" class="w-4 h-4"> <span>開發者功能：LINE Pay Sandbox
+                            模式（測試環境）</span>
                     </label>
                 </div>
             </div>

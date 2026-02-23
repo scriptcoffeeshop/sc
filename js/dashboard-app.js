@@ -602,10 +602,31 @@ async function loadSettings() {
             document.getElementById('s-notes-size').value = s.notes_section_size || 'text-base';
             document.getElementById('s-notes-bold').checked = String(s.notes_section_bold) !== 'false';
 
-            // 付款設定
-            document.getElementById('s-linepay-enabled').checked = String(s.linepay_enabled) === 'true';
+            // 付款與取貨對應設定
+            const routingConfigStr = s.payment_routing_config || '';
+            let routingConfig = {};
+            if (routingConfigStr) {
+                try { routingConfig = JSON.parse(routingConfigStr); } catch (e) { console.error('Parsed payment_routing_config fails'); }
+            } else {
+                // 相容舊版設定
+                const le = String(s.linepay_enabled) === 'true';
+                const te = String(s.transfer_enabled) === 'true';
+                routingConfig = {
+                    in_store: { cod: true, linepay: le, transfer: te },
+                    delivery: { cod: true, linepay: le, transfer: te },
+                    home_delivery: { cod: true, linepay: le, transfer: te },
+                    seven_eleven: { cod: true, linepay: false, transfer: false },
+                    family_mart: { cod: true, linepay: false, transfer: false }
+                };
+            }
+
+            document.querySelectorAll('.payment-routing-cb').forEach(cb => {
+                const d = cb.dataset.delivery;
+                const p = cb.dataset.payment;
+                cb.checked = !!(routingConfig[d] && routingConfig[d][p]);
+            });
+
             document.getElementById('s-linepay-sandbox').checked = String(s.linepay_sandbox) !== 'false';
-            document.getElementById('s-transfer-enabled').checked = String(s.transfer_enabled) === 'true';
 
             // 載入匯款帳號
             await loadBankAccountsAdmin();
@@ -629,37 +650,46 @@ function resetSectionTitle(section) {
 
 async function saveSettings() {
     try {
+        const payload = {
+            userId: getAuthUserId(),
+            settings: {
+                announcement_enabled: String(document.getElementById('s-ann-enabled').checked),
+                announcement: document.getElementById('s-announcement').value,
+                is_open: document.querySelector('input[name="s-open"]:checked')?.value || 'true',
+                site_title: document.getElementById('s-site-title').value.trim(),
+                site_subtitle: document.getElementById('s-site-subtitle').value.trim(),
+                site_icon_emoji: document.getElementById('s-site-emoji').value.trim(),
+
+                products_section_title: document.getElementById('s-products-title').value.trim(),
+                products_section_color: document.getElementById('s-products-color').value,
+                products_section_size: document.getElementById('s-products-size').value,
+                products_section_bold: String(document.getElementById('s-products-bold').checked),
+
+                delivery_section_title: document.getElementById('s-delivery-title').value.trim(),
+                delivery_section_color: document.getElementById('s-delivery-color').value,
+                delivery_section_size: document.getElementById('s-delivery-size').value,
+                delivery_section_bold: String(document.getElementById('s-delivery-bold').checked),
+
+                notes_section_title: document.getElementById('s-notes-title').value.trim(),
+                notes_section_color: document.getElementById('s-notes-color').value,
+                notes_section_size: document.getElementById('s-notes-size').value,
+                notes_section_bold: String(document.getElementById('s-notes-bold').checked),
+
+                linepay_sandbox: String(document.getElementById('s-linepay-sandbox').checked)
+            }
+        };
+
+        const routingConfig = {};
+        document.querySelectorAll('.payment-routing-cb').forEach(cb => {
+            const d = cb.dataset.delivery;
+            const p = cb.dataset.payment;
+            if (!routingConfig[d]) routingConfig[d] = {};
+            routingConfig[d][p] = cb.checked;
+        });
+        payload.settings.payment_routing_config = JSON.stringify(routingConfig);
+
         const r = await authFetch(`${API_URL}?action=updateSettings`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-                userId: getAuthUserId(),
-                settings: {
-                    announcement_enabled: String(document.getElementById('s-ann-enabled').checked),
-                    announcement: document.getElementById('s-announcement').value,
-                    is_open: document.querySelector('input[name="s-open"]:checked')?.value || 'true',
-                    site_title: document.getElementById('s-site-title').value.trim(),
-                    site_subtitle: document.getElementById('s-site-subtitle').value.trim(),
-                    site_icon_emoji: document.getElementById('s-site-emoji').value.trim(),
-
-                    products_section_title: document.getElementById('s-products-title').value.trim(),
-                    products_section_color: document.getElementById('s-products-color').value,
-                    products_section_size: document.getElementById('s-products-size').value,
-                    products_section_bold: String(document.getElementById('s-products-bold').checked),
-
-                    delivery_section_title: document.getElementById('s-delivery-title').value.trim(),
-                    delivery_section_color: document.getElementById('s-delivery-color').value,
-                    delivery_section_size: document.getElementById('s-delivery-size').value,
-                    delivery_section_bold: String(document.getElementById('s-delivery-bold').checked),
-
-                    notes_section_title: document.getElementById('s-notes-title').value.trim(),
-                    notes_section_color: document.getElementById('s-notes-color').value,
-                    notes_section_size: document.getElementById('s-notes-size').value,
-                    notes_section_bold: String(document.getElementById('s-notes-bold').checked),
-
-                    linepay_enabled: String(document.getElementById('s-linepay-enabled').checked),
-                    linepay_sandbox: String(document.getElementById('s-linepay-sandbox').checked),
-                    transfer_enabled: String(document.getElementById('s-transfer-enabled').checked),
-                }
-            })
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
         });
         const d = await r.json();
         if (d.success) Toast.fire({ icon: 'success', title: '設定已儲存' });

@@ -180,17 +180,64 @@ function applySettings(s) {
         document.getElementById('total-price').textContent = '🔒 目前休息中，暫停接單';
     }
 
-    // 付款方式設定
-    state.linePayEnabled = String(s.linepay_enabled) === 'true';
-    state.transferEnabled = String(s.transfer_enabled) === 'true';
-
-    if (state.linePayEnabled) {
-        document.getElementById('linepay-option').classList.remove('hidden');
-    }
-    if (state.transferEnabled) {
-        document.getElementById('transfer-option').classList.remove('hidden');
+    // 將設定保存給其他模組使用
+    window.appSettings = s;
+    if (typeof window.updatePaymentOptionsState === 'function') {
+        window.updatePaymentOptionsState();
     }
 }
+
+window.updatePaymentOptionsState = function () {
+    if (!window.appSettings) return;
+
+    const routingConfigStr = window.appSettings.payment_routing_config || '';
+    let routingConfig = {};
+    if (routingConfigStr) {
+        try { routingConfig = JSON.parse(routingConfigStr); } catch (e) { console.error('Parsed payment_routing_config fails'); }
+    } else {
+        const le = String(window.appSettings.linepay_enabled) === 'true';
+        const te = String(window.appSettings.transfer_enabled) === 'true';
+        routingConfig = {
+            in_store: { cod: true, linepay: le, transfer: te },
+            delivery: { cod: true, linepay: le, transfer: te },
+            home_delivery: { cod: true, linepay: le, transfer: te },
+            seven_eleven: { cod: true, linepay: false, transfer: false },
+            family_mart: { cod: true, linepay: false, transfer: false }
+        };
+    }
+
+    const delivery = state.selectedDelivery || 'in_store';
+    const currentConfig = routingConfig[delivery] || { cod: true, linepay: false, transfer: false };
+
+    const codOpt = document.getElementById('cod-option');
+    const lpOpt = document.getElementById('linepay-option');
+    const trOpt = document.getElementById('transfer-option');
+
+    // 處理 DOM 更新
+    if (codOpt) codOpt.classList.toggle('hidden', !currentConfig.cod);
+    if (lpOpt) lpOpt.classList.toggle('hidden', !currentConfig.linepay);
+    if (trOpt) trOpt.classList.toggle('hidden', !currentConfig.transfer);
+
+    // 如果目前選擇的選項不被該物流允許，則重置為第一個可用的選向
+    if (state.selectedPayment && !currentConfig[state.selectedPayment]) {
+        if (currentConfig.cod) selectPayment('cod');
+        else if (currentConfig.linepay) selectPayment('linepay');
+        else if (currentConfig.transfer) selectPayment('transfer');
+        else {
+            state.selectedPayment = '';
+            document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
+            // 隱藏轉帳資訊區塊
+            const transferSection = document.getElementById('transfer-info-section');
+            if (transferSection) transferSection.classList.add('hidden');
+        }
+    } else if (!state.selectedPayment) {
+        if (currentConfig.cod) selectPayment('cod');
+        else if (currentConfig.linepay) selectPayment('linepay');
+        else if (currentConfig.transfer) selectPayment('transfer');
+    }
+};
+
+window.selectPayment = selectPayment;
 
 function updateFormState() {
     const loggedIn = !!state.currentUser;
