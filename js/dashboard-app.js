@@ -139,7 +139,7 @@ function renderOrders() {
 
     container.innerHTML = filtered.map(o => {
         const time = new Date(o.timestamp).toLocaleString('zh-TW');
-        const addrInfo = o.deliveryMethod === 'delivery'
+        const addrInfo = (o.deliveryMethod === 'delivery' || o.deliveryMethod === 'home_delivery')
             ? `${o.city || ''}${o.district || ''} ${o.address || ''}`
             : `${o.storeName || ''}${o.storeId ? ' [' + o.storeId + ']' : ''}${o.storeAddress ? ' (' + o.storeAddress + ')' : ''}`;
 
@@ -161,6 +161,26 @@ function renderOrders() {
             ? `<button onclick="confirmTransferPayment('${esc(o.orderId)}')" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
             : '';
 
+        let trackingHtml = '';
+        if (o.trackingNumber) {
+            let trackingLink = '';
+            if (o.deliveryMethod === 'seven_eleven') {
+                trackingLink = `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 7-11貨態查詢</a>`;
+            } else if (o.deliveryMethod === 'family_mart') {
+                trackingLink = `<a href="https://fmec.famiport.com.tw/FP_Entrance/QueryBox" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 全家貨態查詢</a>`;
+            } else if (o.deliveryMethod === 'delivery' || o.deliveryMethod === 'home_delivery') {
+                trackingLink = `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 中華郵政查詢</a>`;
+            }
+
+            trackingHtml = `
+                <div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
+                    <span class="text-gray-500">物流單號：</span>
+                    <span class="font-mono font-bold">${esc(o.trackingNumber)}</span>
+                    <button onclick="navigator.clipboard.writeText('${esc(o.trackingNumber)}'); Toast.fire({icon: 'success', title: '單號已複製'});" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button>
+                    ${trackingLink}
+                </div>`;
+        }
+
         return `
         <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
             <div class="flex justify-between items-center mb-2">
@@ -179,7 +199,8 @@ function renderOrders() {
                 <div class="col-span-2"><span class="text-gray-500">地址/門市：</span>${esc(addrInfo)}</div>
                 ${transferInfo}
             </div>
-            <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${esc(o.items)}</div>
+            ${trackingHtml}
+            <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2 mt-2">${esc(o.items)}</div>
             ${o.note ? `<div class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2">📝 ${esc(o.note)}</div>` : ''}
             <div class="flex justify-between items-center">
                 <span class="font-bold" style="color:var(--accent)">$${o.total}</span>
@@ -198,9 +219,41 @@ function renderOrders() {
 
 async function changeOrderStatus(orderId, status) {
     try {
-        const r = await authFetch(`${API_URL}?action=updateOrderStatus`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), orderId, status }) });
+        let trackingNumber = '';
+        if (status === 'shipped') {
+            const { value: inputNum, isConfirmed } = await Swal.fire({
+                title: '設定已出貨',
+                text: '請輸入物流單號 (可選填)',
+                input: 'text',
+                inputPlaceholder: '請輸入單號',
+                showCancelButton: true,
+                confirmButtonText: '確定',
+                cancelButtonText: '取消',
+                confirmButtonColor: '#3C2415'
+            });
+            if (!isConfirmed) {
+                // 如果取消，則恢復原本的選單狀態 (重新載入一次列表)
+                loadOrders();
+                return;
+            }
+            trackingNumber = inputNum ? inputNum.trim() : '';
+        }
+
+        const payload = { userId: getAuthUserId(), orderId, status };
+        if (trackingNumber) {
+            payload.trackingNumber = trackingNumber;
+        }
+
+        const r = await authFetch(`${API_URL}?action=updateOrderStatus`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
         const d = await r.json();
-        if (d.success) { Toast.fire({ icon: 'success', title: '狀態已更新' }); loadOrders(); }
+        if (d.success) {
+            Toast.fire({ icon: 'success', title: '狀態已更新' });
+            loadOrders();
+        }
         else throw new Error(d.error);
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
 }
