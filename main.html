@@ -73,37 +73,8 @@
         <!-- 配送方式 -->
         <div class="mb-6">
             <h2 class="text-lg font-bold mb-4" style="color:var(--primary)" id="delivery-section-title">🚚 配送方式</h2>
-            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
-                <div class="delivery-option" onclick="selectDelivery('in_store', event)">
-                    <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🚶</div>
-                    <div class="font-semibold" style="font-size: 0.95rem;">來店取貨</div>
-                    <div class="text-xs text-gray-500 mt-1">到店自取</div>
-                </div>
-                <div class="delivery-option" onclick="selectDelivery('delivery', event)">
-                    <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🛵</div>
-                    <div class="font-semibold" style="font-size: 0.95rem;">配送到府</div>
-                    <div class="text-xs text-gray-500 mt-1">新竹限區送</div>
-                </div>
-                <div class="delivery-option" onclick="selectDelivery('seven_eleven', event)">
-                    <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🏪</div>
-                    <div class="font-semibold" style="font-size: 0.95rem;">7-11 取件</div>
-                    <div class="text-xs text-gray-500 mt-1">超商門市</div>
-                </div>
-                <div class="delivery-option" onclick="selectDelivery('family_mart', event)">
-                    <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">🏬</div>
-                    <div class="font-semibold" style="font-size: 0.95rem;">全家取件</div>
-                    <div class="text-xs text-gray-500 mt-1">超商門市</div>
-                </div>
-                <div class="delivery-option" onclick="selectDelivery('home_delivery', event)">
-                    <div class="check-mark">✓</div>
-                    <div class="text-2xl mb-2">📦</div>
-                    <div class="font-semibold" style="font-size: 0.95rem;">全台宅配</div>
-                    <div class="text-xs text-gray-500 mt-1">宅配到府</div>
-                </div>
+            <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4" id="delivery-options-list">
+                <!-- 由 JS 動態產生，依據 delivery_options_config -->
             </div>
 
             <!-- 配送到府地址 (限竹北/新竹) -->

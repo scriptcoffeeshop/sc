@@ -28,8 +28,34 @@ if (document.readyState === 'loading') {
     initCitySelector();
 }
 
+/** 動態渲染配送選項按鈕 */
+window.renderDeliveryOptions = function (config) {
+    const list = document.getElementById('delivery-options-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    // 只渲染有啟用的物流方式
+    const activeOptions = config.filter(opt => opt.enabled);
+
+    activeOptions.forEach(opt => {
+        const div = document.createElement('div');
+        div.className = 'delivery-option';
+        // 使用資料屬性與 onclick 讓原先的邏輯能夠正常運作
+        div.setAttribute('onclick', `selectDelivery('${opt.id}', event)`);
+        div.dataset.id = opt.id;
+
+        div.innerHTML = `
+            <div class="check-mark">✓</div>
+            <div class="text-2xl mb-2">${opt.icon}</div>
+            <div class="font-semibold" style="font-size: 0.95rem;">${opt.name}</div>
+            <div class="text-xs text-gray-500 mt-1">${opt.description}</div>
+        `;
+        list.appendChild(div);
+    });
+};
+
 /** 選擇配送方式 */
-export function selectDelivery(method, e) {
+window.selectDelivery = function (method, e) {
     state.selectedDelivery = method;
     document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('active'));
 
@@ -37,7 +63,7 @@ export function selectDelivery(method, e) {
     if (e && e.currentTarget && typeof e.currentTarget.classList !== 'undefined') {
         e.currentTarget.classList.add('active');
     } else {
-        const btn = document.querySelector(`.delivery-option[onclick*="'${method}'"]`);
+        const btn = document.querySelector(`.delivery-option[data-id="${method}"]`) || document.querySelector(`.delivery-option[onclick*="'${method}'"]`);
         if (btn) btn.classList.add('active');
     }
 
@@ -60,11 +86,19 @@ export function selectDelivery(method, e) {
         clearSelectedStore();
     }
 
-    // 處理付款方式選項（根據新版矩陣設定動態更新顯示與選取）
+    // 處理付款方式選項（根據新版陣列設定動態更新顯示與選取）
     if (typeof window.updatePaymentOptionsState === 'function') {
-        window.updatePaymentOptionsState();
+        // 從 appSettings 重新抓取
+        const deliveryConfigStr = window.appSettings?.delivery_options_config || '';
+        let deliveryConfig = [];
+        if (deliveryConfigStr) {
+            try { deliveryConfig = JSON.parse(deliveryConfigStr); } catch (e) { }
+        }
+        window.updatePaymentOptionsState(deliveryConfig);
     }
 }
+// 為了相容匯出 (如果其他檔案透過 import 引用)
+export const selectDelivery = window.selectDelivery;
 
 /** 更新地區下拉 (限新竹使用) */
 export function updateDistricts() {

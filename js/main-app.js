@@ -182,32 +182,67 @@ function applySettings(s) {
 
     // 將設定保存給其他模組使用
     window.appSettings = s;
+
+    // 取出最新的物流選項
+    const deliveryConfigStr = window.appSettings.delivery_options_config || '';
+    let deliveryConfig = [];
+    if (deliveryConfigStr) {
+        try { deliveryConfig = JSON.parse(deliveryConfigStr); } catch (e) { }
+    }
+
+    // 如果尚未轉移格式，進行臨時轉換以保證前台正常運作
+    if (!deliveryConfig.length) {
+        const rStr = s.payment_routing_config || '';
+        let rConfig = {};
+        if (rStr) { try { rConfig = JSON.parse(rStr); } catch (e) { } }
+        else {
+            const le = String(s.linepay_enabled) === 'true';
+            const te = String(s.transfer_enabled) === 'true';
+            rConfig = {
+                in_store: { cod: true, linepay: le, transfer: te },
+                delivery: { cod: true, linepay: le, transfer: te },
+                home_delivery: { cod: true, linepay: le, transfer: te },
+                seven_eleven: { cod: true, linepay: false, transfer: false },
+                family_mart: { cod: true, linepay: false, transfer: false }
+            };
+        }
+        deliveryConfig = [
+            { id: 'in_store', icon: '🚶', name: '來店自取', description: '到店自取', enabled: true, payment: rConfig['in_store'] || { cod: true, linepay: false, transfer: false } },
+            { id: 'delivery', icon: '🛵', name: '配送到府 (限新竹)', description: '專人外送', enabled: true, payment: rConfig['delivery'] || { cod: true, linepay: false, transfer: false } },
+            { id: 'home_delivery', icon: '📦', name: '全台宅配', description: '宅配到府', enabled: true, payment: rConfig['home_delivery'] || { cod: true, linepay: false, transfer: false } },
+            { id: 'seven_eleven', icon: '🏪', name: '7-11 取件', description: '超商門市', enabled: true, payment: rConfig['seven_eleven'] || { cod: true, linepay: false, transfer: false } },
+            { id: 'family_mart', icon: '🏬', name: '全家取件', description: '超商門市', enabled: true, payment: rConfig['family_mart'] || { cod: true, linepay: false, transfer: false } }
+        ];
+    }
+
+    // 渲染物流選項 (在 delivery.js 中定義)
+    if (typeof window.renderDeliveryOptions === 'function') {
+        window.renderDeliveryOptions(deliveryConfig);
+    }
+
     if (typeof window.updatePaymentOptionsState === 'function') {
-        window.updatePaymentOptionsState();
+        window.updatePaymentOptionsState(deliveryConfig);
     }
 }
 
-window.updatePaymentOptionsState = function () {
-    if (!window.appSettings) return;
+window.updatePaymentOptionsState = function (deliveryConfig) {
+    if (!deliveryConfig) return;
 
-    const routingConfigStr = window.appSettings.payment_routing_config || '';
-    let routingConfig = {};
-    if (routingConfigStr) {
-        try { routingConfig = JSON.parse(routingConfigStr); } catch (e) { console.error('Parsed payment_routing_config fails'); }
-    } else {
-        const le = String(window.appSettings.linepay_enabled) === 'true';
-        const te = String(window.appSettings.transfer_enabled) === 'true';
-        routingConfig = {
-            in_store: { cod: true, linepay: le, transfer: te },
-            delivery: { cod: true, linepay: le, transfer: te },
-            home_delivery: { cod: true, linepay: le, transfer: te },
-            seven_eleven: { cod: true, linepay: false, transfer: false },
-            family_mart: { cod: true, linepay: false, transfer: false }
-        };
+    // 確保有預設選擇的物流
+    const activeDeliveryOptions = deliveryConfig.filter(d => d.enabled);
+    if (activeDeliveryOptions.length === 0) return; // 全部關閉的防呆
+
+    if (!state.selectedDelivery || !activeDeliveryOptions.find(d => d.id === state.selectedDelivery)) {
+        // 如果目前選的物流不存在或被關閉，預設選回第一個
+        state.selectedDelivery = activeDeliveryOptions[0].id;
+        // 需同步更新 UI
+        if (typeof window.selectDelivery === 'function') {
+            window.selectDelivery(state.selectedDelivery);
+        }
     }
 
-    const delivery = state.selectedDelivery || 'in_store';
-    const currentConfig = routingConfig[delivery] || { cod: true, linepay: false, transfer: false };
+    const currentConfigOpt = activeDeliveryOptions.find(d => d.id === state.selectedDelivery);
+    const currentConfig = currentConfigOpt ? currentConfigOpt.payment : { cod: true, linepay: false, transfer: false };
 
     const codOpt = document.getElementById('cod-option');
     const lpOpt = document.getElementById('linepay-option');
@@ -218,7 +253,7 @@ window.updatePaymentOptionsState = function () {
     if (lpOpt) lpOpt.classList.toggle('hidden', !currentConfig.linepay);
     if (trOpt) trOpt.classList.toggle('hidden', !currentConfig.transfer);
 
-    // 如果目前選擇的選項不被該物流允許，則重置為第一個可用的選向
+    // 如果目前選擇的選向不被該物流允許，則重置為第一個可用的選向
     if (state.selectedPayment && !currentConfig[state.selectedPayment]) {
         if (currentConfig.cod) selectPayment('cod');
         else if (currentConfig.linepay) selectPayment('linepay');

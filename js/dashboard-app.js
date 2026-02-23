@@ -602,29 +602,48 @@ async function loadSettings() {
             document.getElementById('s-notes-size').value = s.notes_section_size || 'text-base';
             document.getElementById('s-notes-bold').checked = String(s.notes_section_bold) !== 'false';
 
-            // 付款與取貨對應設定
-            const routingConfigStr = s.payment_routing_config || '';
-            let routingConfig = {};
-            if (routingConfigStr) {
-                try { routingConfig = JSON.parse(routingConfigStr); } catch (e) { console.error('Parsed payment_routing_config fails'); }
-            } else {
-                // 相容舊版設定
-                const le = String(s.linepay_enabled) === 'true';
-                const te = String(s.transfer_enabled) === 'true';
-                routingConfig = {
-                    in_store: { cod: true, linepay: le, transfer: te },
-                    delivery: { cod: true, linepay: le, transfer: te },
-                    home_delivery: { cod: true, linepay: le, transfer: te },
-                    seven_eleven: { cod: true, linepay: false, transfer: false },
-                    family_mart: { cod: true, linepay: false, transfer: false }
-                };
+            // 物流與金流對應設定載入
+            const deliveryConfigStr = s.delivery_options_config || '';
+            let deliveryConfig = [];
+
+            if (deliveryConfigStr) {
+                try {
+                    deliveryConfig = JSON.parse(deliveryConfigStr);
+                } catch (e) {
+                    console.error('Parsed delivery_options_config fails:', e);
+                }
             }
 
-            document.querySelectorAll('.payment-routing-cb').forEach(cb => {
-                const d = cb.dataset.delivery;
-                const p = cb.dataset.payment;
-                cb.checked = !!(routingConfig[d] && routingConfig[d][p]);
-            });
+            // 如果從未設定過 delivery_options_config，則進行舊版資料轉移 (Migration)
+            if (!deliveryConfig.length) {
+                // 嘗試讀取舊版金流對應
+                const routingConfigStr = s.payment_routing_config || '';
+                let routingConfig = {};
+                if (routingConfigStr) {
+                    try { routingConfig = JSON.parse(routingConfigStr); } catch (e) { }
+                } else {
+                    const le = String(s.linepay_enabled) === 'true';
+                    const te = String(s.transfer_enabled) === 'true';
+                    routingConfig = {
+                        in_store: { cod: true, linepay: le, transfer: te },
+                        delivery: { cod: true, linepay: le, transfer: te },
+                        home_delivery: { cod: true, linepay: le, transfer: te },
+                        seven_eleven: { cod: true, linepay: false, transfer: false },
+                        family_mart: { cod: true, linepay: false, transfer: false }
+                    };
+                }
+
+                // 將舊資料結構轉換為新版陣列
+                deliveryConfig = [
+                    { id: 'in_store', icon: '🚶', name: '來店自取', description: '到店自取', enabled: true, payment: routingConfig['in_store'] || { cod: true, linepay: false, transfer: false } },
+                    { id: 'delivery', icon: '🛵', name: '配送到府 (限新竹)', description: '專人外送', enabled: true, payment: routingConfig['delivery'] || { cod: true, linepay: false, transfer: false } },
+                    { id: 'home_delivery', icon: '📦', name: '全台宅配', description: '宅配到府', enabled: true, payment: routingConfig['home_delivery'] || { cod: true, linepay: false, transfer: false } },
+                    { id: 'seven_eleven', icon: '🏪', name: '7-11 取件', description: '超商門市', enabled: true, payment: routingConfig['seven_eleven'] || { cod: true, linepay: false, transfer: false } },
+                    { id: 'family_mart', icon: '🏬', name: '全家取件', description: '超商門市', enabled: true, payment: routingConfig['family_mart'] || { cod: true, linepay: false, transfer: false } }
+                ];
+            }
+
+            renderDeliveryOptionsAdmin(deliveryConfig);
 
             document.getElementById('s-linepay-sandbox').checked = String(s.linepay_sandbox) !== 'false';
 
@@ -632,6 +651,92 @@ async function loadSettings() {
             await loadBankAccountsAdmin();
         }
     } catch (e) { console.error(e); }
+}
+
+// ============ 物流選項管理 ============
+function renderDeliveryOptionsAdmin(config) {
+    const tbody = document.getElementById('delivery-routing-table');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    config.forEach((item) => {
+        configToHtml(item, tbody);
+    });
+
+    // 重新綁定 Sortable (如果已經存在則銷毀重建)
+    if (window.deliverySortable) {
+        window.deliverySortable.destroy();
+    }
+    window.deliverySortable = new Sortable(tbody, {
+        animation: 150,
+        handle: '.cursor-move',
+        ghostClass: 'bg-gray-100'
+    });
+}
+
+function addDeliveryOptionAdmin() {
+    const tempId = 'custom_' + Date.now();
+    const newConfig = {
+        id: tempId,
+        icon: '📦',
+        name: '新物流方式',
+        description: '設定敘述',
+        enabled: true,
+        payment: { cod: true, linepay: false, transfer: false }
+    };
+
+    const tbody = document.getElementById('delivery-routing-table');
+    if (!tbody) return;
+
+    configToHtml(newConfig, tbody, true);
+}
+
+function configToHtml(item, tbody, isNew = false) {
+    const tr = document.createElement('tr');
+    tr.className = 'border-b delivery-option-row group' + (isNew ? ' bg-yellow-50' : '');
+    tr.style.borderColor = '#e5ddd5';
+    tr.dataset.id = item.id;
+
+    tr.innerHTML = `
+        <td class="p-3 text-center cursor-move text-gray-400 hover:text-gray-600 transition">
+            ☰
+        </td>
+        <td class="p-3">
+            <div class="flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <input type="text" class="border rounded p-1 w-12 text-center text-xl do-icon" value="${item.icon}" placeholder="圖示">
+                    <input type="text" class="border rounded p-1 flex-1 min-w-[120px] do-name" value="${item.name}" placeholder="物流名稱">
+                    <input type="hidden" class="do-id" value="${item.id}">
+                </div>
+                <input type="text" class="border rounded p-1 w-full text-xs text-gray-600 do-desc" value="${item.description}" placeholder="簡短說明 (例如: 到店自取)">
+            </div>
+        </td>
+        <td class="p-3 text-center border-l bg-gray-50/50" style="border-color:#e5ddd5">
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer do-enabled" ${item.enabled ? 'checked' : ''}>
+                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+            </label>
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+            <input type="checkbox" class="w-4 h-4 do-cod" ${item.payment?.cod ? 'checked' : ''}>
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+            <input type="checkbox" class="w-4 h-4 do-linepay" ${item.payment?.linepay ? 'checked' : ''}>
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+            <input type="checkbox" class="w-4 h-4 do-transfer" ${item.payment?.transfer ? 'checked' : ''}>
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+            <button type="button" class="text-red-500 hover:text-red-700 p-1" onclick="this.closest('tr').remove()" title="刪除此選項">
+                🗑️
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+
+    if (isNew) {
+        setTimeout(() => tr.classList.remove('bg-yellow-50'), 1500);
+    }
 }
 
 function resetSectionTitle(section) {
@@ -679,14 +784,31 @@ async function saveSettings() {
             }
         };
 
-        const routingConfig = {};
-        document.querySelectorAll('.payment-routing-cb').forEach(cb => {
-            const d = cb.dataset.delivery;
-            const p = cb.dataset.payment;
-            if (!routingConfig[d]) routingConfig[d] = {};
-            routingConfig[d][p] = cb.checked;
+        const deliveryConfig = [];
+        document.querySelectorAll('.delivery-option-row').forEach(row => {
+            const id = row.querySelector('.do-id').value;
+            const icon = row.querySelector('.do-icon').value.trim();
+            const name = row.querySelector('.do-name').value.trim();
+            const desc = row.querySelector('.do-desc').value.trim();
+            const enabled = row.querySelector('.do-enabled').checked;
+
+            const cod = row.querySelector('.do-cod').checked;
+            const linepay = row.querySelector('.do-linepay').checked;
+            const transfer = row.querySelector('.do-transfer').checked;
+
+            if (name) {
+                deliveryConfig.push({
+                    id,
+                    icon,
+                    name,
+                    description: desc,
+                    enabled,
+                    payment: { cod, linepay, transfer }
+                });
+            }
         });
-        payload.settings.payment_routing_config = JSON.stringify(routingConfig);
+
+        payload.settings.delivery_options_config = JSON.stringify(deliveryConfig);
 
         const r = await authFetch(`${API_URL}?action=updateSettings`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
