@@ -49,6 +49,7 @@ export function selectDelivery(method, e) {
     if (method === 'delivery') {
         document.getElementById('delivery-address-section').classList.remove('hidden');
     } else if (method === 'home_delivery') {
+        initCitySelector(); // 確保使用者點擊時，如果尚未初始化，則再初始化一次
         document.getElementById('home-delivery-section').classList.remove('hidden');
     } else if (method === 'in_store') {
         document.getElementById('in-store-section').classList.remove('hidden');
