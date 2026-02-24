@@ -1,0 +1,13 @@
+project_id = "avnvsjyyeofivgmrchte"
+
+[api]
+enabled = true
+port = 54321
+
+[auth]
+enabled = true
+
+[functions]
+# 這裡可以定義 function 的配置
+[functions.coffee-api]
+verify_jwt = false # 我們的 router 內部會處理

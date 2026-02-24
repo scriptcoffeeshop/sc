@@ -1,0 +1,32 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Verify formatting
+        run: deno fmt --check supabase/functions/coffee-api/
+
+      - name: Linting
+        run: deno lint supabase/functions/coffee-api/
+
+      - name: Type Check
+        run: deno check supabase/functions/coffee-api/index.ts
+
+      - name: Run Tests
+        run: deno test --allow-all supabase/functions/coffee-api/tests/
