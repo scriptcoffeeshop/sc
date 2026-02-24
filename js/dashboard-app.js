@@ -723,11 +723,11 @@ function configToHtml(item, tbody, isNew = false) {
         <td class="p-3">
             <div class="flex flex-col gap-2">
                 <div class="flex items-center gap-2">
-                    <input type="text" class="border rounded p-1 w-12 text-center text-xl do-icon" value="${item.icon}" placeholder="圖示">
-                    <input type="text" class="border rounded p-1 flex-1 min-w-[120px] do-name" value="${item.name}" placeholder="物流名稱">
-                    <input type="hidden" class="do-id" value="${item.id}">
+                    <input type="text" class="border rounded p-1 w-12 text-center text-xl do-icon" value="${esc(item.icon)}" placeholder="圖示">
+                    <input type="text" class="border rounded p-1 flex-1 min-w-[120px] do-name" value="${esc(item.name)}" placeholder="物流名稱">
+                    <input type="hidden" class="do-id" value="${esc(item.id)}">
                 </div>
-                <input type="text" class="border rounded p-1 w-full text-xs text-gray-600 do-desc" value="${item.description}" placeholder="簡短說明 (例如: 到店自取)">
+                <input type="text" class="border rounded p-1 w-full text-xs text-gray-600 do-desc" value="${esc(item.description)}" placeholder="簡短說明 (例如: 到店自取)">
             </div>
         </td>
         <td class="p-3 text-center border-l bg-gray-50/50" style="border-color:#e5ddd5">

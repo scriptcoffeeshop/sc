@@ -34,6 +34,7 @@ window.submitOrder = submitOrder;
 window.showMyOrders = showMyOrders;
 window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
+window.selectBankAccount = selectBankAccount;
 window.loginWithLine = () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state');
 window.closeAnnouncement = () => document.getElementById('announcement-banner').classList.add('hidden');
 
@@ -335,25 +336,45 @@ function selectPayment(method) {
 }
 
 function selectBankAccount(id) {
-    state.selectedBankAccountId = id;
+    const hasAccounts = Array.isArray(state.bankAccounts) && state.bankAccounts.length > 0;
+    if (!hasAccounts) {
+        state.selectedBankAccountId = '';
+        renderBankAccounts();
+        return;
+    }
+
+    const selected = state.bankAccounts.find(b => String(b.id) === String(id));
+    state.selectedBankAccountId = selected ? selected.id : state.bankAccounts[0].id;
     renderBankAccounts(); // 重新渲染以更新 UI 狀態
 }
 
 function renderBankAccounts() {
     const container = document.getElementById('bank-accounts-list');
-    if (!container || !state.bankAccounts.length) return;
+    if (!container) return;
+    if (!Array.isArray(state.bankAccounts) || state.bankAccounts.length === 0) {
+        state.selectedBankAccountId = '';
+        container.innerHTML = '';
+        return;
+    }
+
+    // 如果目前選取帳號不存在（例如後台已刪除），自動回退到第一個可用帳號
+    const selectedExists = state.bankAccounts.some(b => String(b.id) === String(state.selectedBankAccountId));
+    if (!selectedExists) {
+        state.selectedBankAccountId = state.bankAccounts[0].id;
+    }
+
     container.innerHTML = state.bankAccounts.map(b => {
         const isSelected = state.selectedBankAccountId == b.id;
         const borderClass = isSelected ? 'border-primary ring-2 ring-primary bg-orange-50' : 'border-[#d1dce5] bg-white';
         return `
-        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" onclick="selectBankAccount('${b.id}')">
+        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" onclick="window.selectBankAccount('${b.id}')">
             <div class="flex items-center gap-3 mb-1">
-                <input type="radio" name="bank_account_selection" class="w-4 h-4 text-primary" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); selectBankAccount('${b.id}')">
+                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${isSelected ? 'checked' : ''} onclick="window.selectBankAccount('${b.id}')">
                 <div class="font-semibold text-gray-800">${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</div>
             </div>
             <div class="flex items-center gap-2 mt-1 pl-7">
                 <span class="text-lg font-mono font-medium" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</span>
-                <button onclick="event.stopPropagation(); copyTransferAccount(this, '${escapeHtml(b.accountNumber)}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
+                <button type="button" onclick="if(typeof event !== 'undefined') { event.preventDefault(); event.stopPropagation(); } window.copyTransferAccount(this, '${escapeHtml(b.accountNumber)}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
                     📋 複製
                 </button>
             </div>
@@ -427,7 +448,7 @@ async function handleLinePayCallback(lpAction, params) {
     } else if (lpAction === 'cancel') {
         // 通知後端取消
         if (orderId) {
-            try { await fetch(`${API_URL}?action=linePayCancel&orderId=${orderId}`); } catch { }
+            try { await authFetch(`${API_URL}?action=linePayCancel&orderId=${orderId}`); } catch { }
         }
         Swal.fire({ icon: 'info', title: '付款已取消', text: '您已取消 LINE Pay 付款', confirmButtonColor: '#3C2415' });
     }

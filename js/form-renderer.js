@@ -34,7 +34,7 @@ export function renderDynamicFields(fields, container) {
         if (f.field_type === 'textarea') {
             wrapper.className = 'md:col-span-2';
             wrapper.innerHTML = `
-                <label class="block font-medium mb-2" style="color:var(--primary)">${f.label}${requiredMark}</label>
+                <label class="block font-medium mb-2" style="color:var(--primary)">${escapeHtml(f.label)}${requiredMark}</label>
                 <textarea id="${fieldId}" class="input-field resize-none" rows="2" placeholder="${escapeHtml(f.placeholder || '')}" ${f.required ? 'required' : ''}></textarea>
             `;
             grid.appendChild(wrapper);
@@ -46,7 +46,7 @@ export function renderDynamicFields(fields, container) {
             try { options = JSON.parse(f.options || '[]'); } catch { }
             const optionsHtml = options.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
             wrapper.innerHTML = `
-                <label class="block font-medium mb-2" style="color:var(--primary)">${f.label}${requiredMark}</label>
+                <label class="block font-medium mb-2" style="color:var(--primary)">${escapeHtml(f.label)}${requiredMark}</label>
                 <select id="${fieldId}" class="input-field" ${f.required ? 'required' : ''}>
                     <option value="">請選擇</option>
                     ${optionsHtml}
@@ -60,7 +60,7 @@ export function renderDynamicFields(fields, container) {
             wrapper.innerHTML = `
                 <label class="flex items-center gap-2 cursor-pointer font-medium" style="color:var(--primary)">
                     <input type="checkbox" id="${fieldId}" class="w-4 h-4">
-                    ${f.label}
+                    ${escapeHtml(f.label)}
                 </label>
             `;
             grid.appendChild(wrapper);
@@ -69,7 +69,7 @@ export function renderDynamicFields(fields, container) {
 
         // text, email, tel, number 等
         wrapper.innerHTML = `
-            <label class="block font-medium mb-2" style="color:var(--primary)">${f.label}${requiredMark}</label>
+            <label class="block font-medium mb-2" style="color:var(--primary)">${escapeHtml(f.label)}${requiredMark}</label>
             <input type="${f.field_type || 'text'}" id="${fieldId}" class="input-field" placeholder="${escapeHtml(f.placeholder || '')}" ${f.required ? 'required' : ''}>
         `;
         grid.appendChild(wrapper);
@@ -133,7 +133,12 @@ export function applyBranding(settings) {
     const iconEl = document.getElementById('site-icon');
     if (iconEl) {
         if (settings.site_icon_url) {
-            iconEl.innerHTML = `<img src="${settings.site_icon_url}" alt="icon" class="w-10 h-10 rounded-lg object-cover">`;
+            iconEl.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = settings.site_icon_url;
+            img.alt = 'icon';
+            img.className = 'w-10 h-10 rounded-lg object-cover';
+            iconEl.appendChild(img);
         } else if (settings.site_icon_emoji) {
             iconEl.textContent = settings.site_icon_emoji;
         }

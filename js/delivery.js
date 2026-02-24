@@ -46,9 +46,9 @@ window.renderDeliveryOptions = function (config) {
 
         div.innerHTML = `
             <div class="check-mark">✓</div>
-            <div class="text-2xl mb-2">${opt.icon}</div>
-            <div class="font-semibold" style="font-size: 0.95rem;">${opt.name}</div>
-            <div class="text-xs text-gray-500 mt-1">${opt.description}</div>
+            <div class="text-2xl mb-2">${escapeHtml(opt.icon || '')}</div>
+            <div class="font-semibold" style="font-size: 0.95rem;">${escapeHtml(opt.name || '')}</div>
+            <div class="text-xs text-gray-500 mt-1">${escapeHtml(opt.description || '')}</div>
         `;
         list.appendChild(div);
     });
