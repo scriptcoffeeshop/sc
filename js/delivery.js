@@ -269,18 +269,46 @@ export function loadDeliveryPrefs() {
         }
 
         if (prefs && prefs.method) {
-            const btn = document.querySelector(`.delivery-option[onclick*="selectDelivery('${prefs.method}'"]`);
-            if (btn) {
-                selectDelivery(prefs.method, { currentTarget: btn });
-            }
-            if (prefs.method === 'delivery') {
+            const method = String(prefs.method);
+            const btn = document.querySelector(`.delivery-option[data-id="${method}"]`) ||
+                document.querySelector(`.delivery-option[onclick*="selectDelivery('${method}'"]`);
+
+            // 即使按鈕尚未渲染，也先套用 method，避免登入後偏好遺失
+            if (btn) selectDelivery(method, { currentTarget: btn });
+            else selectDelivery(method);
+
+            if (method === 'delivery') {
                 if (prefs.city) {
                     document.getElementById('delivery-city').value = prefs.city;
                     populateDistricts();
                     if (prefs.district) document.getElementById('delivery-district').value = prefs.district;
                 }
                 if (prefs.address) document.getElementById('delivery-detail-address').value = prefs.address;
-            } else {
+            } else if (method === 'home_delivery') {
+                // home_delivery 的 district 可能是 "300 東區"，回填時需拆出區域名稱
+                const countyEl = document.querySelector('.county');
+                const districtEl = document.querySelector('.district');
+                const zipEl = document.querySelector('.zipcode');
+                const rawDistrict = String(prefs.district || '').trim();
+                const districtText = rawDistrict.replace(/^\d{3}\s*/, '');
+                const zipMatch = rawDistrict.match(/^(\d{3})/);
+
+                if (countyEl && prefs.city) {
+                    countyEl.value = prefs.city;
+                    countyEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (districtEl && districtText) {
+                    districtEl.value = districtText;
+                    districtEl.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                if (zipEl && zipMatch) {
+                    zipEl.value = zipMatch[1];
+                }
+                if (prefs.address) {
+                    const homeAddrEl = document.getElementById('home-delivery-detail');
+                    if (homeAddrEl) homeAddrEl.value = prefs.address;
+                }
+            } else if (method === 'seven_eleven' || method === 'family_mart') {
                 if (prefs.storeId) {
                     applyStoreSelection({ storeId: prefs.storeId, storeName: prefs.storeName, storeAddress: prefs.storeAddress });
                 }

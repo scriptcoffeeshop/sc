@@ -58,6 +58,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     loadCart();
     await loadInitData();
+    // 初始化資料與配送選項渲染完成後，再次套用偏好，避免重新登入後無法自動帶入
+    loadDeliveryPrefs();
     updateFormState();
 
     const storeToken = urlParams.get('store_token');
