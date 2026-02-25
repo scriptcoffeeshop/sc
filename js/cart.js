@@ -174,7 +174,7 @@ export function calcPromotions() {
                 if (t.productId !== item.productId) return false;
                 // 如果該設定沒有指定規格，代表該商品全規格適用 (或者商品本身就沒規格)
                 if (!t.specKey) return true;
-                return t.specKey === item.specName;
+                return t.specKey === item.specKey;
             });
             // 檢查是否符合舊版的 targetProductIds
             const matchInOldIds = prm.targetProductIds && prm.targetProductIds.includes(item.productId);
