@@ -6,7 +6,7 @@ import { API_URL, LINE_REDIRECT } from './config.js';
 import { Toast } from './utils.js';
 import { loginWithLine } from './auth.js';
 import { state } from './state.js';
-import { addToCart, updateCartItemQty, removeCartItem, toggleCart, loadCart } from './cart.js';
+import { addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart } from './cart.js';
 import { renderProducts } from './products.js';
 import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js';
 import { submitOrder, showMyOrders } from './orders.js';
@@ -15,7 +15,7 @@ import { authFetch } from './auth.js';
 import { escapeHtml } from './utils.js';
 
 // ============ 全域函式掛載 (HTML onclick 呼叫) ============
-window._cart = { addToCart, updateCartItemQty, removeCartItem, toggleCart };
+window._cart = { addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart };
 window._delivery = { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore };
 window._orders = { submitOrder, showMyOrders };
 
