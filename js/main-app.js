@@ -314,7 +314,9 @@ function updateFormState() {
     const loggedIn = !!state.currentUser;
     const open = state.isStoreOpen;
     const submitBtn = document.getElementById('submit-btn');
-    submitBtn.disabled = !loggedIn || !open;
+    if (submitBtn) submitBtn.disabled = !loggedIn || !open;
+    const cartSubmitBtn = document.getElementById('cart-submit-btn');
+    if (cartSubmitBtn) cartSubmitBtn.disabled = !loggedIn || !open || cart.length === 0;
 }
 
 // ============ 付款方式選擇 ============
