@@ -178,10 +178,12 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
             if (matchQty >= (prm.min_quantity || 1)) {
                 let dAmt = 0
                 if (prm.discount_type === 'percent') {
-                    dAmt = Math.round(matchItemsSubtotal * (100 - Number(prm.discount_value)) / 100)
+                    const discountValue = Number(prm.discount_value) || 0
+                    dAmt = Math.round(matchItemsSubtotal * (100 - discountValue) / 100)
                 } else if (prm.discount_type === 'amount') {
-                    const sets = Math.floor(matchQty / (prm.min_quantity || 1))
-                    dAmt = sets * Number(prm.discount_value)
+                    const minQty = Number(prm.min_quantity) || 1
+                    const sets = Math.floor(matchQty / minQty)
+                    dAmt = sets * (Number(prm.discount_value) || 0)
                 }
                 if (dAmt > 0) {
                     totalDiscount += dAmt
@@ -196,7 +198,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         return { success: false, error: '該取貨方式已停用或不存在' }
     }
 
-    if (!selectedDeliveryOpt.payment?.[paymentMethod]) {
+    const paymentConfig: any = selectedDeliveryOpt.payment || {}
+    if (!paymentConfig[paymentMethod]) {
         return { success: false, error: `該取貨方式目前不支援此付款方式：${paymentMethod}` }
     }
 

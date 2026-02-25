@@ -150,15 +150,17 @@ export async function reorderCategory(data: Record<string, unknown>, req: Reques
 export async function getPromotions() {
     const { data, error } = await supabase.from('coffee_promotions').select('*').order('sort_order', { ascending: true })
     if (error) return { success: false, error: error.message }
-    const promotions = (data || []).map((r: Record<string, unknown>) => ({
+    const promotions = (data || []).map((r: any) => ({
         id: r.id, name: r.name, type: r.type,
-        targetProductIds: typeof r.target_product_ids === 'string' ? JSON.parse(r.target_product_ids) : (r.target_product_ids || []),
-        targetItems: typeof r.target_items === 'string' ? JSON.parse(r.target_items) : (r.target_items || []),
-        minQuantity: r.min_quantity || 1,
-        discountType: r.discount_type, discountValue: r.discount_value,
+        targetProductIds: (typeof r.target_product_ids === 'string' ? JSON.parse(r.target_product_ids) : r.target_product_ids) || [],
+        targetItems: (typeof r.target_items === 'string' ? JSON.parse(r.target_items) : r.target_items) || [],
+        minQuantity: Number(r.min_quantity) || 1,
+        discountType: r.discount_type,
+        discountValue: Number(r.discount_value) || 0,
         enabled: r.enabled !== false,
-        startTime: r.start_time, endTime: r.end_time,
-        sortOrder: r.sort_order || 0,
+        startTime: r.start_time,
+        endTime: r.end_time,
+        sortOrder: Number(r.sort_order) || 0,
     }))
     return { success: true, promotions }
 }
