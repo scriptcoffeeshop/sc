@@ -1,3 +1,4 @@
+// @ts-ignore: 取消 Deno import 在 IDE 找不到模組的問題
 import { z } from "https://deno.land/x/zod/mod.ts";
 
 export const productSchema = z.object({
