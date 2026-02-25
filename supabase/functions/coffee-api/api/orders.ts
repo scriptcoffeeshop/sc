@@ -55,8 +55,10 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     .select("id, name, price, specs, enabled").in("id", productIds);
   if (pErr || !products) return { success: false, error: "無法讀取商品資料" };
 
-  const productMap = new Map<number, Record<string, unknown>>(
-    products.map((p: Record<string, unknown>) => [p.id, p]),
+  // deno-lint-ignore no-explicit-any
+  const productMap = new Map<number, any>(
+    // deno-lint-ignore no-explicit-any
+    products.map((p: any) => [p.id, p]),
   );
   let total = 0;
   const orderLines: string[] = [];
@@ -111,7 +113,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     }
 
     const qty = Math.max(1, Math.floor(Number(item.qty) || 1));
-    const lineTotal = qty * unitPrice;
+    const lineTotal = qty * Number(unitPrice);
     total += lineTotal;
     orderLines.push(
       `${product.name}${
@@ -148,18 +150,19 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     ]);
 
   let deliveryConfig: Record<string, unknown>[] = [];
-  let routingConfig: Record<string, unknown> = null;
+  // deno-lint-ignore no-explicit-any
+  let routingConfig: any = null;
   let le = false;
   let te = false;
 
   settingsData?.forEach((r: Record<string, unknown>) => {
     if (r.key === "delivery_options_config") {
       try {
-        deliveryConfig = JSON.parse(r.value);
+        deliveryConfig = JSON.parse(String(r.value));
       } catch (_e) { /* ignore */ }
     } else if (r.key === "payment_routing_config") {
       try {
-        routingConfig = JSON.parse(r.value);
+        routingConfig = JSON.parse(String(r.value));
       } catch (_e) { /* ignore */ }
     } else if (r.key === "linepay_enabled") {
       le = String(r.value) === "true";
@@ -215,7 +218,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const { data: activePromos } = await supabase.from("coffee_promotions")
     .select("*").eq("enabled", true);
   let totalDiscount = 0;
-  const appliedPromos: Record<string, unknown>[] = [];
+  // deno-lint-ignore no-explicit-any
+  const appliedPromos: any[] = [];
 
   if (activePromos) {
     for (const prm of activePromos) {
@@ -231,7 +235,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       let matchItemsSubtotal = 0;
       for (const item of cartItems) {
         // 檢查是否符合新版 targetItems
-        const matchInItems = targetItems.some((t: Record<string, unknown>) => {
+        // deno-lint-ignore no-explicit-any
+        const matchInItems = targetItems.some((t: any) => {
           if (t.productId !== item.productId) return false;
           if (!t.specKey) return true; // 適用所有規格
           return t.specKey === item.specKey;
@@ -251,7 +256,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
                 ? JSON.parse(product.specs)
                 : product.specs;
               if (Array.isArray(specs)) {
-                const spec = specs.find((s: Record<string, unknown>) =>
+                // deno-lint-ignore no-explicit-any
+                const spec = specs.find((s: any) =>
                   s.key === item.specKey || s.label === item.specKey ||
                   s.name === item.specKey
                 );
@@ -287,7 +293,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     return { success: false, error: "該取貨方式已停用或不存在" };
   }
 
-  const paymentConfig: Record<string, unknown> = selectedDeliveryOpt.payment ||
+  // deno-lint-ignore no-explicit-any
+  const paymentConfig: any = selectedDeliveryOpt.payment ||
     {};
   if (!paymentConfig[paymentMethod]) {
     return {
@@ -542,7 +549,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         redirectUrls: { confirmUrl, cancelUrl },
       };
 
-      const lpRes = await requestLinePayAPI(
+      // deno-lint-ignore no-explicit-any
+      const lpRes: any = await requestLinePayAPI(
         "POST",
         "/v3/payments/request",
         reqBody,

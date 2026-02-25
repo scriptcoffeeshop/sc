@@ -12,7 +12,7 @@ export const productSchema = z.object({
   specs: z.string().optional(),
   imageUrl: z.string().optional(),
   enabled: z.union([z.boolean(), z.string()]).optional().transform((
-    v: boolean | string,
+    v: boolean | string | undefined,
   ) => v === true || v === "true"),
 });
 
@@ -37,7 +37,7 @@ export const promotionSchema = z.object({
   discountType: z.string(),
   discountValue: z.number().min(0),
   enabled: z.union([z.boolean(), z.string()]).optional().transform((
-    v: boolean | string,
+    v: boolean | string | undefined,
   ) => v === true || v === "true"),
   startTime: z.string().optional().nullable(),
   endTime: z.string().optional().nullable(),
