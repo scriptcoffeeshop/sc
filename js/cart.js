@@ -144,12 +144,28 @@ export function updateCartUI() {
     const container = document.getElementById('cart-items');
     if (!cart.length) {
         container.innerHTML = '<p class="text-center text-gray-400 py-8">購物車是空的</p>';
+        const discountSection = document.getElementById('cart-discount-details');
+        if (discountSection) discountSection.classList.add('hidden');
+
+        // 更新購物車內按鈕狀態
+        const cartSubmitBtn = document.getElementById('cart-submit-btn');
+        if (cartSubmitBtn) cartSubmitBtn.disabled = true;
         return;
     }
-    container.innerHTML = cart.map((c, i) => `
+
+    // 確保有商品時解鎖按鈕（前提是已登入與營業）
+    const cartSubmitBtn = document.getElementById('cart-submit-btn');
+    if (cartSubmitBtn && window.state && window.state.currentUser && window.state.isStoreOpen) {
+        cartSubmitBtn.disabled = false;
+    }
+
+    container.innerHTML = cart.map((c, i) => {
+        const isDiscounted = summary.discountedItemKeys && summary.discountedItemKeys.has(`${c.productId}-${c.specKey}`);
+        const discountBadge = isDiscounted ? `<span class="ml-2 inline-block bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded leading-tight">適用優惠</span>` : '';
+        return `
         <div class="flex items-center justify-between py-3 border-b" style="border-color:#f0e6db;">
             <div class="flex-1 mr-3">
-                <div class="font-medium text-sm">${escapeHtml(c.productName)}</div>
+                <div class="font-medium text-sm flex items-center flex-wrap">${escapeHtml(c.productName)}${discountBadge}</div>
                 <div class="text-xs text-gray-500">${escapeHtml(c.specLabel)} · $${c.unitPrice}</div>
             </div>
             <div class="flex items-center gap-1">
@@ -162,7 +178,31 @@ export function updateCartUI() {
                 <button onclick="window._cart.removeCartItem(${i})" class="text-xs text-red-400 hover:text-red-600">移除</button>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
+
+    // 更新折扣明細區塊
+    const discountSection = document.getElementById('cart-discount-details');
+    if (discountSection) {
+        if (summary.totalDiscount > 0 && summary.appliedPromos && summary.appliedPromos.length > 0) {
+            discountSection.classList.remove('hidden');
+            const promoList = summary.appliedPromos.map(p => `
+                <div class="flex justify-between items-center text-red-600 mb-1">
+                    <span>🏷️ ${escapeHtml(p.name)}</span>
+                    <span>-$${p.amount}</span>
+                </div>
+            `).join('');
+            discountSection.innerHTML = `
+                <div class="border-b border-dashed border-[#e5ddd5] pb-2 mb-2">
+                    <div class="font-semibold text-gray-700 mb-2">已套用優惠活動：</div>
+                    ${promoList}
+                </div>
+            `;
+        } else {
+            discountSection.classList.add('hidden');
+            discountSection.innerHTML = '';
+        }
+    }
 }
 
 /** 切換購物車 Drawer */
@@ -196,6 +236,7 @@ export function calcPromotions() {
     let totalDiscount = 0;
     const appliedPromos = [];
     const activePromos = (state.promotions || []).filter(p => p.enabled);
+    const discountedItemKeys = new Set();
 
     for (const prm of activePromos) {
         if (prm.type !== 'bundle') continue;
@@ -234,16 +275,17 @@ export function calcPromotions() {
                     name: prm.name,
                     amount: discountAmount
                 });
+                matchItems.forEach(item => discountedItemKeys.add(`${item.productId}-${item.specKey}`));
             }
         }
     }
-    return { appliedPromos, totalDiscount };
+    return { appliedPromos, totalDiscount, discountedItemKeys };
 }
 
 /** 計算購物車所有金額 */
 export function calcCartSummary() {
     const subtotal = cart.reduce((s, c) => s + c.qty * c.unitPrice, 0);
-    const { appliedPromos, totalDiscount } = calcPromotions();
+    const { appliedPromos, totalDiscount, discountedItemKeys } = calcPromotions();
     const afterDiscount = Math.max(0, subtotal - totalDiscount);
 
     const shippingConfig = getShippingConfig();
@@ -254,7 +296,7 @@ export function calcCartSummary() {
         }
     }
 
-    return { subtotal, appliedPromos, totalDiscount, afterDiscount, shippingFee, finalTotal: afterDiscount + shippingFee };
+    return { subtotal, appliedPromos, totalDiscount, discountedItemKeys, afterDiscount, shippingFee, finalTotal: afterDiscount + shippingFee };
 }
 
 /** 相容舊版 calcTotal */
