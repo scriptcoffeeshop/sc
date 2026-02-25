@@ -11,10 +11,12 @@ export async function getUsers(data: Record<string, unknown>, req: Request) {
   let filtered = users;
   if (search) {
     filtered = users.filter((u: Record<string, unknown>) =>
-      (u.display_name && u.display_name.toLowerCase().includes(search)) ||
-      (u.line_user_id && u.line_user_id.toLowerCase().includes(search)) ||
-      (u.phone && u.phone.includes(search)) ||
-      (u.email && u.email.includes(search))
+      (u.display_name &&
+        String(u.display_name).toLowerCase().includes(search)) ||
+      (u.line_user_id &&
+        String(u.line_user_id).toLowerCase().includes(search)) ||
+      (u.phone && String(u.phone).includes(search)) ||
+      (u.email && String(u.email).includes(search))
     );
   }
   const formatted = filtered.map((u: Record<string, unknown>) => ({

@@ -30,7 +30,8 @@ export async function linePayConfirm(data: Record<string, unknown>) {
   }
 
   try {
-    const confirmRes = await requestLinePayAPI(
+    // deno-lint-ignore no-explicit-any
+    const confirmRes: any = await requestLinePayAPI(
       "POST",
       `/v3/payments/${transactionId}/confirm`,
       {
@@ -114,7 +115,8 @@ export async function linePayRefund(
 
   try {
     const refundBody = refundAmount > 0 ? { refundAmount } : null;
-    const refundRes = await requestLinePayAPI(
+    // deno-lint-ignore no-explicit-any
+    const refundRes: any = await requestLinePayAPI(
       "POST",
       `/v3/payments/${transactionId}/refund`,
       refundBody,

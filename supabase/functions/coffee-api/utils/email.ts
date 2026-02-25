@@ -29,6 +29,9 @@ export async function sendEmail(
     return { success: true };
   } catch (e: unknown) {
     console.error("Failed to send email:", e);
-    return { success: false, error: e.message || String(e) };
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : String(e),
+    };
   }
 }

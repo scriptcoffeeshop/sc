@@ -124,12 +124,14 @@ serve(async (req: Request) => {
         result = getLineLoginUrl(data.redirectUri as string);
         break;
       case "customerLineLogin": {
-        const v = await validate(lineLoginSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(lineLoginSchema, data) as any;
         result = await customerLineLogin(v.code, v.redirectUri);
         break;
       }
       case "lineLogin": {
-        const v = await validate(lineLoginSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(lineLoginSchema, data) as any;
         result = await handleAdminLogin(v.code, v.redirectUri);
         break;
       }
@@ -161,7 +163,8 @@ serve(async (req: Request) => {
 
       // 需登入
       case "submitOrder": {
-        const v = await validate(submitOrderSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(submitOrderSchema, data) as any;
         result = await submitOrder(v, req);
         break;
       }
@@ -169,7 +172,8 @@ serve(async (req: Request) => {
         result = await getMyOrders(req);
         break;
       case "updateTransferInfo": {
-        const v = await validate(transferInfoSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(transferInfoSchema, data) as any;
         result = await updateTransferInfo(v, req);
         break;
       }
@@ -189,12 +193,14 @@ serve(async (req: Request) => {
         result = await getOrders(req);
         break;
       case "addPromotion": {
-        const v = await validate(promotionSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(promotionSchema, data) as any;
         result = await addPromotion(v, req);
         break;
       }
       case "updatePromotion": {
-        const v = await validate(promotionSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(promotionSchema, data) as any;
         result = await updatePromotion(v, req);
         break;
       }
@@ -205,12 +211,14 @@ serve(async (req: Request) => {
         result = await reorderPromotionsBulk(data, req);
         break;
       case "addProduct": {
-        const v = await validate(productSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(productSchema, data) as any;
         result = await addProduct(v, req);
         break;
       }
       case "updateProduct": {
-        const v = await validate(productSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(productSchema, data) as any;
         result = await updateProduct(v, req);
         break;
       }
@@ -224,12 +232,14 @@ serve(async (req: Request) => {
         result = await reorderProductsBulk(data, req);
         break;
       case "addCategory": {
-        const v = await validate(categorySchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(categorySchema, data) as any;
         result = await addCategory(v, req);
         break;
       }
       case "updateCategory": {
-        const v = await validate(categorySchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(categorySchema, data) as any;
         result = await updateCategory(v, req);
         break;
       }
@@ -240,12 +250,14 @@ serve(async (req: Request) => {
         result = await reorderCategory(data, req);
         break;
       case "updateSettings": {
-        const v = await validate(updateSettingsSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(updateSettingsSchema, data) as any;
         result = await updateSettingsAction(v, req);
         break;
       }
       case "updateOrderStatus": {
-        const v = await validate(updateOrderStatusSchema, data) as unknown;
+        // deno-lint-ignore no-explicit-any
+        const v = await validate(updateOrderStatusSchema, data) as any;
         result = await updateOrderStatus(v, req);
         break;
       }
