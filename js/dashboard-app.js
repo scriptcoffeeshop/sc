@@ -670,8 +670,8 @@ function renderPromoProducts(selectedItems = []) {
                 <div class="pl-4 mt-1 space-y-1">
                     ${specs.map(s => `
                         <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded text-sm">
-                            <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="${esc(s.name)}" ${isSelected(p.id, s.name) ? 'checked' : ''}>
-                            <span class="text-gray-600">${esc(s.name)} <span class="text-xs text-gray-400">($${s.price})</span></span>
+                            <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="${esc(s.key)}" ${isSelected(p.id, s.key) ? 'checked' : ''}>
+                            <span class="text-gray-600">${esc(s.label)} <span class="text-xs text-gray-400">($${s.price})</span></span>
                         </label>
                     `).join('')}
                 </div>
