@@ -3,17 +3,31 @@ import { requireAuth, requireAdmin } from '../utils/auth.ts'
 import { requestLinePayAPI } from '../utils/linepay.ts'
 
 export async function linePayConfirm(data: Record<string, unknown>) {
-    const transactionId = String(data.transactionId)
-    const orderId = String(data.orderId)
-    const amount = parseInt(String(data.amount))
+    const transactionId = String(data.transactionId || '')
+    const orderId = String(data.orderId || '')
 
-    if (!transactionId || !orderId || !amount) {
+    if (!transactionId || !orderId) {
         return { success: false, error: '缺少必要參數' }
+    }
+
+    // 安全驗證：從資料庫讀取應付總額，不信任前端傳入的 amount
+    const { data: order, error: oErr } = await supabase.from('coffee_orders')
+        .select('id, total, payment_id, payment_status, payment_method')
+        .eq('id', orderId)
+        .maybeSingle()
+
+    if (oErr || !order) return { success: false, error: '找不到訂單資料' }
+    if (order.payment_status === 'paid') return { success: true, message: '此訂單已完成付款', orderId }
+    if (order.payment_method !== 'linepay') return { success: false, error: '此訂單非使用 LINE Pay 付款' }
+
+    // 驗證 TransactionId 是否與 Request 階段存入的一致
+    if (String(order.payment_id) !== transactionId) {
+        return { success: false, error: '交易 ID 不匹配，存疑請求' }
     }
 
     try {
         const confirmRes = await requestLinePayAPI('POST', `/v3/payments/${transactionId}/confirm`, {
-            amount,
+            amount: order.total,
             currency: 'TWD',
         })
 
@@ -21,6 +35,8 @@ export async function linePayConfirm(data: Record<string, unknown>) {
             await supabase.from('coffee_orders').update({ payment_status: 'paid' }).eq('id', orderId)
             return { success: true, message: '付款已確認', orderId }
         } else {
+            // 確認失敗時更新狀態為 failed 方便查案
+            await supabase.from('coffee_orders').update({ payment_status: 'failed' }).eq('id', orderId)
             return { success: false, error: `付款確認失敗: ${confirmRes.returnMessage || confirmRes.returnCode}`, orderId }
         }
     } catch (e) {

@@ -152,6 +152,7 @@ async function loadInitData() {
             state.categories = result.categories || [];
             state.formFields = result.formFields || [];
             state.bankAccounts = result.bankAccounts || [];
+            state.promotions = result.promotions || [];
 
             applySettings(result.settings || {});
             applyBranding(result.settings || {});

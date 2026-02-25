@@ -6,7 +6,7 @@ import { API_URL } from './config.js';
 import { authFetch } from './auth.js';
 import { escapeHtml, Toast } from './utils.js';
 import { state } from './state.js';
-import { cart, clearCart, updateCartUI } from './cart.js';
+import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js';
 import { collectDynamicFields } from './form-renderer.js';
 
 /** 送出訂單 */
@@ -42,13 +42,23 @@ export async function submitOrder() {
 
     // 收集訂購品項（從購物車）
     let orderLines = [];
-    let total = 0;
     cart.forEach(c => {
         const amt = c.qty * c.unitPrice;
         orderLines.push(`${c.productName} (${c.specLabel}) x ${c.qty} (${amt}元)`);
-        total += amt;
     });
     if (orderLines.length === 0) { Swal.fire('錯誤', '購物車是空的，請先選擇商品', 'error'); return; }
+
+    const summary = calcCartSummary();
+    if (summary.appliedPromos.length > 0) {
+        orderLines.push(`---`);
+        summary.appliedPromos.forEach(p => {
+            orderLines.push(`🎁 ${p.name} (-$${p.amount})`);
+        });
+    }
+    if (state.selectedDelivery) {
+        orderLines.push(`🚚 運費: $${summary.shippingFee}`);
+    }
+    const total = summary.finalTotal;
 
     // 收集配送資訊
     let deliveryInfo = {};

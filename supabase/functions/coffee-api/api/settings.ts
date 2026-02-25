@@ -146,6 +146,76 @@ export async function reorderCategory(data: Record<string, unknown>, req: Reques
     return { success: true, message: '分類排序已更新' }
 }
 
+// ============ 促銷活動 ============
+export async function getPromotions() {
+    const { data, error } = await supabase.from('coffee_promotions').select('*').order('sort_order', { ascending: true })
+    if (error) return { success: false, error: error.message }
+    const promotions = (data || []).map((r: Record<string, unknown>) => ({
+        id: r.id, name: r.name, type: r.type,
+        targetProductIds: typeof r.target_product_ids === 'string' ? JSON.parse(r.target_product_ids) : (r.target_product_ids || []),
+        minQuantity: r.min_quantity || 1,
+        discountType: r.discount_type, discountValue: r.discount_value,
+        enabled: r.enabled !== false,
+        startTime: r.start_time, endTime: r.end_time,
+        sortOrder: r.sort_order || 0,
+    }))
+    return { success: true, promotions }
+}
+
+export async function addPromotion(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const { data: ins, error } = await supabase.from('coffee_promotions').insert({
+        name: data.name, type: data.type || 'bundle',
+        target_product_ids: data.targetProductIds || [],
+        min_quantity: data.minQuantity || 1,
+        discount_type: data.discountType,
+        discount_value: data.discountValue,
+        enabled: data.enabled !== false,
+        start_time: data.startTime || null, end_time: data.endTime || null,
+    }).select('id').single()
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '活動已新增', id: ins.id }
+}
+
+export async function updatePromotion(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const { error } = await supabase.from('coffee_promotions').update({
+        name: data.name, type: data.type || 'bundle',
+        target_product_ids: data.targetProductIds || [],
+        min_quantity: data.minQuantity || 1,
+        discount_type: data.discountType,
+        discount_value: data.discountValue,
+        enabled: data.enabled !== false,
+        start_time: data.startTime || null, end_time: data.endTime || null,
+    }).eq('id', data.id)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '活動已更新' }
+}
+
+export async function deletePromotion(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const { error } = await supabase.from('coffee_promotions').delete().eq('id', data.id)
+    if (error) return { success: false, error: error.message }
+    return { success: true, message: '活動已刪除' }
+}
+
+export async function reorderPromotionsBulk(data: Record<string, unknown>, req: Request) {
+    await requireAdmin(req)
+    const ids = data.ids as number[]
+    if (!Array.isArray(ids)) return { success: false, error: '資料格式錯誤' }
+
+    const itemsToUpdate = ids.map((id, index) => ({
+        id,
+        sort_order: index * 10
+    }))
+    const { error: rpcError } = await supabase.rpc('batch_update_sort', {
+        table_name: 'coffee_promotions',
+        items: itemsToUpdate
+    })
+    if (rpcError) return { success: false, error: rpcError.message }
+    return { success: true, message: '批量排序已更新' }
+}
+
 // ============ 設定 ============
 export async function getSettings() {
     const { data, error } = await supabase.from('coffee_settings').select('*')
@@ -322,7 +392,7 @@ export async function deleteBankAccount(data: Record<string, unknown>, req: Requ
 
 // ============ 初始化資料 ============
 export async function getInitData() {
-    const [p, c, s, f, b] = await Promise.all([getProducts(), getCategories(), getSettings(), getFormFields(false), getBankAccounts()])
+    const [p, c, s, f, b, pr] = await Promise.all([getProducts(), getCategories(), getSettings(), getFormFields(false), getBankAccounts(), getPromotions()])
     const settings = s.success ? (s as any).settings : {}
     return {
         success: true,
@@ -331,5 +401,6 @@ export async function getInitData() {
         settings,
         formFields: f.success ? (f as any).fields : [],
         bankAccounts: b.success ? (b as any).accounts : [],
+        promotions: pr.success ? (pr as any).promotions : [],
     }
 }

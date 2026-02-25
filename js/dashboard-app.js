@@ -14,6 +14,7 @@ let orders = [];
 let users = [];
 let blacklist = [];
 let bankAccounts = [];
+window.promotions = [];
 
 function getAuthUserId() { if (!currentUser?.userId) throw new Error('請先登入'); return currentUser.userId; }
 
@@ -53,6 +54,13 @@ window.linePayRefundOrder = linePayRefundOrder;
 window.showAddBankAccountModal = showAddBankAccountModal;
 window.editBankAccount = editBankAccount;
 window.deleteBankAccount = deleteBankAccount;
+window.showPromotionModal = showPromotionModal;
+window.closePromotionModal = closePromotionModal;
+window.savePromotion = savePromotion;
+window.editPromotion = editPromotion;
+window.delPromotion = delPromotion;
+window.movePromotion = movePromotion;
+window.togglePromoType = togglePromoType;
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', () => {
@@ -100,7 +108,7 @@ async function showAdmin() {
 }
 
 function showTab(tab) {
-    ['orders', 'products', 'categories', 'settings', 'users', 'blacklist', 'formfields'].forEach(t => {
+    ['orders', 'products', 'categories', 'promotions', 'settings', 'users', 'blacklist', 'formfields'].forEach(t => {
         const tabBtn = document.getElementById(`tab-${t}`);
         const section = document.getElementById(`${t}-section`);
         if (tabBtn) { tabBtn.classList.remove('tab-active'); tabBtn.classList.add('bg-white', 'text-gray-600'); }
@@ -110,6 +118,7 @@ function showTab(tab) {
     document.getElementById(`tab-${tab}`).classList.remove('bg-white', 'text-gray-600');
     document.getElementById(`${tab}-section`).classList.remove('hidden');
     if (tab === 'orders') loadOrders();
+    else if (tab === 'promotions') loadPromotions();
     else if (tab === 'settings') loadSettings();
     else if (tab === 'categories') renderCategories();
     else if (tab === 'users') loadUsers();
@@ -565,6 +574,153 @@ async function moveCategory(id, dir) {
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
 }
 
+// ============ 促銷活動管理 ============
+let promotionsMap = {};
+async function loadPromotions() {
+    try {
+        const r = await authFetch(`${API_URL}?action=getPromotions&_=${Date.now()}`);
+        const d = await r.json();
+        if (d.success) { window.promotions = d.promotions; renderPromotions(); }
+    } catch (e) { console.error(e); }
+}
+
+function renderPromotions() {
+    const table = document.getElementById('promotions-table');
+    table.innerHTML = '';
+    const proms = window.promotions || [];
+    if (!proms.length) {
+        table.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">尚無活動</td></tr>';
+        return;
+    }
+    promotionsMap = {};
+
+    let html = '';
+    proms.forEach((p, i) => {
+        promotionsMap[p.id] = p;
+        const discountStr = p.discountType === 'percent' ? `${p.discountValue} 折` : `折 $${p.discountValue}`;
+        const conditionStr = `任選 ${p.minQuantity} 件`;
+        html += `
+        <tr class="border-b" style="border-color:#f0e6db;" data-id="${p.id}">
+            <td class="p-3 text-center">
+                <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">☰</span>
+            </td>
+            <td class="p-3 font-medium">${esc(p.name)}</td>
+            <td class="p-3 text-sm text-gray-600">${conditionStr} <span class="font-bold text-red-500">${discountStr}</span></td>
+            <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
+            <td class="p-3 text-right">
+                <button onclick="editPromotion(${p.id})" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
+                <button onclick="delPromotion(${p.id})" class="text-sm text-red-500">刪除</button>
+            </td>
+        </tr>`;
+    });
+    table.innerHTML = html;
+
+    if (typeof Sortable !== 'undefined' && table.children.length > 0) {
+        if (window.promoSortable) window.promoSortable.destroy();
+        window.promoSortable = Sortable.create(table, {
+            handle: '.drag-handle-promo',
+            animation: 150,
+            onEnd: async function (evt) {
+                if (evt.oldIndex === evt.newIndex) return;
+                const ids = Array.from(table.querySelectorAll('tr[data-id]')).map(tr => parseInt(tr.dataset.id));
+                try {
+                    const r = await authFetch(`${API_URL}?action=reorderPromotionsBulk`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: getAuthUserId(), ids })
+                    });
+                    const d = await r.json();
+                    if (!d.success) throw new Error(d.error);
+                } catch (e) { Swal.fire('錯誤', e.message, 'error'); loadPromotions(); }
+            }
+        });
+    }
+}
+
+function renderPromoProducts(selectedIds = []) {
+    const list = document.getElementById('prm-products-list');
+    if (!products.length) {
+        list.innerHTML = '<p class="text-gray-400">目前沒有商品可選</p>';
+        return;
+    }
+    const html = products.map(p => `
+        <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+            <input type="checkbox" class="promo-product-cb" value="${p.id}" ${selectedIds.includes(p.id) ? 'checked' : ''}>
+            <span class="text-gray-600">[${esc(p.category)}] ${esc(p.name)}</span>
+        </label>
+    `).join('');
+    list.innerHTML = html;
+}
+
+function showPromotionModal() {
+    document.getElementById('prm-title').textContent = '新增活動';
+    document.getElementById('promotion-form').reset();
+    document.getElementById('prm-id').value = '';
+    document.getElementById('prm-enabled').checked = true;
+    renderPromoProducts([]);
+    document.getElementById('promotion-modal').classList.remove('hidden');
+}
+
+function editPromotion(id) {
+    const p = promotionsMap[id];
+    if (!p) return;
+    document.getElementById('prm-title').textContent = '編輯活動';
+    document.getElementById('prm-id').value = p.id;
+    document.getElementById('prm-name').value = p.name;
+    document.getElementById('prm-type').value = p.type || 'bundle';
+    document.getElementById('prm-min-qty').value = p.minQuantity || 1;
+    document.getElementById('prm-discount-type').value = p.discountType || 'percent';
+    document.getElementById('prm-discount-value').value = p.discountValue || 0;
+    document.getElementById('prm-enabled').checked = p.enabled;
+    renderPromoProducts(p.targetProductIds || []);
+    document.getElementById('promotion-modal').classList.remove('hidden');
+}
+
+function closePromotionModal() {
+    document.getElementById('promotion-modal').classList.add('hidden');
+}
+
+function togglePromoType() { }
+
+async function savePromotion(e) {
+    e.preventDefault();
+    const id = document.getElementById('prm-id').value;
+    const cbs = document.querySelectorAll('.promo-product-cb:checked');
+    const targetProductIds = Array.from(cbs).map(cb => parseInt(cb.value));
+
+    const payload = {
+        userId: getAuthUserId(),
+        name: document.getElementById('prm-name').value.trim(),
+        type: document.getElementById('prm-type').value,
+        targetProductIds,
+        minQuantity: parseInt(document.getElementById('prm-min-qty').value) || 1,
+        discountType: document.getElementById('prm-discount-type').value,
+        discountValue: parseFloat(document.getElementById('prm-discount-value').value) || 0,
+        enabled: document.getElementById('prm-enabled').checked
+    };
+    if (id) payload.id = parseInt(id);
+
+    try {
+        const r = await authFetch(`${API_URL}?action=${id ? 'updatePromotion' : 'addPromotion'}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: id ? '已更新' : '已新增' }); closePromotionModal(); loadPromotions(); }
+        else throw new Error(d.error);
+    } catch (err) { Swal.fire('錯誤', err.message, 'error'); }
+}
+
+async function delPromotion(id) {
+    const c = await Swal.fire({ title: '刪除活動？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#d33', confirmButtonText: '刪除', cancelButtonText: '取消' });
+    if (!c.isConfirmed) return;
+    try {
+        const r = await authFetch(`${API_URL}?action=deletePromotion`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id }) });
+        const d = await r.json();
+        if (d.success) { Toast.fire({ icon: 'success', title: '已刪除' }); loadPromotions(); }
+        else throw new Error(d.error);
+    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+}
+function movePromotion() { }
+
 // ============ 設定 ============
 async function loadSettings() {
     try {
@@ -701,6 +857,8 @@ function addDeliveryOptionAdmin() {
         name: '新物流方式',
         description: '設定敘述',
         enabled: true,
+        fee: 0,
+        free_threshold: 0,
         payment: { cod: true, linepay: false, transfer: false }
     };
 
@@ -735,6 +893,12 @@ function configToHtml(item, tbody, isNew = false) {
                 <input type="checkbox" class="sr-only peer do-enabled" ${item.enabled ? 'checked' : ''}>
                 <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
             </label>
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+            <input type="number" class="border rounded p-1 w-16 text-center text-sm do-fee" value="${item.fee !== undefined ? item.fee : 0}" min="0">
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+            <input type="number" class="border rounded p-1 w-20 text-center text-sm do-free-threshold" value="${item.free_threshold !== undefined ? item.free_threshold : 0}" min="0">
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <input type="checkbox" class="w-4 h-4 do-cod" ${item.payment?.cod ? 'checked' : ''}>
@@ -811,6 +975,9 @@ async function saveSettings() {
             const desc = row.querySelector('.do-desc').value.trim();
             const enabled = row.querySelector('.do-enabled').checked;
 
+            const fee = parseInt(row.querySelector('.do-fee').value) || 0;
+            const free_threshold = parseInt(row.querySelector('.do-free-threshold').value) || 0;
+
             const cod = row.querySelector('.do-cod').checked;
             const linepay = row.querySelector('.do-linepay').checked;
             const transfer = row.querySelector('.do-transfer').checked;
@@ -822,6 +989,8 @@ async function saveSettings() {
                     name,
                     description: desc,
                     enabled,
+                    fee,
+                    free_threshold,
                     payment: { cod, linepay, transfer }
                 });
             }
