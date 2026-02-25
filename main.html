@@ -247,6 +247,8 @@
                     🛒 購物車 <span id="cart-badge"
                         class="hidden ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center">0</span>
                 </button>
+                <!-- 幽靈按鈕：防止舊版快取 JS 找不到物件而引發報錯 -->
+                <button id="submit-btn" style="display:none;"></button>
             </div>
         </div>
     </div>
