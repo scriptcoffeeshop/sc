@@ -10,14 +10,14 @@ export async function getUsers(data: Record<string, unknown>, req: Request) {
   const search = String(data.search || "").toLowerCase();
   let filtered = users;
   if (search) {
-    filtered = users.filter((u: any) =>
+    filtered = users.filter((u: Record<string, unknown>) =>
       (u.display_name && u.display_name.toLowerCase().includes(search)) ||
       (u.line_user_id && u.line_user_id.toLowerCase().includes(search)) ||
       (u.phone && u.phone.includes(search)) ||
       (u.email && u.email.includes(search))
     );
   }
-  const formatted = filtered.map((u: any) => ({
+  const formatted = filtered.map((u: Record<string, unknown>) => ({
     userId: u.line_user_id,
     displayName: u.display_name,
     pictureUrl: u.picture_url,

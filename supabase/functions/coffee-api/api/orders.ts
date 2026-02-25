@@ -55,7 +55,9 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     .select("id, name, price, specs, enabled").in("id", productIds);
   if (pErr || !products) return { success: false, error: "無法讀取商品資料" };
 
-  const productMap = new Map<number, any>(products.map((p: any) => [p.id, p]));
+  const productMap = new Map<number, Record<string, unknown>>(
+    products.map((p: Record<string, unknown>) => [p.id, p]),
+  );
   let total = 0;
   const orderLines: string[] = [];
 
@@ -79,7 +81,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
           ? JSON.parse(product.specs)
           : product.specs;
         const specList = Array.isArray(specs) ? specs : [];
-        const spec = specList.find((s: any) =>
+        const spec = specList.find((s: Record<string, unknown>) =>
           s.key === item.specKey || s.label === item.specKey
         );
         if (!spec) {
@@ -145,20 +147,20 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       "transfer_enabled",
     ]);
 
-  let deliveryConfig: any[] = [];
-  let routingConfig: any = null;
+  let deliveryConfig: Record<string, unknown>[] = [];
+  let routingConfig: Record<string, unknown> = null;
   let le = false;
   let te = false;
 
-  settingsData?.forEach((r: any) => {
+  settingsData?.forEach((r: Record<string, unknown>) => {
     if (r.key === "delivery_options_config") {
       try {
         deliveryConfig = JSON.parse(r.value);
-      } catch (e) {}
+      } catch (_e) { /* ignore */ }
     } else if (r.key === "payment_routing_config") {
       try {
         routingConfig = JSON.parse(r.value);
-      } catch (e) {}
+      } catch (_e) { /* ignore */ }
     } else if (r.key === "linepay_enabled") {
       le = String(r.value) === "true";
     } else if (r.key === "transfer_enabled") {
@@ -213,7 +215,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const { data: activePromos } = await supabase.from("coffee_promotions")
     .select("*").eq("enabled", true);
   let totalDiscount = 0;
-  const appliedPromos: any[] = [];
+  const appliedPromos: Record<string, unknown>[] = [];
 
   if (activePromos) {
     for (const prm of activePromos) {
@@ -229,7 +231,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       let matchItemsSubtotal = 0;
       for (const item of cartItems) {
         // 檢查是否符合新版 targetItems
-        const matchInItems = targetItems.some((t: any) => {
+        const matchInItems = targetItems.some((t: Record<string, unknown>) => {
           if (t.productId !== item.productId) return false;
           if (!t.specKey) return true; // 適用所有規格
           return t.specKey === item.specKey;
@@ -249,13 +251,13 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
                 ? JSON.parse(product.specs)
                 : product.specs;
               if (Array.isArray(specs)) {
-                const spec = specs.find((s: any) =>
+                const spec = specs.find((s: Record<string, unknown>) =>
                   s.key === item.specKey || s.label === item.specKey ||
                   s.name === item.specKey
                 );
                 if (spec && typeof spec.price === "number") uPrice = spec.price;
               }
-            } catch {}
+            } catch (_e) { /* ignore */ }
           }
           matchItemsSubtotal += item.qty * uPrice;
         }
@@ -278,14 +280,15 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     }
   }
 
-  const selectedDeliveryOpt = deliveryConfig.find((d: any) =>
-    d.id === deliveryMethod
-  );
+  const selectedDeliveryOpt = deliveryConfig.find((
+    d: Record<string, unknown>,
+  ) => d.id === deliveryMethod);
   if (!selectedDeliveryOpt || !selectedDeliveryOpt.enabled) {
     return { success: false, error: "該取貨方式已停用或不存在" };
   }
 
-  const paymentConfig: any = selectedDeliveryOpt.payment || {};
+  const paymentConfig: Record<string, unknown> = selectedDeliveryOpt.payment ||
+    {};
   if (!paymentConfig[paymentMethod]) {
     return {
       success: false,

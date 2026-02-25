@@ -6,7 +6,7 @@ export async function validate<T>(
 ): Promise<T> {
   try {
     return await schema.parseAsync(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       const issues = error.issues.map((i: z.ZodIssue) =>
         `${i.path.join(".")}: ${i.message}`

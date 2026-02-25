@@ -56,7 +56,7 @@ async function generateCheckMacValue(
   return hashHex.toUpperCase();
 }
 
-const storeCache: Record<string, { data: any; timestamp: number }> = {};
+const storeCache: Record<string, { data: unknown; timestamp: number }> = {};
 const CACHE_TTL = 60 * 60 * 1000;
 
 export async function getStoreList(cvsType: string) {
@@ -156,7 +156,7 @@ export async function createStoreMapSession(
 
   try {
     await cleanupOldStoreSelections();
-  } catch {}
+  } catch (_e) { /* ignore */ }
 
   const { error } = await supabase.from("coffee_store_selections").upsert({
     token,
@@ -216,7 +216,7 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
 
   if (clientUrl) {
     try {
-      let u = new URL(clientUrl);
+      const u = new URL(clientUrl);
       if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
         clientUrl = "";
       }

@@ -27,7 +27,7 @@ export async function requestLinePayAPI(
   method: string,
   apiPath: string,
   data: unknown = null,
-): Promise<any> {
+): Promise<unknown> {
   const { data: sandboxSetting } = await supabase.from("coffee_settings")
     .select("value").eq("key", "linepay_sandbox").maybeSingle();
   const isSandbox = !sandboxSetting || String(sandboxSetting.value) !== "false";

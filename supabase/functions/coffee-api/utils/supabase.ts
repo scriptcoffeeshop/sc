@@ -1,5 +1,5 @@
 // utils/supabase.ts
-// @ts-ignore
+// @ts-ignore: deno
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from "./config.ts";
 

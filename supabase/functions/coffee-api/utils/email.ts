@@ -1,5 +1,5 @@
-// @ts-ignore
-import nodemailer from "npm:nodemailer";
+// @ts-ignore: deno
+import nodemailer from "npm:nodemailer@6.9.11";
 import { SMTP_PASS, SMTP_USER } from "./config.ts";
 
 export async function sendEmail(
@@ -27,7 +27,7 @@ export async function sendEmail(
       html: htmlContent,
     });
     return { success: true };
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error("Failed to send email:", e);
     return { success: false, error: e.message || String(e) };
   }
