@@ -153,6 +153,7 @@ export async function getPromotions() {
     const promotions = (data || []).map((r: Record<string, unknown>) => ({
         id: r.id, name: r.name, type: r.type,
         targetProductIds: typeof r.target_product_ids === 'string' ? JSON.parse(r.target_product_ids) : (r.target_product_ids || []),
+        targetItems: typeof r.target_items === 'string' ? JSON.parse(r.target_items) : (r.target_items || []),
         minQuantity: r.min_quantity || 1,
         discountType: r.discount_type, discountValue: r.discount_value,
         enabled: r.enabled !== false,
@@ -167,6 +168,7 @@ export async function addPromotion(data: Record<string, unknown>, req: Request) 
     const { data: ins, error } = await supabase.from('coffee_promotions').insert({
         name: data.name, type: data.type || 'bundle',
         target_product_ids: data.targetProductIds || [],
+        target_items: data.targetItems || [],
         min_quantity: data.minQuantity || 1,
         discount_type: data.discountType,
         discount_value: data.discountValue,
@@ -182,6 +184,7 @@ export async function updatePromotion(data: Record<string, unknown>, req: Reques
     const { error } = await supabase.from('coffee_promotions').update({
         name: data.name, type: data.type || 'bundle',
         target_product_ids: data.targetProductIds || [],
+        target_items: data.targetItems || [],
         min_quantity: data.minQuantity || 1,
         discount_type: data.discountType,
         discount_value: data.discountValue,

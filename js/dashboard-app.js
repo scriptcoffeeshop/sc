@@ -636,18 +636,49 @@ function renderPromotions() {
     }
 }
 
-function renderPromoProducts(selectedIds = []) {
+function renderPromoProducts(selectedItems = []) {
     const list = document.getElementById('prm-products-list');
     if (!products.length) {
         list.innerHTML = '<p class="text-gray-400">目前沒有商品可選</p>';
         return;
     }
-    const html = products.map(p => `
-        <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
-            <input type="checkbox" class="promo-product-cb" value="${p.id}" ${selectedIds.includes(p.id) ? 'checked' : ''}>
-            <span class="text-gray-600">[${esc(p.category)}] ${esc(p.name)}</span>
-        </label>
-    `).join('');
+
+    // selectedItems 現在是 [{"productId": 1, "specKey": "..."}]
+    const isSelected = (pid, skey) => {
+        return selectedItems.some(i => i.productId === pid && i.specKey === skey);
+    };
+
+    let html = '';
+    products.forEach(p => {
+        let specs = [];
+        try { specs = JSON.parse(p.specs || '[]'); } catch (e) { }
+
+        if (specs.length === 0) {
+            // 無規格商品
+            html += `
+            <div class="mb-1 border-b pb-1 last:border-0" style="border-color:#f0e6db">
+                <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                    <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="" ${isSelected(p.id, '') ? 'checked' : ''}>
+                    <span class="text-gray-700 font-medium">[${esc(p.category)}] ${esc(p.name)}</span>
+                </label>
+            </div>`;
+        } else {
+            // 有規格商品：標題列 + 規格子選項
+            html += `
+            <div class="mb-2 border-b pb-1 last:border-0" style="border-color:#f0e6db">
+                <div class="text-gray-700 font-medium p-1 bg-gray-50 rounded">[${esc(p.category)}] ${esc(p.name)}</div>
+                <div class="pl-4 mt-1 space-y-1">
+                    ${specs.map(s => `
+                        <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded text-sm">
+                            <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="${esc(s.name)}" ${isSelected(p.id, s.name) ? 'checked' : ''}>
+                            <span class="text-gray-600">${esc(s.name)} <span class="text-xs text-gray-400">($${s.price})</span></span>
+                        </label>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+    });
+
     list.innerHTML = html;
 }
 
@@ -671,7 +702,12 @@ function editPromotion(id) {
     document.getElementById('prm-discount-type').value = p.discountType || 'percent';
     document.getElementById('prm-discount-value').value = p.discountValue || 0;
     document.getElementById('prm-enabled').checked = p.enabled;
-    renderPromoProducts(p.targetProductIds || []);
+    // 相容舊版資料：如果沒有 targetItems，就將 targetProductIds 當作無規格商品轉換
+    let targetItems = p.targetItems || [];
+    if (targetItems.length === 0 && p.targetProductIds && p.targetProductIds.length > 0) {
+        targetItems = p.targetProductIds.map(id => ({ productId: id, specKey: '' }));
+    }
+    renderPromoProducts(targetItems);
     document.getElementById('promotion-modal').classList.remove('hidden');
 }
 
@@ -685,13 +721,16 @@ async function savePromotion(e) {
     e.preventDefault();
     const id = document.getElementById('prm-id').value;
     const cbs = document.querySelectorAll('.promo-product-cb:checked');
-    const targetProductIds = Array.from(cbs).map(cb => parseInt(cb.value));
+    const targetItems = Array.from(cbs).map(cb => ({
+        productId: parseInt(cb.dataset.pid),
+        specKey: cb.dataset.skey || ''
+    }));
 
     const payload = {
         userId: getAuthUserId(),
         name: document.getElementById('prm-name').value.trim(),
         type: document.getElementById('prm-type').value,
-        targetProductIds,
+        targetItems,
         minQuantity: parseInt(document.getElementById('prm-min-qty').value) || 1,
         discountType: document.getElementById('prm-discount-type').value,
         discountValue: parseFloat(document.getElementById('prm-discount-value').value) || 0,
