@@ -1,0 +1,542 @@
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/validate.ts[0m[0m[33m:9:19[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m9 | [0m  } catch (error: any) {
+ [0m[38;5;12m | [0m                  [0m[1m[31m^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[require-await][0m: [0m[1mAsync arrow function has no 'await' expression or 'await using' declaration.[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/tests/smoke_test.ts[0m[0m[33m:3:47[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m3 | [0mDeno.test("Basic Router Test - Health Check", async () => {
+ [0m[38;5;12m | [0m                                              [0m[1m[31m^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Remove 'async' keyword from the function or use 'await' expression or 'await using' declaration inside.
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/require-await
+
+
+[0m[1m[31merror[ban-ts-comment][0m: [0m[1m`@ts-ignore` is not allowed without comment[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/supabase.ts[0m[0m[33m:2:1[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m2 | [0m// @ts-ignore
+ [0m[38;5;12m | [0m[0m[1m[31m^^^^^^^^^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Add an in-line comment explaining the reason for using `@ts-ignore`, like `// @ts-ignore: <reason>`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/ban-ts-comment
+
+
+[0m[1m[31merror[ban-ts-comment][0m: [0m[1m`@ts-ignore` is not allowed without comment[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/config.ts[0m[0m[33m:2:1[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m2 | [0m// @ts-ignore
+ [0m[38;5;12m | [0m[0m[1m[31m^^^^^^^^^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Add an in-line comment explaining the reason for using `@ts-ignore`, like `// @ts-ignore: <reason>`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/ban-ts-comment
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/config.ts[0m[0m[33m:3:21[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m3 | [0mdeclare const Deno: any;
+ [0m[38;5;12m | [0m                    [0m[1m[31m^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[ban-ts-comment][0m: [0m[1m`@ts-ignore` is not allowed without comment[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/email.ts[0m[0m[33m:1:1[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m1 | [0m// @ts-ignore
+ [0m[38;5;12m | [0m[0m[1m[31m^^^^^^^^^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Add an in-line comment explaining the reason for using `@ts-ignore`, like `// @ts-ignore: <reason>`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/ban-ts-comment
+
+
+[0m[1m[31merror[no-unversioned-import][0m: [0m[1mMissing version in specifier[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/email.ts[0m[0m[33m:2:24[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m2 | [0mimport nodemailer from "npm:nodemailer";
+ [0m[38;5;12m | [0m                       [0m[1m[31m^^^^^^^^^^^^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Add a version requirement after the package name
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-unversioned-import
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/email.ts[0m[0m[33m:30:15[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m30 | [0m  } catch (e: any) {
+  [0m[38;5;12m | [0m              [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/users.ts[0m[0m[33m:10:26[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m10 | [0m  const mapToCamel = (u: any) => ({
+  [0m[38;5;12m | [0m                         [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/utils/linepay.ts[0m[0m[33m:30:12[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m30 | [0m): Promise<any> {
+  [0m[38;5;12m | [0m           [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[ban-ts-comment][0m: [0m[1m`@ts-ignore` is not allowed without comment[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:2:1[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m2 | [0m// @ts-ignore
+ [0m[38;5;12m | [0m[0m[1m[31m^^^^^^^^^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: Add an in-line comment explaining the reason for using `@ts-ignore`, like `// @ts-ignore: <reason>`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/ban-ts-comment
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:127:60[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m127 | [0m        const v = await validate(lineLoginSchema, data) as any;
+   [0m[38;5;12m | [0m                                                           [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:132:60[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m132 | [0m        const v = await validate(lineLoginSchema, data) as any;
+   [0m[38;5;12m | [0m                                                           [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:164:62[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m164 | [0m        const v = await validate(submitOrderSchema, data) as any;
+   [0m[38;5;12m | [0m                                                             [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:172:63[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m172 | [0m        const v = await validate(transferInfoSchema, data) as any;
+   [0m[38;5;12m | [0m                                                              [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:192:60[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m192 | [0m        const v = await validate(promotionSchema, data) as any;
+   [0m[38;5;12m | [0m                                                           [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:197:60[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m197 | [0m        const v = await validate(promotionSchema, data) as any;
+   [0m[38;5;12m | [0m                                                           [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:208:58[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m208 | [0m        const v = await validate(productSchema, data) as any;
+   [0m[38;5;12m | [0m                                                         [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:213:58[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m213 | [0m        const v = await validate(productSchema, data) as any;
+   [0m[38;5;12m | [0m                                                         [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:227:59[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m227 | [0m        const v = await validate(categorySchema, data) as any;
+   [0m[38;5;12m | [0m                                                          [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:232:59[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m232 | [0m        const v = await validate(categorySchema, data) as any;
+   [0m[38;5;12m | [0m                                                          [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:243:65[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m243 | [0m        const v = await validate(updateSettingsSchema, data) as any;
+   [0m[38;5;12m | [0m                                                                [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/index.ts[0m[0m[33m:248:68[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m248 | [0m        const v = await validate(updateOrderStatusSchema, data) as any;
+   [0m[38;5;12m | [0m                                                                   [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/users.ts[0m[0m[33m:13:33[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m13 | [0m    filtered = users.filter((u: any) =>
+  [0m[38;5;12m | [0m                                [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/users.ts[0m[0m[33m:20:38[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m20 | [0m  const formatted = filtered.map((u: any) => ({
+  [0m[38;5;12m | [0m                                     [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/stores.ts[0m[0m[33m:59:42[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m59 | [0mconst storeCache: Record<string, { data: any; timestamp: number }> = {};
+  [0m[38;5;12m | [0m                                         [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-empty][0m: [0m[1mEmpty block statement[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/stores.ts[0m[0m[33m:159:11[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m159 | [0m  } catch {}
+   [0m[38;5;12m | [0m          [0m[1m[31m^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Add code or comment to the empty block
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-empty
+
+
+[0m[1m[31merror[prefer-const][0m: [0m[1m`u` is never reassigned[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/stores.ts[0m[0m[33m:219:11[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m219 | [0m      let u = new URL(clientUrl);
+   [0m[38;5;12m | [0m          [0m[1m[31m^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use `const` instead
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/prefer-const
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:58:38[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m58 | [0m  const productMap = new Map<number, any>(products.map((p: any) => [p.id, p]));
+  [0m[38;5;12m | [0m                                     [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:58:60[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m58 | [0m  const productMap = new Map<number, any>(products.map((p: any) => [p.id, p]));
+  [0m[38;5;12m | [0m                                                           [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+  [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:82:40[0m
+  [0m[38;5;12m | [0m
+[0m[38;5;12m82 | [0m        const spec = specList.find((s: any) =>
+  [0m[38;5;12m | [0m                                       [0m[1m[31m^^^[0m
+   [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:148:23[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m148 | [0m  let deliveryConfig: any[] = [];
+   [0m[38;5;12m | [0m                      [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:149:22[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m149 | [0m  let routingConfig: any = null;
+   [0m[38;5;12m | [0m                     [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:153:29[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m153 | [0m  settingsData?.forEach((r: any) => {
+   [0m[38;5;12m | [0m                            [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-unused-vars][0m: [0m[1m`e` is never used[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:157:16[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m157 | [0m      } catch (e) {}
+   [0m[38;5;12m | [0m               [0m[1m[31m^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: If this is intentional, prefix it with an underscore like `_e`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+[0m[1m[31merror[no-empty][0m: [0m[1mEmpty block statement[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:157:19[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m157 | [0m      } catch (e) {}
+   [0m[38;5;12m | [0m                  [0m[1m[31m^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Add code or comment to the empty block
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-empty
+
+
+[0m[1m[31merror[no-unused-vars][0m: [0m[1m`e` is never used[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:161:16[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m161 | [0m      } catch (e) {}
+   [0m[38;5;12m | [0m               [0m[1m[31m^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: If this is intentional, prefix it with an underscore like `_e`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+[0m[1m[31merror[no-empty][0m: [0m[1mEmpty block statement[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:161:19[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m161 | [0m      } catch (e) {}
+   [0m[38;5;12m | [0m                  [0m[1m[31m^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Add code or comment to the empty block
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-empty
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:216:24[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m216 | [0m  const appliedPromos: any[] = [];
+   [0m[38;5;12m | [0m                       [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:232:51[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m232 | [0m        const matchInItems = targetItems.some((t: any) => {
+   [0m[38;5;12m | [0m                                                  [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:252:45[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m252 | [0m                const spec = specs.find((s: any) =>
+   [0m[38;5;12m | [0m                                            [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-empty][0m: [0m[1mEmpty block statement[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:258:21[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m258 | [0m            } catch {}
+   [0m[38;5;12m | [0m                    [0m[1m[31m^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Add code or comment to the empty block
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-empty
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:281:55[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m281 | [0m  const selectedDeliveryOpt = deliveryConfig.find((d: any) =>
+   [0m[38;5;12m | [0m                                                      [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/orders.ts[0m[0m[33m:288:24[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m288 | [0m  const paymentConfig: any = selectedDeliveryOpt.payment || {};
+   [0m[38;5;12m | [0m                       [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-unused-vars][0m: [0m[1m`testEmailAction` is never used[0m
+ [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:3:23[0m
+ [0m[38;5;12m | [0m
+[0m[38;5;12m3 | [0mimport { testEmail as testEmailAction } from "./misc.ts"; // I'll create this or just keep it in index for now.
+ [0m[38;5;12m | [0m                      [0m[1m[31m^^^^^^^^^^^^^^^[0m
+  [0m[38;5;12m=[0m [0m[1mhint[0m: If this is intentional, alias it with an underscore like `testEmailAction as _testEmailAction`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-unused-vars
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:218:43[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m218 | [0m  const promotions = (data || []).map((r: any) => ({
+   [0m[38;5;12m | [0m                                          [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[prefer-const][0m: [0m[1m`query` is never reassigned[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:359:7[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m359 | [0m  let query = supabase.from("coffee_form_fields").select("*").order(
+   [0m[38;5;12m | [0m      [0m[1m[31m^^^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use `const` instead
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/prefer-const
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:496:36[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m496 | [0m    accounts: (data || []).map((r: any) => ({
+   [0m[38;5;12m | [0m                                   [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:576:38[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m576 | [0m  const settings = s.success ? (s as any).settings : {};
+   [0m[38;5;12m | [0m                                     [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:579:33[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m579 | [0m    products: p.success ? (p as any).products : [],
+   [0m[38;5;12m | [0m                                [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:580:35[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m580 | [0m    categories: c.success ? (c as any).categories : [],
+   [0m[38;5;12m | [0m                                  [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:582:35[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m582 | [0m    formFields: f.success ? (f as any).fields : [],
+   [0m[38;5;12m | [0m                                  [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:583:37[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m583 | [0m    bankAccounts: b.success ? (b as any).accounts : [],
+   [0m[38;5;12m | [0m                                    [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+[0m[1m[31merror[no-explicit-any][0m: [0m[1m`any` type is not allowed[0m
+   [0m[38;5;12m-->[0m [0m[36m/Users/kimi/Library/Mobile Documents/com~apple~CloudDocs/咖啡訂購/supabase/functions/coffee-api/api/settings.ts[0m[0m[33m:584:37[0m
+   [0m[38;5;12m | [0m
+[0m[38;5;12m584 | [0m    promotions: pr.success ? (pr as any).promotions : [],
+   [0m[38;5;12m | [0m                                    [0m[1m[31m^^^[0m
+    [0m[38;5;12m=[0m [0m[1mhint[0m: Use a specific type other than `any`
+
+  [0m[38;5;12mdocs[0m: https://docs.deno.com/lint/rules/no-explicit-any
+
+
+Found 54 problems
+Checked 22 files
