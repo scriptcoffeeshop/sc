@@ -7,7 +7,7 @@ export async function registerOrUpdateUser(data: Record<string, string>) {
     .eq("line_user_id", data.userId)
     .single();
 
-  const mapToCamel = (u: any) => ({
+  const mapToCamel = (u: Record<string, unknown>) => ({
     userId: u.line_user_id,
     displayName: u.display_name,
     pictureUrl: u.picture_url,

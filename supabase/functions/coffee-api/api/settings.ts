@@ -1,6 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
-import { testEmail as testEmailAction } from "./misc.ts"; // I'll create this or just keep it in index for now.
+// I'll create this or just keep it in index for now.
 
 // ============ 商品 ============
 export async function getProducts() {
@@ -215,7 +215,7 @@ export async function getPromotions() {
   const { data, error } = await supabase.from("coffee_promotions").select("*")
     .order("sort_order", { ascending: true });
   if (error) return { success: false, error: error.message };
-  const promotions = (data || []).map((r: any) => ({
+  const promotions = (data || []).map((r: Record<string, unknown>) => ({
     id: r.id,
     name: r.name,
     type: r.type,
@@ -356,7 +356,7 @@ export async function getFormFields(includeDisabled: boolean) {
 
 export async function getFormFieldsAdmin(req: Request) {
   await requireAdmin(req);
-  let query = supabase.from("coffee_form_fields").select("*").order(
+  const query = supabase.from("coffee_form_fields").select("*").order(
     "sort_order",
     { ascending: true },
   ).order("id");
@@ -493,7 +493,7 @@ export async function getBankAccounts() {
   if (error) return { success: false, error: error.message };
   return {
     success: true,
-    accounts: (data || []).map((r: any) => ({
+    accounts: (data || []).map((r: Record<string, unknown>) => ({
       id: r.id,
       bankCode: r.bank_code,
       bankName: r.bank_name,
@@ -573,14 +573,14 @@ export async function getInitData() {
     getBankAccounts(),
     getPromotions(),
   ]);
-  const settings = s.success ? (s as any).settings : {};
+  const settings = s.success ? (s as Record<string, unknown>).settings : {};
   return {
     success: true,
-    products: p.success ? (p as any).products : [],
-    categories: c.success ? (c as any).categories : [],
+    products: p.success ? (p as Record<string, unknown>).products : [],
+    categories: c.success ? (c as Record<string, unknown>).categories : [],
     settings,
-    formFields: f.success ? (f as any).fields : [],
-    bankAccounts: b.success ? (b as any).accounts : [],
-    promotions: pr.success ? (pr as any).promotions : [],
+    formFields: f.success ? (f as Record<string, unknown>).fields : [],
+    bankAccounts: b.success ? (b as Record<string, unknown>).accounts : [],
+    promotions: pr.success ? (pr as Record<string, unknown>).promotions : [],
   };
 }
