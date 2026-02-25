@@ -7,7 +7,7 @@ import { Toast } from './utils.js';
 import { loginWithLine } from './auth.js';
 import { state } from './state.js';
 import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart } from './cart.js';
-import { renderProducts } from './products.js';
+import { renderProducts, openSpecDrawer, closeSpecDrawer } from './products.js';
 import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js';
 import { submitOrder, showMyOrders } from './orders.js';
 import { renderDynamicFields, applyBranding } from './form-renderer.js';
@@ -35,6 +35,8 @@ window.showMyOrders = showMyOrders;
 window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
 window.selectBankAccount = selectBankAccount;
+window.openSpecDrawer = openSpecDrawer;
+window.closeSpecDrawer = closeSpecDrawer;
 window.loginWithLine = () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state');
 window.closeAnnouncement = () => document.getElementById('announcement-banner').classList.add('hidden');
 
