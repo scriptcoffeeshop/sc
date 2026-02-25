@@ -40,13 +40,23 @@ export function addToCart(productId, specKey) {
         .fire({ icon: 'success', title: `已加入 ${p.name} (${spec.label})` });
 }
 
-/** 更新購物車品項數量 */
+/** 更新購物車品項數量 (by Array Index) */
 export function updateCartItemQty(idx, delta) {
     if (!cart[idx]) return;
     cart[idx].qty += delta;
     if (cart[idx].qty <= 0) cart.splice(idx, 1);
     saveCart();
     updateCartUI();
+}
+
+/** 依據商品ID與規格Key更新數量 (給 In-line Stepper 使用) */
+export function updateCartItemQtyByKeys(productId, specKey, delta) {
+    const idx = cart.findIndex(c => c.productId === productId && c.specKey === specKey);
+    if (idx !== -1) {
+        updateCartItemQty(idx, delta);
+    } else if (delta > 0) {
+        addToCart(productId, specKey);
+    }
 }
 
 /** 移除購物車品項 */
@@ -90,19 +100,25 @@ export function updateCartUI() {
         transferTotalEl.textContent = `$${summary.finalTotal}`;
     }
 
-    // 更新規格按鈕上的數量 badge
-    document.querySelectorAll('button[data-pid][data-spec]').forEach(btn => {
-        const pid = parseInt(btn.dataset.pid);
-        const specKey = btn.dataset.spec;
+    // 更新前台商品卡片：In-line Stepper 顯示邏輯
+    document.querySelectorAll('.spec-container').forEach(container => {
+        const pid = parseInt(container.dataset.pid);
+        const specKey = container.dataset.spec;
         const cartItem = cart.find(c => c.productId === pid && c.specKey === specKey);
-        const specBadge = btn.querySelector('.spec-badge');
-        if (specBadge) {
-            if (cartItem && cartItem.qty > 0) {
-                specBadge.textContent = cartItem.qty;
-                specBadge.classList.remove('hidden');
-            } else {
-                specBadge.classList.add('hidden');
-            }
+
+        const btnAdd = container.querySelector('.spec-btn-add');
+        const btnStepper = container.querySelector('.spec-btn-stepper');
+        const qtyText = container.querySelector('.spec-qty-text');
+
+        if (cartItem && cartItem.qty > 0) {
+            // 已在購物車內：隱藏加入按鈕，顯示加減算盤
+            if (btnAdd) btnAdd.classList.add('hidden');
+            if (btnStepper) btnStepper.classList.remove('hidden');
+            if (qtyText) qtyText.textContent = cartItem.qty;
+        } else {
+            // 不在購物車內：顯示加入按鈕，隱藏加減算盤
+            if (btnAdd) btnAdd.classList.remove('hidden');
+            if (btnStepper) btnStepper.classList.add('hidden');
         }
     });
 

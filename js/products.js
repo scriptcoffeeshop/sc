@@ -35,15 +35,42 @@ export function renderProducts() {
             let specBtns = '';
             if (enabledSpecs.length) {
                 specBtns = enabledSpecs.map(s => `
-                    <button onclick="window._cart.addToCart(${p.id}, '${s.key}')" data-pid="${p.id}" data-spec="${s.key}"
-                        class="relative flex-1 min-w-[80px] text-xs sm:text-sm py-2 px-2 rounded-lg border-2 font-medium transition-all hover:shadow-md active:scale-95"
-                        style="border-color:var(--secondary); color:var(--primary); background:#fefdf8;">
-                        <span class="spec-badge hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow">0</span>
-                        ${escapeHtml(s.label)}<br><span class="font-bold">$${s.price}</span>
-                    </button>
+                    <div class="spec-container relative flex-1 min-w-[80px]" data-pid="${p.id}" data-spec="${s.key}">
+                        <!-- 預設按鈕 (未加入購物車) -->
+                        <button onclick="window._cart.addToCart(${p.id}, '${s.key}')" 
+                            class="spec-btn-add w-full text-xs sm:text-sm py-2 px-2 rounded-lg border-2 font-medium transition-all hover:shadow-md active:scale-95 flex flex-col items-center justify-center"
+                            style="border-color:var(--secondary); color:var(--primary); background:#fefdf8; height: 100%;">
+                            <span>${escapeHtml(s.label)}</span>
+                            <span class="font-bold">$${s.price}</span>
+                        </button>
+                        
+                        <!-- 加減算盤 (已加入購物車時顯示) -->
+                        <div class="spec-btn-stepper hidden w-full h-full absolute inset-0 rounded-lg border-2 flex items-center justify-between px-1"
+                            style="border-color:var(--secondary); background:var(--secondary); shadow-inner;">
+                            <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, '${s.key}', -1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">−</button>
+                            <div class="flex flex-col items-center justify-center leading-tight">
+                                <span class="text-[10px] text-white opacity-90">${escapeHtml(s.label)}</span>
+                                <span class="spec-qty-text font-bold text-white text-sm">1</span>
+                            </div>
+                            <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, '${s.key}', 1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">+</button>
+                        </div>
+                    </div>
                 `).join('');
             } else {
-                specBtns = `<button onclick="window._cart.addToCart(${p.id}, 'default')" class="text-sm py-2 px-4 rounded-lg border-2 font-medium" style="border-color:var(--secondary); color:var(--primary);">加入購物車 $${p.price}</button>`;
+                specBtns = `
+                    <div class="spec-container relative" data-pid="${p.id}" data-spec="default">
+                        <button onclick="window._cart.addToCart(${p.id}, 'default')" 
+                            class="spec-btn-add text-sm py-2 px-4 rounded-lg border-2 font-medium transition-all" 
+                            style="border-color:var(--secondary); color:var(--primary); width:100%; height:100%;">加入購物車 $${p.price}</button>
+                            
+                        <div class="spec-btn-stepper hidden w-full h-full absolute inset-0 rounded-lg border-2 flex items-center justify-between px-2"
+                            style="border-color:var(--secondary); background:var(--secondary);">
+                            <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, 'default', -1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">−</button>
+                            <span class="spec-qty-text font-bold text-white text-base">1</span>
+                            <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, 'default', 1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">+</button>
+                        </div>
+                    </div>
+                `;
             }
 
             html += `
