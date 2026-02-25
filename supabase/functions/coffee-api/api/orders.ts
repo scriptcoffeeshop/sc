@@ -160,12 +160,16 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
                 if (matchInItems || matchInOldIds) {
                     matchQty += item.qty
                     const product = productMap.get(item.productId)
-                    let uPrice = product.price
+                    if (!product) continue;
+
+                    let uPrice = Number(product.price) || 0
                     if (product.specs) {
                         try {
                             const specs = typeof product.specs === 'string' ? JSON.parse(product.specs) : product.specs
-                            const spec = specs.find((s: any) => s.key === item.specKey || s.label === item.specKey || s.name === item.specKey)
-                            if (spec) uPrice = spec.price ?? product.price
+                            if (Array.isArray(specs)) {
+                                const spec = specs.find((s: any) => s.key === item.specKey || s.label === item.specKey || s.name === item.specKey)
+                                if (spec && typeof spec.price === 'number') uPrice = spec.price
+                            }
                         } catch { }
                     }
                     matchItemsSubtotal += item.qty * uPrice
