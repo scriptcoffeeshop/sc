@@ -81,15 +81,29 @@ export function updateCartUI() {
     if (totalItems > 0) { badge.textContent = totalItems; badge.classList.remove('hidden'); }
     else { badge.classList.add('hidden'); }
 
-    // 計算總金額
+    // 計算總金額並套用方案 B 排版 (動態小標籤 + 大總額)
     const summary = calcCartSummary();
-    let priceHtml = `總金額: $${summary.finalTotal}`;
+    let priceHtml = `<div class="text-xl font-bold">總金額: $${summary.finalTotal}</div>`;
+
     if (summary.totalDiscount > 0 || state.selectedDelivery) {
-        priceHtml = `商品小計 $${summary.subtotal}`;
-        if (summary.totalDiscount > 0) priceHtml += ` | 折扣 -$${summary.totalDiscount}`;
-        if (summary.shippingFee > 0) priceHtml += ` | 運費 $${summary.shippingFee}`;
-        else if (state.selectedDelivery) priceHtml += ` | 運費 $0`;
-        priceHtml += ` <br><span class="text-xl">應付總額: $${summary.finalTotal}</span>`;
+        let badgesHtml = '';
+        if (summary.totalDiscount > 0) {
+            badgesHtml += `<span style="background-color: #fee2e2; color: #dc2626; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">折 -$${summary.totalDiscount}</span>`;
+        }
+        if (state.selectedDelivery) {
+            if (summary.shippingFee === 0) {
+                badgesHtml += `<span style="background-color: #dbeafe; color: #2563eb; font-size: 11px; padding: 2px 6px; border-radius: 4px;">免運費</span>`;
+            } else {
+                badgesHtml += `<span style="background-color: #f3f4f6; color: #4b5563; font-size: 11px; padding: 2px 6px; border-radius: 4px;">運費 $${summary.shippingFee}</span>`;
+            }
+        }
+
+        priceHtml = `
+            <div class="flex flex-col items-start justify-center">
+                <div class="flex items-center mb-0.5">${badgesHtml}</div>
+                <div class="text-xl font-bold leading-tight">應付總額: $${summary.finalTotal}</div>
+            </div>
+        `;
     }
     document.getElementById('total-price').innerHTML = priceHtml;
     document.getElementById('cart-total').textContent = `$${summary.finalTotal}`;
