@@ -35,6 +35,11 @@ import {
     getInitData,
     getFormFields,
     getFormFieldsAdmin,
+    getPromotions,
+    addPromotion,
+    updatePromotion,
+    deletePromotion,
+    reorderPromotionsBulk,
     addProduct,
     updateProduct,
     deleteProduct,
@@ -76,7 +81,7 @@ import { testEmail } from './api/misc.ts'
 import { validate } from './utils/validate.ts'
 import { lineLoginSchema, transferInfoSchema } from './schemas/auth.ts'
 import { submitOrderSchema, updateOrderStatusSchema } from './schemas/order.ts'
-import { productSchema, categorySchema, updateSettingsSchema } from './schemas/settings.ts'
+import { productSchema, categorySchema, updateSettingsSchema, promotionSchema } from './schemas/settings.ts'
 
 // ============ 主路由 ============
 serve(async (req: Request) => {
@@ -96,6 +101,7 @@ serve(async (req: Request) => {
             case 'getCategories': result = await getCategories(); break
             case 'getSettings': result = await getSettings(); break
             case 'getInitData': result = await getInitData(); break
+            case 'getPromotions': result = await getPromotions(); break
             case 'getFormFields': result = await getFormFields(false); break
             case 'getLineLoginUrl': result = getLineLoginUrl(data.redirectUri as string); break
             case 'customerLineLogin': {
@@ -142,6 +148,18 @@ serve(async (req: Request) => {
             // 需管理員
             case 'getFormFieldsAdmin': result = await getFormFieldsAdmin(req); break
             case 'getOrders': result = await getOrders(req); break
+            case 'addPromotion': {
+                const v = await validate(promotionSchema, data) as any
+                result = await addPromotion(v, req)
+                break
+            }
+            case 'updatePromotion': {
+                const v = await validate(promotionSchema, data) as any
+                result = await updatePromotion(v, req)
+                break
+            }
+            case 'deletePromotion': result = await deletePromotion(data, req); break
+            case 'reorderPromotionsBulk': result = await reorderPromotionsBulk(data, req); break
             case 'addProduct': {
                 const v = await validate(productSchema, data) as any
                 result = await addProduct(v, req)

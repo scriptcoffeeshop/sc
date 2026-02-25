@@ -82,7 +82,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         orderLines.push(`${product.name}${specLabel ? ` (${specLabel})` : ''} x ${qty} (${lineTotal}元)`)
     }
 
-    const ordersText = orderLines.join('\n')
+
     const deliveryMethod = String(data.deliveryMethod || 'delivery')
     const validMethods = ['delivery', 'home_delivery', 'seven_eleven', 'family_mart', 'in_store']
     if (!validMethods.includes(deliveryMethod)) {
@@ -135,6 +135,48 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         ]
     }
 
+    const { data: activePromos } = await supabase.from('coffee_promotions').select('*').eq('enabled', true)
+    let totalDiscount = 0
+    const appliedPromos: any[] = []
+
+    if (activePromos) {
+        for (const prm of activePromos) {
+            if (prm.type !== 'bundle') continue
+            const targetIds = typeof prm.target_product_ids === 'string' ? JSON.parse(prm.target_product_ids) : (prm.target_product_ids || [])
+
+            let matchQty = 0
+            let matchItemsSubtotal = 0
+            for (const item of cartItems) {
+                if (targetIds.includes(item.productId)) {
+                    matchQty += item.qty
+                    const product = productMap.get(item.productId)
+                    let uPrice = product.price
+                    if (product.specs) {
+                        try {
+                            const specs = typeof product.specs === 'string' ? JSON.parse(product.specs) : product.specs
+                            const spec = specs.find((s: any) => s.key === item.specKey || s.label === item.specKey)
+                            if (spec) uPrice = spec.price ?? product.price
+                        } catch { }
+                    }
+                    matchItemsSubtotal += item.qty * uPrice
+                }
+            }
+            if (matchQty >= (prm.min_quantity || 1)) {
+                let dAmt = 0
+                if (prm.discount_type === 'percent') {
+                    dAmt = Math.round(matchItemsSubtotal * (100 - Number(prm.discount_value)) / 100)
+                } else if (prm.discount_type === 'amount') {
+                    const sets = Math.floor(matchQty / (prm.min_quantity || 1))
+                    dAmt = sets * Number(prm.discount_value)
+                }
+                if (dAmt > 0) {
+                    totalDiscount += dAmt
+                    appliedPromos.push({ name: prm.name, amount: dAmt })
+                }
+            }
+        }
+    }
+
     const selectedDeliveryOpt = deliveryConfig.find((d: any) => d.id === deliveryMethod)
     if (!selectedDeliveryOpt || !selectedDeliveryOpt.enabled) {
         return { success: false, error: '該取貨方式已停用或不存在' }
@@ -143,6 +185,27 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     if (!selectedDeliveryOpt.payment?.[paymentMethod]) {
         return { success: false, error: `該取貨方式目前不支援此付款方式：${paymentMethod}` }
     }
+
+    let shippingFee = 0
+    const fee = Number(selectedDeliveryOpt.fee) || 0
+    const freeThreshold = Number(selectedDeliveryOpt.free_threshold) || 0
+    const afterDiscount = Math.max(0, total - totalDiscount)
+    if (freeThreshold <= 0 || afterDiscount < freeThreshold) {
+        shippingFee = fee
+    }
+
+    if (appliedPromos.length > 0) {
+        orderLines.push('---')
+        appliedPromos.forEach(p => {
+            orderLines.push(`🎁 ${p.name} (-$${p.amount})`)
+        })
+    }
+    total = Math.max(0, total - totalDiscount)
+
+    orderLines.push(`🚚 運費: $${shippingFee}`)
+    total += shippingFee
+
+    const ordersText = orderLines.join('\n')
 
     if (deliveryMethod === 'delivery') {
         const city = String(data.city || '')

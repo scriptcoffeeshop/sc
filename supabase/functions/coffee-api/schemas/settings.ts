@@ -24,3 +24,16 @@ export const settingSchema = z.record(z.string())
 export const updateSettingsSchema = z.object({
     settings: settingSchema
 })
+
+export const promotionSchema = z.object({
+    id: z.number().optional(),
+    name: z.string().min(1, '活動名稱不能為空'),
+    type: z.string().default('bundle'),
+    targetProductIds: z.any().optional(),
+    minQuantity: z.number().min(1).default(1),
+    discountType: z.string(),
+    discountValue: z.number().min(0),
+    enabled: z.union([z.boolean(), z.string()]).optional().transform((v: boolean | string) => v === true || v === 'true'),
+    startTime: z.string().optional().nullable(),
+    endTime: z.string().optional().nullable(),
+})

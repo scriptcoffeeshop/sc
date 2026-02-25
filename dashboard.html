@@ -53,6 +53,9 @@
             <button id="tab-categories" onclick="showTab('categories')"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">📂
                 分類管理</button>
+            <button id="tab-promotions" onclick="showTab('promotions')"
+                class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">🎁
+                促銷活動</button>
             <button id="tab-settings" onclick="showTab('settings')"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">⚙️
                 系統設定</button>
@@ -125,6 +128,32 @@
                 <button onclick="addCategory()" class="btn-primary text-sm">新增</button>
             </div>
             <div id="categories-list"></div>
+        </div>
+
+        <!-- ===== 促銷活動 ===== -->
+        <div id="promotions-section" class="glass-card p-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold" style="color:var(--primary)">促銷活動管理</h2>
+                <button onclick="showPromotionModal()" class="btn-primary text-sm">+ 新增活動</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b-2" style="border-color:var(--secondary)">
+                            <th class="p-3 text-left w-10 text-center" style="color:var(--primary)">排序</th>
+                            <th class="p-3 text-left" style="color:var(--primary)">活動名稱</th>
+                            <th class="p-3 text-left" style="color:var(--primary)">條件與折扣</th>
+                            <th class="p-3 text-center w-24" style="color:var(--primary)">狀態</th>
+                            <th class="p-3 text-right w-32" style="color:var(--primary)">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="promotions-table" class="sortable-tbody">
+                        <tr>
+                            <td colspan="5" class="text-center py-8 text-gray-500">載入中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- ===== 用戶管理 ===== -->
@@ -327,6 +356,10 @@
                                 <th class="p-3 font-medium text-gray-700">圖示與名稱 / 說明</th>
                                 <th class="p-3 font-medium text-gray-700 w-16 text-center border-l"
                                     style="border-color:#e5ddd5">啟用</th>
+                                <th class="p-3 font-medium text-gray-700 w-20 text-center border-l"
+                                    style="border-color:#e5ddd5">運費</th>
+                                <th class="p-3 font-medium text-gray-700 w-24 text-center border-l"
+                                    style="border-color:#e5ddd5">免運門檻</th>
                                 <th class="p-3 font-medium text-gray-700 text-center border-l"
                                     style="border-color:#e5ddd5">貨到/取貨付款</th>
                                 <th class="p-3 font-medium text-gray-700 text-center border-l"
@@ -486,6 +519,71 @@
                     <button type="submit" class="btn-primary flex-1">儲存</button>
                     <button type="button" onclick="closeProductModal()"
                         class="flex-1 px-6 py-3 bg-gray-200 rounded-xl">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 促銷活動 Modal -->
+    <div id="promotion-modal" class="modal-overlay hidden overflow-y-auto">
+        <div class="modal-content my-8 mx-auto" style="max-height: 90vh; overflow-y: auto;">
+            <h3 id="prm-title" class="text-xl font-bold mb-6" style="color:var(--primary)">新增活動</h3>
+            <form id="promotion-form" onsubmit="savePromotion(event)">
+                <input type="hidden" id="prm-id">
+
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-600 mb-1">活動名稱 *</label>
+                    <input type="text" id="prm-name" class="input-field" placeholder="例如：任選2件9折" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-600 mb-1">活動類型 *</label>
+                    <select id="prm-type" class="input-field" required>
+                        <option value="bundle">組合優惠 (多件折扣)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+                    <label class="block text-sm text-gray-600 space-x-2 font-medium mb-2">🎁 觸發條件</label>
+                    <div class="mb-3">
+                        <label class="block text-xs text-gray-500 mb-1">適用商品 (打勾即納入計算)</label>
+                        <div id="prm-products-list"
+                            class="max-h-40 overflow-y-auto border p-2 bg-white rounded space-y-1 text-sm">
+                            <!-- JS 生成 checkbox -->
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-sm">任選滿</span>
+                        <input type="number" id="prm-min-qty" class="input-field w-20 px-2 py-1 text-center" value="2"
+                            min="1" required>
+                        <span class="text-sm">件，可享優惠</span>
+                    </div>
+                </div>
+
+                <div class="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+                    <label class="block text-sm text-gray-600 font-medium mb-2">🏷️ 優惠設定</label>
+                    <div class="flex items-center gap-2 mb-2">
+                        <select id="prm-discount-type" class="input-field w-32 px-2 py-1">
+                            <option value="percent">打折 (%)</option>
+                            <option value="amount">折抵現金 ($)</option>
+                        </select>
+                        <input type="number" id="prm-discount-value" class="input-field flex-1 px-2 py-1"
+                            placeholder="數值" required min="0" step="0.1">
+                    </div>
+                    <p class="text-xs text-gray-500">例如：選擇「打折(%)」並輸入 90 表示 9折；選擇「折抵現金($)」並輸入 100 表示折抵 100元。</p>
+                </div>
+
+                <div class="mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="prm-enabled" checked class="w-4 h-4">
+                        <span class="text-sm">啟用此活動</span>
+                    </label>
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="btn-primary flex-1">儲存</button>
+                    <button type="button" onclick="closePromotionModal()"
+                        class="flex-1 px-6 py-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition">取消</button>
                 </div>
             </form>
         </div>

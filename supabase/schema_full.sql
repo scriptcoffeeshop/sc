@@ -66,8 +66,7 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('announcement', ''),
   ('announcement_enabled', 'false'),
   ('store_name', '咖啡訂購'),
-  ('delivery_fee', '0'),
-  ('free_delivery_threshold', '0'),
+  ('delivery_pricing_rules', '[]'),
   ('site_title', '咖啡豆訂購'),
   ('site_subtitle', '新鮮烘焙・產地直送'),
   ('site_icon_url', ''),
@@ -151,6 +150,21 @@ INSERT INTO coffee_bank_accounts (bank_code, bank_name, account_number, account_
   ('013', '國泰世華', '699506138462', '', true, 1)
 ON CONFLICT DO NOTHING;
 
+-- 9. 促銷活動表
+CREATE TABLE IF NOT EXISTS coffee_promotions (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,                   -- 活動名稱
+  type TEXT NOT NULL DEFAULT 'bundle',  -- 類型 (bundle: 組合/任選, discount: 單品折扣)
+  target_product_ids JSONB DEFAULT '[]',-- 參與活動的商品ID陣列 (例如: [1, 2])
+  min_quantity INT DEFAULT 1,           -- 觸發門檻數量
+  discount_type TEXT NOT NULL,          -- 折扣方式 (percent: 打折, amount: 扣減固定金額)
+  discount_value NUMERIC NOT NULL,      -- 折扣數值
+  enabled BOOLEAN DEFAULT true,
+  start_time TIMESTAMPTZ,
+  end_time TIMESTAMPTZ,
+  sort_order INT DEFAULT 0
+);
+
 -- ============================================
 -- 索引
 -- ============================================
@@ -173,6 +187,7 @@ ALTER TABLE coffee_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coffee_store_selections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coffee_form_fields ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coffee_bank_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coffee_promotions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Allow anon read coffee_products" ON coffee_products;
 CREATE POLICY "Allow anon read coffee_products" ON coffee_products FOR SELECT USING (true);
@@ -188,6 +203,9 @@ CREATE POLICY "Allow anon read coffee_form_fields" ON coffee_form_fields FOR SEL
 
 DROP POLICY IF EXISTS "Allow anon read coffee_bank_accounts" ON coffee_bank_accounts;
 CREATE POLICY "Allow anon read coffee_bank_accounts" ON coffee_bank_accounts FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Allow anon read coffee_promotions" ON coffee_promotions;
+CREATE POLICY "Allow anon read coffee_promotions" ON coffee_promotions FOR SELECT USING (true);
 
 -- 這些表僅由後端 Edge Function (使用 service_role) 存取，前端 API 應全面阻擋以符合資安規範與消除警告
 DROP POLICY IF EXISTS "Deny all access to coffee_orders" ON coffee_orders;
@@ -229,6 +247,11 @@ BEGIN
     SET sort_order = (i->>'sort_order')::int
     FROM jsonb_array_elements(items) i
     WHERE b.id = (i->>'id')::int;
+  ELSIF table_name = 'coffee_promotions' THEN
+    UPDATE public.coffee_promotions pr
+    SET sort_order = (i->>'sort_order')::int
+    FROM jsonb_array_elements(items) i
+    WHERE pr.id = (i->>'id')::int;
   END IF;
 END;
 $$;

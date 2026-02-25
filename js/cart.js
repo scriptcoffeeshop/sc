@@ -72,14 +72,22 @@ export function updateCartUI() {
     else { badge.classList.add('hidden'); }
 
     // 計算總金額
-    const total = calcTotal();
-    document.getElementById('total-price').textContent = `總金額: $${total}`;
-    document.getElementById('cart-total').textContent = `$${total}`;
+    const summary = calcCartSummary();
+    let priceHtml = `總金額: $${summary.finalTotal}`;
+    if (summary.totalDiscount > 0 || state.selectedDelivery) {
+        priceHtml = `商品小計 $${summary.subtotal}`;
+        if (summary.totalDiscount > 0) priceHtml += ` | 折扣 -$${summary.totalDiscount}`;
+        if (summary.shippingFee > 0) priceHtml += ` | 運費 $${summary.shippingFee}`;
+        else if (state.selectedDelivery) priceHtml += ` | 運費 $0`;
+        priceHtml += ` <br><span class="text-xl">應付總額: $${summary.finalTotal}</span>`;
+    }
+    document.getElementById('total-price').innerHTML = priceHtml;
+    document.getElementById('cart-total').textContent = `$${summary.finalTotal}`;
 
     // 更新匯款資訊的應付總金額
     const transferTotalEl = document.getElementById('transfer-total-amount');
     if (transferTotalEl) {
-        transferTotalEl.textContent = `$${total}`;
+        transferTotalEl.textContent = `$${summary.finalTotal}`;
     }
 
     // 更新規格按鈕上的數量 badge
@@ -139,7 +147,73 @@ export function toggleCart() {
     }
 }
 
-/** 計算總金額 */
+/** 取得目前的運費設定 */
+export function getShippingConfig() {
+    if (!window.appSettings || !window.appSettings.delivery_options_config) return null;
+    try {
+        const config = JSON.parse(window.appSettings.delivery_options_config);
+        const sel = config.find(opt => opt.id === state.selectedDelivery);
+        return sel ? { fee: parseInt(sel.fee) || 0, freeThreshold: parseInt(sel.free_threshold) || 0 } : { fee: 0, freeThreshold: 0 };
+    } catch { return { fee: 0, freeThreshold: 0 }; }
+}
+
+/** 計算折扣活動 */
+export function calcPromotions() {
+    let totalDiscount = 0;
+    const appliedPromos = [];
+    const activePromos = (state.promotions || []).filter(p => p.enabled);
+
+    for (const prm of activePromos) {
+        if (prm.type !== 'bundle') continue;
+
+        let matchQty = 0;
+        let matchItems = [];
+        for (const item of cart) {
+            if (prm.targetProductIds.includes(item.productId)) {
+                matchQty += item.qty;
+                matchItems.push(item);
+            }
+        }
+
+        if (matchQty >= prm.minQuantity) {
+            let discountAmount = 0;
+            if (prm.discountType === 'percent') {
+                const subtotal = matchItems.reduce((acc, c) => acc + c.qty * c.unitPrice, 0);
+                discountAmount = Math.round(subtotal * (100 - prm.discountValue) / 100);
+            } else if (prm.discountType === 'amount') {
+                const sets = Math.floor(matchQty / prm.minQuantity);
+                discountAmount = sets * prm.discountValue;
+            }
+            if (discountAmount > 0) {
+                totalDiscount += discountAmount;
+                appliedPromos.push({
+                    name: prm.name,
+                    amount: discountAmount
+                });
+            }
+        }
+    }
+    return { appliedPromos, totalDiscount };
+}
+
+/** 計算購物車所有金額 */
+export function calcCartSummary() {
+    const subtotal = cart.reduce((s, c) => s + c.qty * c.unitPrice, 0);
+    const { appliedPromos, totalDiscount } = calcPromotions();
+    const afterDiscount = Math.max(0, subtotal - totalDiscount);
+
+    const shippingConfig = getShippingConfig();
+    let shippingFee = 0;
+    if (state.selectedDelivery && shippingConfig) {
+        if (shippingConfig.freeThreshold <= 0 || afterDiscount < shippingConfig.freeThreshold) {
+            shippingFee = shippingConfig.fee;
+        }
+    }
+
+    return { subtotal, appliedPromos, totalDiscount, afterDiscount, shippingFee, finalTotal: afterDiscount + shippingFee };
+}
+
+/** 相容舊版 calcTotal */
 export function calcTotal() {
-    return cart.reduce((s, c) => s + c.qty * c.unitPrice, 0);
+    return calcCartSummary().finalTotal;
 }
