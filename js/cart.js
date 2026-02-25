@@ -123,17 +123,21 @@ export function updateCartUI() {
         const btnAdd = container.querySelector('.spec-btn-add');
         const btnStepper = container.querySelector('.spec-btn-stepper');
         const specBadge = container.querySelector('.spec-badge');
+        const qtyText = container.querySelector('.spec-qty-text');
 
         if (cartItem && cartItem.qty > 0) {
-            // 已在購物車內：隱藏加入按鈕，顯示加減算盤，並更新紅點數量
+            // 已在購物車內：隱藏加入按鈕，顯示加減算盤，並更新數量
             if (btnAdd) btnAdd.classList.add('hidden');
             if (btnStepper) btnStepper.classList.remove('hidden');
             if (specBadge) {
                 specBadge.textContent = cartItem.qty;
                 specBadge.classList.remove('hidden');
             }
+            if (qtyText) {
+                qtyText.textContent = cartItem.qty;
+            }
         } else {
-            // 不在購物車內：顯示加入按鈕，隱藏加減算盤與紅點
+            // 不在購物車內：顯示加入按鈕，隱藏加減算盤與數量
             if (btnAdd) btnAdd.classList.remove('hidden');
             if (btnStepper) btnStepper.classList.add('hidden');
             if (specBadge) specBadge.classList.add('hidden');
