@@ -29,7 +29,8 @@ export const promotionSchema = z.object({
     id: z.number().optional(),
     name: z.string().min(1, '活動名稱不能為空'),
     type: z.string().default('bundle'),
-    targetProductIds: z.any().optional(),
+    targetProductIds: z.any().optional(), // 保留相容
+    targetItems: z.any().optional(),
     minQuantity: z.number().min(1).default(1),
     discountType: z.string(),
     discountValue: z.number().min(0),

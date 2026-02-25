@@ -155,7 +155,8 @@ CREATE TABLE IF NOT EXISTS coffee_promotions (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,                   -- 活動名稱
   type TEXT NOT NULL DEFAULT 'bundle',  -- 類型 (bundle: 組合/任選, discount: 單品折扣)
-  target_product_ids JSONB DEFAULT '[]',-- 參與活動的商品ID陣列 (例如: [1, 2])
+  target_product_ids JSONB DEFAULT '[]',-- 參與活動的商品ID陣列 (舊版兼容)
+  target_items JSONB DEFAULT '[]',      -- 參與活動的具體商品規格陣列 (例如: [{"productId": 1, "specKey": "half_pound"}])
   min_quantity INT DEFAULT 1,           -- 觸發門檻數量
   discount_type TEXT NOT NULL,          -- 折扣方式 (percent: 打折, amount: 扣減固定金額)
   discount_value NUMERIC NOT NULL,      -- 折扣數值

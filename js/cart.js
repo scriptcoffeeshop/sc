@@ -169,7 +169,17 @@ export function calcPromotions() {
         let matchQty = 0;
         let matchItems = [];
         for (const item of cart) {
-            if (prm.targetProductIds.includes(item.productId)) {
+            // 檢查是否符合新版的 targetItems
+            const matchInItems = prm.targetItems && prm.targetItems.some(t => {
+                if (t.productId !== item.productId) return false;
+                // 如果該設定沒有指定規格，代表該商品全規格適用 (或者商品本身就沒規格)
+                if (!t.specKey) return true;
+                return t.specKey === item.specName;
+            });
+            // 檢查是否符合舊版的 targetProductIds
+            const matchInOldIds = prm.targetProductIds && prm.targetProductIds.includes(item.productId);
+
+            if (matchInItems || matchInOldIds) {
                 matchQty += item.qty;
                 matchItems.push(item);
             }

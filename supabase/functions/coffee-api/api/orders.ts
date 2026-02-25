@@ -143,18 +143,28 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         for (const prm of activePromos) {
             if (prm.type !== 'bundle') continue
             const targetIds = typeof prm.target_product_ids === 'string' ? JSON.parse(prm.target_product_ids) : (prm.target_product_ids || [])
+            const targetItems = typeof prm.target_items === 'string' ? JSON.parse(prm.target_items) : (prm.target_items || [])
 
             let matchQty = 0
             let matchItemsSubtotal = 0
             for (const item of cartItems) {
-                if (targetIds.includes(item.productId)) {
+                // 檢查是否符合新版 targetItems
+                const matchInItems = targetItems.some((t: any) => {
+                    if (t.productId !== item.productId) return false;
+                    if (!t.specKey) return true; // 適用所有規格
+                    return t.specKey === item.specKey;
+                });
+                // 檢查舊版 targetProductIds
+                const matchInOldIds = targetIds.includes(item.productId);
+
+                if (matchInItems || matchInOldIds) {
                     matchQty += item.qty
                     const product = productMap.get(item.productId)
                     let uPrice = product.price
                     if (product.specs) {
                         try {
                             const specs = typeof product.specs === 'string' ? JSON.parse(product.specs) : product.specs
-                            const spec = specs.find((s: any) => s.key === item.specKey || s.label === item.specKey)
+                            const spec = specs.find((s: any) => s.key === item.specKey || s.label === item.specKey || s.name === item.specKey)
                             if (spec) uPrice = spec.price ?? product.price
                         } catch { }
                     }
