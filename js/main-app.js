@@ -13,6 +13,7 @@ import { submitOrder, showMyOrders } from './orders.js';
 import { renderDynamicFields, applyBranding } from './form-renderer.js';
 import { authFetch } from './auth.js';
 import { escapeHtml } from './utils.js';
+import { supabase } from './supabase-client.js';
 
 // ============ 全域函式掛載 (HTML onclick 呼叫) ============
 window._cart = { addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart };
@@ -144,6 +145,110 @@ window.logout = function () {
 
 // ============ 載入資料 ============
 async function loadInitData() {
+    try {
+        // 使用 Supabase 直連，平行查詢所有公開資料
+        const [productsRes, categoriesRes, settingsRes, formFieldsRes, bankAccountsRes, promotionsRes] = await Promise.all([
+            supabase.from('coffee_products').select('*').order('sort_order', { ascending: true }),
+            supabase.from('coffee_categories').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }),
+            supabase.from('coffee_settings').select('*'),
+            supabase.from('coffee_form_fields').select('*').eq('enabled', true).order('sort_order', { ascending: true }),
+            supabase.from('coffee_bank_accounts').select('*').eq('enabled', true).order('sort_order', { ascending: true }),
+            supabase.from('coffee_promotions').select('*').order('sort_order', { ascending: true }),
+        ]);
+
+        // 檢查是否有任何查詢失敗
+        const errors = [productsRes, categoriesRes, settingsRes, formFieldsRes, bankAccountsRes, promotionsRes]
+            .filter(r => r.error)
+            .map(r => r.error.message);
+        if (errors.length > 0) {
+            console.warn('Supabase 直連查詢部分失敗，嘗試 fallback:', errors);
+            return await loadInitDataFallback();
+        }
+
+        // 映射商品資料（與後端 getProducts 的格式一致）
+        const products = (productsRes.data || []).map(r => ({
+            id: r.id,
+            category: r.category,
+            name: r.name,
+            description: r.description || '',
+            price: r.price,
+            weight: r.weight || '',
+            origin: r.origin || '',
+            roastLevel: r.roast_level || '',
+            specs: r.specs || '',
+            imageUrl: r.image_url || '',
+            enabled: r.enabled !== false,
+            sortOrder: r.sort_order || 0,
+        })).filter(p => p.enabled);
+
+        // 映射分類資料
+        const categories = (categoriesRes.data || []).map(r => ({
+            id: r.id,
+            name: r.name,
+        }));
+
+        // 映射設定資料（key-value 格式）
+        const settings = {};
+        for (const row of (settingsRes.data || [])) {
+            settings[row.key] = row.value;
+        }
+
+        // 映射促銷活動資料
+        const promotions = (promotionsRes.data || []).map(r => ({
+            id: r.id,
+            name: r.name,
+            type: r.type,
+            targetProductIds: (typeof r.target_product_ids === 'string' ? JSON.parse(r.target_product_ids) : r.target_product_ids) || [],
+            targetItems: (typeof r.target_items === 'string' ? JSON.parse(r.target_items) : r.target_items) || [],
+            minQuantity: Number(r.min_quantity) || 1,
+            discountType: r.discount_type,
+            discountValue: Number(r.discount_value) || 0,
+            enabled: r.enabled !== false,
+            startTime: r.start_time,
+            endTime: r.end_time,
+            sortOrder: Number(r.sort_order) || 0,
+        }));
+
+        // 映射銀行帳號資料
+        const bankAccounts = (bankAccountsRes.data || []).map(r => ({
+            id: r.id,
+            bankCode: r.bank_code,
+            bankName: r.bank_name,
+            accountNumber: r.account_number,
+            accountName: r.account_name || '',
+        }));
+
+        // 表單欄位直接使用（已與後端格式一致）
+        const formFields = formFieldsRes.data || [];
+
+        // 賦值到 state
+        state.products = products;
+        state.categories = categories;
+        state.formFields = formFields;
+        state.bankAccounts = bankAccounts;
+        state.promotions = promotions;
+
+        applySettings(settings);
+        applyBranding(settings);
+        renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'));
+        renderProducts();
+        renderBankAccounts();
+
+        // 登入後再回填一次（因為渲染完才有欄位）
+        if (state.currentUser) {
+            const phoneEl = document.getElementById('field-phone');
+            const emailEl = document.getElementById('field-email');
+            if (phoneEl && state.currentUser.phone) phoneEl.value = state.currentUser.phone;
+            if (emailEl && state.currentUser.email) emailEl.value = state.currentUser.email;
+        }
+    } catch (e) {
+        console.warn('Supabase 直連載入失敗，嘗試 fallback:', e);
+        return await loadInitDataFallback();
+    }
+}
+
+/** Fallback：透過 Edge Function 載入資料（原有邏輯） */
+async function loadInitDataFallback() {
     try {
         const res = await fetch(`${API_URL}?action=getInitData&_=${Date.now()}`);
         const result = await res.json();
