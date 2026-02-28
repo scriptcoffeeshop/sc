@@ -15,32 +15,51 @@ import { authFetch } from './auth.js';
 import { escapeHtml } from './utils.js';
 import { supabase } from './supabase-client.js';
 
-// ============ 全域函式掛載 (HTML onclick 呼叫) ============
-window._cart = { addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart };
-window._delivery = { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore };
-window._orders = { submitOrder, showMyOrders };
+// ============ 事件代理 (Event Delegation) ============
+// 透過 data-action 屬性在 document.body 統一監聯 click 事件，
+// 取代原本散落在 HTML 各處的 onclick="window.xxx()" 掛載方式。
+const actionHandlers = {
+    'add-to-cart': (el) => addToCart(+el.dataset.pid, el.dataset.spec),
+    'cart-qty-change': (el) => updateCartItemQtyByKeys(+el.dataset.pid, el.dataset.spec, +el.dataset.delta),
+    'cart-item-qty': (el) => updateCartItemQty(+el.dataset.idx, +el.dataset.delta),
+    'remove-cart-item': (el) => removeCartItem(+el.dataset.idx),
+    'toggle-cart': () => toggleCart(),
+    'select-delivery': (el) => selectDelivery(el.dataset.method),
+    'select-payment': (el) => selectPayment(el.dataset.method),
+    'open-store-map': () => openStoreMap(),
+    'clear-selected-store': () => clearSelectedStore(),
+    'select-store': (el) => { selectStoreFromList(el); Swal.close(); },
+    'submit-order': () => { toggleCart(); submitOrder(); },
+    'show-my-orders': () => showMyOrders(),
+    'login-with-line': () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state'),
+    'logout': () => window.logout(),
+    'close-announcement': () => document.getElementById('announcement-banner').classList.add('hidden'),
+    'close-orders-modal': () => document.getElementById('my-orders-modal').classList.add('hidden'),
+};
 
-// 直接掛載到 window（保持 HTML onclick 相容）
-window.addToCart = addToCart;
-window.updateCartItemQty = updateCartItemQty;
-window.removeCartItem = removeCartItem;
-window.toggleCart = toggleCart;
-window.selectDelivery = selectDelivery;
-window.updateDistricts = updateDistricts;
-window.openStoreMap = openStoreMap;
-window.openStoreSearchModal = openStoreSearchModal;
-window.selectStoreFromList = selectStoreFromList;
-window.clearSelectedStore = clearSelectedStore;
-window.submitOrder = submitOrder;
-window.showMyOrders = showMyOrders;
+function initEventDelegation() {
+    document.body.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.dataset.action;
+        const handler = actionHandlers[action];
+        if (handler) {
+            e.preventDefault();
+            handler(target, e);
+        }
+    });
+}
+
+// ============ 保留必要的 window 掛載 ============
+// 以下函式仍需掛載到 window，因為它們在程式碼內部的渲染邏輯中透過 onclick 呼叫
+// （如 renderBankAccounts / selectPayment 的 querySelector 等）
 window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
 window.selectBankAccount = selectBankAccount;
-window.loginWithLine = () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state');
-window.closeAnnouncement = () => document.getElementById('announcement-banner').classList.add('hidden');
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', async () => {
+    initEventDelegation(); // 啟動事件代理
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     const stateParam = urlParams.get('state');

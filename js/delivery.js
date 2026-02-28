@@ -40,8 +40,8 @@ window.renderDeliveryOptions = function (config) {
     activeOptions.forEach(opt => {
         const div = document.createElement('div');
         div.className = 'delivery-option';
-        // 使用資料屬性與 onclick 讓原先的邏輯能夠正常運作
-        div.setAttribute('onclick', `selectDelivery('${opt.id}', event)`);
+        div.dataset.action = 'select-delivery';
+        div.dataset.method = opt.id;
         div.dataset.id = opt.id;
 
         div.innerHTML = `
@@ -232,10 +232,9 @@ export async function openStoreSearchModal() {
                 ).slice(0, 50);
                 hintP.textContent = matches.length >= 50 ? `顯示前 50 筆，請輸入更精確的關鍵字` : `找到 ${matches.length} 間門市`;
                 resultsDiv.innerHTML = matches.map(s => `
-                    <div class="store-result-item" data-id="${s.id}" data-name="${s.name}" data-addr="${s.address}"
+                    <div class="store-result-item" data-action="select-store" data-id="${s.id}" data-name="${s.name}" data-addr="${s.address}"
                          style="padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; transition:background 0.2s;"
-                         onmouseover="this.style.background='#f0faf0'" onmouseout="this.style.background=''"
-                         onclick="window._delivery.selectStoreFromList(this)">
+                         onmouseover="this.style.background='#f0faf0'" onmouseout="this.style.background=''">
                         <div style="font-weight:600; font-size:14px;">${s.name}</div>
                         <div style="color:#666; font-size:12px;">${s.address}</div>
                         <div style="color:#aaa; font-size:11px;">代號：${s.id}</div>

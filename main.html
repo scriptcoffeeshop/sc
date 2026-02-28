@@ -18,7 +18,7 @@
     <!-- 公告 -->
     <div id="announcement-banner"
         class="hidden max-w-3xl mx-auto mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 relative">
-        <button onclick="closeAnnouncement()"
+        <button data-action="close-announcement"
             class="absolute top-2 right-3 text-amber-500 hover:text-amber-700 text-xl">&times;</button>
         <p id="announcement-text" class="pr-6"></p>
     </div>
@@ -37,7 +37,7 @@
         <div id="login-section" class="mb-6 p-4 rounded-xl" style="background:#f0faf0; border:1px solid #c8e6c9;">
             <div id="login-prompt" class="text-center">
                 <p class="text-gray-600 mb-3">請先使用 LINE 帳號登入以進行訂購</p>
-                <button onclick="loginWithLine()"
+                <button data-action="login-with-line"
                     class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                         <path
@@ -52,9 +52,9 @@
                     <p class="text-sm text-gray-500">已登入</p>
                     <p id="user-display-name" class="font-semibold text-gray-700"></p>
                 </div>
-                <button onclick="showMyOrders()" class="text-sm font-medium" style="color:var(--primary)">📋
+                <button data-action="show-my-orders" class="text-sm font-medium" style="color:var(--primary)">📋
                     我的訂單</button>
-                <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500">登出</button>
+                <button data-action="logout" class="text-sm text-gray-500 hover:text-red-500">登出</button>
             </div>
         </div>
         <input type="hidden" id="line-name">
@@ -134,7 +134,7 @@
                 style="background:#f0faf0; border:1px solid #c8e6c9;">
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">🏪 取貨門市資訊</h3>
                 <div class="mb-3 text-center">
-                    <button onclick="openStoreMap()" class="store-select-btn">📍 選擇門市</button>
+                    <button data-action="open-store-map" class="store-select-btn">📍 選擇門市</button>
                     <p class="text-xs text-gray-500 mt-1">點擊後將開啟綠界超商地圖選擇門市</p>
                 </div>
                 <div id="store-selected-info" class="hidden store-info-card mb-3">
@@ -144,7 +144,7 @@
                             <p class="text-sm text-gray-600" id="selected-store-address"></p>
                             <p class="text-xs text-gray-400" id="selected-store-id"></p>
                         </div>
-                        <button onclick="clearSelectedStore()" class="text-sm text-red-500 hover:text-red-700">✕
+                        <button data-action="clear-selected-store" class="text-sm text-red-500 hover:text-red-700">✕
                             清除</button>
                     </div>
                 </div>
@@ -188,19 +188,21 @@
         <div id="payment-method-section" class="mb-6 fade-in">
             <h2 class="text-lg font-bold mb-4" style="color:var(--primary)" id="payment-section-title">💳 付款方式</h2>
             <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4" id="payment-options">
-                <div class="payment-option active" id="cod-option" onclick="selectPayment('cod')">
+                <div class="payment-option active" id="cod-option" data-action="select-payment" data-method="cod">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2" id="po-cod-icon-display">💵</div>
                     <div class="font-semibold" id="po-cod-name-display">取件 / 到付</div>
                     <div class="text-xs text-gray-500 mt-1" id="po-cod-desc-display">取貨時付現或宅配到付</div>
                 </div>
-                <div class="payment-option hidden" id="linepay-option" onclick="selectPayment('linepay')">
+                <div class="payment-option hidden" id="linepay-option" data-action="select-payment"
+                    data-method="linepay">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2" id="po-linepay-icon-display">💚</div>
                     <div class="font-semibold text-[#06C755]" id="po-linepay-name-display">LINE Pay</div>
                     <div class="text-xs text-gray-500 mt-1" id="po-linepay-desc-display">線上安全付款</div>
                 </div>
-                <div class="payment-option hidden" id="transfer-option" onclick="selectPayment('transfer')">
+                <div class="payment-option hidden" id="transfer-option" data-action="select-payment"
+                    data-method="transfer">
                     <div class="check-mark">✓</div>
                     <div class="text-2xl mb-2" id="po-transfer-icon-display">🏦</div>
                     <div class="font-semibold text-blue-600" id="po-transfer-name-display">線上轉帳</div>
@@ -242,7 +244,7 @@
         <div class="w-full max-w-3xl mx-auto flex items-center justify-between">
             <div class="text-xl font-bold" style="color:var(--primary)" id="total-price">總金額: $0</div>
             <div class="flex gap-2">
-                <button onclick="toggleCart()"
+                <button data-action="toggle-cart"
                     class="relative bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm hover:bg-amber-100 transition-colors">
                     🛒 購物車 <span id="cart-badge"
                         class="hidden ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center">0</span>
@@ -254,12 +256,12 @@
     </div>
 
     <!-- 購物車 Drawer -->
-    <div id="cart-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60]" onclick="toggleCart()"></div>
+    <div id="cart-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60]" data-action="toggle-cart"></div>
     <div id="cart-drawer"
         class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-[61] transform translate-x-full transition-transform duration-300 flex flex-col">
         <div class="p-4 border-b flex justify-between items-center" style="border-color:#f0e6db;">
             <h3 class="text-lg font-bold" style="color:var(--primary)">🛒 購物車</h3>
-            <button onclick="toggleCart()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            <button data-action="toggle-cart" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         <div id="cart-items" class="flex-1 overflow-y-auto p-4">
             <p class="text-center text-gray-400 py-8">購物車是空的</p>
@@ -270,8 +272,7 @@
                 <span class="font-semibold text-gray-700">合計</span>
                 <span id="cart-total" class="text-xl font-bold" style="color:var(--primary)">$0</span>
             </div>
-            <button onclick="toggleCart(); submitOrder();" class="btn-primary w-full"
-                id="cart-submit-btn">確認送出訂單</button>
+            <button data-action="submit-order" class="btn-primary w-full" id="cart-submit-btn">確認送出訂單</button>
         </div>
     </div>
 
@@ -281,14 +282,14 @@
         <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div class="p-4 border-b flex justify-between items-center">
                 <h3 class="text-lg font-bold" style="color:var(--primary)">📋 我的訂單</h3>
-                <button onclick="document.getElementById('my-orders-modal').classList.add('hidden')"
+                <button data-action="close-orders-modal"
                     class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
             </div>
             <div id="my-orders-list" class="flex-1 overflow-y-auto p-4"></div>
         </div>
     </div>
 
-    <script type="module" src="js/main-app.js?v=11"></script>
+    <script type="module" src="js/main-app.js?v=12"></script>
 </body>
 
 </html>

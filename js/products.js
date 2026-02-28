@@ -37,7 +37,7 @@ export function renderProducts() {
                 specBtns = enabledSpecs.map(s => `
                     <div class="spec-container flex-1 min-w-[80px] relative" data-pid="${p.id}" data-spec="${s.key}">
                         <!-- 預設按鈕 (未加入購物車) -->
-                        <button onclick="window._cart.addToCart(${p.id}, '${s.key}')" 
+                        <button data-action="add-to-cart" data-pid="${p.id}" data-spec="${s.key}"
                             class="spec-btn-add w-full text-xs sm:text-sm py-2 px-1 rounded-lg border-2 font-medium transition-all hover:shadow-md active:scale-95 flex flex-col items-center justify-center min-h-[48px]"
                             style="border-color:var(--secondary); color:var(--primary); background:#fefdf8;">
                             <span>${escapeHtml(s.label)}</span>
@@ -52,11 +52,11 @@ export function renderProducts() {
                                  <span class="font-bold">$${s.price}</span>
                             </div>
                             <div class="flex items-center justify-between px-1 py-1" style="background:var(--secondary);">
-                                <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, '${s.key}', -1)" class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">−</button>
+                                <button data-action="cart-qty-change" data-pid="${p.id}" data-spec="${s.key}" data-delta="-1" class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">−</button>
                                 <div class="flex-1 flex items-center justify-center mx-1 overflow-hidden">
                                     <span class="text-sm sm:text-base font-bold text-white spec-qty-text">1</span>
                                 </div>
-                                <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, '${s.key}', 1)" class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">+</button>
+                                <button data-action="cart-qty-change" data-pid="${p.id}" data-spec="${s.key}" data-delta="1" class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">+</button>
                             </div>
                         </div>
                     </div>
@@ -64,7 +64,7 @@ export function renderProducts() {
             } else {
                 specBtns = `
                     <div class="spec-container flex-1 relative" data-pid="${p.id}" data-spec="default">
-                        <button onclick="window._cart.addToCart(${p.id}, 'default')" 
+                        <button data-action="add-to-cart" data-pid="${p.id}" data-spec="default"
                             class="spec-btn-add text-sm py-2 px-4 rounded-lg border-2 font-medium transition-all min-h-[48px] w-full flex flex-col items-center justify-center" 
                             style="border-color:var(--secondary); color:var(--primary); background:#fefdf8;">
                             <span>加入購物車</span>
@@ -78,11 +78,11 @@ export function renderProducts() {
                                  <span class="font-bold">$${p.price}</span>
                             </div>
                             <div class="flex items-center justify-between px-2 py-1" style="background:var(--secondary);">
-                                <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, 'default', -1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">−</button>
+                                <button data-action="cart-qty-change" data-pid="${p.id}" data-spec="default" data-delta="-1" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">−</button>
                                 <div class="flex-1 flex items-center justify-center mx-1 overflow-hidden">
                                     <span class="text-sm sm:text-base font-bold text-white spec-qty-text">1</span>
                                 </div>
-                                <button onclick="window._cart.updateCartItemQtyByKeys(${p.id}, 'default', 1)" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">+</button>
+                                <button data-action="cart-qty-change" data-pid="${p.id}" data-spec="default" data-delta="1" class="w-8 h-8 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90">+</button>
                             </div>
                         </div>
                     </div>
