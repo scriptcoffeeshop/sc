@@ -1,12 +1,15 @@
-// 咖啡豆訂購系統 — Supabase Edge Function (Modularized)
-// @ts-ignore: deno
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+// ============================================
+// 咖啡豆訂購系統 — Supabase Edge Function (Hono Router)
+// ============================================
 
+import { Hono } from "npm:hono@3.12.0";
+import { cors } from "npm:hono@3.12.0/cors";
+import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
-import { applyCorsHeaders, corsHeaders, jsonResponse } from "./utils/cors.ts";
+import { applyCorsHeaders, jsonResponse } from "./utils/cors.ts";
 import { extractAuth } from "./utils/auth.ts";
 
-// API Modules
+// ============ API 模組 ============
 import {
   customerLineLogin,
   getLineLoginUrl,
@@ -88,245 +91,194 @@ import {
   updateSettingsSchema,
 } from "./schemas/settings.ts";
 
-// ============ 主路由 ============
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return applyCorsHeaders(new Response("ok", { headers: corsHeaders }), req);
-  }
+// ============ 建立 Hono 應用程式 ============
+const app = new Hono();
 
-  const url = new URL(req.url);
-  const action = url.searchParams.get("action") || "getProducts";
-  const data = await parseRequestData(req, url);
+// CORS 中介層
+app.use(
+  "*",
+  cors({
+    origin: (origin: string) => {
+      if (ALLOWED_REDIRECT_ORIGINS.includes(origin)) return origin;
+      return ALLOWED_REDIRECT_ORIGINS[0] || "*";
+    },
+    allowHeaders: ["authorization", "x-client-info", "apikey", "content-type"],
+    allowMethods: ["GET", "POST", "OPTIONS"],
+  }),
+);
 
-  let result: unknown;
-  try {
-    switch (action) {
-      // 公開 API
-      case "getProducts":
-        result = await getProducts();
-        break;
-      case "getCategories":
-        result = await getCategories();
-        break;
-      case "getSettings":
-        result = await getSettings();
-        break;
-      case "getInitData":
-        result = await getInitData();
-        break;
-      case "getPromotions":
-        result = await getPromotions();
-        break;
-      case "getFormFields":
-        result = await getFormFields(false);
-        break;
-      case "getLineLoginUrl":
-        result = getLineLoginUrl(data.redirectUri as string);
-        break;
-      case "customerLineLogin": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(lineLoginSchema, data) as any;
-        result = await customerLineLogin(v.code, v.redirectUri);
-        break;
+// ============ 共用的錯誤處理與回應包裝 ============
+function wrapHandler(
+  handler: (data: Record<string, unknown>, req: Request) => Promise<unknown>,
+  options?: { parseBody?: boolean },
+) {
+  return async (c: { req: { raw: Request }; json: (data: unknown, status?: number) => Response }) => {
+    try {
+      const req = c.req.raw;
+      const url = new URL(req.url);
+      const data = options?.parseBody !== false
+        ? await parseRequestData(req, url)
+        : Object.fromEntries(url.searchParams);
+      const result = await handler(data, req);
+      if (result instanceof Response) return result;
+      return c.json(result);
+    } catch (error) {
+      const msg = String(error).replace(/^Error:\s*/, "");
+      if (
+        msg.includes("登入") || msg.includes("權限") ||
+        msg.includes("Token") || msg.includes("無效")
+      ) {
+        return c.json({ success: false, error: msg }, 401);
       }
-      case "lineLogin": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(lineLoginSchema, data) as any;
-        result = await handleAdminLogin(v.code, v.redirectUri);
-        break;
-      }
-      case "getStoreList":
-        result = await getStoreList(data.cvsType as string);
-        break;
-      case "createStoreMapSession":
-        result = await createStoreMapSession(
-          data.deliveryMethod as string ||
-            url.searchParams.get("deliveryMethod") || "",
-          data.clientUrl as string || url.searchParams.get("clientUrl") || "",
-        );
-        break;
-      case "getStoreSelection":
-        result = await getStoreSelection(data.token as string);
-        break;
-      case "storeMapCallback":
-        result = await handleStoreMapCallback(data);
-        break;
-      case "getBankAccounts":
-        result = await getBankAccounts();
-        break;
-      case "linePayConfirm":
-        result = await linePayConfirm(data);
-        break;
-      case "linePayCancel":
-        result = await linePayCancel(data, req);
-        break;
-
-      // 需登入
-      case "submitOrder": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(submitOrderSchema, data) as any;
-        result = await submitOrder(v, req);
-        break;
-      }
-      case "getMyOrders":
-        result = await getMyOrders(req);
-        break;
-      case "updateTransferInfo": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(transferInfoSchema, data) as any;
-        result = await updateTransferInfo(v, req);
-        break;
-      }
-      case "verifyAdmin": {
-        const a = await extractAuth(req);
-        result = a
-          ? { success: true, isAdmin: a.isAdmin, role: a.role, message: "OK" }
-          : { success: false, isAdmin: false, message: "請先登入" };
-        break;
-      }
-
-      // 需管理員
-      case "getFormFieldsAdmin":
-        result = await getFormFieldsAdmin(req);
-        break;
-      case "getOrders":
-        result = await getOrders(req);
-        break;
-      case "addPromotion": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(promotionSchema, data) as any;
-        result = await addPromotion(v, req);
-        break;
-      }
-      case "updatePromotion": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(promotionSchema, data) as any;
-        result = await updatePromotion(v, req);
-        break;
-      }
-      case "deletePromotion":
-        result = await deletePromotion(data, req);
-        break;
-      case "reorderPromotionsBulk":
-        result = await reorderPromotionsBulk(data, req);
-        break;
-      case "addProduct": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(productSchema, data) as any;
-        result = await addProduct(v, req);
-        break;
-      }
-      case "updateProduct": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(productSchema, data) as any;
-        result = await updateProduct(v, req);
-        break;
-      }
-      case "deleteProduct":
-        result = await deleteProduct(data, req);
-        break;
-      case "reorderProduct":
-        result = await reorderProduct(data, req);
-        break;
-      case "reorderProductsBulk":
-        result = await reorderProductsBulk(data, req);
-        break;
-      case "addCategory": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(categorySchema, data) as any;
-        result = await addCategory(v, req);
-        break;
-      }
-      case "updateCategory": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(categorySchema, data) as any;
-        result = await updateCategory(v, req);
-        break;
-      }
-      case "deleteCategory":
-        result = await deleteCategory(data, req);
-        break;
-      case "reorderCategory":
-        result = await reorderCategory(data, req);
-        break;
-      case "updateSettings": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(updateSettingsSchema, data) as any;
-        result = await updateSettingsAction(v, req);
-        break;
-      }
-      case "updateOrderStatus": {
-        // deno-lint-ignore no-explicit-any
-        const v = await validate(updateOrderStatusSchema, data) as any;
-        result = await updateOrderStatus(v, req);
-        break;
-      }
-      case "deleteOrder":
-        result = await deleteOrder(data, req);
-        break;
-      case "getUsers":
-        result = await getUsers(data, req);
-        break;
-      case "updateUserRole":
-        result = await updateUserRole(data, req);
-        break;
-      case "getBlacklist":
-        result = await getBlacklist(req);
-        break;
-      case "addToBlacklist":
-        result = await addToBlacklist(data, req);
-        break;
-      case "removeFromBlacklist":
-        result = await removeFromBlacklist(data, req);
-        break;
-      case "testEmail":
-        result = await testEmail(data, req);
-        break;
-      case "addFormField":
-        result = await addFormField(data, req);
-        break;
-      case "updateFormField":
-        result = await updateFormField(data, req);
-        break;
-      case "deleteFormField":
-        result = await deleteFormField(data, req);
-        break;
-      case "reorderFormFields":
-        result = await reorderFormFields(data, req);
-        break;
-      case "uploadSiteIcon":
-        result = await uploadSiteIcon(data, req);
-        break;
-      case "linePayRefund":
-        result = await linePayRefund(data, req);
-        break;
-      case "addBankAccount":
-        result = await addBankAccount(data, req);
-        break;
-      case "updateBankAccount":
-        result = await updateBankAccount(data, req);
-        break;
-      case "deleteBankAccount":
-        result = await deleteBankAccount(data, req);
-        break;
-
-      default:
-        result = { success: false, error: "未知的操作" };
+      return c.json({ success: false, error: msg });
     }
-  } catch (error) {
-    const msg = String(error).replace(/^Error:\s*/, "");
-    if (
-      msg.includes("登入") || msg.includes("權限") || msg.includes("Token") ||
-      msg.includes("無效")
-    ) {
-      return applyCorsHeaders(
-        jsonResponse({ success: false, error: msg }, 401),
-        req,
-      );
-    }
-    result = { success: false, error: msg };
-  }
+  };
+}
 
-  if (result instanceof Response) return applyCorsHeaders(result, req);
-  return applyCorsHeaders(jsonResponse(result), req);
-});
+// ============ Action 路由對應表 ============
+// 將所有 ?action=xxx 映射到對應的處理函式
+// 這是核心的路由分派機制，取代了原本的 switch...case
+type ActionHandler = (
+  data: Record<string, unknown>,
+  req: Request,
+) => Promise<unknown>;
+
+const actionMap: Record<string, ActionHandler> = {
+  // ====== 公開 API ======
+  getProducts: async () => await getProducts(),
+  getCategories: async () => await getCategories(),
+  getSettings: async () => await getSettings(),
+  getInitData: async () => await getInitData(),
+  getPromotions: async () => await getPromotions(),
+  getFormFields: async () => await getFormFields(false),
+  getBankAccounts: async () => await getBankAccounts(),
+  getLineLoginUrl: async (data) =>
+    getLineLoginUrl(data.redirectUri as string),
+  customerLineLogin: async (data) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(lineLoginSchema, data)) as any;
+    return await customerLineLogin(v.code, v.redirectUri);
+  },
+  lineLogin: async (data) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(lineLoginSchema, data)) as any;
+    return await handleAdminLogin(v.code, v.redirectUri);
+  },
+  getStoreList: async (data) =>
+    await getStoreList(data.cvsType as string),
+  createStoreMapSession: async (data) =>
+    await createStoreMapSession(
+      (data.deliveryMethod as string) || "",
+      (data.clientUrl as string) || "",
+    ),
+  getStoreSelection: async (data) =>
+    await getStoreSelection(data.token as string),
+  storeMapCallback: async (data) =>
+    await handleStoreMapCallback(data),
+  linePayConfirm: async (data) => await linePayConfirm(data),
+  linePayCancel: async (data, req) => await linePayCancel(data, req),
+
+  // ====== 需登入 ======
+  submitOrder: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(submitOrderSchema, data)) as any;
+    return await submitOrder(v, req);
+  },
+  getMyOrders: async (_data, req) => await getMyOrders(req),
+  updateTransferInfo: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(transferInfoSchema, data)) as any;
+    return await updateTransferInfo(v, req);
+  },
+  verifyAdmin: async (_data, req) => {
+    const a = await extractAuth(req);
+    return a
+      ? { success: true, isAdmin: a.isAdmin, role: a.role, message: "OK" }
+      : { success: false, isAdmin: false, message: "請先登入" };
+  },
+
+  // ====== 需管理員 ======
+  getFormFieldsAdmin: async (_data, req) => await getFormFieldsAdmin(req),
+  getOrders: async (_data, req) => await getOrders(req),
+  addPromotion: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(promotionSchema, data)) as any;
+    return await addPromotion(v, req);
+  },
+  updatePromotion: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(promotionSchema, data)) as any;
+    return await updatePromotion(v, req);
+  },
+  deletePromotion: async (data, req) => await deletePromotion(data, req),
+  reorderPromotionsBulk: async (data, req) =>
+    await reorderPromotionsBulk(data, req),
+  addProduct: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(productSchema, data)) as any;
+    return await addProduct(v, req);
+  },
+  updateProduct: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(productSchema, data)) as any;
+    return await updateProduct(v, req);
+  },
+  deleteProduct: async (data, req) => await deleteProduct(data, req),
+  reorderProduct: async (data, req) => await reorderProduct(data, req),
+  reorderProductsBulk: async (data, req) =>
+    await reorderProductsBulk(data, req),
+  addCategory: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(categorySchema, data)) as any;
+    return await addCategory(v, req);
+  },
+  updateCategory: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(categorySchema, data)) as any;
+    return await updateCategory(v, req);
+  },
+  deleteCategory: async (data, req) => await deleteCategory(data, req),
+  reorderCategory: async (data, req) => await reorderCategory(data, req),
+  updateSettings: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(updateSettingsSchema, data)) as any;
+    return await updateSettingsAction(v, req);
+  },
+  updateOrderStatus: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(updateOrderStatusSchema, data)) as any;
+    return await updateOrderStatus(v, req);
+  },
+  deleteOrder: async (data, req) => await deleteOrder(data, req),
+  getUsers: async (data, req) => await getUsers(data, req),
+  updateUserRole: async (data, req) => await updateUserRole(data, req),
+  getBlacklist: async (_data, req) => await getBlacklist(req),
+  addToBlacklist: async (data, req) => await addToBlacklist(data, req),
+  removeFromBlacklist: async (data, req) =>
+    await removeFromBlacklist(data, req),
+  testEmail: async (data, req) => await testEmail(data, req),
+  addFormField: async (data, req) => await addFormField(data, req),
+  updateFormField: async (data, req) => await updateFormField(data, req),
+  deleteFormField: async (data, req) => await deleteFormField(data, req),
+  reorderFormFields: async (data, req) => await reorderFormFields(data, req),
+  uploadSiteIcon: async (data, req) => await uploadSiteIcon(data, req),
+  linePayRefund: async (data, req) => await linePayRefund(data, req),
+  addBankAccount: async (data, req) => await addBankAccount(data, req),
+  updateBankAccount: async (data, req) => await updateBankAccount(data, req),
+  deleteBankAccount: async (data, req) => await deleteBankAccount(data, req),
+};
+
+// ============ 主路由：?action=xxx 相容模式 ============
+// 前端（訂購頁 + 管理後台）都使用 ?action=xxx 呼叫，
+// 為了 100% 向下相容，我們使用萬用路由統一處理。
+app.all("/*", wrapHandler(async (data, req) => {
+  const action = (data.action as string) || "getProducts";
+  const handler = actionMap[action];
+  if (!handler) {
+    return { success: false, error: `未知的操作: ${action}` };
+  }
+  return await handler(data, req);
+}));
+
+// ============ 匯出 ============
+export default app;

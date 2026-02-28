@@ -173,13 +173,13 @@ export function updateCartUI() {
                 <div class="text-xs text-gray-500">${escapeHtml(c.specLabel)} · $${c.unitPrice}</div>
             </div>
             <div class="flex items-center gap-1">
-                <button class="quantity-btn" onclick="window._cart.updateCartItemQty(${i},-1)" style="width:28px;height:28px;font-size:14px;">−</button>
+                <button class="quantity-btn" data-action="cart-item-qty" data-idx="${i}" data-delta="-1" style="width:28px;height:28px;font-size:14px;">−</button>
                 <span class="w-8 text-center font-medium">${c.qty}</span>
-                <button class="quantity-btn" onclick="window._cart.updateCartItemQty(${i},1)" style="width:28px;height:28px;font-size:14px;">+</button>
+                <button class="quantity-btn" data-action="cart-item-qty" data-idx="${i}" data-delta="1" style="width:28px;height:28px;font-size:14px;">+</button>
             </div>
             <div class="text-right ml-3 min-w-[60px]">
                 <div class="font-semibold text-sm" style="color:var(--accent)">$${c.qty * c.unitPrice}</div>
-                <button onclick="window._cart.removeCartItem(${i})" class="text-xs text-red-400 hover:text-red-600">移除</button>
+                <button data-action="remove-cart-item" data-idx="${i}" class="text-xs text-red-400 hover:text-red-600">移除</button>
             </div>
         </div>
         `;
