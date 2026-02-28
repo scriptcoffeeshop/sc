@@ -112,7 +112,12 @@ function wrapHandler(
   handler: (data: Record<string, unknown>, req: Request) => Promise<unknown>,
   options?: { parseBody?: boolean },
 ) {
-  return async (c: { req: { raw: Request }; json: (data: unknown, status?: number) => Response }) => {
+  return async (
+    c: {
+      req: { raw: Request };
+      json: (data: unknown, status?: number) => Response;
+    },
+  ) => {
     try {
       const req = c.req.raw;
       const url = new URL(req.url);
@@ -152,8 +157,7 @@ const actionMap: Record<string, ActionHandler> = {
   getPromotions: async () => await getPromotions(),
   getFormFields: async () => await getFormFields(false),
   getBankAccounts: async () => await getBankAccounts(),
-  getLineLoginUrl: async (data) =>
-    getLineLoginUrl(data.redirectUri as string),
+  getLineLoginUrl: async (data) => getLineLoginUrl(data.redirectUri as string),
   customerLineLogin: async (data) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(lineLoginSchema, data)) as any;
@@ -164,8 +168,7 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(lineLoginSchema, data)) as any;
     return await handleAdminLogin(v.code, v.redirectUri);
   },
-  getStoreList: async (data) =>
-    await getStoreList(data.cvsType as string),
+  getStoreList: async (data) => await getStoreList(data.cvsType as string),
   createStoreMapSession: async (data) =>
     await createStoreMapSession(
       (data.deliveryMethod as string) || "",
@@ -173,8 +176,7 @@ const actionMap: Record<string, ActionHandler> = {
     ),
   getStoreSelection: async (data) =>
     await getStoreSelection(data.token as string),
-  storeMapCallback: async (data) =>
-    await handleStoreMapCallback(data),
+  storeMapCallback: async (data) => await handleStoreMapCallback(data),
   linePayConfirm: async (data) => await linePayConfirm(data),
   linePayCancel: async (data, req) => await linePayCancel(data, req),
 
@@ -271,14 +273,17 @@ const actionMap: Record<string, ActionHandler> = {
 // ============ 主路由：?action=xxx 相容模式 ============
 // 前端（訂購頁 + 管理後台）都使用 ?action=xxx 呼叫，
 // 為了 100% 向下相容，我們使用萬用路由統一處理。
-app.all("/*", wrapHandler(async (data, req) => {
-  const action = (data.action as string) || "getProducts";
-  const handler = actionMap[action];
-  if (!handler) {
-    return { success: false, error: `未知的操作: ${action}` };
-  }
-  return await handler(data, req);
-}));
+app.all(
+  "/*",
+  wrapHandler(async (data, req) => {
+    const action = (data.action as string) || "getProducts";
+    const handler = actionMap[action];
+    if (!handler) {
+      return { success: false, error: `未知的操作: ${action}` };
+    }
+    return await handler(data, req);
+  }),
+);
 
 // ============ 匯出 ============
 export default app;
