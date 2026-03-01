@@ -5,6 +5,14 @@
 
 ---
 
+## 📅 近期重要更新 (v17 階段)
+
+### 1. 修復 main-app.js ES Module 中斷錯誤 (v17)
+- **問題**：在上一版 (v16) 中，將 `updateCartUI` 掛載到 `window` 時，忘記在 `main-app.js` 頂部的 `import` 清單中引入它。這導致 ES Module 拋出 `ReferenceError` 並**中斷了整個腳本的執行**。結果導致 `DOMContentLoaded` 事件未綁定，也沒有呼叫 `loadInitData()`，使得首頁商品區卡在「載入商品中...」。
+- **修正**：在 `js/main-app.js` 的 `import` 清單中補上 `updateCartUI`，解決 ReferenceError 並恢復正常載入腳本。
+
+---
+
 ## 📅 近期重要更新 (v12→v16 階段)
 
 ### 1. 付款方式選取外框修復 (v13)
