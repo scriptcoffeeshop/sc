@@ -81,6 +81,53 @@ export function updateCartUI() {
     if (totalItems > 0) { badge.textContent = totalItems; badge.classList.remove('hidden'); }
     else { badge.classList.add('hidden'); }
 
+    // 更新前台商品卡片：In-line Stepper 顯示邏輯
+    document.querySelectorAll('.spec-container').forEach(container => {
+        const pid = parseInt(container.dataset.pid);
+        const specKey = container.dataset.spec;
+        const cartItem = cart.find(c => c.productId === pid && c.specKey === specKey);
+
+        const btnAdd = container.querySelector('.spec-btn-add');
+        const btnStepper = container.querySelector('.spec-btn-stepper');
+        const specBadge = container.querySelector('.spec-badge');
+        const qtyText = container.querySelector('.spec-qty-text');
+
+        if (cartItem && cartItem.qty > 0) {
+            if (btnAdd) btnAdd.classList.add('hidden');
+            if (btnStepper) btnStepper.classList.remove('hidden');
+            if (specBadge) {
+                specBadge.textContent = cartItem.qty;
+                specBadge.classList.remove('hidden');
+            }
+            if (qtyText) {
+                qtyText.textContent = cartItem.qty;
+            }
+        } else {
+            if (btnAdd) btnAdd.classList.remove('hidden');
+            if (btnStepper) btnStepper.classList.add('hidden');
+            if (specBadge) specBadge.classList.add('hidden');
+        }
+    });
+
+    // 渲染購物車清單
+    const container = document.getElementById('cart-items');
+    if (!cart.length) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-8">購物車是空的</p>';
+        const discountSection = document.getElementById('cart-discount-details');
+        if (discountSection) { discountSection.classList.add('hidden'); discountSection.innerHTML = ''; }
+
+        // 購物車為空時，重置底部欄位與金額
+        document.getElementById('total-price').innerHTML = '<div class="text-xl font-bold">總金額: $0</div>';
+        document.getElementById('cart-total').textContent = '$0';
+        const transferTotalEl = document.getElementById('transfer-total-amount');
+        if (transferTotalEl) transferTotalEl.textContent = '$0';
+
+        // 更新購物車內按鈕狀態
+        const cartSubmitBtn = document.getElementById('cart-submit-btn');
+        if (cartSubmitBtn) cartSubmitBtn.disabled = true;
+        return;
+    }
+
     // 計算總金額並套用方案 B 排版 (動態小標籤 + 大總額)
     const summary = calcCartSummary();
     let priceHtml = `<div class="text-xl font-bold">總金額: $${summary.finalTotal}</div>`;
@@ -112,49 +159,6 @@ export function updateCartUI() {
     const transferTotalEl = document.getElementById('transfer-total-amount');
     if (transferTotalEl) {
         transferTotalEl.textContent = `$${summary.finalTotal}`;
-    }
-
-    // 更新前台商品卡片：In-line Stepper 顯示邏輯
-    document.querySelectorAll('.spec-container').forEach(container => {
-        const pid = parseInt(container.dataset.pid);
-        const specKey = container.dataset.spec;
-        const cartItem = cart.find(c => c.productId === pid && c.specKey === specKey);
-
-        const btnAdd = container.querySelector('.spec-btn-add');
-        const btnStepper = container.querySelector('.spec-btn-stepper');
-        const specBadge = container.querySelector('.spec-badge');
-        const qtyText = container.querySelector('.spec-qty-text');
-
-        if (cartItem && cartItem.qty > 0) {
-            // 已在購物車內：隱藏加入按鈕，顯示加減算盤，並更新數量
-            if (btnAdd) btnAdd.classList.add('hidden');
-            if (btnStepper) btnStepper.classList.remove('hidden');
-            if (specBadge) {
-                specBadge.textContent = cartItem.qty;
-                specBadge.classList.remove('hidden');
-            }
-            if (qtyText) {
-                qtyText.textContent = cartItem.qty;
-            }
-        } else {
-            // 不在購物車內：顯示加入按鈕，隱藏加減算盤與數量
-            if (btnAdd) btnAdd.classList.remove('hidden');
-            if (btnStepper) btnStepper.classList.add('hidden');
-            if (specBadge) specBadge.classList.add('hidden');
-        }
-    });
-
-    // 渲染購物車清單
-    const container = document.getElementById('cart-items');
-    if (!cart.length) {
-        container.innerHTML = '<p class="text-center text-gray-400 py-8">購物車是空的</p>';
-        const discountSection = document.getElementById('cart-discount-details');
-        if (discountSection) discountSection.classList.add('hidden');
-
-        // 更新購物車內按鈕狀態
-        const cartSubmitBtn = document.getElementById('cart-submit-btn');
-        if (cartSubmitBtn) cartSubmitBtn.disabled = true;
-        return;
     }
 
     // 確保有商品時解鎖按鈕（前提是已登入與營業）
@@ -294,7 +298,7 @@ export function calcCartSummary() {
 
     const shippingConfig = getShippingConfig();
     let shippingFee = 0;
-    if (state.selectedDelivery && shippingConfig) {
+    if (cart.length > 0 && state.selectedDelivery && shippingConfig) {
         if (shippingConfig.freeThreshold <= 0 || afterDiscount < shippingConfig.freeThreshold) {
             shippingFee = shippingConfig.fee;
         }
