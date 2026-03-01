@@ -308,3 +308,132 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
 </body>
 </html>`);
 }
+
+// ============================================
+// PCSC 7-11 官方電子地圖整合
+// ============================================
+
+/**
+ * 為 7-11 PCSC 電子地圖建立 session
+ * 前端會用回傳的 callbackUrl 與 token 來提交 POST 表單至 PCSC emap
+ */
+export async function createPcscMapSession(
+  clientUrl: string = "",
+) {
+  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
+  const callbackUrl =
+    `${SUPABASE_URL}/functions/v1/coffee-api?action=pcscMapCallback`;
+
+  try {
+    await cleanupOldStoreSelections();
+  } catch (_e) { /* ignore */ }
+
+  const { error } = await supabase.from("coffee_store_selections").upsert({
+    token,
+    cvs_store_id: "",
+    cvs_store_name: "",
+    cvs_address: "",
+    logistics_sub_type: "UNIMARTC2C",
+    extra_data: clientUrl,
+    created_at: new Date().toISOString(),
+  });
+  if (error) {
+    return { success: false, error: "建立門市地圖會話失敗：" + error.message };
+  }
+
+  return {
+    success: true,
+    token,
+    callbackUrl,
+    eshopid: "870",
+  };
+}
+
+/**
+ * 處理 PCSC 電子地圖回傳的門市選擇結果
+ * PCSC 會以 POST 方式回傳 storeid, storename, storeaddress, storeTel 等欄位
+ */
+export async function handlePcscMapCallback(
+  data: Record<string, unknown>,
+) {
+  const token = String(data.tempvar || data.sid || "");
+  if (!token) return new Response("Miss Token", { status: 400 });
+
+  let clientUrl = "";
+  const { data: selection } = await supabase.from("coffee_store_selections")
+    .select("extra_data").eq("token", token).maybeSingle();
+  if (selection && selection.extra_data) {
+    clientUrl = selection.extra_data;
+  }
+
+  if (clientUrl) {
+    try {
+      const u = new URL(clientUrl);
+      if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
+        clientUrl = "";
+      }
+    } catch {
+      clientUrl = "";
+    }
+  }
+
+  const storeId = String(data.storeid || data.StoreID || "").trim();
+  const storeName = String(data.storename || data.StoreName || "").trim();
+  const storeAddress = String(
+    data.storeaddress || data.StoreAddress || "",
+  ).trim();
+
+  const { error } = await supabase.from("coffee_store_selections").update({
+    cvs_store_id: storeId,
+    cvs_store_name: storeName,
+    cvs_address: storeAddress,
+    logistics_sub_type: "UNIMARTC2C",
+  }).eq("token", token);
+
+  if (error) {
+    return htmlResponse(
+      `<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>${
+        escapeHtml(error.message)
+      }</p></body></html>`,
+      500,
+    );
+  }
+
+  const safeName = escapeHtml(storeName || "（未提供門市名稱）");
+  const safeAddr = escapeHtml(storeAddress || "（未提供門市地址）");
+  const redirectScript = clientUrl
+    ? `window.location.replace("${clientUrl}?store_token=${token}");`
+    : `alert('選擇完成，請手動返回原網頁');`;
+
+  return htmlResponse(`<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>7-11 門市選擇完成</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #f6f9f6; color: #1f2937; }
+    .card { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+    h3 { margin: 0 0 12px; color: #0f5132; }
+    p { margin: 8px 0; line-height: 1.5; }
+    .hint { color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>7-11 門市選擇成功</h3>
+    <p><strong>門市：</strong>${safeName}</p>
+    <p><strong>地址：</strong>${safeAddr}</p>
+    <p class="hint">正在將您導回訂購頁面...</p>
+  </div>
+  <script>
+    if (window.opener && window.opener !== window) {
+      window.opener.postMessage('store_selected', '*');
+      window.close();
+    } else {
+      ${redirectScript}
+    }
+  </script>
+</body>
+</html>`);
+}

@@ -173,6 +173,51 @@ export async function openStoreMap() {
         return;
     }
 
+    // 7-11 使用 PCSC 官方電子地圖
+    if (state.selectedDelivery === 'seven_eleven') {
+        Swal.fire({ title: '準備前往 7-11 門市地圖...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const clientUrl = window.location.origin + window.location.pathname;
+            // 先在後端建立 store selection session（取得 token 與 callback URL）
+            const res = await fetch(`${API_URL}?action=createPcscMapSession&clientUrl=${encodeURIComponent(clientUrl)}`);
+            const result = await res.json();
+            if (!result.success) throw new Error(result.error || '建立地圖會話失敗');
+
+            // 以 POST 表單提交到 PCSC 電子地圖
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = 'https://emap.pcsc.com.tw/ecmap/default.aspx';
+            form.target = '_self';
+
+            const fields = {
+                eshopid: result.eshopid || '870',
+                url: result.callbackUrl,
+                tempvar: result.token,
+                sid: '1',
+                stoession: '',
+                showtype: '1',
+            };
+            Object.entries(fields).forEach(([k, v]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = k;
+                input.value = v;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            Swal.close();
+            form.submit();
+        } catch (e) {
+            const choice = await Swal.fire({
+                icon: 'error', title: '無法開啟 7-11 門市地圖', text: e.message || String(e),
+                showCancelButton: true, confirmButtonText: '改用門市搜尋', cancelButtonText: '關閉', confirmButtonColor: '#3C2415',
+            });
+            if (choice.isConfirmed) await openStoreSearchModal();
+        }
+        return;
+    }
+
+    // 全家仍使用綠界地圖
     Swal.fire({ title: '準備前往綠界地圖...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
         const clientUrl = window.location.origin + window.location.pathname;
