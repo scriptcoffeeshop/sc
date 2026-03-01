@@ -56,6 +56,7 @@ function initEventDelegation() {
 window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
 window.selectBankAccount = selectBankAccount;
+window.updateCartUI = updateCartUI;
 
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', async () => {
