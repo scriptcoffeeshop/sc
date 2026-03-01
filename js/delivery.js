@@ -186,7 +186,7 @@ export async function openStoreMap() {
             // 以 POST 表單提交到 PCSC 電子地圖
             const form = document.createElement('form');
             form.method = 'POST';
-            form.action = 'https://emap.pcsc.com.tw/ecmap/default.aspx';
+            form.action = 'https://emap.presco.com.tw/c2cemap.ashx';
             form.target = '_self';
 
             const fields = {
@@ -196,6 +196,7 @@ export async function openStoreMap() {
                 sid: '1',
                 stoession: '',
                 showtype: '1',
+                servicetype: '1',
             };
             Object.entries(fields).forEach(([k, v]) => {
                 const input = document.createElement('input');
