@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=25';
-import { esc, Toast } from './utils.js?v=25';
-import { loginWithLine, authFetch } from './auth.js?v=25';
+import { API_URL, LINE_REDIRECT } from './config.js?v=26';
+import { esc, Toast } from './utils.js?v=26';
+import { loginWithLine, authFetch } from './auth.js?v=26';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -36,7 +36,7 @@ window.addSpecRow = addSpecRow;
 window.addCategory = addCategory;
 window.editCategory = editCategory;
 window.delCategory = delCategory;
-window.moveCategory = moveCategory;
+window.updateCategoryOrders = updateCategoryOrders;
 window.saveSettings = saveSettings;
 window.loadUsers = loadUsers;
 window.toggleUserRole = toggleUserRole;
@@ -516,11 +516,10 @@ function renderCategories() {
     if (!categories.length) { container.innerHTML = '<p class="text-center text-gray-500 py-4">尚無分類</p>'; return; }
     categoriesMap = {};
     categories.forEach(c => { categoriesMap[c.id] = c; });
-    container.innerHTML = categories.map((c, i) => `
-        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;">
+    container.innerHTML = categories.map((c) => `
+        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;" data-id="${c.id}">
             <div class="flex items-center gap-2">
-                <button onclick="moveCategory(${c.id},'up')" class="text-gray-400 hover:text-amber-700 ${i === 0 ? 'opacity-30' : ''}" ${i === 0 ? 'disabled' : ''}>▲</button>
-                <button onclick="moveCategory(${c.id},'down')" class="text-gray-400 hover:text-amber-700 ${i === categories.length - 1 ? 'opacity-30' : ''}" ${i === categories.length - 1 ? 'disabled' : ''}>▼</button>
+                <span class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">☰</span>
                 <span class="font-medium">${esc(c.name)}</span>
             </div>
             <div class="flex gap-2">
@@ -529,6 +528,19 @@ function renderCategories() {
             </div>
         </div>
     `).join('');
+
+    // 掛載 Sortable 拖曳排序
+    if (typeof Sortable !== 'undefined') {
+        if (window.categorySortable) window.categorySortable.destroy();
+        window.categorySortable = Sortable.create(container, {
+            handle: '.drag-handle-cat',
+            animation: 150,
+            onEnd: async function () {
+                const ids = Array.from(container.querySelectorAll('[data-id]')).map(el => parseInt(el.dataset.id));
+                await updateCategoryOrders(ids);
+            }
+        });
+    }
 }
 
 async function addCategory() {
@@ -551,7 +563,7 @@ async function editCategory(id) {
         try {
             const r = await authFetch(`${API_URL}?action=updateCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, name: value }) });
             const d = await r.json();
-            if (d.success) { loadCategories(); loadProducts(); }
+            if (d.success) { Toast.fire({ icon: 'success', title: '分類已更新，商品同步完成' }); loadCategories(); loadProducts(); }
         } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
     }
 }
@@ -566,12 +578,15 @@ async function delCategory(id) {
     } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
 }
 
-async function moveCategory(id, dir) {
+async function updateCategoryOrders(ids) {
     try {
-        const r = await authFetch(`${API_URL}?action=reorderCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }) });
+        const r = await authFetch(`${API_URL}?action=reorderCategory`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), ids }) });
         const d = await r.json();
-        if (d.success) loadCategories();
-    } catch (e) { Swal.fire('錯誤', e.message, 'error'); }
+        if (!d.success) throw new Error(d.error);
+    } catch (e) {
+        Swal.fire('錯誤', e.message, 'error');
+        loadCategories();
+    }
 }
 
 // ============ 促銷活動管理 ============
