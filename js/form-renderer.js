@@ -2,7 +2,7 @@
 // form-renderer.js — 動態表單欄位渲染與收集
 // ============================================
 
-import { escapeHtml } from './utils.js';
+import { escapeHtml } from './utils.js?v=20';
 
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
