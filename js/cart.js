@@ -159,7 +159,7 @@ export function updateCartUI() {
 
     // 確保有商品時解鎖按鈕（前提是已登入與營業）
     const cartSubmitBtn = document.getElementById('cart-submit-btn');
-    if (cartSubmitBtn && window.state && window.state.currentUser && window.state.isStoreOpen) {
+    if (cartSubmitBtn && state.currentUser && state.isStoreOpen) {
         cartSubmitBtn.disabled = false;
     }
 
