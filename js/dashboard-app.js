@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=23';
-import { esc, Toast } from './utils.js?v=23';
-import { loginWithLine, authFetch } from './auth.js?v=23';
+import { API_URL, LINE_REDIRECT } from './config.js?v=24';
+import { esc, Toast } from './utils.js?v=24';
+import { loginWithLine, authFetch } from './auth.js?v=24';
 
 // ============ 共享狀態 ============
 let currentUser = null;
