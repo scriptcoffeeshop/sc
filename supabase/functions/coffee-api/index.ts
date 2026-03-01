@@ -156,7 +156,8 @@ const actionMap: Record<string, ActionHandler> = {
   getPromotions: async () => await getPromotions(),
   getFormFields: async () => await getFormFields(false),
   getBankAccounts: async () => await getBankAccounts(),
-  getLineLoginUrl: (data) => Promise.resolve(getLineLoginUrl(data.redirectUri as string)),
+  getLineLoginUrl: (data) =>
+    Promise.resolve(getLineLoginUrl(data.redirectUri as string)),
   customerLineLogin: async (data) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(lineLoginSchema, data)) as any;
