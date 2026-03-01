@@ -5,6 +5,17 @@
 
 ---
 
+## 📅 近期重要更新 (v26 階段)
+
+### 1. 分類管理拖曳排序與更名商品同步 (v26)
+- **問題 1**：原本分類管理使用 ▲▼ 上下箭頭排序，需點擊多次且每次都發送 API，體驗不佳。
+- **解決方案**：改用 Sortable.js 拖曳排序（`drag-handle-cat`），拖曳完成後一次性傳送 `ids` 陣列至後端 `reorderCategory` action。原 `moveCategory` 改為 `updateCategoryOrders`。後端已有的 `reorderCategory` 已支援 `ids` 陣列批量更新，不需變動。
+- **問題 2**：後端 `updateCategory` 只更新 `coffee_categories` 的名稱，但沒有同步更新商品的 `category` 欄位。當分類從「咖啡豆」改名為「單品豆」後，所有商品仍歸屬於「咖啡豆」，導致變成「未分類」。
+- **解決方案**：修改後端 `settings.ts` 的 `updateCategory`，在更新分類名稱前先查詢舊名稱，若有變更則執行 `update().eq('category', oldName)` 將所有商品的 `category` 欄位同步更新。前端更名成功後會顯示 Toast 確認並重新載入分類與商品列表。
+- **版號**：前端快取推進至 `v=26`。
+
+---
+
 ## 📅 近期重要更新 (v25 階段)
 
 ### 1. 強化運費顯示視覺衐擊 (v25)
