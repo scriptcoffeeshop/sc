@@ -356,8 +356,24 @@ export async function createPcscMapSession(
 export async function handlePcscMapCallback(
   data: Record<string, unknown>,
 ) {
-  const token = String(data.tempvar || data.sid || "");
-  if (!token) return new Response("Miss Token", { status: 400 });
+  // 除錯：dump PCSC 回傳的所有欄位（暫時）
+  console.log("[PCSC Callback] 收到資料:", JSON.stringify(data));
+
+  const token = String(
+    data.tempvar || data.Tempvar || data.TempVar || data.sid || "",
+  );
+  if (!token) {
+    // 回傳除錯頁面讓我們知道 PCSC 送了什麼
+    return htmlResponse(
+      `<!doctype html><html><head><meta charset="utf-8"><title>PCSC Debug</title></head><body>
+        <h3>PCSC Callback Debug - Miss Token</h3>
+        <p>收到的所有欄位：</p>
+        <pre>${escapeHtml(JSON.stringify(data, null, 2))}</pre>
+        <p>期望欄位 tempvar 但未找到</p>
+      </body></html>`,
+      400,
+    );
+  }
 
   let clientUrl = "";
   const { data: selection } = await supabase.from("coffee_store_selections")
