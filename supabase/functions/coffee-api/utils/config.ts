@@ -29,6 +29,8 @@ export const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ||
 
 export const ALLOWED_REDIRECT_ORIGINS = [
   "https://scriptcoffeeshop.github.io",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
   Deno.env.get("ALLOWED_REDIRECT_ORIGINS") || Deno.env.get("ALLOWED_ORIGIN") ||
   "",
 ].filter(Boolean);
