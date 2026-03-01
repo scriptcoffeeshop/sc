@@ -96,6 +96,11 @@ window.selectDelivery = function (method, e) {
         }
         window.updatePaymentOptionsState(deliveryConfig);
     }
+
+    // 切換配送方式後，立即重新計算運費與金額並更新 UI
+    if (typeof window.updateCartUI === 'function') {
+        window.updateCartUI();
+    }
 }
 // 為了相容匯出 (如果其他檔案透過 import 引用)
 export const selectDelivery = window.selectDelivery;
