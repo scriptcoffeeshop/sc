@@ -2,8 +2,8 @@
 // cart.js — 購物車 CRUD & UI
 // ============================================
 
-import { escapeHtml, Toast } from './utils.js?v=24';
-import { state } from './state.js?v=24';
+import { escapeHtml, Toast } from './utils.js?v=25';
+import { state } from './state.js?v=25';
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
@@ -211,24 +211,25 @@ export function updateCartUI() {
         // 獨立處理運費與未達免運提示 (不放在優惠與折抵區塊中)
         if (shippingNotice) {
             if (state.selectedDelivery && shippingConfig && !isFreeShipping) {
-                let noticeHTML = `
-                    <div class="flex justify-between items-center text-gray-600 mb-2 px-1 text-sm">
-                        <span>🚚 ${escapeHtml(deliveryName)}運費</span>
-                        <span>$${summary.shippingFee}</span>
-                    </div>
-                `;
-
+                let thresholdHint = '';
                 if (shippingConfig.freeThreshold > 0) {
                     const diff = shippingConfig.freeThreshold - summary.totalAfterDiscount;
                     if (diff > 0) {
-                        noticeHTML += `
-                            <div class="bg-orange-50 border border-orange-200 text-orange-800 px-3 py-2 rounded-lg text-sm flex items-center justify-between">
-                                <span>未達免運門檻 (滿$${shippingConfig.freeThreshold})</span>
-                                <span class="font-bold text-orange-600">還差 $${diff}</span>
-                            </div>
+                        thresholdHint = `
+                            <div class="text-xs mt-1" style="color:#b91c1c;">還差 $${diff} 即可免運</div>
                         `;
                     }
                 }
+
+                let noticeHTML = `
+                    <div class="px-3 py-2 rounded-lg mb-1" style="background:#fef2f2; border:1px solid #fca5a5;">
+                        <div class="flex justify-between items-center text-sm font-semibold" style="color:#991b1b;">
+                            <span>未達🚚 ${escapeHtml(deliveryName)}免運門檻</span>
+                            <span>+$${summary.shippingFee}</span>
+                        </div>
+                        ${thresholdHint}
+                    </div>
+                `;
                 shippingNotice.innerHTML = noticeHTML;
                 shippingNotice.classList.remove('hidden');
             } else {
