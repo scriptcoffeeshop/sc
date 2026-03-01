@@ -147,7 +147,7 @@ export async function checkStoreToken(token) {
             Swal.close();
             const typeMap = { 'UNIMARTC2C': 'seven_eleven', 'FAMIC2C': 'family_mart', 'UNIMART': 'seven_eleven', 'FAMI': 'family_mart' };
             const method = typeMap[result.logisticsSubType] || 'seven_eleven';
-            const btn = document.querySelector(`.delivery-option[onclick*="selectDelivery('${method}'"]`);
+            const btn = document.querySelector(`.delivery-option[data-id="${method}"]`) || document.querySelector(`.delivery-option[onclick*="selectDelivery('${method}'"]`);
             if (btn) btn.click();
             else selectDelivery(method, { currentTarget: { classList: { add: () => { } } } });
 
