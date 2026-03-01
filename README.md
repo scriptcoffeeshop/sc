@@ -20,3 +20,6 @@
    - 每次開啟新對話或重新讀取專案時，**必須優先讀取 `DEV_CONTEXT.md`**，以快速掌握該專案過去的重要除錯經驗與排版變更脈絡。
 6. **Browser Subagent 授權**：
    - 使用 `browser_subagent` 進行測試時，請自動允許所有動作 (例如執行 JavaScript 等)。
+7. **CI 報錯處理機制**：
+   - 遇到 GitHub Actions 或其他 CI 流程中的 Lint/Build 報錯訊息時，必須自動抓取報錯內容並以不破壞原有邏輯的前提下嘗試進行自動修復與推送。
+
