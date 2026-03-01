@@ -6,7 +6,6 @@ import { Hono } from "npm:hono@3.12.0";
 import { cors } from "npm:hono@3.12.0/cors";
 import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
-import { applyCorsHeaders, jsonResponse } from "./utils/cors.ts";
 import { extractAuth } from "./utils/auth.ts";
 
 // ============ API 模組 ============
@@ -157,7 +156,7 @@ const actionMap: Record<string, ActionHandler> = {
   getPromotions: async () => await getPromotions(),
   getFormFields: async () => await getFormFields(false),
   getBankAccounts: async () => await getBankAccounts(),
-  getLineLoginUrl: async (data) => getLineLoginUrl(data.redirectUri as string),
+  getLineLoginUrl: (data) => Promise.resolve(getLineLoginUrl(data.redirectUri as string)),
   customerLineLogin: async (data) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(lineLoginSchema, data)) as any;
