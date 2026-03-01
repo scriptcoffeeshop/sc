@@ -11,6 +11,11 @@
 - **問題源由**：原本未達免運時，運費依然顯示於購物車的「已套用優惠與折抵」區段內，邏輯上不合理且缺乏刺激消費的醒目提示。
 - **解決方案**：修改 `cart.js` 的 `updateCartUI` 與 HTML，將未滿免運的運費移出優惠區塊（只在真實達標時才放入優惠區的免運條目）。同時新增一個專屬的橘色邊框提示元件，明確顯示「未達免運門檻 (滿$XXXX)」以及「還差 $XXX」，強化視覺引導效果。前端快取版號推進至 `v=24`。
 
+### 2. 修復 LINE Pay 付款後 404 錯誤
+- **問題源由**：Suapbase 遠端環境變數 `FRONTEND_URL` 被設定為 `https://scriptcoffeeshop.github.io`，缺少了 `/sc` 子路徑。因此 LINE Pay 付款完成後的回調 URL 變成 `scriptcoffeeshop.github.io/main.html`，而 GitHub Pages 實際的路徑應該是 `scriptcoffeeshop.github.io/sc/main.html`，導致 404 頁面不存在。
+- **解決方案**：`supabase secrets set FRONTEND_URL="https://scriptcoffeeshop.github.io/sc"` 修正路徑，並重新執行 `supabase functions deploy coffee-api --no-verify-jwt` 套用新值。程式碼本身不需要修改，`config.ts` 中的 fallback 值本來就是正確的。
+- **教訓**：任何後端回調 URL (如 LINE Pay / ECPay / PCSC) 都依賴 `FRONTEND_URL`，此變數必須包含完整的子路徑 `/sc`。
+
 ---
 
 ## 📅 近期重要更新 (v22 & v23 階段)
