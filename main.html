@@ -135,7 +135,7 @@
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">🏪 取貨門市資訊</h3>
                 <div class="mb-3 text-center">
                     <button data-action="open-store-map" class="store-select-btn">📍 選擇門市</button>
-                    <p class="text-xs text-gray-500 mt-1">點擊後將開啟綠界超商地圖選擇門市</p>
+                    <p class="text-xs text-gray-500 mt-1">點擊後將開啟超商地圖選擇門市</p>
                 </div>
                 <div id="store-selected-info" class="hidden store-info-card mb-3">
                     <div class="flex justify-between items-start">
@@ -148,17 +148,8 @@
                             清除</button>
                     </div>
                 </div>
-                <div id="store-input-section">
-                    <p class="text-xs text-gray-500 mb-2">或者手動填寫門市資訊：</p>
-                    <div class="mb-3">
-                        <label class="block text-sm text-gray-600 mb-1">門市名稱</label>
-                        <input type="text" id="store-name-input" class="input-field" placeholder="例：新竹光復門市">
-                    </div>
-                    <div>
-                        <label class="block text-sm text-gray-600 mb-1">門市地址</label>
-                        <input type="text" id="store-address-input" class="input-field" placeholder="例：新竹市東區光復路一段100號">
-                    </div>
-                </div>
+                <input type="hidden" id="store-name-input">
+                <input type="hidden" id="store-address-input">
                 <input type="hidden" id="store-id-input">
             </div>
 
@@ -289,7 +280,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/main-app.js?v=21"></script>
+    <script type="module" src="js/main-app.js?v=22"></script>
 </body>
 
 </html>

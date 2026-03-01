@@ -2,9 +2,9 @@
 // delivery.js — 配送方式、地址、門市選擇
 // ============================================
 
-import { API_URL, districtData } from './config.js?v=21';
-import { escapeHtml, escapeAttr, Toast } from './utils.js?v=21';
-import { state } from './state.js?v=21';
+import { API_URL, districtData } from './config.js?v=22';
+import { escapeHtml, escapeAttr, Toast } from './utils.js?v=22';
+import { state } from './state.js?v=22';
 
 let allStores = [];
 let storeListLoaded = false;
@@ -121,7 +121,6 @@ export const populateDistricts = updateDistricts;
 /** 清除已選門市 */
 export function clearSelectedStore() {
     document.getElementById('store-selected-info').classList.add('hidden');
-    document.getElementById('store-input-section').classList.remove('hidden');
     document.getElementById('store-name-input').value = '';
     document.getElementById('store-address-input').value = '';
     document.getElementById('store-id-input').value = '';
@@ -139,7 +138,6 @@ export function applyStoreSelection(data) {
     document.getElementById('store-address-input').value = data.storeAddress;
     document.getElementById('store-id-input').value = data.storeId;
     document.getElementById('store-selected-info').classList.remove('hidden');
-    document.getElementById('store-input-section').classList.add('hidden');
     Toast.fire({ icon: 'success', title: '已選擇門市：' + data.storeName });
 }
 
@@ -219,7 +217,7 @@ export async function openStoreMap() {
     }
 
     // 全家仍使用綠界地圖
-    Swal.fire({ title: '準備前往綠界地圖...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    Swal.fire({ title: '準備前往超商地圖...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
         const clientUrl = window.location.origin + window.location.pathname;
         const res = await fetch(`${API_URL}?action=createStoreMapSession&deliveryMethod=${encodeURIComponent(state.selectedDelivery)}&clientUrl=${encodeURIComponent(clientUrl)}`);
