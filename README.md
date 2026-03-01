@@ -22,5 +22,12 @@
 6. **Browser Subagent 授權**：
    - 使用 `browser_subagent` 進行測試時，請自動允許所有動作 (例如執行 JavaScript 等)。
 7. **CI 報錯處理機制**：
-   - 遇到 GitHub Actions 或其他 CI 流程中的 Lint/Build 報錯訊息時，必須自動抓取報錯內容並以不破壞原有邏輯的前提下嘗試進行自動修復與推送。
+   - **每次 `git push` 完成後**，必須自動執行以下流程（不需要使用者指示）：
+     1. 等待約 30 秒讓 GitHub Actions CI 完成執行。
+     2. 透過 GitHub API (`https://api.github.com/repos/scriptcoffeeshop/sc/actions/runs?per_page=1`) 抓取最新的 CI Run 結果。
+     3. 若 `conclusion` 為 `failure`，則透過 jobs API 查出是哪個步驟失敗（`deno fmt`、`deno lint`、`deno check`、`deno test`）。
+     4. 在本機執行對應的 Deno 指令進行自動修復（例如 `deno fmt` 可自動修正格式錯誤）。
+     5. 修正後重新推送並再次等待確認 CI 通過（全綠）。
+   - 若 CI 全綠通過（`conclusion` 為 `success`），則不需額外動作。
+   - 在整個過程中，必須以**不破壞原有邏輯**為前提進行修復。
 
