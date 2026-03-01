@@ -171,10 +171,33 @@ export async function updateCategory(
   req: Request,
 ) {
   await requireAdmin(req);
+  const newName = String(data.name);
+
+  // 先取得舊名稱
+  const { data: oldRow } = await supabase.from("coffee_categories").select(
+    "name",
+  ).eq("id", data.id).single();
+  const oldName = oldRow?.name;
+
+  // 更新分類名稱
   const { error } = await supabase.from("coffee_categories").update({
-    name: data.name,
+    name: newName,
   }).eq("id", data.id);
   if (error) return { success: false, error: error.message };
+
+  // 同步更新所有隸屬於舊名稱的商品
+  if (oldName && oldName !== newName) {
+    const { error: prodErr } = await supabase.from("coffee_products").update({
+      category: newName,
+    }).eq("category", oldName);
+    if (prodErr) {
+      return {
+        success: true,
+        message: "分類已更新，但商品同步失敗: " + prodErr.message,
+      };
+    }
+  }
+
   return { success: true, message: "分類已更新" };
 }
 

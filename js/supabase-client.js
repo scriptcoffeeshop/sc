@@ -3,7 +3,7 @@
 // ============================================
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=25';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=26';
 
 /**
  * 初始化 Supabase Client（前端用，受 RLS 保護）
