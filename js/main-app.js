@@ -440,7 +440,20 @@ function updateFormState() {
     const submitBtn = document.getElementById('submit-btn');
     if (submitBtn) submitBtn.disabled = !loggedIn || !open;
     const cartSubmitBtn = document.getElementById('cart-submit-btn');
-    if (cartSubmitBtn) cartSubmitBtn.disabled = !loggedIn || !open || cart.length === 0;
+    if (cartSubmitBtn) {
+        const hasItems = cart.length > 0;
+        cartSubmitBtn.disabled = !loggedIn || !open || !hasItems;
+        // 根據禁用原因顯示對應的按鈕文字提示
+        if (!loggedIn) {
+            cartSubmitBtn.textContent = '請先登入後再送出訂單';
+        } else if (!open) {
+            cartSubmitBtn.textContent = '🔒 目前休息中，暫停接單';
+        } else if (!hasItems) {
+            cartSubmitBtn.textContent = '購物車是空的';
+        } else {
+            cartSubmitBtn.textContent = '確認送出訂單';
+        }
+    }
 }
 
 // ============ 付款方式選擇 ============

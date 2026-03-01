@@ -54,7 +54,7 @@ export async function authFetch(url, options = {}, tokenKey = 'coffee_jwt') {
     if (response.status === 401) {
         console.warn('Unauthorized request, token might be expired or invalid.');
         localStorage.removeItem(tokenKey);
-        // 可選：拋出特定錯誤讓前端捕捉後登出或重定向
+        throw new Error('登入已過期，請重新登入');
     }
 
     return response;

@@ -39,8 +39,11 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     }
   }
 
-  if (!data.lineName || !data.phone) {
-    return { success: false, error: "缺少必要資訊" };
+  if (!data.lineName) {
+    return { success: false, error: "請填寫您的 LINE 名稱" };
+  }
+  if (!data.phone) {
+    return { success: false, error: "請填寫聯絡電話" };
   }
 
   const cartItems = data.items as Array<
@@ -116,8 +119,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     const lineTotal = qty * Number(unitPrice);
     total += lineTotal;
     orderLines.push(
-      `${product.name}${
-        specLabel ? ` (${specLabel})` : ""
+      `${product.name}${specLabel ? ` (${specLabel})` : ""
       } x ${qty} (${lineTotal}元)`,
     );
   }
@@ -365,11 +367,9 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   }
 
   const pad = (n: number) => String(n).padStart(2, "0");
-  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
-    pad(now.getDate())
-  }${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${
-    pad(Math.floor(Math.random() * 100))
-  }`;
+  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())
+    }${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${pad(Math.floor(Math.random() * 100))
+    }`;
 
   const { error } = await supabase.from("coffee_orders").insert({
     id: orderId,
@@ -387,8 +387,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     store_type: deliveryMethod === "seven_eleven"
       ? "7-11"
       : deliveryMethod === "family_mart"
-      ? "全家"
-      : "",
+        ? "全家"
+        : "",
     store_id: data.storeId || "",
     store_name: data.storeName || "",
     store_address: data.storeAddress || "",
@@ -461,15 +461,13 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
           customFieldsHtml =
             '<h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 20px;">其他資訊</h3>';
           for (const [key, val] of Object.entries(parsedFields)) {
-            customFieldsHtml += `<p style="margin: 0 0 5px 0;"><strong>${
-              sanitize(key)
-            }：</strong> ${sanitize(String(val))}</p>`;
+            customFieldsHtml += `<p style="margin: 0 0 5px 0;"><strong>${sanitize(key)
+              }：</strong> ${sanitize(String(val))}</p>`;
           }
         }
       } catch {
         customFieldsHtml =
-          `<p style="margin: 10px 0 0 0;"><strong>其他資訊：</strong> ${
-            sanitize(data.customFields)
+          `<p style="margin: 10px 0 0 0;"><strong>其他資訊：</strong> ${sanitize(data.customFields)
           }</p>`;
       }
     }
@@ -480,30 +478,24 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     <h1 style="margin: 0; font-size: 24px;">☕ 咖啡訂購確認</h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
-    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
-      sanitize(data.lineName)
-    }，您的訂單已成立！</h2>
+    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${sanitize(data.lineName)
+      }，您的訂單已成立！</h2>
     <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
-      <p style="margin: 0 0 10px 0;"><strong>聯絡電話：</strong> ${
-      sanitize(phone)
-    }</p>
-      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-      methodMap[deliveryMethod] || deliveryMethod
-    }<br><span style="color: #666; font-size: 14px;">${
-      sanitize(deliveryText)
-    }</span></p>
+      <p style="margin: 0 0 10px 0;"><strong>聯絡電話：</strong> ${sanitize(phone)
+      }</p>
+      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${methodMap[deliveryMethod] || deliveryMethod
+      }<br><span style="color: #666; font-size: 14px;">${sanitize(deliveryText)
+      }</span></p>
       <p style="margin: 0 0 10px 0;"><strong>付款方式：</strong> ${paymentText}${transferHtml}</p>
-      <p style="margin: 0;"><strong>訂單備註：</strong> ${
-      sanitize(data.note) || "無"
-    }</p>
+      <p style="margin: 0;"><strong>訂單備註：</strong> ${sanitize(data.note) || "無"
+      }</p>
     </div>
     ${customFieldsHtml}
     <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
-    <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${
-      sanitize(ordersText)
-    }</pre>
+    <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${sanitize(ordersText)
+      }</pre>
     <div style="text-align: right; margin-top: 20px;">
       <h3 style="color: #e63946; font-size: 22px; margin: 0;">總金額：$${total}</h3>
     </div>
@@ -575,9 +567,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         }).eq("id", orderId);
         return {
           success: false,
-          error: `LINE Pay 請求失敗: ${
-            lpRes.returnMessage || lpRes.returnCode
-          }`,
+          error: `LINE Pay 請求失敗: ${lpRes.returnMessage || lpRes.returnCode
+            }`,
           orderId,
         };
       }
@@ -704,13 +695,11 @@ export async function updateOrderStatus(
     const isInStore = orderData.delivery_method === "in_store";
     let deliveryText = "";
     if (isDelivery) {
-      deliveryText = `${orderData.city || ""}${orderData.district || ""} ${
-        orderData.address || ""
-      }`;
+      deliveryText = `${orderData.city || ""}${orderData.district || ""} ${orderData.address || ""
+        }`;
     } else if (!isInStore) {
-      deliveryText = `${orderData.store_name || ""} (${
-        orderData.store_address || ""
-      })`;
+      deliveryText = `${orderData.store_name || ""} (${orderData.store_address || ""
+        })`;
     }
 
     const paymentText = paymentMap[orderData.payment_method] ||
@@ -736,8 +725,7 @@ export async function updateOrderStatus(
           `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#047857; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 中華郵政貨態查詢</a>`;
       }
       trackingSection =
-        `<p style="margin: 10px 0 0 0; padding-top: 10px; border-top: 1px dashed #dcd3cb;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${
-          sanitize(String(data.trackingNumber))
+        `<p style="margin: 10px 0 0 0; padding-top: 10px; border-top: 1px dashed #dcd3cb;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${sanitize(String(data.trackingNumber))
         }</span><br>${trackingLink}</p>`;
     }
 
@@ -747,18 +735,15 @@ export async function updateOrderStatus(
     <h1 style="margin: 0; font-size: 24px;">📦 訂單出貨通知</h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
-    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
-      sanitize(orderData.line_name)
-    }，您的訂單已出貨！</h2>
+    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${sanitize(orderData.line_name)
+      }，您的訂單已出貨！</h2>
     <p>這封信是要通知您，您所訂購的商品已經安排出貨！</p>
     
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${data.orderId}</p>
-      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-      methodMap[orderData.delivery_method] || "一般配送"
-    }<br><span style="color: #666; font-size: 14px;">${
-      sanitize(deliveryText)
-    }</span></p>
+      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${methodMap[orderData.delivery_method] || "一般配送"
+      }<br><span style="color: #666; font-size: 14px;">${sanitize(deliveryText)
+      }</span></p>
       <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatusColor}; font-weight: bold;">(${paymentStatusText})</span></p>
       ${trackingSection}
     </div>

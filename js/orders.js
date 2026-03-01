@@ -209,9 +209,11 @@ export async function submitOrder() {
                 clearCart();
                 document.getElementById('order-note').value = '';
             });
-        } else { throw new Error(result.error); }
+        } else { throw new Error(result.error || '訂單送出發生未知錯誤'); }
     } catch (e) {
-        Swal.fire('送出失敗', e.message === 'Failed to fetch' ? '網路連線失敗' : e.message, 'error');
+        const msg = e.message || '訂單送出發生未知錯誤，請稍後再試';
+        const displayMsg = msg === 'Failed to fetch' ? '網路連線失敗，請檢查網路後再試' : msg;
+        Swal.fire('送出失敗', displayMsg, 'error');
     }
 }
 
