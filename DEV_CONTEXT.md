@@ -5,6 +5,25 @@
 
 ---
 
+## 📅 近期重要更新 (CI 與 7-11 PCSC 整合階段)
+
+### 1. CI 報錯自動抓取與修復機制 (README #7)
+- **機制建立**：在 `README.md` 中確立了每次推送後自動偵錯並修復的 SOP。
+- **自動化 Workflow**：建立了 `.agents/workflows/ci-check.md`，定義了從 GitHub API 抓取失敗任務、在本機執行 `deno fmt`/`lint`/`check` 到重新推送的完整流程（指令已標記為 `// turbo-all`）。
+- **實戰經驗**：成功解決了 `Backend CI` 中 `Verify formatting` 的失敗情況，透過本機 `deno fmt` 自動修正後全綠通過。
+
+### 2. 7-11 超商取貨：從綠界轉向 PCSC 官方電子地圖
+- **變更點**：應使用者要求，將 7-11 的選店地圖從綠界 (ECPay) 更換為 PCSC 官方系統，全家則維持原樣。
+- **關鍵發現 (c2cemap.ashx)**：原本使用 `emap.pcsc.com.tw/ecmap/default.aspx` 端點會因不支援 C2C 而回傳 E0014 錯誤。經測試確認，正確的 C2C 取貨地圖端點應為 `https://emap.presco.com.tw/c2cemap.ashx`，並需帶上 `servicetype: '1'` 參數。
+- **後端 Callback 處理**：
+  - 新增 `createPcscMapSession` 與 `pcscMapCallback` 端點。
+  - PCSC 會以 POST 回傳全小寫欄位（`storeid`, `storename`, `storeaddress`, `tempvar`）。
+  - **Token 處理**：原本發往 PCSC 的 `tempvar` 會原樣回傳，後端必須能正確解析 `multipart/form-data` 以提取 token 進行 Session 匹配。
+- **CORS 陷阱**：由於 Edge Function 預設只允許產線 Origin，導致 localhost 開發時會被封鎖。已在 `config.ts` 的 `ALLOWED_REDIRECT_ORIGINS` 加入 `localhost:5500` 解決本地偵錯問題。
+
+
+---
+
 ## 📅 近期重要更新 (v21 階段)
 
 ### 1. 徹底修復免運明細顯示為「來店自取」的 Bug (v21)
