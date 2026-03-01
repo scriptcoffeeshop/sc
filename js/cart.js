@@ -192,18 +192,50 @@ export function updateCartUI() {
     // 更新折扣明細區塊
     const discountSection = document.getElementById('cart-discount-details');
     if (discountSection) {
-        if (summary.totalDiscount > 0 && summary.appliedPromos && summary.appliedPromos.length > 0) {
+        const shippingConfig = getShippingConfig();
+        const isFreeShipping = state.selectedDelivery && shippingConfig && summary.shippingFee === 0;
+        const hasPromos = summary.totalDiscount > 0 && summary.appliedPromos && summary.appliedPromos.length > 0;
+
+        if (hasPromos || isFreeShipping) {
             discountSection.classList.remove('hidden');
-            const promoList = summary.appliedPromos.map(p => `
-                <div class="flex justify-between items-center text-red-600 mb-1">
-                    <span>🏷️ ${escapeHtml(p.name)}</span>
-                    <span>-$${p.amount}</span>
-                </div>
-            `).join('');
+            let promoListHTML = '';
+
+            if (hasPromos) {
+                promoListHTML += summary.appliedPromos.map(p => `
+                    <div class="flex justify-between items-center text-red-600 mb-1">
+                        <span>🏷️ ${escapeHtml(p.name)}</span>
+                        <span>-$${p.amount}</span>
+                    </div>
+                `).join('');
+            }
+
+            if (isFreeShipping) {
+                // 找出對應的配送方式名稱
+                let deliveryName = '該配送方式';
+                const configStr = window.appSettings?.delivery_options_config || '[]';
+                try {
+                    const parsed = JSON.parse(configStr);
+                    const sel = parsed.find(opt => opt.id === state.selectedDelivery);
+                    if (sel && sel.name) deliveryName = sel.name;
+                } catch (e) { }
+
+                let thresholdText = '';
+                if (shippingConfig.freeThreshold > 0) {
+                    thresholdText = ` (滿$${shippingConfig.freeThreshold})`;
+                }
+
+                promoListHTML += `
+                    <div class="flex justify-between items-center text-blue-600 mb-1">
+                        <span>🚚 ${escapeHtml(deliveryName)}免運${thresholdText}</span>
+                        <span>免運費</span>
+                    </div>
+                `;
+            }
+
             discountSection.innerHTML = `
                 <div class="border-b border-dashed border-[#e5ddd5] pb-2 mb-2">
-                    <div class="font-semibold text-gray-700 mb-2">已套用優惠活動：</div>
-                    ${promoList}
+                    <div class="font-semibold text-gray-700 mb-2">已套用優惠與折抵：</div>
+                    ${promoListHTML}
                 </div>
             `;
         } else {
