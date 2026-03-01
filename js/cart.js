@@ -2,8 +2,8 @@
 // cart.js — 購物車 CRUD & UI
 // ============================================
 
-import { escapeHtml, Toast } from './utils.js?v=23';
-import { state } from './state.js?v=23';
+import { escapeHtml, Toast } from './utils.js?v=24';
+import { state } from './state.js?v=24';
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
@@ -189,14 +189,55 @@ export function updateCartUI() {
         `;
     }).join('');
 
-    // 更新折扣明細區塊
+    // 更新折扣明細區塊與獨立的運費提示
     const discountSection = document.getElementById('cart-discount-details');
+    const shippingNotice = document.getElementById('cart-shipping-notice');
+
     if (discountSection) {
         const shippingConfig = getShippingConfig();
         const isFreeShipping = state.selectedDelivery && shippingConfig && summary.shippingFee === 0;
         const hasPromos = summary.totalDiscount > 0 && summary.appliedPromos && summary.appliedPromos.length > 0;
 
-        if (hasPromos || state.selectedDelivery) {
+        let deliveryName = '該配送方式';
+        if (state.selectedDelivery) {
+            const configStr = window.appSettings?.delivery_options_config || '[]';
+            try {
+                const parsed = JSON.parse(configStr);
+                const sel = parsed.find(opt => opt.id === state.selectedDelivery);
+                if (sel && sel.name) deliveryName = sel.name;
+            } catch (e) { }
+        }
+
+        // 獨立處理運費與未達免運提示 (不放在優惠與折抵區塊中)
+        if (shippingNotice) {
+            if (state.selectedDelivery && shippingConfig && !isFreeShipping) {
+                let noticeHTML = `
+                    <div class="flex justify-between items-center text-gray-600 mb-2 px-1 text-sm">
+                        <span>🚚 ${escapeHtml(deliveryName)}運費</span>
+                        <span>$${summary.shippingFee}</span>
+                    </div>
+                `;
+
+                if (shippingConfig.freeThreshold > 0) {
+                    const diff = shippingConfig.freeThreshold - summary.totalAfterDiscount;
+                    if (diff > 0) {
+                        noticeHTML += `
+                            <div class="bg-orange-50 border border-orange-200 text-orange-800 px-3 py-2 rounded-lg text-sm flex items-center justify-between">
+                                <span>未達免運門檻 (滿$${shippingConfig.freeThreshold})</span>
+                                <span class="font-bold text-orange-600">還差 $${diff}</span>
+                            </div>
+                        `;
+                    }
+                }
+                shippingNotice.innerHTML = noticeHTML;
+                shippingNotice.classList.remove('hidden');
+            } else {
+                shippingNotice.classList.add('hidden');
+            }
+        }
+
+        // 優惠與折抵區塊只顯示折扣或達標的免運
+        if (hasPromos || isFreeShipping) {
             discountSection.classList.remove('hidden');
             let promoListHTML = '';
 
@@ -209,41 +250,18 @@ export function updateCartUI() {
                 `).join('');
             }
 
-            if (state.selectedDelivery && shippingConfig) {
-                // 找出對應的配送方式名稱
-                let deliveryName = '該配送方式';
-                const configStr = window.appSettings?.delivery_options_config || '[]';
-                try {
-                    const parsed = JSON.parse(configStr);
-                    const sel = parsed.find(opt => opt.id === state.selectedDelivery);
-                    if (sel && sel.name) deliveryName = sel.name;
-                } catch (e) { }
-
+            if (isFreeShipping) {
                 let thresholdText = '';
                 if (shippingConfig.freeThreshold > 0) {
                     thresholdText = ` (滿$${shippingConfig.freeThreshold})`;
                 }
 
-                if (isFreeShipping) {
-                    promoListHTML += `
-                        <div class="flex justify-between items-center text-blue-600 mb-1">
-                            <span>🚚 ${escapeHtml(deliveryName)}免運${thresholdText}</span>
-                            <span>免運費</span>
-                        </div>
-                    `;
-                } else {
-                    const diff = shippingConfig.freeThreshold - summary.totalAfterDiscount;
-                    let diffText = '';
-                    if (shippingConfig.freeThreshold > 0 && diff > 0) {
-                        diffText = `<span class="text-xs text-orange-500 ml-1">，還差 $${diff} 免運</span>`;
-                    }
-                    promoListHTML += `
-                        <div class="flex justify-between items-center text-gray-500 mb-1">
-                            <span>🚚 ${escapeHtml(deliveryName)}運費${thresholdText}${diffText}</span>
-                            <span>$${summary.shippingFee}</span>
-                        </div>
-                    `;
-                }
+                promoListHTML += `
+                    <div class="flex justify-between items-center text-blue-600 mb-1">
+                        <span>🚚 ${escapeHtml(deliveryName)}免運${thresholdText}</span>
+                        <span>免運費</span>
+                    </div>
+                `;
             }
 
             discountSection.innerHTML = `
