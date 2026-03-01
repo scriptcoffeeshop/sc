@@ -5,6 +5,37 @@
 
 ---
 
+## 📅 近期重要更新 (v12→v16 階段)
+
+### 1. 付款方式選取外框修復 (v13)
+- **問題**：UI 改版後事件綁定從 `onclick` 改為 `data-action` / `data-method`，但 `selectPayment()` 中用來加上 `.active` 外框的選擇器仍使用舊的 `onclick` 屬性查找，導致點選付款方式時沒有顯示外框。
+- **修正**：選擇器改為優先查找 `data-method`，並同時保留 `onclick` fallback。
+
+### 2. CI Lint 錯誤修復 (v13)
+- **問題**：GitHub Actions 中的 Deno Lint 報錯 (`no-unused-vars`, `require-await`)。
+- **修正**：移除未使用的 `applyCorsHeaders` / `jsonResponse` import，將 `getLineLoginUrl` 改為 `Promise.resolve` 包裝。
+
+### 3. 訂單送出靜默失敗修復 (v14)
+- **根因 (最關鍵)**：`cart.js` 中判斷「確認送出訂單」按鈕啟用狀態時使用了 `window.state`，但 `state` 是透過 ES module `import` 的，**從未掛載到 `window`**。導致 `window.state?.currentUser` 永遠為 `undefined`，按鈕永遠 disabled。
+- **修正**：改為直接使用 ES module 的 `state` 物件。
+- **附帶修復**：
+  - `auth.js`：401 時拋出「登入已過期」中文錯誤
+  - `orders.js`：catch 區塊提供預設錯誤訊息，避免空白彈窗
+  - `main-app.js`：按鈕依禁用原因顯示提示文字（未登入/休息中/購物車空）
+  - 後端 `orders.ts`：驗證拆分為個別檢查，提供明確錯誤
+
+### 4. 購物車運費即時更新修復 (v15-v16)
+- **問題 A (v15)**：清空購物車後底部仍顯示運費/免運標籤。原因是 `calcCartSummary()` 在空購物車時因 `0 < threshold` 為 true 而套用運費，且 `updateCartUI()` 的底部欄位計算在空購物車 early return 之前執行。
+- **修正 A**：重構 `updateCartUI()` 執行順序，空購物車檢查提前；`calcCartSummary()` 加入 `cart.length > 0` 保護。
+- **問題 B (v16)**：切換配送方式後運費/免運標籤不會即時更新。原因是 `delivery.js` 的 `selectDelivery()` 沒有呼叫 `updateCartUI()`。
+- **修正 B**：在 `selectDelivery()` 末尾加入 `window.updateCartUI()`，並在 `main-app.js` 中將 `updateCartUI` 掛載到 `window`。
+
+### 5. 專案規範新增
+- `README.md` 新增第 6 點「Browser Subagent 授權」與第 7 點「CI 報錯處理機制」。
+- `README.md` 第 5 點新增版號修改時必須同步更新 `DEV_CONTEXT.md` 的規定。
+
+---
+
 ## 📅 近期重要更新 (v11 階段)
 
 ### 1. 前端直連 Supabase — 公開資料改用 supabase-js 讀取
