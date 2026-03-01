@@ -2,7 +2,7 @@
 // auth.js — LINE Login 認證 (客戶端 + 管理端共用)
 // ============================================
 
-import { API_URL } from './config.js?v=20';
+import { API_URL } from './config.js?v=21';
 
 /**
  * 啟動 LINE Login 流程
