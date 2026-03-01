@@ -72,9 +72,11 @@ import {
 } from "./api/users.ts";
 
 import {
+  createPcscMapSession,
   createStoreMapSession,
   getStoreList,
   getStoreSelection,
+  handlePcscMapCallback,
   handleStoreMapCallback,
 } from "./api/stores.ts";
 
@@ -177,6 +179,11 @@ const actionMap: Record<string, ActionHandler> = {
   getStoreSelection: async (data) =>
     await getStoreSelection(data.token as string),
   storeMapCallback: async (data) => await handleStoreMapCallback(data),
+  createPcscMapSession: async (data) =>
+    await createPcscMapSession(
+      (data.clientUrl as string) || "",
+    ),
+  pcscMapCallback: async (data) => await handlePcscMapCallback(data),
   linePayConfirm: async (data) => await linePayConfirm(data),
   linePayCancel: async (data, req) => await linePayCancel(data, req),
 
