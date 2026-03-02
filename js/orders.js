@@ -2,12 +2,12 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from './config.js?v=33';
-import { authFetch } from './auth.js?v=33';
-import { escapeHtml, Toast } from './utils.js?v=33';
-import { state } from './state.js?v=33';
-import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=33';
-import { collectDynamicFields } from './form-renderer.js?v=33';
+import { API_URL } from './config.js?v=34';
+import { authFetch } from './auth.js?v=34';
+import { escapeHtml, Toast } from './utils.js?v=34';
+import { state } from './state.js?v=34';
+import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=34';
+import { collectDynamicFields } from './form-renderer.js?v=34';
 
 /** 送出訂單 */
 export async function submitOrder() {
@@ -130,7 +130,7 @@ export async function submitOrder() {
     const customFieldsJson = Object.keys(customFieldsData).length > 0 ? JSON.stringify(customFieldsData) : '';
 
     // 配送方式文字
-    const methodText = { delivery: '配送到府(限新竹)', home_delivery: '全台宅配(含郵遞區號)', seven_eleven: '7-11 取件', family_mart: '全家取件', in_store: '來店取貨' };
+    const methodText = { delivery: '配送到府(限新竹)', home_delivery: '全台宅配', seven_eleven: '7-11 取件', family_mart: '全家取件', in_store: '來店取貨' };
     let addrText = (state.selectedDelivery === 'delivery' || state.selectedDelivery === 'home_delivery')
         ? `${deliveryInfo.city}${deliveryInfo.district || ''} ${deliveryInfo.address}`
         : state.selectedDelivery === 'in_store'
