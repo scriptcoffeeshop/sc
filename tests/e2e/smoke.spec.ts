@@ -21,8 +21,13 @@ async function fulfillJson(route: Route, payload: unknown, status = 200) {
 }
 
 async function installGlobalStubs(page: Page) {
+  // 攔截 SweetAlert2 CDN，避免真實腳本覆蓋 mock
+  await page.route('**/sweetalert2**', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/javascript', body: '/* swal blocked */' }),
+  );
+
   await page.addInitScript(() => {
-    const noop = () => {};
+    const noop = () => { };
     (window as any).Swal = {
       fire: async () => ({ isConfirmed: true }),
       close: noop,
