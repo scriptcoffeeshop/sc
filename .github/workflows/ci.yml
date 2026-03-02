@@ -19,8 +19,25 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Verify frontend cache version sync
         run: python3 scripts/sync_frontend_version.py --check
+
+      - name: Verify dashboard event delegation guardrails
+        run: python3 scripts/check_dashboard_event_delegation.py
+
+      - name: Verify storefront event delegation guardrails
+        run: python3 scripts/check_main_event_delegation.py
+
+      - name: Install Playwright browser
+        run: npx -y @playwright/test@1.53.2 install --with-deps chromium
+
+      - name: Run E2E smoke tests
+        run: npx -y @playwright/test@1.53.2 test tests/e2e/smoke.spec.ts --config=playwright.config.ts --reporter=line
 
       - name: Verify formatting
         run: deno fmt --check supabase/functions/coffee-api/

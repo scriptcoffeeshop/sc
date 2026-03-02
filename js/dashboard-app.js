@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=27';
-import { esc, Toast } from './utils.js?v=27';
-import { loginWithLine, authFetch } from './auth.js?v=27';
+import { API_URL, LINE_REDIRECT } from './config.js?v=32';
+import { esc, Toast } from './utils.js?v=32';
+import { loginWithLine, authFetch } from './auth.js?v=32';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -18,7 +18,7 @@ window.promotions = [];
 
 function getAuthUserId() { if (!currentUser?.userId) throw new Error('請先登入'); return currentUser.userId; }
 
-// ============ 全域函式掛載 (HTML onclick 呼叫) ============
+// ============ 全域函式掛載（保留舊快取相容性） ============
 window.loginWithLine = () => loginWithLine(LINE_REDIRECT.dashboard, 'coffee_admin_state');
 window.logout = logout;
 window.showTab = showTab;
@@ -61,6 +61,11 @@ window.editPromotion = editPromotion;
 window.delPromotion = delPromotion;
 window.movePromotion = movePromotion;
 window.togglePromoType = togglePromoType;
+
+function parseId(value) {
+    const parsed = Number.parseInt(value ?? '', 10);
+    return Number.isNaN(parsed) ? null : parsed;
+}
 
 function initializeDashboardEventDelegation() {
     document.addEventListener('click', (event) => {
@@ -131,9 +136,103 @@ function initializeDashboardEventDelegation() {
             case 'close-promotion-modal':
                 closePromotionModal();
                 break;
+            case 'refund-linepay-order':
+                if (actionButton.dataset.orderId) linePayRefundOrder(actionButton.dataset.orderId);
+                break;
+            case 'confirm-transfer-payment':
+                if (actionButton.dataset.orderId) window.confirmTransferPayment(actionButton.dataset.orderId);
+                break;
+            case 'copy-tracking-number':
+                if (actionButton.dataset.trackingNumber) {
+                    navigator.clipboard.writeText(actionButton.dataset.trackingNumber)
+                        .then(() => Toast.fire({ icon: 'success', title: '單號已複製' }))
+                        .catch(() => Swal.fire('錯誤', '複製失敗，請手動複製', 'error'));
+                }
+                break;
+            case 'delete-order':
+                if (actionButton.dataset.orderId) deleteOrderById(actionButton.dataset.orderId);
+                break;
+            case 'edit-product': {
+                const id = parseId(actionButton.dataset.productId);
+                if (id !== null) editProduct(id);
+                break;
+            }
+            case 'delete-product': {
+                const id = parseId(actionButton.dataset.productId);
+                if (id !== null) delProduct(id);
+                break;
+            }
+            case 'remove-spec-row':
+                actionButton.closest('.spec-row')?.remove();
+                break;
+            case 'edit-category': {
+                const id = parseId(actionButton.dataset.categoryId);
+                if (id !== null) editCategory(id);
+                break;
+            }
+            case 'delete-category': {
+                const id = parseId(actionButton.dataset.categoryId);
+                if (id !== null) delCategory(id);
+                break;
+            }
+            case 'edit-promotion': {
+                const id = parseId(actionButton.dataset.promotionId);
+                if (id !== null) editPromotion(id);
+                break;
+            }
+            case 'delete-promotion': {
+                const id = parseId(actionButton.dataset.promotionId);
+                if (id !== null) delPromotion(id);
+                break;
+            }
+            case 'remove-delivery-option-row':
+                actionButton.closest('.delivery-option-row')?.remove();
+                break;
+            case 'toggle-user-blacklist':
+                if (actionButton.dataset.userId) toggleUserBlacklist(actionButton.dataset.userId, actionButton.dataset.blocked === 'true');
+                break;
+            case 'toggle-user-role':
+                if (actionButton.dataset.userId && actionButton.dataset.newRole) {
+                    toggleUserRole(actionButton.dataset.userId, actionButton.dataset.newRole);
+                }
+                break;
+            case 'toggle-field-enabled': {
+                const id = parseId(actionButton.dataset.fieldId);
+                if (id !== null) toggleFieldEnabled(id, actionButton.dataset.enabled === 'true');
+                break;
+            }
+            case 'edit-form-field': {
+                const id = parseId(actionButton.dataset.fieldId);
+                if (id !== null) editFormField(id);
+                break;
+            }
+            case 'delete-form-field': {
+                const id = parseId(actionButton.dataset.fieldId);
+                if (id !== null) deleteFormField(id);
+                break;
+            }
+            case 'edit-bank-account': {
+                const id = parseId(actionButton.dataset.bankAccountId);
+                if (id !== null) editBankAccount(id);
+                break;
+            }
+            case 'delete-bank-account': {
+                const id = parseId(actionButton.dataset.bankAccountId);
+                if (id !== null) deleteBankAccount(id);
+                break;
+            }
             default:
                 break;
         }
+    });
+
+    document.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLSelectElement)) return;
+        if (target.dataset.action !== 'change-order-status') return;
+        const orderId = target.dataset.orderId;
+        if (!orderId) return;
+        changeOrderStatus(orderId, target.value);
     });
 
     const orderFilter = document.getElementById('order-filter');
@@ -270,10 +369,10 @@ function renderOrders() {
                </div>`
             : '';
         const refundBtn = pm === 'linepay' && ps === 'paid'
-            ? `<button onclick="linePayRefundOrder('${esc(o.orderId)}')" class="text-xs text-purple-600 hover:text-purple-800">↩️ 退款</button>`
+            ? `<button data-action="refund-linepay-order" data-order-id="${esc(o.orderId)}" class="text-xs text-purple-600 hover:text-purple-800">↩️ 退款</button>`
             : '';
         const confirmPayBtn = pm === 'transfer' && ps === 'pending'
-            ? `<button onclick="confirmTransferPayment('${esc(o.orderId)}')" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
+            ? `<button data-action="confirm-transfer-payment" data-order-id="${esc(o.orderId)}" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
             : '';
 
         let trackingHtml = '';
@@ -291,7 +390,7 @@ function renderOrders() {
                 <div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
                     <span class="text-gray-500">物流單號：</span>
                     <span class="font-mono font-bold">${esc(o.trackingNumber)}</span>
-                    <button onclick="navigator.clipboard.writeText('${esc(o.trackingNumber)}'); Toast.fire({icon: 'success', title: '單號已複製'});" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button>
+                    <button type="button" data-action="copy-tracking-number" data-tracking-number="${esc(o.trackingNumber)}" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button>
                     ${trackingLink}
                 </div>`;
         }
@@ -322,10 +421,10 @@ function renderOrders() {
                 <div class="flex gap-2">
                     ${refundBtn}
                     ${confirmPayBtn}
-                    <select onchange="changeOrderStatus('${esc(o.orderId)}',this.value)" class="text-xs border rounded px-2 py-1">
+                    <select data-action="change-order-status" data-order-id="${esc(o.orderId)}" class="text-xs border rounded px-2 py-1">
                         ${['pending', 'processing', 'shipped', 'completed', 'cancelled'].map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${statusLabel[s]}</option>`).join('')}
                     </select>
-                    <button onclick="deleteOrderById('${esc(o.orderId)}')" class="text-xs text-red-500 hover:text-red-700">刪除</button>
+                    <button data-action="delete-order" data-order-id="${esc(o.orderId)}" class="text-xs text-red-500 hover:text-red-700">刪除</button>
                 </div>
             </div>
         </div>`;
@@ -444,8 +543,8 @@ function renderProducts() {
                 <td class="p-3 text-right font-medium">${priceDisplay}</td>
                 <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
                 <td class="p-3 text-center">
-                    <button onclick="editProduct(${p.id})" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                    <button onclick="delProduct(${p.id})" class="text-sm text-red-500">刪除</button>
+                    <button data-action="edit-product" data-product-id="${p.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
+                    <button data-action="delete-product" data-product-id="${p.id}" class="text-sm text-red-500">刪除</button>
                 </td>
             </tr>`;
         });
@@ -503,14 +602,14 @@ function addSpecRow(specData) {
     const container = document.getElementById('specs-container');
     const s = specData || { key: '', label: '', price: 0, enabled: true };
     const div = document.createElement('div');
-    div.className = 'flex items-center gap-2 p-2 rounded-lg border';
+    div.className = 'spec-row flex items-center gap-2 p-2 rounded-lg border';
     div.style.borderColor = '#e5ddd5';
     div.innerHTML = `
         <label class="flex items-center"><input type="checkbox" class="spec-enabled w-4 h-4" ${s.enabled ? 'checked' : ''}></label>
         <input type="text" class="spec-label input-field text-sm py-1" value="${esc(s.label)}" placeholder="規格名稱" style="width:90px">
         <span class="text-gray-500 text-sm">$</span>
         <input type="number" class="spec-price input-field text-sm py-1" value="${s.price || ''}" placeholder="價格" min="0" style="width:80px">
-        <button type="button" onclick="this.closest('div').remove()" class="text-red-400 hover:text-red-600 text-lg font-bold">&times;</button>
+        <button type="button" data-action="remove-spec-row" class="text-red-400 hover:text-red-600 text-lg font-bold">&times;</button>
     `;
     container.appendChild(div);
 }
@@ -629,8 +728,8 @@ function renderCategories() {
                 <span class="font-medium">${esc(c.name)}</span>
             </div>
             <div class="flex gap-2">
-                <button onclick="editCategory(${c.id})" class="text-sm" style="color:var(--primary)">編輯</button>
-                <button onclick="delCategory(${c.id})" class="text-sm text-red-500">刪除</button>
+                <button data-action="edit-category" data-category-id="${c.id}" class="text-sm" style="color:var(--primary)">編輯</button>
+                <button data-action="delete-category" data-category-id="${c.id}" class="text-sm text-red-500">刪除</button>
             </div>
         </div>
     `).join('');
@@ -729,8 +828,8 @@ function renderPromotions() {
             <td class="p-3 text-sm text-gray-600">${conditionStr} <span class="font-bold text-red-500">${discountStr}</span></td>
             <td class="p-3 text-center"><span class="${p.enabled ? 'text-green-600' : 'text-gray-400'}">${p.enabled ? '啟用' : '停用'}</span></td>
             <td class="p-3 text-right">
-                <button onclick="editPromotion(${p.id})" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                <button onclick="delPromotion(${p.id})" class="text-sm text-red-500">刪除</button>
+                <button data-action="edit-promotion" data-promotion-id="${p.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
+                <button data-action="delete-promotion" data-promotion-id="${p.id}" class="text-sm text-red-500">刪除</button>
             </td>
         </tr>`;
     });
@@ -1070,7 +1169,7 @@ function configToHtml(item, tbody, isNew = false) {
             <input type="checkbox" class="w-4 h-4 do-transfer" ${item.payment?.transfer ? 'checked' : ''}>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
-            <button type="button" class="text-red-500 hover:text-red-700 p-1" onclick="this.closest('tr').remove()" title="刪除此選項">
+            <button type="button" data-action="remove-delivery-option-row" class="text-red-500 hover:text-red-700 p-1" title="刪除此選項">
                 🗑️
             </button>
         </td>
@@ -1210,14 +1309,14 @@ function renderUsers() {
 
         let actions = '';
         if (isBlocked) {
-            actions += `<button onclick="toggleUserBlacklist('${esc(u.userId)}', false)" class="text-green-600 hover:text-green-800 text-sm font-medium mr-3">解除封鎖</button>`;
+            actions += `<button data-action="toggle-user-blacklist" data-user-id="${esc(u.userId)}" data-blocked="false" class="text-green-600 hover:text-green-800 text-sm font-medium mr-3">解除封鎖</button>`;
         } else {
-            actions += `<button onclick="toggleUserBlacklist('${esc(u.userId)}', true)" class="text-red-500 hover:text-red-700 text-sm font-medium mr-3">封鎖</button>`;
+            actions += `<button data-action="toggle-user-blacklist" data-user-id="${esc(u.userId)}" data-blocked="true" class="text-red-500 hover:text-red-700 text-sm font-medium mr-3">封鎖</button>`;
         }
 
         if (isSuperAdmin && !isUserSuperAdmin) {
-            if (isAdmin) actions += `<button onclick="toggleUserRole('${esc(u.userId)}', 'USER')" class="text-red-600 hover:text-red-800 text-sm font-medium">移除管理員</button>`;
-            else actions += `<button onclick="toggleUserRole('${esc(u.userId)}', 'ADMIN')" class="text-purple-600 hover:text-purple-800 text-sm font-medium">設為管理員</button>`;
+            if (isAdmin) actions += `<button data-action="toggle-user-role" data-user-id="${esc(u.userId)}" data-new-role="USER" class="text-red-600 hover:text-red-800 text-sm font-medium">移除管理員</button>`;
+            else actions += `<button data-action="toggle-user-role" data-user-id="${esc(u.userId)}" data-new-role="ADMIN" class="text-purple-600 hover:text-purple-800 text-sm font-medium">設為管理員</button>`;
         }
 
         return `
@@ -1303,7 +1402,7 @@ function renderBlacklist() {
                 <div class="text-xs text-red-500 mt-1">${esc(b.reason) || '(無原因)'}</div>
             </td>
             <td class="p-3 text-right">
-                <button onclick="toggleUserBlacklist('${esc(b.lineUserId)}', false)" class="text-green-600 hover:text-green-800 text-sm font-medium">解除封鎖</button>
+                <button data-action="toggle-user-blacklist" data-user-id="${esc(b.lineUserId)}" data-blocked="false" class="text-green-600 hover:text-green-800 text-sm font-medium">解除封鎖</button>
             </td>
         </tr>`;
     }).join('');
@@ -1354,9 +1453,9 @@ function renderFormFields() {
                         <div class="text-xs text-gray-400 mt-1">key: ${esc(f.field_key)} ${f.placeholder ? '・' + esc(f.placeholder) : ''}</div>
                     </div>
                     <div class="flex gap-1 items-center">
-                        <button onclick="toggleFieldEnabled(${f.id}, ${!f.enabled})" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${f.enabled ? '停用' : '啟用'}">${f.enabled ? '🟢' : '⚪'}</button>
-                        <button onclick="editFormField(${f.id})" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">✏️</button>
-                        ${!isProtected ? `<button onclick="deleteFormField(${f.id})" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">🗑</button>` : ''}
+                        <button data-action="toggle-field-enabled" data-field-id="${f.id}" data-enabled="${!f.enabled}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${f.enabled ? '停用' : '啟用'}">${f.enabled ? '🟢' : '⚪'}</button>
+                        <button data-action="edit-form-field" data-field-id="${f.id}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">✏️</button>
+                        ${!isProtected ? `<button data-action="delete-form-field" data-field-id="${f.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">🗑</button>` : ''}
                     </div>
                 </div>`;
     }).join('')}
@@ -1630,8 +1729,8 @@ function renderBankAccountsAdmin() {
                 ${b.accountName ? `<div class="text-xs text-gray-400">戶名: ${esc(b.accountName)}</div>` : ''}
             </div>
             <div class="flex gap-2">
-                <button onclick="editBankAccount(${b.id})" class="text-sm" style="color:var(--primary)">編輯</button>
-                <button onclick="deleteBankAccount(${b.id})" class="text-sm text-red-500">刪除</button>
+                <button data-action="edit-bank-account" data-bank-account-id="${b.id}" class="text-sm" style="color:var(--primary)">編輯</button>
+                <button data-action="delete-bank-account" data-bank-account-id="${b.id}" class="text-sm text-red-500">刪除</button>
             </div>
         </div>
     `).join('');

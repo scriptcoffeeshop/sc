@@ -19,6 +19,115 @@
 
 ---
 
+## 📅 近期重要更新 (v28 階段)
+
+### 1. 後台動態事件全面改為事件代理 (dashboard)
+- **問題源由**：雖然 `dashboard.html` 靜態區塊已移除 inline 事件，但 `js/dashboard-app.js` 動態產生的列表仍含大量 `onclick/onchange`，維護成本高且容易受模組作用域與快取影響。
+- **解決方案**：
+  - 將訂單、商品、分類、促銷、物流選項、用戶管理、黑名單、表單欄位、匯款帳號管理等動態模板內的 inline handler 改為 `data-action` + `data-*`。
+  - 擴充 `initializeDashboardEventDelegation`，集中處理 click 與 change 事件（含訂單狀態下拉切換、複製物流單號、各管理按鈕動作）。
+  - 補上 `parseId` 小工具，統一解析 `data-*` 中的數字 id，降低重複與型別錯誤風險。
+- **版號**：前端快取推進至 `v=28`。
+
+### 2. 加入 dashboard 事件代理防回歸檢查 (CI Guardrail)
+- **問題源由**：事件代理已改完，但若後續開發者把 `onclick` 等 inline 事件加回後台，將破壞單一路徑與可維護性。
+- **解決方案**：
+  - 新增 `scripts/check_dashboard_event_delegation.py`。
+  - 檢查 `dashboard.html` 與 `js/dashboard-app.js` 禁止出現 inline 事件屬性。
+  - 檢查所有 `data-action` 是否都有對應 handler（含 switch case 與 change handler）。
+  - CI 新增步驟 `Verify dashboard event delegation guardrails`，PR 階段即攔截回歸。
+
+---
+
+## 📅 近期重要更新 (v29 階段)
+
+### 1. 前台 inline 事件清理與事件代理補齊 (storefront)
+- **問題源由**：`main.html` 與 `js/main-app.js` 仍有少量 inline 事件遺留（配送縣市切換、載入失敗重試按鈕、轉帳帳號卡片與複製按鈕）。
+- **解決方案**：
+  - 移除 `main.html` 的配送縣市 `onchange`，改由 `main-app.js` 在初始化時綁定 `delivery-city` 的 `change` 事件。
+  - 將前台 fallback「重試」按鈕與轉帳帳號卡片/複製按鈕改為 `data-action`，統一走 `actionHandlers`。
+  - 移除 `selectPayment` 對舊式 `onclick` 選擇器的 fallback，固定使用 `data-method`。
+
+### 2. 新增 storefront 事件代理防回歸檢查 (CI Guardrail)
+- **解決方案**：
+  - 新增 `scripts/check_main_event_delegation.py`。
+  - 檢查 `main.html` 與 `js/main-app.js` 不得出現 inline 事件屬性。
+  - 檢查所有 `data-action` 是否都有對應 `actionHandlers` key。
+  - CI 新增步驟 `Verify storefront event delegation guardrails`，PR 階段攔截回歸。
+- **版號**：前端快取推進至 `v=29`。
+
+---
+
+## 📅 近期重要更新 (v30 階段)
+
+### 1. 新增最小 E2E Smoke Test（前台 + 後台）
+- **問題源由**：目前已有靜態規則檢查（guardrails），但仍缺少「實際點擊互動」層級的自動驗證，無法及早發現事件代理斷鏈或 UI 流程故障。
+- **解決方案**：
+  - 新增 `playwright.config.ts` 與 `tests/e2e/smoke.spec.ts`。
+  - 前台 smoke：驗證資料載入、配送縣市切換、轉帳帳號選取與複製按鈕不影響選取狀態。
+  - 後台 smoke：驗證自動登入、訂單狀態切換觸發更新、商品編輯按鈕可開啟 modal。
+  - 測試中以 route mock Supabase/API 回應，降低對外部環境依賴與 flakiness。
+
+### 2. CI 串接 Playwright Smoke
+- **解決方案**：
+  - `Backend CI` 新增 `Setup Node.js`。
+  - 新增 `Install Playwright browser` 與 `Run E2E smoke tests` 步驟，讓 PR 階段即攔截前後台關鍵流程回歸。
+- **版號**：前端快取推進至 `v=30`。
+
+---
+
+## 📅 近期重要更新 (v31 階段)
+
+### 1. 清除 delivery 模組的 legacy onclick selector fallback
+- **問題源由**：`js/delivery.js` 仍保留 `document.querySelector('[onclick*="..."]')` 這類舊式 fallback，與現行 `data-* + 事件代理` 策略不一致，且提高未來回歸風險。
+- **解決方案**：
+  - `selectDelivery`、`checkStoreToken`、`loadDeliveryPrefs` 三處改為僅使用 `.delivery-option[data-id="..."]` 尋找元素。
+  - 保留 `populateDistricts` 別名，但註解改為舊流程相容用途，不再暗示 inline 事件依賴。
+
+### 2. 強化 storefront guardrail：禁止 legacy `[onclick*]` selector
+- **解決方案**：
+  - 升級 `scripts/check_main_event_delegation.py`，新增檢查 `js/main-app.js` 與 `js/delivery.js` 不可出現 `[onclick*` selector。
+  - 維持既有檢查：禁止 inline 事件屬性 + `data-action` 對應 `actionHandlers`。
+- **版號**：前端快取推進至 `v=31`。
+
+### 3. 補強前台送單流程 E2E Smoke（submitOrder happy path）
+- **問題源由**：既有 smoke 已涵蓋前台互動與後台管理，但尚未覆蓋最核心的前台送單請求路徑，無法及早發現送單 payload 組裝或流程斷鏈問題。
+- **解決方案**：
+  - 在 `tests/e2e/smoke.spec.ts` 新增前台送單 smoke case。
+  - 以 route mock 攔截 `submitOrder`，驗證請求次數與關鍵 payload 欄位（`deliveryMethod/city/address/items`）。
+  - 驗證送單成功後購物車清空，確保結帳流程完成收斂。
+
+### 4. 擴充送單分支 Smoke：transfer 與 linepay
+- **問題源由**：僅有 happy path 還不足以覆蓋付款分支邏輯，無法防止 `transfer` 對帳欄位或 `linepay` 跳轉流程回歸。
+- **解決方案**：
+  - `smoke.spec.ts` 的 `installMainRoutes` 改為可注入付款配置，測試可依分支動態啟用付款方式。
+  - 新增 `transfer` 送單 smoke：驗證 `paymentMethod=transfer`、`transferAccountLast5` 與 `transferTargetAccount` payload。
+  - 新增 `linepay` 送單 smoke：mock `paymentUrl` 並驗證送單後跳轉行為。
+
+---
+
+## 📅 近期重要更新 (v32 階段)
+
+### 1. 匯款帳號選取同步強化（radio / 藍框 / 背景）
+- **問題源由**：既有前台邏輯雖已走單一路徑更新帳號選取，但回歸測試尚未涵蓋「直接點 radio」情境，導致未來若互動行為異動，可能再次出現藍框與選取狀態不同步。
+- **解決方案**：
+  - `js/main-app.js` 將匯款帳號 radio 移除 `pointer-events-none`，允許直接點擊單選圓點。
+  - 保持既有單一路徑：點擊卡片/點擊 radio 皆透過 `selectBankAccount` 更新狀態，再由 `renderBankAccounts` 重繪。
+
+### 2. 擴充 E2E 回歸：選取狀態持續一致
+- **解決方案**：
+  - `tests/e2e/smoke.spec.ts` 新增/補強斷言：
+    - 進入轉帳後預設第一筆為選取狀態（藍框 + radio checked）。
+    - 直接點第二筆 radio，需同步切換藍框與 checked。
+    - 點「複製」按鈕不影響目前選取。
+    - `transfer -> cod -> transfer` 切換後選取仍保留。
+  - transfer 送單測試改為先選第二筆帳號，再驗證 `transferTargetAccount` payload 對應第二筆帳號。
+
+### 3. 快取版號推進
+- **版號**：前端快取推進至 `v=32`（含 `main.html`、`dashboard.html`、`js/*.js` 內部 import 全面同步）。
+
+---
+
 ## 📅 近期重要更新 (v26 階段)
 
 ### 1. 分類管理拖曳排序與更名商品同步 (v26)
@@ -195,5 +304,5 @@
 ## 🛠 給協助審查或接手此專案的 AI 的注意事項
 
 1. **不可輕忽的手機 Cache**：未來如果修改了 js 代碼但畫面邏輯崩潰，請高度懷疑是瀏覽器快取搗亂。解法是：**只要動了 js，就必須同時修改 `.html` 引用的 `v=X` 版號**。
-2. **Global Window Functions**：因為當前的實作包含了很多寫在 `.html` 原生的 `onclick="window.xxx()"` 事件，因此如果在 module 裡面新寫了函數（如 `openSpecDrawer` 等），務必記得去 `main-app.js` 全局綁定給 `window`。
+2. **事件代理策略**：前台與後台的 inline 事件（`onclick/onchange` 等）已全面改為 `data-action` + 事件代理。**禁止再加回任何 inline handler**，CI guardrail 會自動攔截。若新增功能需要按鈕互動，請在 `actionHandlers`（前台）或 `initializeDashboardEventDelegation` 的 switch（後台）中註冊新 action。部分函式仍掛載在 `window` 上，是為了保留舊快取版本的相容性，非必要請勿新增。
 3. **繁體中文規則**：所有對話與代碼內的開發邏輯註解（comments），依照過去的強制要求，請一律使用 **「繁體中文（Traditional Chinese）」**。
