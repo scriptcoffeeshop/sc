@@ -2,17 +2,28 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from './config.js?v=32';
-import { authFetch } from './auth.js?v=32';
-import { escapeHtml, Toast } from './utils.js?v=32';
-import { state } from './state.js?v=32';
-import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=32';
-import { collectDynamicFields } from './form-renderer.js?v=32';
+import { API_URL } from './config.js?v=33';
+import { authFetch } from './auth.js?v=33';
+import { escapeHtml, Toast } from './utils.js?v=33';
+import { state } from './state.js?v=33';
+import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=33';
+import { collectDynamicFields } from './form-renderer.js?v=33';
 
 /** 送出訂單 */
 export async function submitOrder() {
     const u = state.currentUser;
     if (!u) { Swal.fire('請先登入', '使用 LINE 登入後再訂購', 'warning'); return; }
+
+    // 政策同意驗證
+    const policyCheckbox = document.getElementById('policy-agree');
+    const policyHint = document.getElementById('policy-agree-hint');
+    if (policyCheckbox && !policyCheckbox.checked) {
+        if (policyHint) policyHint.classList.remove('hidden');
+        policyCheckbox.focus();
+        Swal.fire('提醒', '請先閱讀並勾選同意隱私權政策及退換貨政策', 'warning');
+        return;
+    }
+    if (policyHint) policyHint.classList.add('hidden');
 
     // 動態欄位驗證
     const fieldsResult = collectDynamicFields(state.formFields);

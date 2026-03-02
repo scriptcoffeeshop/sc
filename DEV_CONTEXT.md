@@ -13,6 +13,14 @@
 
 ---
 
+## 📅 v33 — 隱私權與退換貨政策頁面 + 下單同意勾選
+
+- 新增 `policy.html`（隱私權政策 + 退換貨政策），使用與訂購頁一致的視覺風格。
+- `main.html` 備註上方新增同意 checkbox，連結可開新分頁查看政策。
+- `orders.js` 的 `submitOrder()` 加入勾選驗證，未勾選會顯示提示且無法下單。
+
+---
+
 ## 📅 v32 — 匯款帳號選取同步強化 & E2E 回歸
 
 - **radio 同步**：匯款帳號 radio 移除 `pointer-events-none`，允許直接點擊；點卡片/點 radio 皆透過 `selectBankAccount` 統一更新。

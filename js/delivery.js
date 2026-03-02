@@ -2,9 +2,9 @@
 // delivery.js — 配送方式、地址、門市選擇
 // ============================================
 
-import { API_URL, districtData } from './config.js?v=32';
-import { escapeHtml, escapeAttr, Toast } from './utils.js?v=32';
-import { state } from './state.js?v=32';
+import { API_URL, districtData } from './config.js?v=33';
+import { escapeHtml, escapeAttr, Toast } from './utils.js?v=33';
+import { state } from './state.js?v=33';
 
 let allStores = [];
 let storeListLoaded = false;

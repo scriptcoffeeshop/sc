@@ -221,6 +221,19 @@
             </div>
         </div>
 
+        <!-- 政策同意 -->
+        <div class="mb-4">
+            <label class="flex items-start gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="policy-agree" class="mt-1 w-4 h-4 rounded accent-[#3C2415] shrink-0">
+                <span class="text-sm text-gray-600">
+                    我已閱讀並同意
+                    <a href="policy.html" target="_blank" class="font-medium underline hover:opacity-80"
+                        style="color:var(--primary)">隱私權政策及退換貨政策</a>
+                </span>
+            </label>
+            <p id="policy-agree-hint" class="hidden text-xs text-red-500 mt-1 ml-6">請先勾選同意政策後才能送出訂單</p>
+        </div>
+
         <!-- 備註 -->
         <div class="mb-6">
             <label class="block font-medium mb-2" style="color:var(--primary)" id="notes-section-title">📝 訂單備註</label>
@@ -281,7 +294,7 @@
         </div>
     </div>
 
-    <script type="module" src="js/main-app.js?v=32"></script>
+    <script type="module" src="js/main-app.js?v=33"></script>
 </body>
 
 </html>
