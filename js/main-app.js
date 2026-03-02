@@ -2,22 +2,22 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=27';
-import { Toast } from './utils.js?v=27';
-import { loginWithLine } from './auth.js?v=27';
-import { state } from './state.js?v=27';
-import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=27';
-import { renderProducts } from './products.js?v=27';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=27';
-import { submitOrder, showMyOrders } from './orders.js?v=27';
-import { renderDynamicFields, applyBranding } from './form-renderer.js?v=27';
-import { authFetch } from './auth.js?v=27';
-import { escapeHtml } from './utils.js?v=27';
-import { supabase } from './supabase-client.js?v=27';
+import { API_URL, LINE_REDIRECT } from './config.js?v=32';
+import { Toast } from './utils.js?v=32';
+import { loginWithLine } from './auth.js?v=32';
+import { state } from './state.js?v=32';
+import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=32';
+import { renderProducts } from './products.js?v=32';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=32';
+import { submitOrder, showMyOrders } from './orders.js?v=32';
+import { renderDynamicFields, applyBranding } from './form-renderer.js?v=32';
+import { authFetch } from './auth.js?v=32';
+import { escapeHtml } from './utils.js?v=32';
+import { supabase } from './supabase-client.js?v=32';
 
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
-// 取代原本散落在 HTML 各處的 onclick="window.xxx()" 掛載方式。
+// 取代原本散落在 HTML 各處的內嵌事件掛載方式。
 const actionHandlers = {
     'add-to-cart': (el) => addToCart(+el.dataset.pid, el.dataset.spec),
     'cart-qty-change': (el) => updateCartItemQtyByKeys(+el.dataset.pid, el.dataset.spec, +el.dataset.delta),
@@ -35,6 +35,12 @@ const actionHandlers = {
     'logout': () => window.logout(),
     'close-announcement': () => document.getElementById('announcement-banner').classList.add('hidden'),
     'close-orders-modal': () => document.getElementById('my-orders-modal').classList.add('hidden'),
+    'reload-page': () => window.location.reload(),
+    'select-bank-account': (el) => selectBankAccount(el.dataset.bankId),
+    'copy-transfer-account': (el, event) => {
+        event.stopPropagation();
+        copyTransferAccount(el, el.dataset.account || '');
+    },
 };
 
 function initEventDelegation() {
@@ -48,11 +54,15 @@ function initEventDelegation() {
             handler(target, e);
         }
     });
+
+    const deliveryCity = document.getElementById('delivery-city');
+    if (deliveryCity) {
+        deliveryCity.addEventListener('change', updateDistricts);
+    }
 }
 
 // ============ 保留必要的 window 掛載 ============
-// 以下函式仍需掛載到 window，因為它們在程式碼內部的渲染邏輯中透過 onclick 呼叫
-// （如 renderBankAccounts / selectPayment 的 querySelector 等）
+// 以下函式保留掛載，避免舊快取版本或外部調用造成功能中斷。
 window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
 window.selectBankAccount = selectBankAccount;
@@ -295,7 +305,7 @@ async function loadInitDataFallback() {
             }
         } else { throw new Error(result.error); }
     } catch (e) {
-        document.getElementById('products-container').innerHTML = `<p class="p-8 text-center text-red-600">載入失敗: ${e.message}<br><button onclick="location.reload()" class="mt-3 btn-primary">重試</button></p>`;
+        document.getElementById('products-container').innerHTML = `<p class="p-8 text-center text-red-600">載入失敗: ${e.message}<br><button type="button" data-action="reload-page" class="mt-3 btn-primary">重試</button></p>`;
     }
 }
 
@@ -463,8 +473,7 @@ function selectPayment(method) {
     state.selectedPayment = method;
     document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
 
-    // 以 method 尋找對應的按鈕（支援 data-method 或傳統的 onclick）
-    const activeBtn = document.querySelector(`.payment-option[data-method="${method}"]`) || document.querySelector(`.payment-option[onclick*="'${method}'"]`);
+    const activeBtn = document.querySelector(`.payment-option[data-method="${method}"]`);
     if (activeBtn) activeBtn.classList.add('active');
 
     // 顯示/隱藏轉帳資訊
@@ -511,14 +520,14 @@ function renderBankAccounts() {
         const isSelected = state.selectedBankAccountId == b.id;
         const borderClass = isSelected ? 'border-primary ring-2 ring-primary bg-orange-50' : 'border-[#d1dce5] bg-white';
         return `
-        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" onclick="window.selectBankAccount('${b.id}')">
+        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" data-action="select-bank-account" data-bank-id="${b.id}">
             <div class="flex items-center gap-3 mb-1">
-                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${isSelected ? 'checked' : ''} onclick="window.selectBankAccount('${b.id}')">
+                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${isSelected ? 'checked' : ''}>
                 <div class="font-semibold text-gray-800">${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)})</div>
             </div>
             <div class="flex items-center gap-2 mt-1 pl-7">
                 <span class="text-lg font-mono font-medium" style="color:var(--primary)">${escapeHtml(b.accountNumber)}</span>
-                <button type="button" onclick="if(typeof event !== 'undefined') { event.preventDefault(); event.stopPropagation(); } window.copyTransferAccount(this, '${escapeHtml(b.accountNumber)}')" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
+                <button type="button" data-action="copy-transfer-account" data-account="${escapeHtml(b.accountNumber)}" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
                     📋 複製
                 </button>
             </div>

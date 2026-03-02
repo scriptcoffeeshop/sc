@@ -2,9 +2,9 @@
 // delivery.js — 配送方式、地址、門市選擇
 // ============================================
 
-import { API_URL, districtData } from './config.js?v=27';
-import { escapeHtml, escapeAttr, Toast } from './utils.js?v=27';
-import { state } from './state.js?v=27';
+import { API_URL, districtData } from './config.js?v=32';
+import { escapeHtml, escapeAttr, Toast } from './utils.js?v=32';
+import { state } from './state.js?v=32';
 
 let allStores = [];
 let storeListLoaded = false;
@@ -63,7 +63,7 @@ window.selectDelivery = function (method, e) {
     if (e && e.currentTarget && typeof e.currentTarget.classList !== 'undefined') {
         e.currentTarget.classList.add('active');
     } else {
-        const btn = document.querySelector(`.delivery-option[data-id="${method}"]`) || document.querySelector(`.delivery-option[onclick*="'${method}'"]`);
+        const btn = document.querySelector(`.delivery-option[data-id="${method}"]`);
         if (btn) btn.classList.add('active');
     }
 
@@ -115,7 +115,7 @@ export function updateDistricts() {
     }
 }
 
-/** 別名 (HTML onclick 使用) */
+/** 舊別名保留，供歷史流程呼叫 */
 export const populateDistricts = updateDistricts;
 
 /** 清除已選門市 */
@@ -150,7 +150,7 @@ export async function checkStoreToken(token) {
             Swal.close();
             const typeMap = { 'UNIMARTC2C': 'seven_eleven', 'FAMIC2C': 'family_mart', 'UNIMART': 'seven_eleven', 'FAMI': 'family_mart' };
             const method = typeMap[result.logisticsSubType] || 'seven_eleven';
-            const btn = document.querySelector(`.delivery-option[data-id="${method}"]`) || document.querySelector(`.delivery-option[onclick*="selectDelivery('${method}'"]`);
+            const btn = document.querySelector(`.delivery-option[data-id="${method}"]`);
             if (btn) btn.click();
             else selectDelivery(method, { currentTarget: { classList: { add: () => { } } } });
 
@@ -318,8 +318,7 @@ export function loadDeliveryPrefs() {
 
         if (prefs && prefs.method) {
             const method = String(prefs.method);
-            const btn = document.querySelector(`.delivery-option[data-id="${method}"]`) ||
-                document.querySelector(`.delivery-option[onclick*="selectDelivery('${method}'"]`);
+            const btn = document.querySelector(`.delivery-option[data-id="${method}"]`);
 
             // 即使按鈕尚未渲染，也先套用 method，避免登入後偏好遺失
             if (btn) selectDelivery(method, { currentTarget: btn });

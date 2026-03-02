@@ -2,12 +2,12 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from './config.js?v=27';
-import { authFetch } from './auth.js?v=27';
-import { escapeHtml, Toast } from './utils.js?v=27';
-import { state } from './state.js?v=27';
-import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=27';
-import { collectDynamicFields } from './form-renderer.js?v=27';
+import { API_URL } from './config.js?v=32';
+import { authFetch } from './auth.js?v=32';
+import { escapeHtml, Toast } from './utils.js?v=32';
+import { state } from './state.js?v=32';
+import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=32';
+import { collectDynamicFields } from './form-renderer.js?v=32';
 
 /** 送出訂單 */
 export async function submitOrder() {
