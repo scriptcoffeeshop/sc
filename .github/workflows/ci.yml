@@ -19,6 +19,9 @@ jobs:
         with:
           deno-version: v1.x
 
+      - name: Verify frontend cache version sync
+        run: python3 scripts/sync_frontend_version.py --check
+
       - name: Verify formatting
         run: deno fmt --check supabase/functions/coffee-api/
 

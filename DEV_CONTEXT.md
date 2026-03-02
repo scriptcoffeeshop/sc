@@ -5,6 +5,20 @@
 
 ---
 
+## 📅 近期重要更新 (v27 階段)
+
+### 1. 前端快取版號改為「單一來源 + 自動檢查」
+- **問題源由**：先前所有 `?v=26` 分散在 `main.html`、`dashboard.html` 與多個 `js/*.js` 檔案，更新時需手動同步，容易再次發生漏改造成快取版本不一致。
+- **解決方案**：
+  - 新增 `/.frontend-version` 作為前端版號的唯一來源。
+  - 新增 `scripts/sync_frontend_version.py`，可用單一指令同步所有 `?v=XX`，並支援 `--check` 模式驗證一致性。
+  - `Backend CI` 新增步驟 `Verify frontend cache version sync`，每次 push 自動檢查版本參數是否一致，避免漏版號才進到 production。
+- **執行方式**：
+  - 同步版號：`python3 scripts/sync_frontend_version.py 27`
+  - 僅檢查：`python3 scripts/sync_frontend_version.py --check`
+
+---
+
 ## 📅 近期重要更新 (v26 階段)
 
 ### 1. 分類管理拖曳排序與更名商品同步 (v26)
