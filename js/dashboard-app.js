@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=26';
-import { esc, Toast } from './utils.js?v=26';
-import { loginWithLine, authFetch } from './auth.js?v=26';
+import { API_URL, LINE_REDIRECT } from './config.js?v=27';
+import { esc, Toast } from './utils.js?v=27';
+import { loginWithLine, authFetch } from './auth.js?v=27';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -62,8 +62,114 @@ window.delPromotion = delPromotion;
 window.movePromotion = movePromotion;
 window.togglePromoType = togglePromoType;
 
+function initializeDashboardEventDelegation() {
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+
+        const tabButton = target.closest('[data-tab]');
+        if (tabButton) {
+            event.preventDefault();
+            const tab = tabButton.dataset.tab;
+            if (tab) showTab(tab);
+            return;
+        }
+
+        const actionButton = target.closest('[data-action]');
+        if (!actionButton) return;
+
+        const action = actionButton.dataset.action;
+        if (!action) return;
+        event.preventDefault();
+
+        switch (action) {
+            case 'login-with-line':
+                window.loginWithLine();
+                break;
+            case 'logout':
+                logout();
+                break;
+            case 'reload-orders':
+                loadOrders();
+                break;
+            case 'show-product-modal':
+                showProductModal();
+                break;
+            case 'add-category':
+                addCategory();
+                break;
+            case 'show-promotion-modal':
+                showPromotionModal();
+                break;
+            case 'search-users':
+                loadUsers();
+                break;
+            case 'upload-site-icon':
+                uploadSiteIcon();
+                break;
+            case 'reset-section-title':
+                resetSectionTitle(actionButton.dataset.section);
+                break;
+            case 'add-delivery-option-admin':
+                addDeliveryOptionAdmin();
+                break;
+            case 'show-add-bank-account-modal':
+                showAddBankAccountModal();
+                break;
+            case 'save-settings':
+                saveSettings();
+                break;
+            case 'show-add-field-modal':
+                showAddFieldModal();
+                break;
+            case 'add-spec-row':
+                addSpecRow();
+                break;
+            case 'close-product-modal':
+                closeProductModal();
+                break;
+            case 'close-promotion-modal':
+                closePromotionModal();
+                break;
+            default:
+                break;
+        }
+    });
+
+    const orderFilter = document.getElementById('order-filter');
+    if (orderFilter) {
+        orderFilter.addEventListener('change', renderOrders);
+    }
+
+    const userSearchInput = document.getElementById('user-search');
+    if (userSearchInput) {
+        userSearchInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') loadUsers();
+        });
+    }
+
+    const iconFileInput = document.getElementById('s-icon-file');
+    if (iconFileInput) {
+        iconFileInput.addEventListener('change', (event) => {
+            const input = event.target;
+            if (input instanceof HTMLInputElement) previewIcon(input);
+        });
+    }
+
+    const productForm = document.getElementById('product-form');
+    if (productForm) {
+        productForm.addEventListener('submit', saveProduct);
+    }
+
+    const promotionForm = document.getElementById('promotion-form');
+    if (promotionForm) {
+        promotionForm.addEventListener('submit', savePromotion);
+    }
+}
+
 // ============ 初始化 ============
 document.addEventListener('DOMContentLoaded', () => {
+    initializeDashboardEventDelegation();
     const p = new URLSearchParams(window.location.search);
     if (p.get('code')) handleLineCallback(p.get('code'), p.get('state'));
     else checkLogin();

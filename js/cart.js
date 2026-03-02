@@ -2,8 +2,8 @@
 // cart.js — 購物車 CRUD & UI
 // ============================================
 
-import { escapeHtml, Toast } from './utils.js?v=26';
-import { state } from './state.js?v=26';
+import { escapeHtml, Toast } from './utils.js?v=27';
+import { state } from './state.js?v=27';
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];

@@ -18,7 +18,7 @@
         <span class="text-5xl block mb-4">☕</span>
         <h1 class="text-2xl font-bold mb-2" style="color:var(--primary)">咖啡訂購後台</h1>
         <p class="text-gray-500 mb-6">僅限管理員登入</p>
-        <button onclick="loginWithLine()"
+        <button data-action="login-with-line"
             class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path
@@ -39,33 +39,33 @@
                     <p class="text-sm text-gray-500">歡迎，<span id="admin-name"></span></p>
                 </div>
             </div>
-            <button onclick="logout()" class="text-sm text-gray-500 hover:text-red-500">登出</button>
+            <button data-action="logout" class="text-sm text-gray-500 hover:text-red-500">登出</button>
         </div>
 
         <!-- Tabs -->
         <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
-            <button id="tab-orders" onclick="showTab('orders')"
+            <button id="tab-orders" data-tab="orders"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">📋
                 訂單管理</button>
-            <button id="tab-products" onclick="showTab('products')"
+            <button id="tab-products" data-tab="products"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">🫘
                 商品管理</button>
-            <button id="tab-categories" onclick="showTab('categories')"
+            <button id="tab-categories" data-tab="categories"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">📂
                 分類管理</button>
-            <button id="tab-promotions" onclick="showTab('promotions')"
+            <button id="tab-promotions" data-tab="promotions"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">🎁
                 促銷活動</button>
-            <button id="tab-settings" onclick="showTab('settings')"
+            <button id="tab-settings" data-tab="settings"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">⚙️
                 系統設定</button>
-            <button id="tab-formfields" onclick="showTab('formfields')"
+            <button id="tab-formfields" data-tab="formfields"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">📝
                 表單管理</button>
-            <button id="tab-users" onclick="showTab('users')"
+            <button id="tab-users" data-tab="users"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">👥
                 用戶管理</button>
-            <button id="tab-blacklist" onclick="showTab('blacklist')"
+            <button id="tab-blacklist" data-tab="blacklist"
                 class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap">🚫
                 黑名單</button>
         </div>
@@ -75,15 +75,14 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold" style="color:var(--primary)">訂單列表</h2>
                 <div class="flex gap-2 items-center">
-                    <select id="order-filter" class="input-field text-sm py-1" style="width:auto"
-                        onchange="renderOrders()">
+                    <select id="order-filter" class="input-field text-sm py-1" style="width:auto">
                         <option value="all">全部</option>
                         <option value="pending">待處理</option>
                         <option value="processing">處理中</option>
                         <option value="shipped">已出貨</option>
                         <option value="completed">已完成</option>
                     </select>
-                    <button onclick="loadOrders()" class="text-sm" style="color:var(--primary)">🔄 重整</button>
+                    <button data-action="reload-orders" class="text-sm" style="color:var(--primary)">🔄 重整</button>
                 </div>
             </div>
             <div id="orders-list">
@@ -95,7 +94,7 @@
         <div id="products-section" class="glass-card p-6 hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold" style="color:var(--primary)">咖啡豆商品</h2>
-                <button onclick="showProductModal()" class="btn-primary text-sm">+ 新增商品</button>
+                <button data-action="show-product-modal" class="btn-primary text-sm">+ 新增商品</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full" id="products-main-table">
@@ -125,7 +124,7 @@
             </div>
             <div class="flex gap-2 mb-4">
                 <input type="text" id="new-cat-name" class="input-field flex-grow" placeholder="新分類名稱">
-                <button onclick="addCategory()" class="btn-primary text-sm">新增</button>
+                <button data-action="add-category" class="btn-primary text-sm">新增</button>
             </div>
             <div id="categories-list"></div>
         </div>
@@ -134,7 +133,7 @@
         <div id="promotions-section" class="glass-card p-6 hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold" style="color:var(--primary)">促銷活動管理</h2>
-                <button onclick="showPromotionModal()" class="btn-primary text-sm">+ 新增活動</button>
+                <button data-action="show-promotion-modal" class="btn-primary text-sm">+ 新增活動</button>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -161,9 +160,8 @@
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold" style="color:var(--primary)">用戶管理</h2>
                 <div class="flex gap-2 items-center">
-                    <input type="text" id="user-search" class="input-field text-sm py-1" placeholder="搜尋名稱/手機/Email"
-                        onkeyup="if(event.key==='Enter') loadUsers()">
-                    <button onclick="loadUsers()" class="btn-primary text-sm py-1 px-4">搜尋</button>
+                    <input type="text" id="user-search" class="input-field text-sm py-1" placeholder="搜尋名稱/手機/Email">
+                    <button data-action="search-users" class="btn-primary text-sm py-1 px-4">搜尋</button>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -231,10 +229,9 @@
                     <div>
                         <label class="block text-sm text-gray-600 mb-1">上傳自訂 Icon（將取代 Emoji）</label>
                         <div class="flex gap-2 items-center">
-                            <input type="file" id="s-icon-file" accept="image/*" class="text-sm"
-                                onchange="previewIcon(this)">
+                            <input type="file" id="s-icon-file" accept="image/*" class="text-sm">
                             <img id="s-icon-preview" src="" alt="" class="w-8 h-8 rounded hidden object-cover">
-                            <button onclick="uploadSiteIcon()" class="btn-primary text-xs py-1 px-3">上傳</button>
+                            <button type="button" data-action="upload-site-icon" class="btn-primary text-xs py-1 px-3">上傳</button>
                         </div>
                         <p id="s-icon-url-display" class="text-xs text-gray-400 mt-1 truncate"></p>
                     </div>
@@ -249,7 +246,7 @@
                 <div class="mb-4 border-b pb-4" style="border-color:#f0e6db">
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-sm font-medium text-gray-700">商品區塊</label>
-                        <button type="button" onclick="resetSectionTitle('products')"
+                        <button type="button" data-action="reset-section-title" data-section="products"
                             class="text-xs text-blue-500 hover:text-blue-700">恢復預設</button>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center">
@@ -273,7 +270,7 @@
                 <div class="mb-4 border-b pb-4" style="border-color:#f0e6db">
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-sm font-medium text-gray-700">配送區塊</label>
-                        <button type="button" onclick="resetSectionTitle('delivery')"
+                        <button type="button" data-action="reset-section-title" data-section="delivery"
                             class="text-xs text-blue-500 hover:text-blue-700">恢復預設</button>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center">
@@ -297,7 +294,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="block text-sm font-medium text-gray-700">備註區塊</label>
-                        <button type="button" onclick="resetSectionTitle('notes')"
+                        <button type="button" data-action="reset-section-title" data-section="notes"
                             class="text-xs text-blue-500 hover:text-blue-700">恢復預設</button>
                     </div>
                     <div class="flex flex-wrap gap-2 items-center">
@@ -342,7 +339,7 @@
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-3">
                     <h3 class="font-semibold text-lg" style="color:var(--primary)">💳 取貨方式與付款對應設定</h3>
-                    <button type="button" onclick="addDeliveryOptionAdmin()"
+                    <button type="button" data-action="add-delivery-option-admin"
                         class="mt-2 md:mt-0 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition text-sm">
                         + 新增取貨方式
                     </button>
@@ -464,12 +461,12 @@
             <div class="mb-6 p-4 bg-white rounded-xl border" style="border-color:#e5ddd5">
                 <h3 class="font-semibold mb-3" style="color:var(--primary)">🏦 匯款帳號管理</h3>
                 <div id="bank-accounts-admin-list" class="mb-3"></div>
-                <button onclick="showAddBankAccountModal()" class="text-sm font-medium hover:underline"
+                <button data-action="show-add-bank-account-modal" class="text-sm font-medium hover:underline"
                     style="color:var(--primary)">+ 新增匯款帳號</button>
             </div>
 
             <div class="text-center">
-                <button onclick="saveSettings()" class="btn-primary">儲存設定</button>
+                <button data-action="save-settings" class="btn-primary">儲存設定</button>
             </div>
         </div>
 
@@ -477,7 +474,7 @@
         <div id="formfields-section" class="glass-card p-6 hidden">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold" style="color:var(--primary)">表單欄位管理</h2>
-                <button onclick="showAddFieldModal()" class="btn-primary text-sm">+ 新增欄位</button>
+                <button data-action="show-add-field-modal" class="btn-primary text-sm">+ 新增欄位</button>
             </div>
             <p class="text-sm text-gray-500 mb-4">管理前台訂購表單的自訂欄位（如聯絡電話、電子郵件、開立收據等）。可拖拽排序、設定必填、啟用/停用。</p>
             <div id="formfields-list">
@@ -492,7 +489,7 @@
     <div id="product-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 id="pm-title" class="text-xl font-bold mb-6" style="color:var(--primary)">新增商品</h3>
-            <form id="product-form" onsubmit="saveProduct(event)">
+            <form id="product-form">
                 <input type="hidden" id="pm-id">
                 <div class="mb-3"><label class="block text-sm text-gray-600 mb-1">分類 *</label><select id="pm-category"
                         class="input-field" required>
@@ -509,7 +506,7 @@
                 <div class="mb-3">
                     <label class="block text-sm text-gray-600 mb-2 font-semibold">📦 規格與價格</label>
                     <div id="specs-container" class="space-y-2"></div>
-                    <button type="button" onclick="addSpecRow()" class="mt-2 text-sm font-medium hover:underline"
+                    <button type="button" data-action="add-spec-row" class="mt-2 text-sm font-medium hover:underline"
                         style="color:var(--primary)">+ 新增規格</button>
                 </div>
 
@@ -517,7 +514,7 @@
                             class="w-4 h-4"> 啟用販售</label></div>
                 <div class="flex gap-3">
                     <button type="submit" class="btn-primary flex-1">儲存</button>
-                    <button type="button" onclick="closeProductModal()"
+                    <button type="button" data-action="close-product-modal"
                         class="flex-1 px-6 py-3 bg-gray-200 rounded-xl">取消</button>
                 </div>
             </form>
@@ -528,7 +525,7 @@
     <div id="promotion-modal" class="modal-overlay hidden overflow-y-auto">
         <div class="modal-content my-8 mx-auto" style="max-height: 90vh; overflow-y: auto;">
             <h3 id="prm-title" class="text-xl font-bold mb-6" style="color:var(--primary)">新增活動</h3>
-            <form id="promotion-form" onsubmit="savePromotion(event)">
+            <form id="promotion-form">
                 <input type="hidden" id="prm-id">
 
                 <div class="mb-3">
@@ -582,14 +579,14 @@
 
                 <div class="flex gap-3">
                     <button type="submit" class="btn-primary flex-1">儲存</button>
-                    <button type="button" onclick="closePromotionModal()"
+                    <button type="button" data-action="close-promotion-modal"
                         class="flex-1 px-6 py-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition">取消</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <script type="module" src="js/dashboard-app.js?v=26"></script>
+    <script type="module" src="js/dashboard-app.js?v=27"></script>
 </body>
 
 </html>
