@@ -33,11 +33,14 @@ jobs:
       - name: Verify storefront event delegation guardrails
         run: python3 scripts/check_main_event_delegation.py
 
-      - name: Install Playwright browser
-        run: npx -y @playwright/test@1.53.2 install --with-deps chromium
+      - name: Install Playwright and browser
+        run: |
+          npm init -y
+          npm install @playwright/test@1.53.2
+          npx playwright install --with-deps chromium
 
       - name: Run E2E smoke tests
-        run: npx -y @playwright/test@1.53.2 test tests/e2e/smoke.spec.ts --config=playwright.config.ts --reporter=line
+        run: npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ts --reporter=line
 
       - name: Verify formatting
         run: deno fmt --check supabase/functions/coffee-api/
