@@ -250,6 +250,7 @@ test.describe('smoke', () => {
     await page.fill('#delivery-detail-address', '測試路 1 號');
 
     await page.locator('[data-action="add-to-cart"]').first().click();
+    await page.check('#policy-agree');
     await page.locator('.bottom-bar [data-action="toggle-cart"]').click();
     await expect(page.locator('#cart-drawer')).toBeVisible();
 
@@ -303,6 +304,7 @@ test.describe('smoke', () => {
     await expect(page.locator('#transfer-info-section')).toBeVisible();
     await page.locator('#bank-accounts-list input[name="bank_account_selection"]').nth(1).click();
     await page.fill('#transfer-last5', '12345');
+    await page.check('#policy-agree');
 
     await page.locator('.bottom-bar [data-action="toggle-cart"]').click();
     await page.locator('#cart-submit-btn').click();
@@ -351,6 +353,7 @@ test.describe('smoke', () => {
 
     await page.locator('[data-action="select-payment"][data-method="linepay"]').click();
     await expect(page.locator('#transfer-info-section')).toBeHidden();
+    await page.check('#policy-agree');
 
     await page.locator('.bottom-bar [data-action="toggle-cart"]').click();
     await page.locator('#cart-submit-btn').click();

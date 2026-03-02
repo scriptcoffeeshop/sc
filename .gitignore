@@ -1,1 +1,5 @@
 # supabase/
+node_modules/
+package-lock.json
+test-results/
+.DS_Store
