@@ -2,18 +2,30 @@
 // form-renderer.js — 動態表單欄位渲染與收集
 // ============================================
 
-import { escapeHtml } from './utils.js?v=35';
+import { escapeHtml } from './utils.js?v=36';
 
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
  * @param {Array} fields - coffee_form_fields 記錄
  * @param {HTMLElement} container - 要渲染到的容器
+ * @param {string} [deliveryMethod] - 目前選定的配送方式 ID
  */
-export function renderDynamicFields(fields, container) {
+export function renderDynamicFields(fields, container, deliveryMethod) {
     if (!container) return;
     container.innerHTML = '';
 
     if (!fields || fields.length === 0) return;
+
+    // 依配送方式過濾欄位
+    if (deliveryMethod) {
+        fields = fields.filter(f => {
+            if (!f.delivery_visibility) return true; // null = 全部顯示
+            try {
+                const vis = JSON.parse(f.delivery_visibility);
+                return vis[deliveryMethod] !== false;
+            } catch { return true; }
+        });
+    }
 
     const grid = document.createElement('div');
     grid.className = 'mb-6 grid grid-cols-1 md:grid-cols-2 gap-4';
@@ -91,6 +103,7 @@ export function collectDynamicFields(fields) {
 
         const fieldId = `field-${f.field_key}`;
         const el = document.getElementById(fieldId);
+        // 跳過 DOM 中不存在的欄位（可能因配送方式而被隱藏）
         if (!el) continue;
 
         let value;

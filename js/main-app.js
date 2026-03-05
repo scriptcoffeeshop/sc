@@ -2,18 +2,18 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=35';
-import { Toast } from './utils.js?v=35';
-import { loginWithLine } from './auth.js?v=35';
-import { state } from './state.js?v=35';
-import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=35';
-import { renderProducts } from './products.js?v=35';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=35';
-import { submitOrder, showMyOrders } from './orders.js?v=35';
-import { renderDynamicFields, applyBranding } from './form-renderer.js?v=35';
-import { authFetch } from './auth.js?v=35';
-import { escapeHtml } from './utils.js?v=35';
-import { supabase } from './supabase-client.js?v=35';
+import { API_URL, LINE_REDIRECT } from './config.js?v=36';
+import { Toast } from './utils.js?v=36';
+import { loginWithLine } from './auth.js?v=36';
+import { state } from './state.js?v=36';
+import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=36';
+import { renderProducts } from './products.js?v=36';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=36';
+import { submitOrder, showMyOrders } from './orders.js?v=36';
+import { renderDynamicFields, applyBranding } from './form-renderer.js?v=36';
+import { authFetch } from './auth.js?v=36';
+import { escapeHtml } from './utils.js?v=36';
+import { supabase } from './supabase-client.js?v=36';
 
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
@@ -67,6 +67,16 @@ window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
 window.selectBankAccount = selectBankAccount;
 window.updateCartUI = updateCartUI;
+window.rerenderFormFields = function () {
+    renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'), state.selectedDelivery);
+    // 回填使用者資料
+    if (state.currentUser) {
+        const phoneEl = document.getElementById('field-phone');
+        const emailEl = document.getElementById('field-email');
+        if (phoneEl && state.currentUser.phone) phoneEl.value = state.currentUser.phone;
+        if (emailEl && state.currentUser.email) emailEl.value = state.currentUser.email;
+    }
+};
 window.updateDistricts = updateDistricts;
 
 // ============ 初始化 ============
@@ -261,7 +271,7 @@ async function loadInitData() {
 
         applySettings(settings);
         applyBranding(settings);
-        renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'));
+        renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'), state.selectedDelivery);
         renderProducts();
         renderBankAccounts();
 
@@ -292,7 +302,7 @@ async function loadInitDataFallback() {
 
             applySettings(result.settings || {});
             applyBranding(result.settings || {});
-            renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'));
+            renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'), state.selectedDelivery);
             renderProducts();
             renderBankAccounts();
 

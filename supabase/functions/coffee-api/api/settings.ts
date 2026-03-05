@@ -410,6 +410,9 @@ export async function addFormField(
       required: Boolean(data.required),
       enabled: data.enabled !== false,
       sort_order: nextOrder,
+      delivery_visibility: data.deliveryVisibility
+        ? String(data.deliveryVisibility)
+        : null,
     }).select().single();
   if (error) return { success: false, error: error.message };
   return { success: true, field: inserted };
@@ -432,6 +435,11 @@ export async function updateFormField(
   if (data.required !== undefined) updates.required = Boolean(data.required);
   if (data.enabled !== undefined) updates.enabled = Boolean(data.enabled);
   if (data.section !== undefined) updates.section = String(data.section);
+  if (data.deliveryVisibility !== undefined) {
+    updates.delivery_visibility = data.deliveryVisibility
+      ? String(data.deliveryVisibility)
+      : null;
+  }
   const { error } = await supabase.from("coffee_form_fields").update(updates)
     .eq("id", id);
   if (error) return { success: false, error: error.message };

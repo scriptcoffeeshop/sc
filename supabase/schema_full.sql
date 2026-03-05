@@ -127,7 +127,8 @@ CREATE TABLE IF NOT EXISTS coffee_form_fields (
   options TEXT DEFAULT '',
   required BOOLEAN DEFAULT false,
   enabled BOOLEAN DEFAULT true,
-  sort_order INT DEFAULT 0
+  sort_order INT DEFAULT 0,
+  delivery_visibility TEXT DEFAULT NULL
 );
 
 INSERT INTO coffee_form_fields (section, field_key, label, field_type, placeholder, required, enabled, sort_order) VALUES
