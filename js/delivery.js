@@ -2,9 +2,9 @@
 // delivery.js — 配送方式、地址、門市選擇
 // ============================================
 
-import { API_URL, districtData } from './config.js?v=35';
-import { escapeHtml, escapeAttr, Toast } from './utils.js?v=35';
-import { state } from './state.js?v=35';
+import { API_URL, districtData } from './config.js?v=36';
+import { escapeHtml, escapeAttr, Toast } from './utils.js?v=36';
+import { state } from './state.js?v=36';
 
 let allStores = [];
 let storeListLoaded = false;
@@ -100,6 +100,11 @@ window.selectDelivery = function (method, e) {
     // 切換配送方式後，立即重新計算運費與金額並更新 UI
     if (typeof window.updateCartUI === 'function') {
         window.updateCartUI();
+    }
+
+    // 切換配送方式後，重新渲染動態表單欄位（依配送方式過濾）
+    if (typeof window.rerenderFormFields === 'function') {
+        window.rerenderFormFields();
     }
 }
 // 為了相容匯出 (如果其他檔案透過 import 引用)

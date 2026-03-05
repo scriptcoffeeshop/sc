@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=35';
-import { esc, Toast } from './utils.js?v=35';
-import { loginWithLine, authFetch } from './auth.js?v=35';
+import { API_URL, LINE_REDIRECT } from './config.js?v=36';
+import { esc, Toast } from './utils.js?v=36';
+import { loginWithLine, authFetch } from './auth.js?v=36';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -15,6 +15,7 @@ let users = [];
 let blacklist = [];
 let bankAccounts = [];
 window.promotions = [];
+let dashboardSettings = {};
 
 function getAuthUserId() { if (!currentUser?.userId) throw new Error('請先登入'); return currentUser.userId; }
 
@@ -987,6 +988,7 @@ async function loadSettings() {
         const d = await r.json();
         if (d.success) {
             const s = d.settings;
+            dashboardSettings = s;
             document.getElementById('s-ann-enabled').checked = String(s.announcement_enabled) === 'true';
             document.getElementById('s-announcement').value = s.announcement || '';
             const isOpen = String(s.is_open) !== 'false';
@@ -1451,6 +1453,15 @@ function renderFormFields() {
                             ${isProtected ? '<span class="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">🔒 系統</span>' : ''}
                         </div>
                         <div class="text-xs text-gray-400 mt-1">key: ${esc(f.field_key)} ${f.placeholder ? '・' + esc(f.placeholder) : ''}</div>
+                        ${(() => {
+                if (!f.delivery_visibility) return '';
+                try {
+                    const vis = JSON.parse(f.delivery_visibility);
+                    const hidden = Object.entries(vis).filter(([, v]) => v === false).map(([k]) => k);
+                    if (!hidden.length) return '';
+                    return `<div class="text-xs text-orange-500 mt-1">🚫 在 ${hidden.join(', ')} 時隱藏</div>`;
+                } catch { return ''; }
+            })()}
                     </div>
                     <div class="flex gap-1 items-center">
                         <button data-action="toggle-field-enabled" data-field-id="${f.id}" data-enabled="${!f.enabled}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${f.enabled ? '停用' : '啟用'}">${f.enabled ? '🟢' : '⚪'}</button>
@@ -1480,6 +1491,41 @@ function renderFormFields() {
     }
 }
 
+/** 渲染配送方式可見性 Checkbox 到 #swal-dv 容器 */
+function renderDeliveryVisibilityCheckboxes(existingVisibility) {
+    const container = document.getElementById('swal-dv');
+    if (!container) return;
+    // 從 delivery_options_config 取得所有配送方式
+    const configStr = dashboardSettings?.delivery_options_config || '';
+    let deliveryOptions = [];
+    if (configStr) {
+        try { deliveryOptions = JSON.parse(configStr); } catch { }
+    }
+    if (!deliveryOptions.length) {
+        container.innerHTML = '<p class="text-xs text-gray-400">尚未設定配送方式</p>';
+        return;
+    }
+    let vis = {};
+    if (existingVisibility) {
+        try { vis = JSON.parse(existingVisibility); } catch { }
+    }
+    container.innerHTML = deliveryOptions.map(opt => {
+        const checked = vis[opt.id] !== false; // null/undefined/true 都是 checked
+        return `<label class="flex items-center gap-1 text-sm cursor-pointer px-2 py-1 rounded-lg border" style="border-color:#e5ddd5">
+            <input type="checkbox" class="dv-cb" data-delivery-id="${esc(opt.id)}" ${checked ? 'checked' : ''}> ${esc(opt.label || opt.id)}
+        </label>`;
+    }).join('');
+}
+
+/** 收集 #swal-dv 中的勾選狀態，回傳 JSON 字串或 null */
+function collectDeliveryVisibility() {
+    const cbs = document.querySelectorAll('.dv-cb');
+    if (!cbs.length) return null;
+    const vis = {};
+    cbs.forEach(cb => { vis[cb.dataset.deliveryId] = cb.checked; });
+    return JSON.stringify(vis);
+}
+
 async function showAddFieldModal() {
     const { value: formValues } = await Swal.fire({
         title: '新增欄位',
@@ -1506,12 +1552,18 @@ async function showAddFieldModal() {
                 <label class="flex items-center gap-2 cursor-pointer mt-2">
                     <input type="checkbox" id="swal-fr"> <span class="text-sm">必填</span>
                 </label>
+                <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
+                    <label class="block text-sm mb-1 font-medium">🚚 配送方式可見性</label>
+                    <p class="text-xs text-gray-400 mb-2">取消勾選 = 該配送方式下不顯示此欄位，全勾 = 全部顯示</p>
+                    <div id="swal-dv" class="flex flex-wrap gap-2"></div>
+                </div>
             </div>`,
         focusConfirm: false,
         showCancelButton: true,
         confirmButtonText: '新增',
         cancelButtonText: '取消',
         confirmButtonColor: '#3C2415',
+        didOpen: () => renderDeliveryVisibilityCheckboxes(null),
         preConfirm: () => {
             const fieldKey = document.getElementById('swal-fk').value.trim();
             const label = document.getElementById('swal-fl').value.trim();
@@ -1521,11 +1573,26 @@ async function showAddFieldModal() {
             const optionsRaw = document.getElementById('swal-fo').value.trim();
             const options = optionsRaw ? JSON.stringify(optionsRaw.split(',').map(s => s.trim()).filter(Boolean)) : '';
             const required = document.getElementById('swal-fr').checked;
-            return { fieldKey, label, fieldType, placeholder, options, required };
+            const deliveryVisibility = collectDeliveryVisibility();
+            return { fieldKey, label, fieldType, placeholder, options, required, deliveryVisibility };
         },
     });
 
+    // Swal didOpen callback 不能在這裡，改用 setTimeout
+    // 實際上我們需要在 Swal 打開後渲染配送方式 checkbox
+    // 但 SweetAlert2 的 didOpen 已在上面的 html 欄位處處理
+    // 所以我們在這邊用 Swal.getHtmlContainer 不太方便
+    // 改用另一個方式：在 showAddFieldModal 和 editFormField 中使用 didOpen
+
     if (!formValues) return;
+
+    // 如果全部都是 true 就存 null（= 全部顯示）
+    if (formValues.deliveryVisibility) {
+        try {
+            const vis = JSON.parse(formValues.deliveryVisibility);
+            if (Object.values(vis).every(v => v === true)) formValues.deliveryVisibility = null;
+        } catch { }
+    }
 
     try {
         Swal.fire({ title: '新增中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -1562,12 +1629,18 @@ async function editFormField(id) {
                 <label class="flex items-center gap-2 cursor-pointer mt-2">
                     <input type="checkbox" id="swal-fr" ${f.required ? 'checked' : ''}> <span class="text-sm">必填</span>
                 </label>
+                <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
+                    <label class="block text-sm mb-1 font-medium">🚚 配送方式可見性</label>
+                    <p class="text-xs text-gray-400 mb-2">取消勾選 = 該配送方式下不顯示此欄位</p>
+                    <div id="swal-dv" class="flex flex-wrap gap-2"></div>
+                </div>
             </div>`,
         focusConfirm: false,
         showCancelButton: true,
         confirmButtonText: '儲存',
         cancelButtonText: '取消',
         confirmButtonColor: '#3C2415',
+        didOpen: () => renderDeliveryVisibilityCheckboxes(f.delivery_visibility || null),
         preConfirm: () => {
             const label = document.getElementById('swal-fl').value.trim();
             if (!label) { Swal.showValidationMessage('名稱為必填'); return false; }
@@ -1576,11 +1649,19 @@ async function editFormField(id) {
             const optionsRaw = document.getElementById('swal-fo').value.trim();
             const options = optionsRaw ? JSON.stringify(optionsRaw.split(',').map(s => s.trim()).filter(Boolean)) : '';
             const required = document.getElementById('swal-fr').checked;
-            return { label, fieldType, placeholder, options, required };
+            const deliveryVisibility = collectDeliveryVisibility();
+            return { label, fieldType, placeholder, options, required, deliveryVisibility };
         },
     });
 
     if (!formValues) return;
+
+    if (formValues.deliveryVisibility) {
+        try {
+            const vis = JSON.parse(formValues.deliveryVisibility);
+            if (Object.values(vis).every(v => v === true)) formValues.deliveryVisibility = null;
+        } catch { }
+    }
 
     try {
         const r = await authFetch(`${API_URL}?action=updateFormField`, {
