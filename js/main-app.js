@@ -2,18 +2,18 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=36';
-import { Toast } from './utils.js?v=36';
-import { loginWithLine } from './auth.js?v=36';
-import { state } from './state.js?v=36';
-import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=36';
-import { renderProducts } from './products.js?v=36';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=36';
-import { submitOrder, showMyOrders } from './orders.js?v=36';
-import { renderDynamicFields, applyBranding } from './form-renderer.js?v=36';
-import { authFetch } from './auth.js?v=36';
-import { escapeHtml } from './utils.js?v=36';
-import { supabase } from './supabase-client.js?v=36';
+import { API_URL, LINE_REDIRECT } from './config.js?v=37';
+import { Toast } from './utils.js?v=37';
+import { loginWithLine } from './auth.js?v=37';
+import { state } from './state.js?v=37';
+import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=37';
+import { renderProducts } from './products.js?v=37';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=37';
+import { submitOrder, showMyOrders } from './orders.js?v=37';
+import { renderDynamicFields, applyBranding } from './form-renderer.js?v=37';
+import { authFetch } from './auth.js?v=37';
+import { escapeHtml } from './utils.js?v=37';
+import { supabase } from './supabase-client.js?v=37';
 
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，

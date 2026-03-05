@@ -42,9 +42,6 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   if (!data.lineName) {
     return { success: false, error: "請填寫您的 LINE 名稱" };
   }
-  if (!data.phone) {
-    return { success: false, error: "請填寫聯絡電話" };
-  }
 
   const cartItems = data.items as Array<
     { productId: number; specKey: string; qty: number }
@@ -343,8 +340,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     }
   }
 
-  const phone = String(data.phone).replace(/[\s-]/g, "");
-  if (!/^(09\d{8}|0[2-8]\d{7,8})$/.test(phone)) {
+  const phone = String(data.phone || "").replace(/[\s-]/g, "");
+  if (phone && !/^(09\d{8}|0[2-8]\d{7,8})$/.test(phone)) {
     return { success: false, error: "電話格式不正確" };
   }
 
@@ -479,10 +476,24 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       }
     }
 
+    // 查詢 site_title
+    const { data: siteRow } = await supabase.from("coffee_settings").select(
+      "value",
+    ).eq("key", "site_title").single();
+    const siteTitle = siteRow?.value || "咖啡訂購";
+
+    const phoneHtml = phone
+      ? `<p style="margin: 0 0 10px 0;"><strong>聯絡電話：</strong> ${
+        sanitize(phone)
+      }</p>`
+      : "";
+
     const content = `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">☕ 咖啡訂購確認</h1>
+    <h1 style="margin: 0; font-size: 24px;">☕ ${
+      sanitize(siteTitle)
+    } 訂購確認</h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
@@ -491,9 +502,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
-      <p style="margin: 0 0 10px 0;"><strong>聯絡電話：</strong> ${
-      sanitize(phone)
-    }</p>
+      ${phoneHtml}
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
       methodMap[deliveryMethod] || deliveryMethod
     }<br><span style="color: #666; font-size: 14px;">${
@@ -519,13 +528,13 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 </div>`;
     await sendEmail(
       String(data.email),
-      `[咖啡訂購] 訂單編號 ${orderId} 成立確認信`,
+      `[${siteTitle}] 訂單編號 ${orderId} 成立確認信`,
       content,
     );
     if (SMTP_USER) {
       await sendEmail(
         SMTP_USER,
-        `[新訂單通知] 訂單編號 ${orderId} 成立`,
+        `[${siteTitle}] 新訂單通知 - 訂單編號 ${orderId}`,
         content,
       );
     }
@@ -771,9 +780,14 @@ export async function updateOrderStatus(
   </div>
 </div>
         `;
+    // 查詢 site_title
+    const { data: siteTitleRow } = await supabase.from("coffee_settings")
+      .select("value").eq("key", "site_title").single();
+    const shippedSiteTitle = siteTitleRow?.value || "咖啡訂購";
+
     await sendEmail(
       String(orderData.email),
-      `[咖啡訂購] 訂單編號 ${data.orderId} 已出貨通知`,
+      `[${shippedSiteTitle}] 訂單編號 ${data.orderId} 已出貨通知`,
       content,
     );
   }
