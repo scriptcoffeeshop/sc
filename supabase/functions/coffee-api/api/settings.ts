@@ -453,13 +453,6 @@ export async function deleteFormField(
   await requireAdmin(req);
   const id = parseInt(String(data.id));
   if (!id) return { success: false, error: "缺少欄位 ID" };
-  const { data: field } = await supabase.from("coffee_form_fields").select(
-    "field_key",
-  ).eq("id", id).single();
-  const protectedKeys = ["phone", "email"];
-  if (field && protectedKeys.includes(field.field_key)) {
-    return { success: false, error: "此為系統預設欄位，無法刪除（可停用）" };
-  }
   const { error } = await supabase.from("coffee_form_fields").delete().eq(
     "id",
     id,

@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=36';
-import { esc, Toast } from './utils.js?v=36';
-import { loginWithLine, authFetch } from './auth.js?v=36';
+import { API_URL, LINE_REDIRECT } from './config.js?v=37';
+import { esc, Toast } from './utils.js?v=37';
+import { loginWithLine, authFetch } from './auth.js?v=37';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -1439,8 +1439,7 @@ function renderFormFields() {
         const typeBadge = FIELD_TYPE_LABELS[f.field_type] || f.field_type;
         const requiredBadge = f.required ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">必填</span>' : '';
         const enabledClass = f.enabled ? '' : 'opacity-50';
-        const protectedKeys = ['phone', 'email'];
-        const isProtected = protectedKeys.includes(f.field_key);
+        const isProtected = false;
         return `
                 <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${f.id}">
                     <span class="cursor-grab text-gray-400 drag-handle">⠿</span>

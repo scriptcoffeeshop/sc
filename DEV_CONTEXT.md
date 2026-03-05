@@ -13,6 +13,26 @@
 
 ---
 
+## 📅 v36 — 表單欄位依配送方式顯示/隱藏
+
+- 資料庫 `coffee_form_fields` 新增 `delivery_visibility` TEXT 欄位（JSON 格式）。
+- 後端 `settings.ts`：`addFormField`/`updateFormField` 加入 `deliveryVisibility` 參數讀寫。
+- 後台 `dashboard-app.js`：
+  - 新增 `dashboardSettings` 全域變數快取系統設定。
+  - 表單管理的新增/編輯 modal 加入「🚚 配送方式可見性」勾選面板。
+  - 欄位列表顯示配送限制 badge（🚫 在 xxx 時隱藏）。
+- 前台 `form-renderer.js`：`renderDynamicFields` 新增第 3 參數 `deliveryMethod`，依 `delivery_visibility` 過濾欄位。
+- 前台 `delivery.js`：`selectDelivery` 切換配送方式時呼叫 `window.rerenderFormFields()`。
+- 前台 `main-app.js`：暴露 `window.rerenderFormFields` 全域函式，帶入 `state.selectedDelivery`。
+
+---
+
+## 📅 v35 — 將動態表單欄位移至配送方式與付款方式之間
+
+- `main.html`：`#dynamic-fields-container` 從商品列表上方移至配送方式 `</div>` 與付款方式 `<div>` 之間。
+
+---
+
 ## 📅 v34 — 修改宅配選項文字與同步 Email 格式
 
 - 前端 `orders.js` 中的 `home_delivery` 顯示文字從「全台宅配(含郵遞區號)」改為「全台宅配」。
