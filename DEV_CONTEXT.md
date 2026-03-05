@@ -13,6 +13,18 @@
 
 ---
 
+## 📅 v37 — 移除系統欄位保護 + Email 連動表單欄位 + 標題動態化
+
+- 前台 `dashboard-app.js`：移除 `protectedKeys`，phone/email 不再有 🔒 系統標記，可被停用或刪除。
+- 後端 `settings.ts`：`deleteFormField` 移除 `protectedKeys` 保護，允許刪除任何欄位。
+- 後端 `orders.ts`：
+  - 電話必填驗證和格式驗證改為條件式（無電話時不驗證）。
+  - Email 模板中「聯絡電話」改為條件顯示（`phone` 為空則不顯示）。
+  - Email 標題從硬編碼 `[咖啡訂購]` 改用 `site_title` 系統設定。
+  - 出貨通知 Email 標題同步使用 `site_title`。
+
+---
+
 ## 📅 v36 — 表單欄位依配送方式顯示/隱藏
 
 - 資料庫 `coffee_form_fields` 新增 `delivery_visibility` TEXT 欄位（JSON 格式）。

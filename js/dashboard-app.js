@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=37';
-import { esc, Toast } from './utils.js?v=37';
-import { loginWithLine, authFetch } from './auth.js?v=37';
+import { API_URL, LINE_REDIRECT } from './config.js?v=38';
+import { esc, Toast } from './utils.js?v=38';
+import { loginWithLine, authFetch } from './auth.js?v=38';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -309,7 +309,7 @@ async function showAdmin() {
     document.getElementById('login-page').classList.add('hidden');
     document.getElementById('admin-page').classList.remove('hidden');
     document.getElementById('admin-name').textContent = currentUser.displayName || '管理員';
-    await Promise.all([loadCategories(), loadProducts()]);
+    await Promise.all([loadCategories(), loadProducts(), loadSettings()]);
     showTab('orders');
 }
 
