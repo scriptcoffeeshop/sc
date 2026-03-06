@@ -21,7 +21,7 @@ export async function sendEmail(
       },
     });
     await transporter.sendMail({
-      from: `"☕ 咖啡豆訂購系統" <${SMTP_USER}>`,
+      from: `"Script Coffee" <${SMTP_USER}>`,
       to,
       subject,
       html: htmlContent,

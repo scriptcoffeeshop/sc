@@ -455,22 +455,40 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         `<br><span style="color: #D32F2F; font-size: 14px; display: inline-block; margin-top: 4px;">請匯款至：${targetAccount}<br>您的帳號後五碼：${last5}</span>`;
     }
 
+    // 從資料庫取得表單欄位設定，作為 customFields 的 Label 映射與排序依據
+    const { data: formFields } = await supabase.from("coffee_form_fields")
+      .select("field_key, label, sort_order")
+      .eq("enabled", true)
+      .order("sort_order", { ascending: true });
+
     let customFieldsHtml = "";
     if (data.customFields && typeof data.customFields === "string") {
       try {
         const parsedFields = JSON.parse(data.customFields);
         if (Object.keys(parsedFields).length > 0) {
-          customFieldsHtml =
-            '<h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 20px;">其他資訊</h3>';
+          // 依據表單欄位定義的順序進行處理
+          if (formFields && formFields.length > 0) {
+            for (const field of formFields) {
+              const key = field.field_key;
+              if (parsedFields[key] !== undefined) {
+                customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
+                  sanitize(field.label)
+                }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
+                delete parsedFields[key]; // 已處理過的移除
+              }
+            }
+          }
+          // 處理剩餘不在設定中的欄位（若有）
           for (const [key, val] of Object.entries(parsedFields)) {
-            customFieldsHtml += `<p style="margin: 0 0 5px 0;"><strong>${
+            customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
               sanitize(key)
             }：</strong> ${sanitize(String(val))}</p>`;
           }
         }
       } catch {
-        customFieldsHtml =
-          `<p style="margin: 10px 0 0 0;"><strong>其他資訊：</strong> ${
+        // 解析失敗則直接以字串顯示
+        customFieldsHtml +=
+          `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
             sanitize(data.customFields)
           }</p>`;
       }
@@ -491,9 +509,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     const content = `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">☕ ${
-      sanitize(siteTitle)
-    } 訂購確認</h1>
+    <h1 style="margin: 0; font-size: 24px;">${sanitize(siteTitle)} 訂購確認</h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
@@ -502,6 +518,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
+      ${customFieldsHtml}
       ${phoneHtml}
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
       methodMap[deliveryMethod] || deliveryMethod
@@ -513,7 +530,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       sanitize(data.note) || "無"
     }</p>
     </div>
-    ${customFieldsHtml}
+    </div>
     <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
     <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${
       sanitize(ordersText)
