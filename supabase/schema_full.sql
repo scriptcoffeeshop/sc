@@ -102,7 +102,8 @@ CREATE TABLE IF NOT EXISTS coffee_users (
   default_store_address TEXT DEFAULT '',
   email TEXT DEFAULT '',
   blacklist_reason TEXT DEFAULT '',
-  blocked_at TIMESTAMPTZ
+  blocked_at TIMESTAMPTZ,
+  default_custom_fields TEXT DEFAULT '{}'
 );
 
 -- 6. 門市選擇暫存表（ECPay 電子地圖回傳）

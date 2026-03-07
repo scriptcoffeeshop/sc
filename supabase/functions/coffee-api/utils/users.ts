@@ -20,6 +20,7 @@ export async function registerOrUpdateUser(data: Record<string, string>) {
     defaultStoreId: u.default_store_id,
     defaultStoreName: u.default_store_name,
     defaultStoreAddress: u.default_store_address,
+    defaultCustomFields: u.default_custom_fields,
   });
 
   if (existing) {

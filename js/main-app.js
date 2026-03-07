@@ -2,18 +2,18 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=39';
-import { Toast } from './utils.js?v=39';
-import { loginWithLine } from './auth.js?v=39';
-import { state } from './state.js?v=39';
-import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=39';
-import { renderProducts } from './products.js?v=39';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=39';
-import { submitOrder, showMyOrders } from './orders.js?v=39';
-import { renderDynamicFields, applyBranding } from './form-renderer.js?v=39';
-import { authFetch } from './auth.js?v=39';
-import { escapeHtml } from './utils.js?v=39';
-import { supabase } from './supabase-client.js?v=39';
+import { API_URL, LINE_REDIRECT } from './config.js?v=40';
+import { Toast } from './utils.js?v=40';
+import { loginWithLine } from './auth.js?v=40';
+import { state } from './state.js?v=40';
+import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=40';
+import { renderProducts } from './products.js?v=40';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=40';
+import { submitOrder, showMyOrders } from './orders.js?v=40';
+import { renderDynamicFields, applyBranding } from './form-renderer.js?v=40';
+import { authFetch } from './auth.js?v=40';
+import { escapeHtml } from './utils.js?v=40';
+import { supabase } from './supabase-client.js?v=40';
 
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
@@ -31,6 +31,7 @@ const actionHandlers = {
     'select-store': (el) => { selectStoreFromList(el); Swal.close(); },
     'submit-order': () => { toggleCart(); submitOrder(); },
     'show-my-orders': () => showMyOrders(),
+    'show-profile': () => showProfileModal(),
     'login-with-line': () => loginWithLine(LINE_REDIRECT.main, 'coffee_line_state'),
     'logout': () => window.logout(),
     'close-announcement': () => document.getElementById('announcement-banner').classList.add('hidden'),
@@ -69,13 +70,8 @@ window.selectBankAccount = selectBankAccount;
 window.updateCartUI = updateCartUI;
 window.rerenderFormFields = function () {
     renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'), state.selectedDelivery);
-    // 回填使用者資料
-    if (state.currentUser) {
-        const phoneEl = document.getElementById('field-phone');
-        const emailEl = document.getElementById('field-email');
-        if (phoneEl && state.currentUser.phone) phoneEl.value = state.currentUser.phone;
-        if (emailEl && state.currentUser.email) emailEl.value = state.currentUser.email;
-    }
+    // 回填使用者資料（包含所有動態表單欄位）
+    prefillUserFields();
 };
 window.updateDistricts = updateDistricts;
 
@@ -160,13 +156,131 @@ function showUserInfo() {
     document.getElementById('user-display-name').textContent = state.currentUser.displayName || state.currentUser.display_name;
     document.getElementById('user-avatar').src = state.currentUser.pictureUrl || state.currentUser.picture_url || 'https://via.placeholder.com/48';
     document.getElementById('line-name').value = state.currentUser.displayName || state.currentUser.display_name;
-    // 回填動態欄位: phone / email
-    const phoneEl = document.getElementById('field-phone');
-    const emailEl = document.getElementById('field-email');
-    if (phoneEl && state.currentUser.phone) phoneEl.value = state.currentUser.phone;
-    if (emailEl && state.currentUser.email) emailEl.value = state.currentUser.email;
+    // 回填所有動態表單欄位
+    prefillUserFields();
     updateFormState();
     setTimeout(loadDeliveryPrefs, 100);
+}
+
+/** 將使用者儲存的資料回填到動態表單欄位 */
+function prefillUserFields() {
+    if (!state.currentUser) return;
+    const u = state.currentUser;
+    // phone / email
+    const phoneEl = document.getElementById('field-phone');
+    const emailEl = document.getElementById('field-email');
+    if (phoneEl && u.phone) phoneEl.value = u.phone;
+    if (emailEl && u.email) emailEl.value = u.email;
+    // 自訂欄位
+    let customDefaults = {};
+    if (u.defaultCustomFields) {
+        try { customDefaults = typeof u.defaultCustomFields === 'string' ? JSON.parse(u.defaultCustomFields) : u.defaultCustomFields; } catch { }
+    }
+    for (const [key, val] of Object.entries(customDefaults)) {
+        const el = document.getElementById(`field-${key}`);
+        if (el && val) el.value = val;
+    }
+}
+
+/** 顯示會員資料編輯彈窗 */
+async function showProfileModal() {
+    if (!state.currentUser) return;
+    const u = state.currentUser;
+
+    // 取得動態表單欄位設定
+    const fields = (state.formFields || []).filter(f => f.enabled && f.field_type !== 'section_title');
+
+    // 準備現有預設值
+    let customDefaults = {};
+    if (u.defaultCustomFields) {
+        try { customDefaults = typeof u.defaultCustomFields === 'string' ? JSON.parse(u.defaultCustomFields) : u.defaultCustomFields; } catch { }
+    }
+
+    // 產生 HTML 表單
+    let fieldsHtml = '';
+    for (const f of fields) {
+        const key = f.field_key;
+        let currentVal = '';
+        if (key === 'phone') currentVal = u.phone || '';
+        else if (key === 'email') currentVal = u.email || '';
+        else currentVal = customDefaults[key] || '';
+
+        const escapedVal = escapeHtml(currentVal);
+        const escapedLabel = escapeHtml(f.label);
+        const escapedPlaceholder = escapeHtml(f.placeholder || '');
+
+        if (f.field_type === 'select') {
+            let opts = [];
+            try { opts = JSON.parse(f.options || '[]'); } catch { }
+            fieldsHtml += `<div style="margin-bottom:12px">
+                <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
+                <select id="profile-${key}" class="swal2-select" style="margin:0;width:100%">
+                    <option value="">-- 請選擇 --</option>
+                    ${opts.map(o => `<option value="${escapeHtml(o)}" ${o === currentVal ? 'selected' : ''}>${escapeHtml(o)}</option>`).join('')}
+                </select>
+            </div>`;
+        } else if (f.field_type === 'textarea') {
+            fieldsHtml += `<div style="margin-bottom:12px">
+                <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
+                <textarea id="profile-${key}" class="swal2-textarea" placeholder="${escapedPlaceholder}" style="margin:0;width:100%;min-height:60px">${escapedVal}</textarea>
+            </div>`;
+        } else {
+            fieldsHtml += `<div style="margin-bottom:12px">
+                <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
+                <input id="profile-${key}" type="${f.field_type || 'text'}" class="swal2-input" value="${escapedVal}" placeholder="${escapedPlaceholder}" style="margin:0;width:100%">
+            </div>`;
+        }
+    }
+
+    const { value: confirmed } = await Swal.fire({
+        title: '👤 會員資料',
+        html: `<div style="text-align:left;max-height:60vh;overflow-y:auto;padding:4px">
+            <p style="color:#888;font-size:13px;margin-bottom:16px">編輯常用資料，下次登入時將自動帶入表單。</p>
+            ${fieldsHtml}
+        </div>`,
+        showCancelButton: true,
+        confirmButtonText: '💾 儲存',
+        cancelButtonText: '取消',
+        confirmButtonColor: '#3C2415',
+        preConfirm: () => true,
+    });
+
+    if (!confirmed) return;
+
+    // 收集資料
+    const profileData = {};
+    const customFieldsData = {};
+    for (const f of fields) {
+        const key = f.field_key;
+        const el = document.getElementById(`profile-${key}`);
+        const val = el ? el.value.trim() : '';
+        if (key === 'phone') profileData.phone = val;
+        else if (key === 'email') profileData.email = val;
+        else if (val) customFieldsData[key] = val;
+    }
+    profileData.defaultCustomFields = JSON.stringify(customFieldsData);
+
+    // 呼叫 API 儲存
+    try {
+        Swal.fire({ title: '儲存中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        const r = await authFetch(`${API_URL}?action=updateUserProfile`, {
+            method: 'POST',
+            body: JSON.stringify(profileData),
+        });
+        const d = await r.json();
+        if (d.success && d.profile) {
+            // 更新本地 state
+            Object.assign(state.currentUser, d.profile);
+            localStorage.setItem('coffee_user', JSON.stringify(state.currentUser));
+            // 重新帶入表單
+            prefillUserFields();
+            Toast.fire({ icon: 'success', title: '會員資料已儲存' });
+        } else {
+            Swal.fire('錯誤', d.error || '儲存失敗', 'error');
+        }
+    } catch (e) {
+        Swal.fire('錯誤', e.message, 'error');
+    }
 }
 
 window.logout = function () {

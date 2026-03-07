@@ -2,12 +2,12 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from './config.js?v=39';
-import { authFetch } from './auth.js?v=39';
-import { escapeHtml, Toast } from './utils.js?v=39';
-import { state } from './state.js?v=39';
-import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=39';
-import { collectDynamicFields } from './form-renderer.js?v=39';
+import { API_URL } from './config.js?v=40';
+import { authFetch } from './auth.js?v=40';
+import { escapeHtml, Toast } from './utils.js?v=40';
+import { state } from './state.js?v=40';
+import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=40';
+import { collectDynamicFields } from './form-renderer.js?v=40';
 
 /** 送出訂單 */
 export async function submitOrder() {
@@ -178,8 +178,26 @@ export async function submitOrder() {
         if (result.success) {
             if (email) u.email = email;
             if (phone) u.phone = phone;
+            // 將自訂欄位存入 defaultCustomFields
+            if (customFieldsJson) {
+                u.defaultCustomFields = customFieldsJson;
+            }
             localStorage.setItem('coffee_user', JSON.stringify(u));
             try { localStorage.setItem('coffee_delivery_prefs', JSON.stringify({ method: state.selectedDelivery, ...deliveryInfo })); } catch { }
+
+            // 背景同步使用者資料到後端
+            try {
+                authFetch(`${API_URL}?action=updateUserProfile`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        phone: phone || '',
+                        email: email || '',
+                        defaultCustomFields: customFieldsJson || '{}',
+                        defaultDeliveryMethod: state.selectedDelivery || '',
+                        ...deliveryInfo,
+                    }),
+                }).catch(() => { });
+            } catch { }
 
             // LINE Pay: 跳轉到付款頁面
             if (result.paymentUrl) {
