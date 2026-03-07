@@ -15,6 +15,8 @@ import {
   handleAdminLogin,
 } from "./api/auth.ts";
 
+import { getUserProfile, updateUserProfile } from "./api/profile.ts";
+
 import {
   deleteOrder,
   getMyOrders,
@@ -194,6 +196,8 @@ const actionMap: Record<string, ActionHandler> = {
     return await submitOrder(v, req);
   },
   getMyOrders: async (_data, req) => await getMyOrders(req),
+  getUserProfile: async (data, req) => await getUserProfile(data, req),
+  updateUserProfile: async (data, req) => await updateUserProfile(data, req),
   updateTransferInfo: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(transferInfoSchema, data)) as any;
