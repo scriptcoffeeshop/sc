@@ -22,7 +22,24 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v44)
+## 🚀 近期重大更新 (v40 - v45)
+
+### 📅 v45 — Email 模板抽離、後台模組化 (階段二) 與前端資料流統一
+
+- **P2-1：Email 模板抽離**
+  - 新增 `utils/email-templates.ts`，將 `orders.ts` 中原本混雜的 170 行 HTML 模板提取為獨立工廠函數。
+  - 提升了業務邏輯的可讀性與模板的可維護性。
+- **P1-4：測試品質升級**
+  - 在 `smoke.spec.ts` 中加入 `quoteOrder` 回傳結構強驗證。
+  - 新增 `tests/e2e/api_integration.spec.ts` (非 mock 整合測試)。
+  - 刪除過時的 `test_pm_category.spec.ts`。
+- **P2-3：後端模組化 (階段二)**
+  - 將 600 多行的 `api/settings.ts` 拆分為 5 個專屬模組：`products.ts`, `categories.ts`, `promotions.ts`, `form-fields.ts`, `bank-accounts.ts`。
+  - `index.ts` 路由映射全面轉向子模組。
+- **P2-3：前端資料來源統一**
+  - `main-app.js` 移除 Supabase 直接查詢邏輯，統一改由 Edge Function `getInitData` 獲取資料。
+  - 刪除已無引用的 `js/supabase-client.js`。
+  - 消滅前、後端兩套 Mapping 邏輯，大幅提升安全性與資料一致性。
 
 ### 📅 v44 — 單一 quoteOrder 計價引擎上線 + dashboard 事件模組化
 

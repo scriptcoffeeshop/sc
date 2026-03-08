@@ -2,25 +2,25 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=44";
-import { esc, Toast } from "./utils.js?v=44";
-import { authFetch, loginWithLine } from "./auth.js?v=44";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=45";
+import { esc, Toast } from "./utils.js?v=45";
+import { authFetch, loginWithLine } from "./auth.js?v=45";
 import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
-} from "./dashboard/modules/orders.js?v=44";
+} from "./dashboard/modules/orders.js?v=45";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
-} from "./dashboard/modules/products.js?v=44";
+} from "./dashboard/modules/products.js?v=45";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
-} from "./dashboard/modules/settings.js?v=44";
+} from "./dashboard/modules/settings.js?v=45";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
-} from "./dashboard/modules/users.js?v=44";
+} from "./dashboard/modules/users.js?v=45";
 
 // ============ 共享狀態 ============
 let currentUser = null;
