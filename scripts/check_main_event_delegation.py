@@ -20,7 +20,7 @@ MAIN_APP = ROOT / "js" / "main-app.js"
 DELIVERY_JS = ROOT / "js" / "delivery.js"
 TARGETS = [MAIN_HTML, MAIN_APP, DELIVERY_JS]
 
-INLINE_EVENT_RE = re.compile(r"\bon(?:click|change|keyup|keydown|submit|input)\s*=")
+INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 LEGACY_ONCLICK_SELECTOR_RE = re.compile(r"\[onclick\*")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
 HANDLERS_BLOCK_RE = re.compile(r"const\s+actionHandlers\s*=\s*\{(?P<body>[\s\S]*?)\n\};")

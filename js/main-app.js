@@ -469,7 +469,20 @@ async function loadInitData() {
       supabase.from("coffee_categories").select("*").order("sort_order", {
         ascending: true,
       }).order("id", { ascending: true }),
-      supabase.from("coffee_settings").select("*"),
+      supabase.from("coffee_settings").select("key, value").in("key", [
+        "site_title",
+        "site_icon",
+        "announcement_enabled",
+        "announcement",
+        "is_open",
+        "delivery_options_config",
+        "payment_options_config",
+        "payment_routing_config",
+        "linepay_enabled",
+        "transfer_enabled",
+        "shipping_fee",
+        "free_shipping_threshold",
+      ]),
       supabase.from("coffee_form_fields").select("*").eq("enabled", true).order(
         "sort_order",
         { ascending: true },

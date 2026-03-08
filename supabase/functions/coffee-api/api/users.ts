@@ -33,6 +33,10 @@ export async function getUsers(data: Record<string, unknown>, req: Request) {
     email: u.email,
     blacklistReason: u.blacklist_reason,
     blockedAt: u.blocked_at,
+    defaultDeliveryMethod: u.default_delivery_method || "",
+    defaultCity: u.default_city || "",
+    defaultDistrict: u.default_district || "",
+    defaultAddress: u.default_address || "",
   }));
   return { success: true, users: formatted };
 }
