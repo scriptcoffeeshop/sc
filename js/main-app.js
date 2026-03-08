@@ -31,8 +31,6 @@ import { showMyOrders, submitOrder } from "./orders.js?v=44";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js?v=44";
 import { authFetch } from "./auth.js?v=44";
 import { escapeHtml } from "./utils.js?v=44";
-import { supabase } from "./supabase-client.js?v=44";
-
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
 // 取代原本散落在 HTML 各處的內嵌事件掛載方式。
@@ -161,8 +159,7 @@ async function handleLineCallback(code, stateParam) {
   });
   try {
     const res = await fetch(
-      `${API_URL}?action=customerLineLogin&code=${
-        encodeURIComponent(code)
+      `${API_URL}?action=customerLineLogin&code=${encodeURIComponent(code)
       }&redirectUri=${encodeURIComponent(LINE_REDIRECT.main)}`,
     );
     const result = await res.json();
@@ -229,7 +226,7 @@ function prefillUserFields() {
       customDefaults = typeof u.defaultCustomFields === "string"
         ? JSON.parse(u.defaultCustomFields)
         : u.defaultCustomFields;
-    } catch {}
+    } catch { }
   }
   for (const [key, val] of Object.entries(customDefaults)) {
     const el = document.getElementById(`field-${key}`);
@@ -254,7 +251,7 @@ async function showProfileModal() {
       customDefaults = typeof u.defaultCustomFields === "string"
         ? JSON.parse(u.defaultCustomFields)
         : u.defaultCustomFields;
-    } catch {}
+    } catch { }
   }
 
   // 產生 HTML 表單
@@ -274,18 +271,16 @@ async function showProfileModal() {
       let opts = [];
       try {
         opts = JSON.parse(f.options || "[]");
-      } catch {}
+      } catch { }
       fieldsHtml += `<div style="margin-bottom:12px">
                 <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
                 <select id="profile-${key}" class="swal2-select" style="margin:0;width:100%">
                     <option value="">-- 請選擇 --</option>
-                    ${
-        opts.map((o) =>
-          `<option value="${escapeHtml(o)}" ${
-            o === currentVal ? "selected" : ""
-          }>${escapeHtml(o)}</option>`
-        ).join("")
-      }
+                    ${opts.map((o) =>
+        `<option value="${escapeHtml(o)}" ${o === currentVal ? "selected" : ""
+        }>${escapeHtml(o)}</option>`
+      ).join("")
+        }
                 </select>
             </div>`;
     } else if (f.field_type === "textarea") {
@@ -296,9 +291,8 @@ async function showProfileModal() {
     } else {
       fieldsHtml += `<div style="margin-bottom:12px">
                 <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
-                <input id="profile-${key}" type="${
-        f.field_type || "text"
-      }" class="swal2-input" value="${escapedVal}" placeholder="${escapedPlaceholder}" style="margin:0;width:100%">
+                <input id="profile-${key}" type="${f.field_type || "text"
+        }" class="swal2-input" value="${escapedVal}" placeholder="${escapedPlaceholder}" style="margin:0;width:100%">
             </div>`;
     }
   }
@@ -451,136 +445,8 @@ window.refreshQuote = async function (options = {}) {
     return { success: false, error: state.quoteError };
   }
 };
-
 // ============ 載入資料 ============
 async function loadInitData() {
-  try {
-    // 使用 Supabase 直連，平行查詢所有公開資料
-    const [
-      productsRes,
-      categoriesRes,
-      settingsRes,
-      formFieldsRes,
-      bankAccountsRes,
-    ] = await Promise.all([
-      supabase.from("coffee_products").select("*").order("sort_order", {
-        ascending: true,
-      }),
-      supabase.from("coffee_categories").select("*").order("sort_order", {
-        ascending: true,
-      }).order("id", { ascending: true }),
-      supabase.from("coffee_settings").select("key, value").in("key", [
-        "site_title",
-        "site_icon",
-        "announcement_enabled",
-        "announcement",
-        "is_open",
-        "delivery_options_config",
-        "payment_options_config",
-        "payment_routing_config",
-        "linepay_enabled",
-        "transfer_enabled",
-        "shipping_fee",
-        "free_shipping_threshold",
-      ]),
-      supabase.from("coffee_form_fields").select("*").eq("enabled", true).order(
-        "sort_order",
-        { ascending: true },
-      ),
-      supabase.from("coffee_bank_accounts").select("*").eq("enabled", true)
-        .order("sort_order", { ascending: true }),
-    ]);
-
-    // 檢查是否有任何查詢失敗
-    const errors = [
-      productsRes,
-      categoriesRes,
-      settingsRes,
-      formFieldsRes,
-      bankAccountsRes,
-    ]
-      .filter((r) => r.error)
-      .map((r) => r.error.message);
-    if (errors.length > 0) {
-      console.warn("Supabase 直連查詢部分失敗，嘗試 fallback:", errors);
-      return await loadInitDataFallback();
-    }
-
-    // 映射商品資料（與後端 getProducts 的格式一致）
-    const products = (productsRes.data || []).map((r) => ({
-      id: r.id,
-      category: r.category,
-      name: r.name,
-      description: r.description || "",
-      price: r.price,
-      weight: r.weight || "",
-      origin: r.origin || "",
-      roastLevel: r.roast_level || "",
-      specs: r.specs || "",
-      imageUrl: r.image_url || "",
-      enabled: r.enabled !== false,
-      sortOrder: r.sort_order || 0,
-    })).filter((p) => p.enabled);
-
-    // 映射分類資料
-    const categories = (categoriesRes.data || []).map((r) => ({
-      id: r.id,
-      name: r.name,
-    }));
-
-    // 映射設定資料（key-value 格式）
-    const settings = {};
-    for (const row of (settingsRes.data || [])) {
-      settings[row.key] = row.value;
-    }
-
-    // 映射銀行帳號資料
-    const bankAccounts = (bankAccountsRes.data || []).map((r) => ({
-      id: r.id,
-      bankCode: r.bank_code,
-      bankName: r.bank_name,
-      accountNumber: r.account_number,
-      accountName: r.account_name || "",
-    }));
-
-    // 表單欄位直接使用（已與後端格式一致）
-    const formFields = formFieldsRes.data || [];
-
-    // 賦值到 state
-    state.products = products;
-    state.categories = categories;
-    state.formFields = formFields;
-    state.bankAccounts = bankAccounts;
-
-    applySettings(settings);
-    applyBranding(settings);
-    renderDynamicFields(
-      state.formFields,
-      document.getElementById("dynamic-fields-container"),
-      state.selectedDelivery,
-    );
-    renderProducts();
-    renderBankAccounts();
-
-    // 登入後再回填一次（因為渲染完才有欄位）
-    if (state.currentUser) {
-      const phoneEl = document.getElementById("field-phone");
-      const emailEl = document.getElementById("field-email");
-      if (phoneEl && state.currentUser.phone) {
-        phoneEl.value = state.currentUser.phone;
-      }
-      if (emailEl && state.currentUser.email) {
-        emailEl.value = state.currentUser.email;
-      }
-    }
-  } catch (e) {
-    console.warn("Supabase 直連載入失敗，嘗試 fallback:", e);
-    return await loadInitDataFallback();
-  }
-}
-
-/** Fallback：透過 Edge Function 載入資料（原有邏輯） */
-async function loadInitDataFallback() {
   try {
     const res = await fetch(`${API_URL}?action=getInitData&_=${Date.now()}`);
     const result = await res.json();
@@ -614,7 +480,7 @@ async function loadInitDataFallback() {
     } else throw new Error(result.error);
   } catch (e) {
     document.getElementById("products-container").innerHTML =
-      `<p class="p-8 text-center text-red-600">載入失敗: ${e.message}<br><button type="button" data-action="reload-page" class="mt-3 btn-primary">重試</button></p>`;
+      `<p class="p-8 text-center text-red-600">載入資料失敗: ${e.message}<br><button type="button" data-action="reload-page" class="mt-3 btn-primary">重試</button></p>`;
   }
 }
 
@@ -639,7 +505,7 @@ function applySettings(s) {
   if (paymentOptionsStr) {
     try {
       paymentOptions = JSON.parse(paymentOptionsStr);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   if (paymentOptions.cod) {
@@ -673,7 +539,7 @@ function applySettings(s) {
   if (deliveryConfigStr) {
     try {
       deliveryConfig = JSON.parse(deliveryConfigStr);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // 如果尚未轉移格式，進行臨時轉換以保證前台正常運作
@@ -683,7 +549,7 @@ function applySettings(s) {
     if (rStr) {
       try {
         rConfig = JSON.parse(rStr);
-      } catch (e) {}
+      } catch (e) { }
     } else {
       const le = String(s.linepay_enabled) === "true";
       const te = String(s.transfer_enabled) === "true";
@@ -926,30 +792,24 @@ function renderBankAccounts() {
     return `
         <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" data-action="select-bank-account" data-bank-id="${b.id}">
             <div class="flex items-center gap-3 mb-1">
-                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${
-      isSelected ? "checked" : ""
-    }>
-                <div class="font-semibold text-gray-800">${
-      escapeHtml(b.bankName)
-    } (${escapeHtml(b.bankCode)})</div>
+                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${isSelected ? "checked" : ""
+      }>
+                <div class="font-semibold text-gray-800">${escapeHtml(b.bankName)
+      } (${escapeHtml(b.bankCode)})</div>
             </div>
             <div class="flex items-center gap-2 mt-1 pl-7">
-                <span class="text-lg font-mono font-medium" style="color:var(--primary)">${
-      escapeHtml(b.accountNumber)
-    }</span>
-                <button type="button" data-action="copy-transfer-account" data-account="${
-      escapeHtml(b.accountNumber)
-    }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
+                <span class="text-lg font-mono font-medium" style="color:var(--primary)">${escapeHtml(b.accountNumber)
+      }</span>
+                <button type="button" data-action="copy-transfer-account" data-account="${escapeHtml(b.accountNumber)
+      }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
                     📋 複製
                 </button>
             </div>
-            ${
-      b.accountName
-        ? `<div class="text-sm text-gray-500 mt-1 pl-7">戶名: ${
-          escapeHtml(b.accountName)
+            ${b.accountName
+        ? `<div class="text-sm text-gray-500 mt-1 pl-7">戶名: ${escapeHtml(b.accountName)
         }</div>`
         : ""
-    }
+      }
         </div>
         `;
   }).join("");
@@ -1032,7 +892,7 @@ async function handleLinePayCallback(lpAction, params) {
     if (orderId) {
       try {
         await authFetch(`${API_URL}?action=linePayCancel&orderId=${orderId}`);
-      } catch {}
+      } catch { }
     }
     Swal.fire({
       icon: "info",

@@ -9,6 +9,10 @@ import { sanitize } from "../utils/html.ts";
 import { sendEmail } from "../utils/email.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
 import { buildOrderQuote } from "./quote.ts";
+import {
+  buildOrderConfirmationHtml,
+  buildShippingNotificationHtml,
+} from "../utils/email-templates.ts";
 
 // Note: registerOrUpdateUser is currently in api/auth.ts.
 // For now, I'll copy or move it to a shared place if needed.
@@ -156,34 +160,6 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   }
 
   if (data.email) {
-    const methodMap: Record<string, string> = {
-      delivery: "配送到府",
-      home_delivery: "全台宅配",
-      seven_eleven: "7-11 取貨/取貨付款",
-      family_mart: "全家取貨/取貨付款",
-      in_store: "來店自取",
-    };
-    const paymentMap: Record<string, string> = {
-      cod: "貨到付款",
-      linepay: "LINE Pay",
-      transfer: "銀行轉帳",
-    };
-    const isDelivery = deliveryMethod === "delivery" ||
-      deliveryMethod === "home_delivery";
-    const deliveryText = isDelivery
-      ? `${data.city || ""}${data.district || ""} ${data.address || ""}`
-      : `${data.storeName || ""} ${
-        data.storeAddress ? `(${data.storeAddress})` : ""
-      }`.trim();
-    const paymentText = paymentMap[paymentMethod] || paymentMethod;
-    let transferHtml = "";
-    if (paymentMethod === "transfer") {
-      const targetAccount = sanitize(String(data.transferTargetAccount || ""));
-      const last5 = sanitize(String(data.transferAccountLast5 || ""));
-      transferHtml =
-        `<br><span style="color: #D32F2F; font-size: 14px; display: inline-block; margin-top: 4px;">請匯款至：${targetAccount}<br>您的帳號後五碼：${last5}</span>`;
-    }
-
     // 從資料庫取得表單欄位設定，作為 customFields 的 Label 映射與排序依據
     const { data: formFields } = await supabase.from("coffee_form_fields")
       .select("field_key, label, sort_order")
@@ -229,49 +205,25 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     ).eq("key", "site_title").single();
     const siteTitle = siteRow?.value || "咖啡訂購";
 
-    const phoneHtml = phone
-      ? `<p style="margin: 0 0 10px 0;"><strong>聯絡電話：</strong> ${
-        sanitize(phone)
-      }</p>`
-      : "";
-
-    const content = `
-<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
-  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">${sanitize(siteTitle)} 訂購確認</h1>
-  </div>
-  <div style="padding: 30px; color: #333333; line-height: 1.6;">
-    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
-      sanitize(data.lineName)
-    }，您的訂單已成立！</h2>
-    <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
-    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${orderId}</p>
-      ${customFieldsHtml}
-      ${phoneHtml}
-      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-      methodMap[deliveryMethod] || deliveryMethod
-    }<br><span style="color: #666; font-size: 14px;">${
-      sanitize(deliveryText)
-    }</span></p>
-      <p style="margin: 0 0 10px 0;"><strong>付款方式：</strong> ${paymentText}${transferHtml}</p>
-      <p style="margin: 0;"><strong>訂單備註：</strong> ${
-      sanitize(data.note) || "無"
-    }</p>
-    </div>
-    </div>
-    <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
-    <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${
-      sanitize(ordersText)
-    }</pre>
-    <div style="text-align: right; margin-top: 20px;">
-      <h3 style="color: #e63946; font-size: 22px; margin: 0;">總金額：$${total}</h3>
-    </div>
-  </div>
-  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
-    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
-  </div>
-</div>`;
+    const content = buildOrderConfirmationHtml({
+      orderId,
+      siteTitle,
+      lineName: String(data.lineName),
+      phone,
+      deliveryMethod,
+      city: String(data.city || ""),
+      district: String(data.district || ""),
+      address: String(data.address || ""),
+      storeName: String(data.storeName || ""),
+      storeAddress: String(data.storeAddress || ""),
+      paymentMethod,
+      transferTargetAccount: String(data.transferTargetAccount || ""),
+      transferAccountLast5: String(data.transferAccountLast5 || ""),
+      note: String(data.note || ""),
+      ordersText,
+      total,
+      customFieldsHtml,
+    });
     await sendEmail(
       String(data.email),
       `[${siteTitle}] 訂單編號 ${orderId} 成立確認信`,
@@ -445,91 +397,25 @@ export async function updateOrderStatus(
   if (error) return { success: false, error: error.message };
 
   if (data.status === "shipped" && orderData?.email) {
-    const methodMap: Record<string, string> = {
-      delivery: "配送到府",
-      home_delivery: "全台宅配",
-      seven_eleven: "7-11 取貨/取貨付款",
-      family_mart: "全家取貨/取貨付款",
-      in_store: "來店自取",
-    };
-
-    const paymentMap: Record<string, string> = {
-      cod: "貨到付款",
-      linepay: "LINE Pay",
-      transfer: "銀行轉帳",
-    };
-
-    const isDelivery = orderData.delivery_method === "delivery" ||
-      orderData.delivery_method === "home_delivery";
-    const deliveryText = isDelivery
-      ? `${orderData.city || ""}${orderData.district || ""} ${
-        orderData.address || ""
-      }`
-      : `${orderData.store_name || ""} ${
-        orderData.store_address ? `(${orderData.store_address})` : ""
-      }`.trim();
-
-    const paymentText = paymentMap[orderData.payment_method] ||
-      orderData.payment_method;
-    const paymentStatusText = orderData.payment_status === "paid"
-      ? "已付款"
-      : (orderData.payment_method === "cod" ? "貨到付款" : "未付款");
-    const paymentStatusColor = orderData.payment_status === "paid"
-      ? "#2e7d32"
-      : (orderData.payment_method === "cod" ? "#0288d1" : "#d32f2f");
-
-    let trackingSection = "";
-    if (data.trackingNumber) {
-      let trackingLink = "";
-      if (orderData.delivery_method === "seven_eleven") {
-        trackingLink =
-          `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#1e40af; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 7-11 貨態查詢</a>`;
-      } else if (orderData.delivery_method === "family_mart") {
-        trackingLink =
-          `<a href="https://fmec.famiport.com.tw/FP_Entrance/QueryBox" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#059669; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 全家貨態查詢</a>`;
-      } else if (isDelivery) {
-        trackingLink =
-          `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#047857; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 中華郵政貨態查詢</a>`;
-      }
-      trackingSection =
-        `<p style="margin: 10px 0 0 0; padding-top: 10px; border-top: 1px dashed #dcd3cb;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${
-          sanitize(String(data.trackingNumber))
-        }</span><br>${trackingLink}</p>`;
-    }
-
-    const content = `
-<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
-  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">📦 訂單出貨通知</h1>
-  </div>
-  <div style="padding: 30px; color: #333333; line-height: 1.6;">
-    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
-      sanitize(orderData.line_name)
-    }，您的訂單已出貨！</h2>
-    <p>這封信是要通知您，您所訂購的商品已經安排出貨！</p>
-    
-    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${data.orderId}</p>
-      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-      methodMap[orderData.delivery_method] || "一般配送"
-    }<br><span style="color: #666; font-size: 14px;">${
-      sanitize(deliveryText)
-    }</span></p>
-      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatusColor}; font-weight: bold;">(${paymentStatusText})</span></p>
-      ${trackingSection}
-    </div>
-    
-    <p style="margin-top: 30px; color: #555;">依據配送方式不同，商品預計於 1-3 個工作天內抵達。<br>若是超商取貨，屆時將有手機簡訊通知取件，請留意您的手機訊息。</p>
-  </div>
-  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
-    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
-  </div>
-</div>
-        `;
     // 查詢 site_title
     const { data: siteTitleRow } = await supabase.from("coffee_settings")
       .select("value").eq("key", "site_title").single();
     const shippedSiteTitle = siteTitleRow?.value || "咖啡訂購";
+
+    const content = buildShippingNotificationHtml({
+      orderId: String(data.orderId),
+      siteTitle: shippedSiteTitle,
+      lineName: String(orderData.line_name),
+      deliveryMethod: String(orderData.delivery_method),
+      city: String(orderData.city || ""),
+      district: String(orderData.district || ""),
+      address: String(orderData.address || ""),
+      storeName: String(orderData.store_name || ""),
+      storeAddress: String(orderData.store_address || ""),
+      paymentMethod: String(orderData.payment_method),
+      paymentStatus: String(orderData.payment_status),
+      trackingNumber: String(data.trackingNumber || ""),
+    });
 
     await sendEmail(
       String(orderData.email),

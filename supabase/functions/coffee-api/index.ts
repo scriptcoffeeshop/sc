@@ -34,37 +34,52 @@ import {
 } from "./api/payments.ts";
 
 import {
-  addBankAccount,
-  addCategory,
-  addFormField,
-  addProduct,
-  addPromotion,
-  deleteBankAccount,
-  deleteCategory,
-  deleteFormField,
-  deleteProduct,
-  deletePromotion,
-  getBankAccounts,
-  getCategories,
-  getFormFields,
-  getFormFieldsAdmin,
   getInitData,
-  getProducts,
-  getPromotions,
   getSettings,
-  reorderCategory,
-  reorderFormFields,
-  reorderProduct,
-  reorderProductsBulk,
-  reorderPromotionsBulk,
-  updateBankAccount,
-  updateCategory,
-  updateFormField,
-  updateProduct,
-  updatePromotion,
   updateSettingsAction,
   uploadSiteIcon,
 } from "./api/settings.ts";
+
+import {
+  addProduct,
+  deleteProduct,
+  getProducts,
+  reorderProduct,
+  reorderProductsBulk,
+  updateProduct,
+} from "./api/products.ts";
+
+import {
+  addCategory,
+  deleteCategory,
+  getCategories,
+  reorderCategory,
+  updateCategory,
+} from "./api/categories.ts";
+
+import {
+  addPromotion,
+  deletePromotion,
+  getPromotions,
+  reorderPromotionsBulk,
+  updatePromotion,
+} from "./api/promotions.ts";
+
+import {
+  addFormField,
+  deleteFormField,
+  getFormFields,
+  getFormFieldsAdmin,
+  reorderFormFields,
+  updateFormField,
+} from "./api/form-fields.ts";
+
+import {
+  addBankAccount,
+  deleteBankAccount,
+  getBankAccounts,
+  updateBankAccount,
+} from "./api/bank-accounts.ts";
 
 import {
   addToBlacklist,
