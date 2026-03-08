@@ -47,9 +47,14 @@ Deno.test("Email Templates - Order Confirmation", () => {
 
   assertEquals(html.includes("C20261231-AABBCCDD"), true, "Missing orderId");
   assertEquals(
-    html.includes("Test Shop 訂購確認"),
+    html.includes("Test Shop</h1>"),
     true,
     "Missing site title",
+  );
+  assertEquals(
+    html.includes("訂購確認"),
+    false,
+    "Unexpected confirmation suffix in title",
   );
   assertEquals(html.includes("配送到府"), true, "Missing delivery method");
   assertEquals(html.includes("貨到付款"), true, "Missing payment method");
@@ -76,6 +81,7 @@ Deno.test("Email Templates - Shipping Notification", () => {
   assertEquals(html.includes("7-11 取貨"), true, "Missing delivery method");
   assertEquals(html.includes("已付款"), true, "Missing payment status");
   assertEquals(html.includes("700123456"), true, "Missing tracking number");
+  assertEquals(html.includes("複製單號"), true, "Missing copy tracking button");
   assertEquals(html.includes("黑貓宅急便"), true, "Missing shipping provider");
   assertEquals(html.includes("物流追蹤頁面"), true, "Missing tracking link");
   assertEquals(html.includes("統智門市"), true, "Missing store name");

@@ -65,7 +65,7 @@ export function buildOrderConfirmationHtml(
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
     <h1 style="margin: 0; font-size: 24px;">${
     sanitize(params.siteTitle)
-  } 訂購確認</h1>
+  }</h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
@@ -165,6 +165,8 @@ export function buildShippingNotificationHtml(
   const customTrackingUrl = normalizeTrackingUrl(params.trackingUrl || "");
   const defaultTrackingUrl = getDefaultTrackingUrl(params.deliveryMethod);
   const finalTrackingUrl = customTrackingUrl || defaultTrackingUrl;
+  const rawTrackingNumber = String(params.trackingNumber || "").trim();
+  const encodedTrackingNumber = encodeURIComponent(rawTrackingNumber);
   const hasShippingInfo = !!params.trackingNumber ||
     !!params.shippingProvider ||
     !!finalTrackingUrl;
@@ -181,7 +183,11 @@ export function buildShippingNotificationHtml(
   const trackingNumberHtml = params.trackingNumber
     ? `<p style="margin: 0 0 8px 0;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${
       sanitize(params.trackingNumber)
-    }</span></p>`
+    }</span>
+      <a href="#" data-tracking-number="${
+      sanitize(params.trackingNumber)
+    }" onclick="if(window.navigator && navigator.clipboard){navigator.clipboard.writeText(decodeURIComponent('${encodedTrackingNumber}'));} return false;" style="display:inline-block; margin-left:8px; padding:2px 8px; border:1px solid #d1d5db; border-radius:4px; color:#374151; text-decoration:none; font-size:12px; background:#ffffff;">📋 複製單號</a>
+    </p>`
     : "";
   const trackingSection = hasShippingInfo
     ? `<div style="margin: 10px 0 0 0; padding-top: 10px; border-top: 1px dashed #dcd3cb;">${providerHtml}${trackingNumberHtml}${trackingLinkHtml}</div>`
