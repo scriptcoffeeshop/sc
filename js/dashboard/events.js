@@ -1,0 +1,69 @@
+export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadUsers, previewIcon, saveProduct, savePromotion, changeOrderStatus, renderOrders) {
+    function initializeDashboardEventDelegation() {
+        document.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+
+            const tabButton = target.closest("[data-tab]");
+            if (tabButton) {
+                event.preventDefault();
+                const tab = tabButton.dataset.tab;
+                if (tab) showTab(tab);
+                return;
+            }
+
+            const actionButton = target.closest("[data-action]");
+            if (!actionButton) return;
+
+            const action = actionButton.dataset.action;
+            if (!action) return;
+            event.preventDefault();
+
+            const handler = actionHandlers[action];
+            if (handler) {
+                handler(actionButton, event);
+            }
+        });
+
+        document.addEventListener("change", (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLSelectElement)) return;
+            if (target.dataset.action !== "change-order-status") return;
+            const orderId = target.dataset.orderId;
+            if (!orderId) return;
+            changeOrderStatus(orderId, target.value);
+        });
+
+        const orderFilter = document.getElementById("order-filter");
+        if (orderFilter) {
+            orderFilter.addEventListener("change", renderOrders);
+        }
+
+        const userSearchInput = document.getElementById("user-search");
+        if (userSearchInput) {
+            userSearchInput.addEventListener("keyup", (event) => {
+                if (event.key === "Enter") loadUsers();
+            });
+        }
+
+        const iconFileInput = document.getElementById("s-icon-file");
+        if (iconFileInput) {
+            iconFileInput.addEventListener("change", (event) => {
+                const input = event.target;
+                if (input instanceof HTMLInputElement) previewIcon(input);
+            });
+        }
+
+        const productForm = document.getElementById("product-form");
+        if (productForm) {
+            productForm.addEventListener("submit", saveProduct);
+        }
+
+        const promotionForm = document.getElementById("promotion-form");
+        if (promotionForm) {
+            promotionForm.addEventListener("submit", savePromotion);
+        }
+    }
+
+    return { initializeDashboardEventDelegation };
+}
