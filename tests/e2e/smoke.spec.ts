@@ -23,6 +23,20 @@ async function fulfillJson(route: Route, payload: unknown, status = 200) {
 }
 
 async function installGlobalStubs(page: Page) {
+  // Strip SRI integrity/crossorigin attributes so Playwright route-intercepted
+  // CDN scripts are not rejected by the browser's hash verification.
+  await page.route("**/*.html", async (route) => {
+    const response = await route.fetch();
+    let body = await response.text();
+    body = body.replace(/\s+integrity="[^"]*"/g, "");
+    body = body.replace(/\s+crossorigin="[^"]*"/g, "");
+    await route.fulfill({
+      response,
+      body,
+      headers: { ...response.headers(), "content-type": "text/html" },
+    });
+  });
+
   // 攔截 SweetAlert2 CDN，避免真實腳本覆蓋 mock
   await page.route(
     "**/sweetalert2**",
