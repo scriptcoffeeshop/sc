@@ -45,6 +45,20 @@
 
 ---
 
+## 📅 v40 — 會員資料功能：自動帶入常用資料
+
+- 新增 `api/profile.ts`：`getUserProfile` / `updateUserProfile` API。
+- `index.ts`：註冊 `getUserProfile`、`updateUserProfile` 路由。
+- `utils/users.ts`：`mapToCamel` 加入 `defaultCustomFields` 欄位對應。
+- `schema_full.sql`：`coffee_users` 新增 `default_custom_fields TEXT DEFAULT '{}'`。
+- `main.html`：使用者登入後顯示「👤 會員資料」按鈕。
+- `main-app.js`：
+  - `showProfileModal()` SweetAlert2 彈窗，動態渲染表單欄位供使用者編輯預設值。
+  - `prefillUserFields()` 函式：登入後自動回填 phone/email 及所有動態自訂欄位。
+- `orders.js`：訂單送出後背景呼叫 `updateUserProfile` 同步資料到 DB。
+
+---
+
 ## 📅 v39 — 優化訂單通知 Email 寄件人與排版
 
 - 後端 `utils/email.ts`：寄件人名稱從 `☕ 咖啡豆訂購系統` 改為 `Script Coffee`。
