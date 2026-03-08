@@ -12,6 +12,7 @@ import { buildOrderQuote } from "./quote.ts";
 import {
   buildOrderConfirmationHtml,
   buildShippingNotificationHtml,
+  normalizeEmailSiteTitle,
 } from "../utils/email-templates.ts";
 
 import { registerOrUpdateUser } from "../utils/users.ts";
@@ -189,7 +190,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     const { data: siteRow } = await supabase.from("coffee_settings").select(
       "value",
     ).eq("key", "site_title").single();
-    const siteTitle = siteRow?.value || "咖啡訂購";
+    const siteTitle = normalizeEmailSiteTitle(String(siteRow?.value || ""));
 
     const content = buildOrderConfirmationHtml({
       orderId,
@@ -446,7 +447,9 @@ export async function updateOrderStatus(
     // 查詢 site_title
     const { data: siteTitleRow } = await supabase.from("coffee_settings")
       .select("value").eq("key", "site_title").single();
-    const shippedSiteTitle = siteTitleRow?.value || "咖啡訂購";
+    const shippedSiteTitle = normalizeEmailSiteTitle(
+      String(siteTitleRow?.value || ""),
+    );
 
     const finalTrackingNumber = data.trackingNumber !== undefined
       ? String(data.trackingNumber || "")

@@ -27,7 +27,7 @@ Deno.test("Utility Test - HTML Escape", () => {
 Deno.test("Email Templates - Order Confirmation", () => {
   const html = buildOrderConfirmationHtml({
     orderId: "C20261231-AABBCCDD",
-    siteTitle: "Test Shop",
+    siteTitle: "Script Coffee 訂購確認",
     lineName: "User",
     phone: "0912345678",
     deliveryMethod: "delivery",
@@ -47,7 +47,7 @@ Deno.test("Email Templates - Order Confirmation", () => {
 
   assertEquals(html.includes("C20261231-AABBCCDD"), true, "Missing orderId");
   assertEquals(
-    html.includes("Test Shop</h1>"),
+    html.includes("Script Coffee</h1>"),
     true,
     "Missing site title",
   );
