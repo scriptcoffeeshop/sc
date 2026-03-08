@@ -2,11 +2,19 @@
 // cart.js — 購物車 CRUD & UI
 // ============================================
 
-import { escapeHtml, Toast } from './utils.js?v=43';
-import { state } from './state.js?v=43';
+import { escapeHtml } from './utils.js?v=44';
+import { state } from './state.js?v=44';
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
+
+function triggerQuoteRefresh() {
+    if (typeof window.scheduleQuoteRefresh === 'function') {
+        window.scheduleQuoteRefresh({ silent: true });
+    } else if (typeof window.refreshQuote === 'function') {
+        window.refreshQuote({ silent: true });
+    }
+}
 
 function saveCart() {
     localStorage.setItem('coffee_cart', JSON.stringify(cart));
@@ -15,7 +23,9 @@ function saveCart() {
 export function loadCart() {
     try {
         const d = localStorage.getItem('coffee_cart');
-        if (d) { cart = JSON.parse(d); updateCartUI(); }
+        cart = d ? JSON.parse(d) : [];
+        updateCartUI();
+        triggerQuoteRefresh();
     } catch { }
 }
 
@@ -36,6 +46,7 @@ export function addToCart(productId, specKey) {
     }
     saveCart();
     updateCartUI();
+    triggerQuoteRefresh();
     Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1200 })
         .fire({ icon: 'success', title: `已加入 ${p.name} (${spec.label})` });
 }
@@ -47,6 +58,7 @@ export function updateCartItemQty(idx, delta) {
     if (cart[idx].qty <= 0) cart.splice(idx, 1);
     saveCart();
     updateCartUI();
+    triggerQuoteRefresh();
 }
 
 /** 依據商品ID與規格Key更新數量 (給 In-line Stepper 使用) */
@@ -64,13 +76,17 @@ export function removeCartItem(idx) {
     cart.splice(idx, 1);
     saveCart();
     updateCartUI();
+    triggerQuoteRefresh();
 }
 
 /** 清空購物車 */
 export function clearCart() {
     cart.length = 0;
+    state.orderQuote = null;
+    state.quoteError = '';
     saveCart();
     updateCartUI();
+    triggerQuoteRefresh();
 }
 
 /** 同步更新所有購物車相關 UI */
@@ -112,6 +128,8 @@ export function updateCartUI() {
     // 渲染購物車清單
     const container = document.getElementById('cart-items');
     if (!cart.length) {
+        state.orderQuote = null;
+        state.quoteError = '';
         container.innerHTML = '<p class="text-center text-gray-400 py-8">購物車是空的</p>';
         const discountSection = document.getElementById('cart-discount-details');
         if (discountSection) { discountSection.classList.add('hidden'); discountSection.innerHTML = ''; }
@@ -130,12 +148,12 @@ export function updateCartUI() {
     const summary = calcCartSummary();
     let priceHtml = `<div class="text-xl font-bold">總金額: $${summary.finalTotal}</div>`;
 
-    if (summary.totalDiscount > 0 || state.selectedDelivery) {
+    if (summary.totalDiscount > 0 || (state.selectedDelivery && summary.quoteAvailable)) {
         let badgesHtml = '';
         if (summary.totalDiscount > 0) {
             badgesHtml += `<span style="background-color: #fee2e2; color: #dc2626; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">折 -$${summary.totalDiscount}</span>`;
         }
-        if (state.selectedDelivery) {
+        if (state.selectedDelivery && summary.quoteAvailable) {
             if (summary.shippingFee === 0) {
                 badgesHtml += `<span style="background-color: #dbeafe; color: #2563eb; font-size: 11px; padding: 2px 6px; border-radius: 4px;">免運費</span>`;
             } else {
@@ -190,7 +208,7 @@ export function updateCartUI() {
 
     if (discountSection) {
         const shippingConfig = getShippingConfig();
-        const isFreeShipping = state.selectedDelivery && shippingConfig && summary.shippingFee === 0;
+        const isFreeShipping = !!(state.selectedDelivery && shippingConfig && summary.quoteAvailable && summary.shippingFee === 0);
         const hasPromos = summary.totalDiscount > 0 && summary.appliedPromos && summary.appliedPromos.length > 0;
 
         let deliveryName = '該配送方式';
@@ -205,7 +223,7 @@ export function updateCartUI() {
 
         // 獨立處理運費與未達免運提示 (不放在優惠與折抵區塊中)
         if (shippingNotice) {
-            if (state.selectedDelivery && shippingConfig && !isFreeShipping) {
+            if (state.selectedDelivery && shippingConfig && summary.quoteAvailable && !isFreeShipping) {
                 let thresholdHint = '';
                 if (shippingConfig.freeThreshold > 0) {
                     const diff = shippingConfig.freeThreshold - summary.totalAfterDiscount;
@@ -299,103 +317,80 @@ export function getShippingConfig() {
     } catch { return { fee: 0, freeThreshold: 0 }; }
 }
 
-function normalizeDiscountRate(discountValue) {
-    const raw = Number(discountValue);
-    if (!Number.isFinite(raw) || raw <= 0) return 1;
-    if (raw <= 1) return raw;
-    if (raw <= 10) return raw / 10;
-    if (raw <= 100) return raw / 100;
-    return 1;
+function toItemKey(productId, specKey = '') {
+    return `${Number(productId)}-${String(specKey || '')}`;
 }
 
-function calcPercentDiscountAmount(subtotal, discountValue) {
-    const safeSubtotal = Math.max(0, Math.round(Number(subtotal) || 0));
-    if (safeSubtotal <= 0) return 0;
-    const rate = normalizeDiscountRate(discountValue);
-    const discountedTotal = Math.round(safeSubtotal * rate);
-    return Math.max(0, safeSubtotal - discountedTotal);
+function toQtyMap(items) {
+    const map = new Map();
+    (items || []).forEach(item => {
+        map.set(
+            toItemKey(item.productId, item.specKey),
+            Math.max(1, Number(item.qty) || 1),
+        );
+    });
+    return map;
 }
 
-function isPromotionActiveNow(promo, nowTs) {
-    const start = promo?.startTime ? Date.parse(promo.startTime) : null;
-    if (promo?.startTime && !Number.isFinite(start)) return false;
-    if (Number.isFinite(start) && nowTs < start) return false;
-
-    const end = promo?.endTime ? Date.parse(promo.endTime) : null;
-    if (promo?.endTime && !Number.isFinite(end)) return false;
-    if (Number.isFinite(end) && nowTs > end) return false;
-
-    return true;
-}
-
-/** 計算折扣活動 */
-export function calcPromotions() {
-    let totalDiscount = 0;
-    const appliedPromos = [];
-    const nowTs = Date.now();
-    const activePromos = (state.promotions || []).filter(p => p.enabled && isPromotionActiveNow(p, nowTs));
-    const discountedItemKeys = new Set();
-
-    for (const prm of activePromos) {
-        if (prm.type !== 'bundle') continue;
-
-        let matchQty = 0;
-        let matchItems = [];
-        for (const item of cart) {
-            // 檢查是否符合新版的 targetItems
-            const matchInItems = prm.targetItems && prm.targetItems.some(t => {
-                if (t.productId !== item.productId) return false;
-                // 如果該設定沒有指定規格，代表該商品全規格適用 (或者商品本身就沒規格)
-                if (!t.specKey) return true;
-                return t.specKey === item.specKey;
-            });
-            // 檢查是否符合舊版的 targetProductIds
-            const matchInOldIds = prm.targetProductIds && prm.targetProductIds.includes(item.productId);
-
-            if (matchInItems || matchInOldIds) {
-                matchQty += item.qty;
-                matchItems.push(item);
-            }
-        }
-
-        if (matchQty >= prm.minQuantity) {
-            const subtotal = matchItems.reduce((acc, c) => acc + c.qty * c.unitPrice, 0);
-            let discountAmount = 0;
-            if (prm.discountType === 'percent') {
-                discountAmount = calcPercentDiscountAmount(subtotal, prm.discountValue);
-            } else if (prm.discountType === 'amount') {
-                const sets = Math.floor(matchQty / prm.minQuantity);
-                discountAmount = sets * prm.discountValue;
-            }
-            discountAmount = Math.min(discountAmount, Math.max(0, subtotal));
-            if (discountAmount > 0) {
-                totalDiscount += discountAmount;
-                appliedPromos.push({
-                    name: prm.name,
-                    amount: discountAmount
-                });
-                matchItems.forEach(item => discountedItemKeys.add(`${item.productId}-${item.specKey}`));
-            }
-        }
+function isQuoteAlignedWithCart(quote) {
+    if (!quote || !Array.isArray(quote.items)) return false;
+    if (state.selectedDelivery && quote.deliveryMethod && quote.deliveryMethod !== state.selectedDelivery) {
+        return false;
     }
-    return { appliedPromos, totalDiscount, discountedItemKeys };
+
+    const cartMap = toQtyMap(cart);
+    const quoteMap = toQtyMap(quote.items);
+    if (cartMap.size !== quoteMap.size) return false;
+
+    for (const [key, qty] of cartMap.entries()) {
+        if (quoteMap.get(key) !== qty) return false;
+    }
+    return true;
 }
 
 /** 計算購物車所有金額 */
 export function calcCartSummary() {
     const subtotal = cart.reduce((s, c) => s + c.qty * c.unitPrice, 0);
-    const { appliedPromos, totalDiscount, discountedItemKeys } = calcPromotions();
-    const afterDiscount = Math.max(0, subtotal - totalDiscount);
+    const quote = state.orderQuote;
 
-    const shippingConfig = getShippingConfig();
-    let shippingFee = 0;
-    if (cart.length > 0 && state.selectedDelivery && shippingConfig) {
-        if (shippingConfig.freeThreshold <= 0 || afterDiscount < shippingConfig.freeThreshold) {
-            shippingFee = shippingConfig.fee;
-        }
+    if (isQuoteAlignedWithCart(quote)) {
+        const totalDiscount = Math.max(0, Number(quote.totalDiscount) || 0);
+        const afterDiscount = Math.max(
+            0,
+            Number(quote.afterDiscount) || subtotal - totalDiscount,
+        );
+        const shippingFee = Math.max(0, Number(quote.shippingFee) || 0);
+        const finalTotal = Math.max(0, Number(quote.total) || afterDiscount + shippingFee);
+        const appliedPromos = Array.isArray(quote.appliedPromos) ? quote.appliedPromos : [];
+        const discountedItemKeys = new Set(
+            Array.isArray(quote.discountedItemKeys) ? quote.discountedItemKeys : [],
+        );
+
+        return {
+            subtotal: Math.max(0, Number(quote.subtotal) || subtotal),
+            appliedPromos,
+            totalDiscount,
+            discountedItemKeys,
+            afterDiscount,
+            totalAfterDiscount: afterDiscount,
+            shippingFee,
+            finalTotal,
+            quoteAvailable: true,
+        };
     }
 
-    return { subtotal, appliedPromos, totalDiscount, discountedItemKeys, afterDiscount, shippingFee, finalTotal: afterDiscount + shippingFee };
+    // 後端 quote 尚未回來時，先顯示基本小計，避免前端自行重算活動與運費造成漂移。
+    return {
+        subtotal,
+        appliedPromos: [],
+        totalDiscount: 0,
+        discountedItemKeys: new Set(),
+        afterDiscount: subtotal,
+        totalAfterDiscount: subtotal,
+        shippingFee: 0,
+        finalTotal: subtotal,
+        quoteAvailable: false,
+    };
 }
 
 /** 相容舊版 calcTotal */

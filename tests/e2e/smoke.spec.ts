@@ -108,6 +108,51 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
       return;
     }
 
+    if (action === 'quoteOrder') {
+      const body = request.postDataJSON() as any;
+      const reqItems = Array.isArray(body?.items) ? body.items : [];
+      const items = reqItems.map((item: any) => {
+        const qty = Math.max(1, Number(item?.qty) || 1);
+        const unitPrice = 220;
+        return {
+          productId: Number(item?.productId) || 101,
+          productName: '測試豆',
+          specKey: String(item?.specKey || 'quarter'),
+          specLabel: '1/4磅',
+          qty,
+          unitPrice,
+          lineTotal: qty * unitPrice,
+        };
+      });
+      const subtotal = items.reduce((sum: number, item: any) => sum + item.lineTotal, 0);
+      const shippingFee = 0;
+      const total = subtotal + shippingFee;
+      await fulfillJson(route, {
+        success: true,
+        quote: {
+          deliveryMethod: body?.deliveryMethod || 'delivery',
+          availablePaymentMethods: payment,
+          items,
+          appliedPromos: [],
+          discountedItemKeys: [],
+          subtotal,
+          totalDiscount: 0,
+          afterDiscount: subtotal,
+          shippingFee,
+          total,
+          orderLines: [
+            ...items.map((item: any) => `${item.productName} (${item.specLabel}) x ${item.qty} (${item.lineTotal}元)`),
+            `🚚 運費: $${shippingFee}`,
+          ],
+          ordersText: [
+            ...items.map((item: any) => `${item.productName} (${item.specLabel}) x ${item.qty} (${item.lineTotal}元)`),
+            `🚚 運費: $${shippingFee}`,
+          ].join('\\n'),
+        },
+      });
+      return;
+    }
+
     await fulfillJson(route, { success: true });
   });
 }

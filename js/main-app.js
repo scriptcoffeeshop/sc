@@ -2,18 +2,18 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=43';
-import { Toast } from './utils.js?v=43';
-import { loginWithLine } from './auth.js?v=43';
-import { state } from './state.js?v=43';
-import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=43';
-import { renderProducts } from './products.js?v=43';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=43';
-import { submitOrder, showMyOrders } from './orders.js?v=43';
-import { renderDynamicFields, applyBranding } from './form-renderer.js?v=43';
-import { authFetch } from './auth.js?v=43';
-import { escapeHtml } from './utils.js?v=43';
-import { supabase } from './supabase-client.js?v=43';
+import { API_URL, LINE_REDIRECT } from './config.js?v=44';
+import { Toast } from './utils.js?v=44';
+import { loginWithLine } from './auth.js?v=44';
+import { state } from './state.js?v=44';
+import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, updateCartUI } from './cart.js?v=44';
+import { renderProducts } from './products.js?v=44';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=44';
+import { submitOrder, showMyOrders } from './orders.js?v=44';
+import { renderDynamicFields, applyBranding } from './form-renderer.js?v=44';
+import { authFetch } from './auth.js?v=44';
+import { escapeHtml } from './utils.js?v=44';
+import { supabase } from './supabase-client.js?v=44';
 
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
@@ -299,21 +299,96 @@ window.logout = function () {
     updateFormState();
 };
 
+let quoteRefreshTimer = null;
+let latestQuoteRequestId = 0;
+
+function getQuoteRequestItems() {
+    return cart.map(c => ({
+        productId: Number(c.productId),
+        specKey: String(c.specKey || ''),
+        qty: Math.max(1, Number(c.qty) || 1),
+    }));
+}
+
+window.scheduleQuoteRefresh = function (options = {}) {
+    if (quoteRefreshTimer) clearTimeout(quoteRefreshTimer);
+    quoteRefreshTimer = setTimeout(() => {
+        window.refreshQuote(options);
+    }, 120);
+};
+
+window.refreshQuote = async function (options = {}) {
+    const silent = options.silent !== false;
+    const items = getQuoteRequestItems();
+
+    if (!items.length) {
+        state.orderQuote = null;
+        state.quoteError = '';
+        if (typeof window.updatePaymentOptionsState === 'function') {
+            window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
+        }
+        updateCartUI();
+        return { success: true, skipped: true };
+    }
+
+    const requestId = ++latestQuoteRequestId;
+    const payload = { items };
+    if (state.selectedDelivery) payload.deliveryMethod = state.selectedDelivery;
+
+    try {
+        const res = await fetch(`${API_URL}?action=quoteOrder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const result = await res.json();
+
+        if (requestId !== latestQuoteRequestId) return result;
+        if (!result.success || !result.quote) {
+            state.orderQuote = null;
+            state.quoteError = result.error || '計價失敗';
+            if (!silent) Swal.fire('錯誤', state.quoteError, 'error');
+            if (typeof window.updatePaymentOptionsState === 'function') {
+                window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
+            }
+            updateCartUI();
+            return result;
+        }
+
+        state.orderQuote = result.quote;
+        state.quoteError = '';
+        if (typeof window.updatePaymentOptionsState === 'function') {
+            window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
+        }
+        updateCartUI();
+        return result;
+    } catch (e) {
+        if (requestId !== latestQuoteRequestId) return { success: false, error: String(e) };
+        state.orderQuote = null;
+        state.quoteError = e.message || '計價請求失敗';
+        if (!silent) Swal.fire('錯誤', state.quoteError, 'error');
+        if (typeof window.updatePaymentOptionsState === 'function') {
+            window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
+        }
+        updateCartUI();
+        return { success: false, error: state.quoteError };
+    }
+};
+
 // ============ 載入資料 ============
 async function loadInitData() {
     try {
         // 使用 Supabase 直連，平行查詢所有公開資料
-        const [productsRes, categoriesRes, settingsRes, formFieldsRes, bankAccountsRes, promotionsRes] = await Promise.all([
+        const [productsRes, categoriesRes, settingsRes, formFieldsRes, bankAccountsRes] = await Promise.all([
             supabase.from('coffee_products').select('*').order('sort_order', { ascending: true }),
             supabase.from('coffee_categories').select('*').order('sort_order', { ascending: true }).order('id', { ascending: true }),
             supabase.from('coffee_settings').select('*'),
             supabase.from('coffee_form_fields').select('*').eq('enabled', true).order('sort_order', { ascending: true }),
             supabase.from('coffee_bank_accounts').select('*').eq('enabled', true).order('sort_order', { ascending: true }),
-            supabase.from('coffee_promotions').select('*').order('sort_order', { ascending: true }),
         ]);
 
         // 檢查是否有任何查詢失敗
-        const errors = [productsRes, categoriesRes, settingsRes, formFieldsRes, bankAccountsRes, promotionsRes]
+        const errors = [productsRes, categoriesRes, settingsRes, formFieldsRes, bankAccountsRes]
             .filter(r => r.error)
             .map(r => r.error.message);
         if (errors.length > 0) {
@@ -349,22 +424,6 @@ async function loadInitData() {
             settings[row.key] = row.value;
         }
 
-        // 映射促銷活動資料
-        const promotions = (promotionsRes.data || []).map(r => ({
-            id: r.id,
-            name: r.name,
-            type: r.type,
-            targetProductIds: (typeof r.target_product_ids === 'string' ? JSON.parse(r.target_product_ids) : r.target_product_ids) || [],
-            targetItems: (typeof r.target_items === 'string' ? JSON.parse(r.target_items) : r.target_items) || [],
-            minQuantity: Number(r.min_quantity) || 1,
-            discountType: r.discount_type,
-            discountValue: Number(r.discount_value) || 0,
-            enabled: r.enabled !== false,
-            startTime: r.start_time,
-            endTime: r.end_time,
-            sortOrder: Number(r.sort_order) || 0,
-        }));
-
         // 映射銀行帳號資料
         const bankAccounts = (bankAccountsRes.data || []).map(r => ({
             id: r.id,
@@ -382,7 +441,6 @@ async function loadInitData() {
         state.categories = categories;
         state.formFields = formFields;
         state.bankAccounts = bankAccounts;
-        state.promotions = promotions;
 
         applySettings(settings);
         applyBranding(settings);
@@ -413,7 +471,6 @@ async function loadInitDataFallback() {
             state.categories = result.categories || [];
             state.formFields = result.formFields || [];
             state.bankAccounts = result.bankAccounts || [];
-            state.promotions = result.promotions || [];
 
             applySettings(result.settings || {});
             applyBranding(result.settings || {});
@@ -511,6 +568,7 @@ function applySettings(s) {
             { id: 'family_mart', icon: '🏬', name: '全家取件', description: '超商門市', enabled: true, payment: rConfig['family_mart'] || { cod: true, linepay: false, transfer: false } }
         ];
     }
+    window.currentDeliveryConfig = deliveryConfig;
 
     // 渲染物流選項 (在 delivery.js 中定義)
     if (typeof window.renderDeliveryOptions === 'function') {
@@ -523,10 +581,10 @@ function applySettings(s) {
 }
 
 window.updatePaymentOptionsState = function (deliveryConfig) {
-    if (!deliveryConfig) return;
+    if (!Array.isArray(deliveryConfig)) return;
 
     // 確保有預設選擇的物流
-    const activeDeliveryOptions = deliveryConfig.filter(d => d.enabled);
+    const activeDeliveryOptions = deliveryConfig.filter(d => d && d.enabled !== false);
     if (activeDeliveryOptions.length === 0) return; // 全部關閉的防呆
 
     if (!state.selectedDelivery || !activeDeliveryOptions.find(d => d.id === state.selectedDelivery)) {
@@ -534,12 +592,27 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
         state.selectedDelivery = activeDeliveryOptions[0].id;
         // 需同步更新 UI
         if (typeof window.selectDelivery === 'function') {
-            window.selectDelivery(state.selectedDelivery);
+            window.selectDelivery(state.selectedDelivery, null, { skipQuote: true });
         }
     }
 
-    const currentConfigOpt = activeDeliveryOptions.find(d => d.id === state.selectedDelivery);
-    const currentConfig = currentConfigOpt ? currentConfigOpt.payment : { cod: true, linepay: false, transfer: false };
+    const fallbackConfigOpt = activeDeliveryOptions.find(d => d.id === state.selectedDelivery);
+    const fallbackConfig = fallbackConfigOpt?.payment || { cod: true, linepay: false, transfer: false };
+    const quote = state.orderQuote;
+    const canUseQuote = quote &&
+        quote.availablePaymentMethods &&
+        (!state.selectedDelivery || quote.deliveryMethod === state.selectedDelivery);
+    const currentConfig = canUseQuote
+        ? {
+            cod: !!quote.availablePaymentMethods.cod,
+            linepay: !!quote.availablePaymentMethods.linepay,
+            transfer: !!quote.availablePaymentMethods.transfer,
+        }
+        : {
+            cod: !!fallbackConfig.cod,
+            linepay: !!fallbackConfig.linepay,
+            transfer: !!fallbackConfig.transfer,
+        };
 
     const codOpt = document.getElementById('cod-option');
     const lpOpt = document.getElementById('linepay-option');
@@ -552,9 +625,9 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
 
     // 如果目前選擇的選向不被該物流允許，則重置為第一個可用的選向
     if (state.selectedPayment && !currentConfig[state.selectedPayment]) {
-        if (currentConfig.cod) selectPayment('cod');
-        else if (currentConfig.linepay) selectPayment('linepay');
-        else if (currentConfig.transfer) selectPayment('transfer');
+        if (currentConfig.cod) selectPayment('cod', { skipQuote: true });
+        else if (currentConfig.linepay) selectPayment('linepay', { skipQuote: true });
+        else if (currentConfig.transfer) selectPayment('transfer', { skipQuote: true });
         else {
             state.selectedPayment = '';
             document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
@@ -563,9 +636,9 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
             if (transferSection) transferSection.classList.add('hidden');
         }
     } else if (!state.selectedPayment) {
-        if (currentConfig.cod) selectPayment('cod');
-        else if (currentConfig.linepay) selectPayment('linepay');
-        else if (currentConfig.transfer) selectPayment('transfer');
+        if (currentConfig.cod) selectPayment('cod', { skipQuote: true });
+        else if (currentConfig.linepay) selectPayment('linepay', { skipQuote: true });
+        else if (currentConfig.transfer) selectPayment('transfer', { skipQuote: true });
     }
 };
 
@@ -594,7 +667,7 @@ function updateFormState() {
 }
 
 // ============ 付款方式選擇 ============
-function selectPayment(method) {
+function selectPayment(method, options = {}) {
     state.selectedPayment = method;
     document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('active'));
 
@@ -610,6 +683,10 @@ function selectPayment(method) {
         }
     } else {
         transferSection.classList.add('hidden');
+    }
+
+    if (!options.skipQuote && typeof window.scheduleQuoteRefresh === 'function') {
+        window.scheduleQuoteRefresh({ silent: true });
     }
 }
 

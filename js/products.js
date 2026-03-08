@@ -2,8 +2,8 @@
 // products.js — 商品卡片式渲染
 // ============================================
 
-import { escapeHtml } from './utils.js?v=43';
-import { state } from './state.js?v=43';
+import { escapeHtml } from './utils.js?v=44';
+import { state } from './state.js?v=44';
 
 /** 渲染商品列表（卡片式、規格按鈕） */
 export function renderProducts() {
