@@ -35,7 +35,7 @@ async function installGlobalStubs(page: Page) {
   );
 
   await page.addInitScript(() => {
-    const noop = () => {};
+    const noop = () => { };
     (window as any).Swal = {
       fire: async () => ({ isConfirmed: true }),
       close: noop,
@@ -347,6 +347,17 @@ test.describe("smoke", () => {
 
     await page.goto("/main.html");
 
+    let quoteResBody: any = null;
+    page.on("response", async (res) => {
+      if (res.url().includes("action=quoteOrder")) {
+        try {
+          quoteResBody = await res.json();
+        } catch {
+          // ignore parsing error for preflight
+        }
+      }
+    });
+
     await expect(page.locator("#products-container")).toContainText("測試豆");
 
     await page.locator(
@@ -369,6 +380,14 @@ test.describe("smoke", () => {
     expect(submitBody.address).toBe("測試路 1 號");
     expect(Array.isArray(submitBody.items)).toBeTruthy();
     expect(submitBody.items.length).toBeGreaterThan(0);
+
+    // 驗證 quoteOrder 回傳結構
+    expect(quoteResBody).toBeTruthy();
+    expect(quoteResBody.success).toBe(true);
+    expect(quoteResBody.quote).toBeDefined();
+    expect(quoteResBody.quote.deliveryMethod).toBe("delivery");
+    expect(typeof quoteResBody.quote.total).toBe("number");
+    expect(Array.isArray(quoteResBody.quote.items)).toBe(true);
 
     await expect(page.locator("#cart-items")).toContainText("購物車是空的");
   });
