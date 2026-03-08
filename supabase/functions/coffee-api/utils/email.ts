@@ -1,4 +1,5 @@
 // @ts-ignore: deno
+// @deno-types="npm:@types/nodemailer"
 import nodemailer from "nodemailer";
 import { SMTP_PASS, SMTP_USER } from "./config.ts";
 
