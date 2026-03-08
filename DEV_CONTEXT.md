@@ -19,10 +19,26 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
    上，是為了保留舊快取版本的相容性，非必要請勿新增。
 3. **繁體中文規則**：所有對話與代碼內的開發邏輯註解（comments），依照過去的強制要求，請一律使用
    **「繁體中文（Traditional Chinese）」**。
+4. **SRI 與 E2E 測試衝突**：在 HTML 啟用 SRI (`integrity`) 後，Playwright 的 `route.fulfill` 攔截 CDN 腳本會導致 hash 不匹配而被瀏覽器阻擋。**解決方案**：在 `smoke.spec.ts` 的 `installGlobalStubs` 中，攔截 HTML 並動態移除 `integrity` 與 `crossorigin` 屬性，確保測試環境能載入 mock 腳本。
+5. **Deno 模組解析與 CI**：Deno 不允許在 production/CI 環境（透過 `deno.json` 控制時）使用 `npm:` 行內前綴或 https URL 的 bare specifier。**規範**：依賴一律宣告在 `deno.json` 的 `imports` 中，程式碼內直接引用別名（如 `import { z } from "zod"`），否則 `deno lint` 與 `deno check` 會失敗。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v45)
+## 🚀 近期重大更新 (v40 - v46)
+
+### 📅 v46 — 資安標頭 (CSP/SRI)、分頁搜尋下推與 CI 穩定化
+
+- **P1 安全強化 (CSP & SRI)**：
+  - 在 `main.html` 與 `dashboard.html` 導入 **CSP (Content Security Policy)** 標頭，限制來源安全性。
+  - 對所有外部 CDN (SweetAlert2, Tailwind, 7-11 Map) 加入 **SRI (Subresource Integrity)** 校驗，並修正 E2E 測試中 SRI 導致的 Mock 失敗問題。
+- **P1/P2 查詢效能下推 (Pagination & Search)**：
+  - `orders.ts` 與 `users.ts` API 全面改寫，支援 `limit`, `offset` 與 `search` 參數，將分頁與 `ilike` 模糊搜尋邏輯下推至 PostgreSQL 執行，大幅降低大數據量下的記憶體負擔。
+- **P2 前端架構模組化 (階段三)**：
+  - 從 `js/dashboard-app.js` 中抽離出 `js/dashboard/events.js` (全域事件代理) 與 `js/dashboard/api.js` (API 封裝)，成功降低主檔案維護難度。
+  - 同步修正 `scripts/check_dashboard_event_delegation.py` 驗證腳本以適配新路徑。
+- **CI/CD 穩定化**：
+  - 統一 Deno 依賴管理，消除 `npm:` 行內前綴引起的 `deno check/lint` 報錯。
+  - 修復 `std/testing/asserts` 斷鏈問題。
 
 ### 📅 v45.1 — 資安與維護性大升級 (P0-P2 修復)
 
