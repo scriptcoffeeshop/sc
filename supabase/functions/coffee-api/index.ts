@@ -24,6 +24,7 @@ import {
   submitOrder,
   updateOrderStatus,
 } from "./api/orders.ts";
+import { quoteOrder } from "./api/quote.ts";
 
 import {
   linePayCancel,
@@ -88,6 +89,7 @@ import { validate } from "./utils/validate.ts";
 import { lineLoginSchema, transferInfoSchema } from "./schemas/auth.ts";
 import {
   deleteOrderSchema,
+  quoteOrderSchema,
   submitOrderSchema,
   updateOrderStatusSchema,
 } from "./schemas/order.ts";
@@ -200,6 +202,11 @@ const actionMap: Record<string, ActionHandler> = {
   getStoreSelection: async (data) =>
     await getStoreSelection(data.token as string),
   storeMapCallback: async (data) => await handleStoreMapCallback(data),
+  quoteOrder: async (data) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(quoteOrderSchema, data)) as any;
+    return await quoteOrder(v);
+  },
   createPcscMapSession: async (data) =>
     await createPcscMapSession(
       (data.clientUrl as string) || "",

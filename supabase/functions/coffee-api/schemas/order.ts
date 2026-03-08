@@ -34,6 +34,18 @@ export const submitOrderSchema = z.object({
   ),
 });
 
+export const quoteOrderSchema = z.object({
+  items: z.array(orderItemSchema).min(1, "購物車是空的"),
+  deliveryMethod: z.enum([
+    "delivery",
+    "home_delivery",
+    "seven_eleven",
+    "family_mart",
+    "in_store",
+  ]).optional(),
+  paymentMethod: z.enum(["cod", "linepay", "transfer"]).optional(),
+});
+
 export const updateOrderStatusSchema = z.object({
   orderId: z.string().min(1, "缺少訂單編號"),
   status: z.enum([

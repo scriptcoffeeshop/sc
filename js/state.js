@@ -10,7 +10,8 @@ export const state = {
     selectedDelivery: '',
     isStoreOpen: true,
     selectedPayment: 'cod',
+    selectedBankAccountId: '',
     bankAccounts: [],
-    linePayEnabled: false,
-    transferEnabled: false,
+    orderQuote: null,
+    quoteError: '',
 };

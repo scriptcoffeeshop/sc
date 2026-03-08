@@ -13,260 +13,58 @@
 
 ---
 
-## 📅 v43 — P0/P1 修復：用戶管理契約、促銷計價一致性、Schema 驗證補強
+## 🚀 近期重大更新 (v40 - v44)
 
-- **P0：用戶管理 API 契約對齊**
-  - 後台前端 `dashboard-app.js` 的用戶操作 payload 統一改為 `targetUserId`（`updateUserRole` / `addToBlacklist` / `removeFromBlacklist`）。
-  - 後端 `api/users.ts` 同步改為使用 `targetUserId/newRole`，修復先前欄位不一致導致的角色更新/黑名單操作錯位問題。
-  - `getBlacklist` 回傳改為前端可直接使用的 camelCase（`lineUserId`, `reason`, `blockedAt`）。
+### 📅 v44 — 單一 quoteOrder 計價引擎上線 + dashboard 事件模組化
+- **後端單一計價引擎**
+  - 新增 `supabase/functions/coffee-api/api/quote.ts`，集中處理：商品規格驗證、促銷套用、運費門檻、可用付款方式。
+  - `orders.ts` 中 `submitOrder` 改用 `quote.ts` 計價，移除重複邏輯。`index.ts` 註冊 `quoteOrder` action。
+- **前端改讀後端 quote 結果**
+  - `main-app.js` 加入 `window.refreshQuote`。`cart.js` 不再本地重算，改讀 `state.orderQuote`。
+  - `delivery.js` 切換配送時觸發重算。
+- **dashboard 模組化 (階段一)**
+  - 拆分 `dashboard/modules/` (orders, products, settings, users) 建構事件處理器，降低主檔耦合。前端版號進階至 `v=44`。
 
-- **P0：促銷折扣公式修正與前後端一致**
-  - 新增 `utils/promotion.ts`：`normalizeDiscountRate` / `calcPercentDiscountAmount`。
-  - 折扣值相容 `0.9 / 9 / 90` 三種格式，避免舊公式把 `9 折` 誤算成 `91% 折扣`。
-  - 前端 `js/cart.js` 與後端 `api/orders.ts` 同步套用同一邏輯，並加上折扣金額上限保護（不超過該組合小計）。
+### 📅 v43 — P0/P1 修復：用戶管理契約、促銷計價一致性、Schema 驗證補強
+- **用戶 API 契約**：操作 payload 統一改為 `targetUserId`，防止錯位，`getBlacklist` 改 camelCase。
+- **促銷邏輯修正**：處理了 0.9/9/90 等折扣值格式，前後端同步計價邏輯並加入時窗 (`start_time/end_time`) 判斷。
+- **Zod 覆蓋補強**：新增 profile, users schema。所有 backend mutation (reorder, delete, list) 強制過 validate。 Frontend 版號推進至 `v=43`。
 
-- **P1：促銷生效時間判斷**
-  - 前後端都加入 `start_time/end_time` 時窗判斷，只有在有效期間內才套用活動。
+### 📅 v42 — 解決商品編輯時分類選項失效的 Race Condition 問題
+- **修復**：`dashboard-app.js` 中 `showProductModal` 及 `editProduct` 在互動前若 `categories` 為空，強制 `await loadCategories()`。解決快速點擊編輯時選單無選項的 Bug。
 
-- **P1：Zod 驗證覆蓋補強**
-  - 新增 `schemas/profile.ts`、`schemas/users.ts`。
-  - 擴充 `schemas/settings.ts`：補上 `reorder/delete/formField/bankAccount` 等 mutation schema。
-  - `index.ts` 對應 action 新增 validate 流程：`updateUserProfile`、用戶管理、分類/商品/促銷刪改排、表單欄位、匯款帳號、刪單等。
+### 📅 v41 — 修復購物車結帳按鈕狀態
+- **修復**：將 `updateFormState` 提升至全域。移除 `cart.js` 舊有寫死的按鈕切換邏輯，統一由 `updateFormState` 正確判斷並連動「確認送出訂單」文字與 disabled 狀態。
 
-- **測試與版本**
-  - 新增 `tests/promotion_test.ts`（促銷折扣與時間窗邏輯）。
-  - 前端快取版號由 `42` 升至 `43`，並以 `scripts/sync_frontend_version.py` 同步所有引用。
-
-## 📅 v42 — 解決商品編輯時分類選項失效的 Race Condition 問題
-
-- `dashboard-app.js`：修正 `showProductModal` 與 `editProduct` 的邏輯，在進入開啟互動視窗前若全域 `categories` 為空或未就緒，將強制等待 `await loadCategories()` 取得最新分類列表。以解決商品列表載入速度快於分類列表時，使用者馬上點擊「編輯商品」造成的選項渲染空白之 Bug。
-
----
-
-## 📅 v37 — 移除系統欄位保護 + Email 連動表單欄位 + 標題動態化
-
-- 前台 `dashboard-app.js`：移除 `protectedKeys`，phone/email 不再有 🔒 系統標記，可被停用或刪除。
-- 後端 `settings.ts`：`deleteFormField` 移除 `protectedKeys` 保護，允許刪除任何欄位。
-- 後端 `orders.ts`：
-  - 電話必填驗證和格式驗證改為條件式（無電話時不驗證）。
-  - Email 模板中「聯絡電話」改為條件顯示（`phone` 為空則不顯示）。
-  - Email 標題從硬編碼 `[咖啡訂購]` 改用 `site_title` 系統設定。
-  - 出貨通知 Email 標題同步使用 `site_title`。
+### 📅 v40 — 會員資料功能：自動帶入常用資料
+- **新功能**：新增 `getUserProfile` / `updateUserProfile` API。`coffee_users` 擴充 `default_custom_fields`。
+- **前端整合**：`main.html` 新增會員資料按鈕；送單後自動回填電話、信箱及自訂表單欄位紀錄至 DB。
 
 ---
 
-## 📅 v36 — 表單欄位依配送方式顯示/隱藏
+## 📦 核心功能演進 (v31 - v39)
 
-- 資料庫 `coffee_form_fields` 新增 `delivery_visibility` TEXT 欄位（JSON 格式）。
-- 後端 `settings.ts`：`addFormField`/`updateFormField` 加入 `deliveryVisibility` 參數讀寫。
-- 後台 `dashboard-app.js`：
-  - 新增 `dashboardSettings` 全域變數快取系統設定。
-  - 表單管理的新增/編輯 modal 加入「🚚 配送方式可見性」勾選面板。
-  - 欄位列表顯示配送限制 badge（🚫 在 xxx 時隱藏）。
-- 前台 `form-renderer.js`：`renderDynamicFields` 新增第 3 參數 `deliveryMethod`，依 `delivery_visibility` 過濾欄位。
-- 前台 `delivery.js`：`selectDelivery` 切換配送方式時呼叫 `window.rerenderFormFields()`。
-- 前台 `main-app.js`：暴露 `window.rerenderFormFields` 全域函式，帶入 `state.selectedDelivery`。
-
----
-
-## 📅 v35 — 將動態表單欄位移至配送方式與付款方式之間
-
-- `main.html`：`#dynamic-fields-container` 從商品列表上方移至配送方式 `</div>` 與付款方式 `<div>` 之間。
+- **v39 (Email 優化)**：寄件人改為 "Script Coffee"。Email 內文動態插入排序後的自訂表單欄位。
+- **v38 (UI/Email 同步)**：後台配送方式可見度修復（`dashboardSettings` 提早載入）。Email 及前端宅配顯示文字移除多餘括號。
+- **v37 (系統欄位與標題)**：解除 phone/email 保護鎖；Email 標題連動 `site_title`。
+- **v36 (動態配送欄位)**：`coffee_form_fields` 新增 `delivery_visibility`。前台依賴選擇的物流隱藏不需填寫的欄位。
+- **v35 (表單重排)**：動態表單區塊移至物流與付款之間。
+- **v34 (文字統一)**：統一「全台宅配」文字及出貨通知信格式。
+- **v33 (政策與條款)**：新增隱私權與退換貨政策勾選，未勾選無法送單。
+- **v32 (匯款體驗)**：支援點擊卡片與 radio 切換，修復切換付款方式時丟失選項的問題。
+- **v31 (送單覆蓋與清理)**：清除 legacy inline selector。補齊 Playwright 之 `submitOrder`, `transfer`, `linepay` 回歸測試。
 
 ---
 
-## 📅 v41 — 修復購物車結帳按鈕狀態
-
-- `main-app.js`：將 `updateFormState` 暴露出以供全域呼叫（`window.updateFormState`）。
-- `cart.js`：移除 `updateCartUI` 中對結帳按鈕文字與停用的不完整更新，改為統一呼叫 `window.updateFormState()` 來正確判斷並變更「確認送出訂單」文字與狀態，解決購物車有物品仍顯示「購物車是空的」之 Bug。
-
----
-
-## 📅 v40 — 會員資料功能：自動帶入常用資料
-
-- 新增 `api/profile.ts`：`getUserProfile` / `updateUserProfile` API。
-- `index.ts`：註冊 `getUserProfile`、`updateUserProfile` 路由。
-- `utils/users.ts`：`mapToCamel` 加入 `defaultCustomFields` 欄位對應。
-- `schema_full.sql`：`coffee_users` 新增 `default_custom_fields TEXT DEFAULT '{}'`。
-- `main.html`：使用者登入後顯示「👤 會員資料」按鈕。
-- `main-app.js`：
-  - `showProfileModal()` SweetAlert2 彈窗，動態渲染表單欄位供使用者編輯預設值。
-  - `prefillUserFields()` 函式：登入後自動回填 phone/email 及所有動態自訂欄位。
-- `orders.js`：訂單送出後背景呼叫 `updateUserProfile` 同步資料到 DB。
-
----
-
-## 📅 v39 — 優化訂單通知 Email 寄件人與排版
-
-- 後端 `utils/email.ts`：寄件人名稱從 `☕ 咖啡豆訂購系統` 改為 `Script Coffee`。
-- 後端 `orders.ts`：
-  - 移除了 Email 內文 `<h1>` 標題（訂購確認）的 `☕` 符號。
-  - 重構自訂表單欄位（`customFields`）處理邏輯：從 `coffee_form_fields` 資料表動態取得標籤名稱（取代預設欄位 Key）並依前台設定的 `sort_order` 排序。
-  - 將自訂欄位資訊移至**「聯絡電話」 上方**呈現，並移除原本置於訂單資料下方的「其他資訊」區塊。
-
----
-
-## 📅 v38 — 修復後台配送選項無法顯示文字與同步 Email 格式
-
-- 前端 `orders.js` 中的 `home_delivery` 顯示文字從「全台宅配(含郵遞區號)」改為「全台宅配」。
-- 同步修改後端 `api/orders.ts` 中的 Email 模板：
-  - 收件資訊格式統一，處理了 `storeAddress` 可能為空的情境以避免出現多餘括號。
-  - 將出貨通知中的 `family_mart` 文字「全家 取貨/取貨付款」移除多餘空白，與建立訂單通知統一。
-
----
-
-## 📅 v34 — 修改宅配選項文字與同步 Email 格式
-
-- 前端 `orders.js` 中的 `home_delivery` 顯示文字從「全台宅配(含郵遞區號)」改為「全台宅配」。
-- 同步修改後端 `api/orders.ts` 中的 Email 模板：
-  - 收件資訊格式統一，處理了 `storeAddress` 可能為空的情境以避免出現多餘括號。
-  - 將出貨通知中的 `family_mart` 文字「全家 取貨/取貨付款」移除多餘空白，與建立訂單通知統一。
-
----
-
-## 📅 v33 — 隱私權與退換貨政策頁面 + 下單同意勾選
-
-- 新增 `policy.html`（隱私權政策 + 退換貨政策），使用與訂購頁一致的視覺風格。
-- `main.html` 備註上方新增同意 checkbox，連結可開新分頁查看政策。
-- `orders.js` 的 `submitOrder()` 加入勾選驗證，未勾選會顯示提示且無法下單。
-
----
-
-## 📅 v32 — 匯款帳號選取同步強化 & E2E 回歸
-
-- **radio 同步**：匯款帳號 radio 移除 `pointer-events-none`，允許直接點擊；點卡片/點 radio 皆透過 `selectBankAccount` 統一更新。
-- **E2E 補強**：進入轉帳後預設第一筆為選取狀態（藍框 + checked）、直接點第二筆 radio 需同步切換、複製按鈕不影響選取、`transfer→cod→transfer` 切換後選取仍保留。transfer 送單改為先選第二筆帳號再驗證 payload。
-
----
-
-## 📅 v31 — delivery legacy 清理 & E2E 送單覆蓋
-
-- **清除 legacy**：`selectDelivery`、`checkStoreToken`、`loadDeliveryPrefs` 改為僅用 `.delivery-option[data-id="..."]`，移除所有 `[onclick*]` 選擇器 fallback。
-- **guardrail 強化**：`check_main_event_delegation.py` 新增禁止 `[onclick*` selector 檢查。
-- **E2E 送單**：新增 `submitOrder` happy path、`transfer`（驗證帳號末 5 碼 payload）、`linepay`（驗證跳轉）smoke test。
-
----
-
-## 📅 v30 — Playwright E2E Smoke Test
-
-- 新增 `playwright.config.ts` + `tests/e2e/smoke.spec.ts`。
-- 前台 smoke：資料載入、配送縣市切換、轉帳帳號選取/複製。後台 smoke：自動登入、訂單狀態切換、商品編輯 modal。
-- 以 route mock 攔截 API，降低外部依賴。CI 新增 `Setup Node.js` + `Install Playwright browser` + `Run E2E smoke tests`。
-
----
-
-## 📅 v29 — 前台 inline 事件清理完畢
-
-- 移除 `main.html` 配送縣市 `onchange`，改由 `main-app.js` 初始化時綁定 `change` 事件。
-- 「重試」按鈕、轉帳帳號卡片/複製按鈕改為 `data-action`。`selectPayment` 固定用 `data-method`。
-- 新增 `scripts/check_main_event_delegation.py` CI guardrail。
-
----
-
-## 📅 v28 — 後台事件代理全面完成
-
-- 後台動態列表（訂單、商品、分類、促銷、物流、用戶、黑名單、表單欄位、匯款帳號）內的 inline handler 全改為 `data-action`。
-- 擴充 `initializeDashboardEventDelegation`，含 click + change 事件。補 `parseId` 工具。
-- 新增 `scripts/check_dashboard_event_delegation.py` CI guardrail。
-
----
-
-## 📅 v27 — 前端快取版號「單一來源」機制
-
-- 新增 `/.frontend-version` 為唯一版號來源。
-- 新增 `scripts/sync_frontend_version.py`（同步：`python3 scripts/sync_frontend_version.py 27`；檢查：`--check`）。
-- CI 新增 `Verify frontend cache version sync` 步驟。
-
----
-
-## 📅 v26 — 分類拖曳排序 & 更名商品同步
-
-- 分類管理改用 Sortable.js 拖曳排序（`drag-handle-cat`），拖曳完成後一次傳 `ids` 陣列。
-- 後端 `updateCategory` 在更名時同步更新 `coffee_products.category` 欄位。
-
----
-
-## 📅 v25 — 運費提示視覺強化
-
-- 未達免運提示改為深紅色 (`#991b1b`) + 淡紅底 (`#fef2f2`)，金額前加 `+` 號，文案改為「未達🚚 XXX免運門檻」+ 下方「還差 $XXX 即可免運」。
-
----
-
-## 📅 v24 — 運費/免運提示區塊獨立 & LINE Pay 404 修復
-
-- 未達免運的運費提示從「已套用優惠」區塊移出，成為獨立醒目元件。
-- **LINE Pay 404**：`FRONTEND_URL` 缺 `/sc` 子路徑 → `supabase secrets set FRONTEND_URL="https://scriptcoffeeshop.github.io/sc"`。
-- **教訓**：任何後端回調 URL 都依賴 `FRONTEND_URL`，必須含完整子路徑 `/sc`。
-
----
-
-## 📅 v22–v23 — 結帳介面優化 & 宅配下拉修復
-
-- **v23**：`onchange="updateDistricts()"` 在 ES Module 作用域內無效 → 加 `window.updateDistricts = updateDistricts;`。文案改為「📍 配送地址 (限新竹市/竹北市)」。
-- **v22**：移除手動門市表單（改 `type="hidden"`），強制使用電子地圖選店。「綠界超商地圖」文案統一為「超商地圖」。購物車新增未達免運橘字提示。
-
----
-
-## 📅 CI & 7-11 PCSC 整合
-
-- **CI 報錯機制**：`.agents/workflows/ci-check.md` 定義從 GitHub API 抓失敗 → 本機 `deno fmt`/`lint`/`check` 修正 → 重推的 SOP。
-- **7-11 PCSC 地圖**：從綠界改為 PCSC 官方 `https://emap.presco.com.tw/c2cemap.ashx`（需 `servicetype: '1'`）。全家維持綠界。
-- 後端新增 `createPcscMapSession` / `pcscMapCallback`。PCSC 回傳全小寫欄位 + `multipart/form-data`。
-- **CORS**：`config.ts` 的 `ALLOWED_REDIRECT_ORIGINS` 加入 `localhost:5500`。
-
----
-
-## 📅 v21 — 免運明細「來店自取」Bug（State Fragmentation）
-
-- Python Regex `([^v]+?)` 漏改 `delivery.js` 版號 → `main-app.js` 和 `cart.js` 載入不同 `state.js` 實體 → 永遠讀到「來店自取」。
-- **解法**：更嚴謹的 Python 腳本統一推升所有 JS import 版號。
-
----
-
-## 📅 v20 — ES Module 碎片化
-
-- `main-app.js` 的 import 帶 `?v=19` 但子模組內部 import 不帶 → 載入不同記憶體實例 → 商品白畫面。
-- **解法**：Python 腳本將 `js/` 下所有 `.js` 的 import 加統一版號。
-
----
-
-## 📅 v19 — ES Module 快取
-
-- 改了 `cart.js` 但 `main-app.js` 的 `import` 未帶版號 → 瀏覽器用舊版 → 免運功能失效。
-- **解法**：所有 import 加 `?v=19` 後綴。
-
----
-
-## 📅 v18 — 購物車免運門檻明細
-
-- `updateCartUI()` 在折扣明細區塊新增免運判斷，以藍色樣式顯示「🚚 超商取件免運 (滿$500)」。
-
----
-
-## 📅 v17 — main-app.js Module 中斷
-
-- `updateCartUI` 掛載到 `window` 但忘記 import → ReferenceError 中斷整個腳本 → 首頁白畫面。
-
----
-
-## 📅 v12–v16 — 事件代理首次導入 & 連鎖修復
-
-- **v13**：付款方式選取外框修復（選擇器改用 `data-method`）+ CI Lint 修復。
-- **v14**：訂單送出靜默失敗（`window.state` 未掛載 → 按鈕永遠 disabled）改為直接用 ES module `state`。
-- **v15–v16**：購物車運費即時更新（`calcCartSummary` 加 `cart.length > 0` 保護；`selectDelivery` 末尾呼叫 `window.updateCartUI()`）。
-
----
-
-## 📅 v11 — 前端直連 Supabase
-
-- 新增 `supabase-client.js` + `config.js` 加入 `SUPABASE_URL` / `SUPABASE_ANON_KEY`。
-- `loadInitData()` 改用 `supabase-js` 平行查詢六張公開表，含 fallback 回 Edge Function。
-- 需執行 `supabase/migrations/20260228_enable_rls_for_public_data.sql` 啟用 RLS。僅影響前台。
-
----
-
-## 📅 v10 — 底部按鈕移除 & 購物車折扣視覺化
-
-- 移除底部「確認送出」按鈕 → 幽靈按鈕（`display:none`）相容舊快取。
-- 購物車折扣明細列出每筆活動扣除金額 + 適用商品打紅色 Badge。
-- **In-line Stepper（方案 A）**：加入購物車後按鈕原地長高為上下兩行（名稱/價格 + 增減按鈕），取代 Bottom Drawer（方案 C 已 revert）。
+## 🏗️ 早期開發與架構除錯 (v10 - v30)
+
+- **v30 (E2E 測試)**：導入 Playwright Smoke Test，涵蓋前/後台核心路徑。
+- **v28-v29 (事件代理)**：全面清除 HTML 內的 `onclick/onchange`，導入 `data-action` 統一代理機制，搭配 CI Guardrail 檢查。
+- **v27 (版號單一來源)**：統一以 `.frontend-version` 為版號來源，新增 Python 同步腳本。
+- **v26 (拖曳排序)**：分類與商品支援 Sortable.js 拖曳。
+- **v24-v25 (UI與串接)**：運費提示改版；針對 LINE Pay 404 補上完整的 URL 路徑參數。
+- **CI & 7-11 PCSC 整合**：建立自動修復 lint 流程。整合 PCSC 官方地圖 API。
+- **v19-v21 (模組快取坑)**：經歷 ES Module 碎片化與快取衝突，確立「動 JS 必更動 HTML 版號」與 Python 統一推升機制。
+- **v12-v18 (架構調適)**：首度導入事件代理，處理全域變數未掛載 (`window.state`) 等 Bug。
+- **v11 (直連 DB)**：引入 `supabase-js` 平行加速前台加載資料，開啟 RLS。
+- **v10 (設計更迭)**：移除底部固定送出鈕，改由表單整合結帳流程，購物車加上折扣 Badge。

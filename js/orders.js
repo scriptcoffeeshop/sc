@@ -2,12 +2,12 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from './config.js?v=43';
-import { authFetch } from './auth.js?v=43';
-import { escapeHtml, Toast } from './utils.js?v=43';
-import { state } from './state.js?v=43';
-import { cart, clearCart, updateCartUI, calcCartSummary } from './cart.js?v=43';
-import { collectDynamicFields } from './form-renderer.js?v=43';
+import { API_URL } from './config.js?v=44';
+import { authFetch } from './auth.js?v=44';
+import { escapeHtml } from './utils.js?v=44';
+import { state } from './state.js?v=44';
+import { cart, clearCart } from './cart.js?v=44';
+import { collectDynamicFields } from './form-renderer.js?v=44';
 
 /** 送出訂單 */
 export async function submitOrder() {
@@ -51,36 +51,34 @@ export async function submitOrder() {
         }
     }
 
-    // 收集訂購品項（從購物車）
-    let orderLines = [];
-    cart.forEach(c => {
-        const amt = c.qty * c.unitPrice;
-        orderLines.push(`${c.productName} (${c.specLabel}) x ${c.qty} (${amt}元)`);
-    });
-    if (orderLines.length === 0) { Swal.fire('錯誤', '購物車是空的，請先選擇商品', 'error'); return; }
+    if (!cart.length) { Swal.fire('錯誤', '購物車是空的，請先選擇商品', 'error'); return; }
 
-    const summary = calcCartSummary();
-    if (summary.appliedPromos.length > 0) {
-        orderLines.push(`---`);
-        summary.appliedPromos.forEach(p => {
-            orderLines.push(`🎁 ${p.name} (-$${p.amount})`);
-        });
+    if (typeof window.refreshQuote === 'function') {
+        const quoteResult = await window.refreshQuote({ silent: true });
+        if (!quoteResult?.success) {
+            Swal.fire('錯誤', quoteResult?.error || '無法計算訂單金額，請稍後再試', 'error');
+            return;
+        }
     }
-    if (state.selectedDelivery) {
-        orderLines.push(`🚚 運費: $${summary.shippingFee}`);
+    const quote = state.orderQuote;
+    if (!quote || !Array.isArray(quote.orderLines)) {
+        Swal.fire('錯誤', '無法取得最新報價，請稍後再試', 'error');
+        return;
     }
-    const total = summary.finalTotal;
+    const orderLines = quote.orderLines;
+    const total = Number(quote.total) || 0;
+    const deliveryMethod = quote.deliveryMethod || state.selectedDelivery;
 
     // 收集配送資訊
     let deliveryInfo = {};
-    if (state.selectedDelivery === 'delivery') {
+    if (deliveryMethod === 'delivery') {
         const city = document.getElementById('delivery-city').value;
         const district = document.getElementById('delivery-district').value;
         const addr = document.getElementById('delivery-detail-address').value.trim();
         if (!city) { Swal.fire('錯誤', '請選擇縣市', 'error'); return; }
         if (!addr) { Swal.fire('錯誤', '請填寫詳細地址', 'error'); return; }
         deliveryInfo = { city, district, address: addr };
-    } else if (state.selectedDelivery === 'home_delivery') {
+    } else if (deliveryMethod === 'home_delivery') {
         // 全台宅配處理
         const cityObj = document.querySelector('.county');
         const distObj = document.querySelector('.district');
@@ -92,7 +90,7 @@ export async function submitOrder() {
         if (!city || !district) { Swal.fire('錯誤', '請選擇全台宅配的縣市及區域', 'error'); return; }
         if (!addr) { Swal.fire('錯誤', '請填寫全台宅配的詳細地址', 'error'); return; }
         deliveryInfo = { city, district: `${zip} ${district}`.trim(), address: addr };
-    } else if (state.selectedDelivery === 'in_store') {
+    } else if (deliveryMethod === 'in_store') {
         deliveryInfo = { storeName: '來店自取', storeAddress: '新竹市東區建中路101號1樓' };
     } else {
         const sName = document.getElementById('store-name-input').value.trim();
@@ -106,6 +104,10 @@ export async function submitOrder() {
     // 付款方式驗證
     const paymentMethod = state.selectedPayment || 'cod';
     let transferTargetAccountInfo = '';
+    if (quote.availablePaymentMethods && !quote.availablePaymentMethods[paymentMethod]) {
+        Swal.fire('錯誤', '目前配送方式不支援此付款方式，請重新選擇', 'error');
+        return;
+    }
 
     if (paymentMethod === 'transfer') {
         if (!state.selectedBankAccountId) {
@@ -131,17 +133,18 @@ export async function submitOrder() {
 
     // 配送方式文字
     const methodText = { delivery: '配送到府(限新竹)', home_delivery: '全台宅配', seven_eleven: '7-11 取件', family_mart: '全家取件', in_store: '來店取貨' };
-    let addrText = (state.selectedDelivery === 'delivery' || state.selectedDelivery === 'home_delivery')
+    let addrText = (deliveryMethod === 'delivery' || deliveryMethod === 'home_delivery')
         ? `${deliveryInfo.city}${deliveryInfo.district || ''} ${deliveryInfo.address}`
-        : state.selectedDelivery === 'in_store'
+        : deliveryMethod === 'in_store'
             ? `來店自取 (${deliveryInfo.storeAddress})`
             : `${deliveryInfo.storeName} [店號：${deliveryInfo.storeId}]${deliveryInfo.storeAddress ? ' (' + deliveryInfo.storeAddress + ')' : ''}`;
+    const orderLinesHtml = orderLines.map(line => escapeHtml(String(line))).join('<br>');
 
     const confirmHtml = `
         <div style="text-align:left;font-size:0.95rem;">
-        <b>配送方式：</b>${methodText[state.selectedDelivery]}<br>
+        <b>配送方式：</b>${methodText[deliveryMethod]}<br>
         <b>取貨地點：</b>${escapeHtml(addrText)}<br><br>
-        <b>訂單內容：</b><br>${orderLines.join('<br>')}<br><br>
+        <b>訂單內容：</b><br>${orderLinesHtml}<br><br>
         <b>總金額：</b>$${total}
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ''}
         <br><br><b>付款方式：</b>${{ cod: '貨到付款', linepay: 'LINE Pay', transfer: '線上轉帳' }[paymentMethod]}
@@ -165,7 +168,7 @@ export async function submitOrder() {
                 lineName: u.displayName || u.display_name,
                 phone, email,
                 items: payloadItems,
-                deliveryMethod: state.selectedDelivery,
+                deliveryMethod,
                 note,
                 customFields: customFieldsJson,
                 paymentMethod,
@@ -183,7 +186,7 @@ export async function submitOrder() {
                 u.defaultCustomFields = customFieldsJson;
             }
             localStorage.setItem('coffee_user', JSON.stringify(u));
-            try { localStorage.setItem('coffee_delivery_prefs', JSON.stringify({ method: state.selectedDelivery, ...deliveryInfo })); } catch { }
+            try { localStorage.setItem('coffee_delivery_prefs', JSON.stringify({ method: deliveryMethod, ...deliveryInfo })); } catch { }
 
             // 背景同步使用者資料到後端
             try {
@@ -193,7 +196,7 @@ export async function submitOrder() {
                         phone: phone || '',
                         email: email || '',
                         defaultCustomFields: customFieldsJson || '{}',
-                        defaultDeliveryMethod: state.selectedDelivery || '',
+                        defaultDeliveryMethod: deliveryMethod || '',
                         ...deliveryInfo,
                     }),
                 }).catch(() => { });

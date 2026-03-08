@@ -2,9 +2,9 @@
 // delivery.js — 配送方式、地址、門市選擇
 // ============================================
 
-import { API_URL, districtData } from './config.js?v=43';
-import { escapeHtml, escapeAttr, Toast } from './utils.js?v=43';
-import { state } from './state.js?v=43';
+import { API_URL, districtData } from './config.js?v=44';
+import { escapeHtml, Toast } from './utils.js?v=44';
+import { state } from './state.js?v=44';
 
 let allStores = [];
 let storeListLoaded = false;
@@ -55,8 +55,10 @@ window.renderDeliveryOptions = function (config) {
 };
 
 /** 選擇配送方式 */
-window.selectDelivery = function (method, e) {
+window.selectDelivery = function (method, e, options = {}) {
     state.selectedDelivery = method;
+    state.orderQuote = null;
+    state.quoteError = '';
     document.querySelectorAll('.delivery-option').forEach(el => el.classList.remove('active'));
 
     // 如果有傳入 event 則使用目前的 target，否則透過 method 尋找對應的選項元素
@@ -97,9 +99,12 @@ window.selectDelivery = function (method, e) {
         window.updatePaymentOptionsState(deliveryConfig);
     }
 
-    // 切換配送方式後，立即重新計算運費與金額並更新 UI
+    // 切換配送方式後，先更新畫面，再重新向後端取得 quote
     if (typeof window.updateCartUI === 'function') {
         window.updateCartUI();
+    }
+    if (!options.skipQuote && typeof window.scheduleQuoteRefresh === 'function') {
+        window.scheduleQuoteRefresh({ silent: true });
     }
 
     // 切換配送方式後，重新渲染動態表單欄位（依配送方式過濾）

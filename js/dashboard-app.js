@@ -2,9 +2,13 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=43';
-import { esc, Toast } from './utils.js?v=43';
-import { loginWithLine, authFetch } from './auth.js?v=43';
+import { API_URL, LINE_REDIRECT } from './config.js?v=44';
+import { esc, Toast } from './utils.js?v=44';
+import { loginWithLine, authFetch } from './auth.js?v=44';
+import { createOrdersActionHandlers, createOrdersTabLoaders } from './dashboard/modules/orders.js?v=44';
+import { createProductsActionHandlers, createProductsTabLoaders } from './dashboard/modules/products.js?v=44';
+import { createSettingsActionHandlers, createSettingsTabLoaders } from './dashboard/modules/settings.js?v=44';
+import { createUsersActionHandlers, createUsersTabLoaders } from './dashboard/modules/users.js?v=44';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -63,10 +67,61 @@ window.delPromotion = delPromotion;
 window.movePromotion = movePromotion;
 window.togglePromoType = togglePromoType;
 
-function parseId(value) {
-    const parsed = Number.parseInt(value ?? '', 10);
-    return Number.isNaN(parsed) ? null : parsed;
-}
+const dashboardActionHandlers = {
+    'login-with-line': () => window.loginWithLine(),
+    'logout': () => logout(),
+    ...createOrdersActionHandlers({
+        loadOrders,
+        deleteOrderById,
+        linePayRefundOrder,
+        confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
+        Toast,
+    }),
+    ...createProductsActionHandlers({
+        showProductModal,
+        addCategory,
+        showPromotionModal,
+        editProduct,
+        delProduct,
+        editCategory,
+        delCategory,
+        editPromotion,
+        delPromotion,
+        addSpecRow,
+        closeProductModal,
+        closePromotionModal,
+        renderCategories,
+        loadPromotions,
+    }),
+    ...createSettingsActionHandlers({
+        uploadSiteIcon,
+        resetSectionTitle,
+        addDeliveryOptionAdmin,
+        showAddBankAccountModal,
+        saveSettings,
+        showAddFieldModal,
+        toggleFieldEnabled,
+        editFormField,
+        deleteFormField,
+        editBankAccount,
+        deleteBankAccount,
+        loadSettings,
+        loadFormFields,
+    }),
+    ...createUsersActionHandlers({
+        loadUsers,
+        toggleUserBlacklist,
+        toggleUserRole,
+        loadBlacklist,
+    }),
+};
+
+const dashboardTabLoaders = {
+    ...createOrdersTabLoaders({ loadOrders }),
+    ...createProductsTabLoaders({ renderCategories, loadPromotions }),
+    ...createSettingsTabLoaders({ loadSettings, loadFormFields }),
+    ...createUsersTabLoaders({ loadUsers, loadBlacklist }),
+};
 
 function initializeDashboardEventDelegation() {
     document.addEventListener('click', (event) => {
@@ -87,139 +142,44 @@ function initializeDashboardEventDelegation() {
         const action = actionButton.dataset.action;
         if (!action) return;
         event.preventDefault();
-
         switch (action) {
             case 'login-with-line':
-                window.loginWithLine();
-                break;
             case 'logout':
-                logout();
-                break;
             case 'reload-orders':
-                loadOrders();
-                break;
             case 'show-product-modal':
-                showProductModal();
-                break;
             case 'add-category':
-                addCategory();
-                break;
             case 'show-promotion-modal':
-                showPromotionModal();
-                break;
             case 'search-users':
-                loadUsers();
-                break;
             case 'upload-site-icon':
-                uploadSiteIcon();
-                break;
             case 'reset-section-title':
-                resetSectionTitle(actionButton.dataset.section);
-                break;
             case 'add-delivery-option-admin':
-                addDeliveryOptionAdmin();
-                break;
             case 'show-add-bank-account-modal':
-                showAddBankAccountModal();
-                break;
             case 'save-settings':
-                saveSettings();
-                break;
             case 'show-add-field-modal':
-                showAddFieldModal();
-                break;
             case 'add-spec-row':
-                addSpecRow();
-                break;
             case 'close-product-modal':
-                closeProductModal();
-                break;
             case 'close-promotion-modal':
-                closePromotionModal();
-                break;
             case 'refund-linepay-order':
-                if (actionButton.dataset.orderId) linePayRefundOrder(actionButton.dataset.orderId);
-                break;
             case 'confirm-transfer-payment':
-                if (actionButton.dataset.orderId) window.confirmTransferPayment(actionButton.dataset.orderId);
-                break;
             case 'copy-tracking-number':
-                if (actionButton.dataset.trackingNumber) {
-                    navigator.clipboard.writeText(actionButton.dataset.trackingNumber)
-                        .then(() => Toast.fire({ icon: 'success', title: '單號已複製' }))
-                        .catch(() => Swal.fire('錯誤', '複製失敗，請手動複製', 'error'));
-                }
-                break;
             case 'delete-order':
-                if (actionButton.dataset.orderId) deleteOrderById(actionButton.dataset.orderId);
-                break;
-            case 'edit-product': {
-                const id = parseId(actionButton.dataset.productId);
-                if (id !== null) editProduct(id);
-                break;
-            }
-            case 'delete-product': {
-                const id = parseId(actionButton.dataset.productId);
-                if (id !== null) delProduct(id);
-                break;
-            }
+            case 'edit-product':
+            case 'delete-product':
             case 'remove-spec-row':
-                actionButton.closest('.spec-row')?.remove();
-                break;
-            case 'edit-category': {
-                const id = parseId(actionButton.dataset.categoryId);
-                if (id !== null) editCategory(id);
-                break;
-            }
-            case 'delete-category': {
-                const id = parseId(actionButton.dataset.categoryId);
-                if (id !== null) delCategory(id);
-                break;
-            }
-            case 'edit-promotion': {
-                const id = parseId(actionButton.dataset.promotionId);
-                if (id !== null) editPromotion(id);
-                break;
-            }
-            case 'delete-promotion': {
-                const id = parseId(actionButton.dataset.promotionId);
-                if (id !== null) delPromotion(id);
-                break;
-            }
+            case 'edit-category':
+            case 'delete-category':
+            case 'edit-promotion':
+            case 'delete-promotion':
             case 'remove-delivery-option-row':
-                actionButton.closest('.delivery-option-row')?.remove();
-                break;
             case 'toggle-user-blacklist':
-                if (actionButton.dataset.userId) toggleUserBlacklist(actionButton.dataset.userId, actionButton.dataset.blocked === 'true');
-                break;
             case 'toggle-user-role':
-                if (actionButton.dataset.userId && actionButton.dataset.newRole) {
-                    toggleUserRole(actionButton.dataset.userId, actionButton.dataset.newRole);
-                }
-                break;
-            case 'toggle-field-enabled': {
-                const id = parseId(actionButton.dataset.fieldId);
-                if (id !== null) toggleFieldEnabled(id, actionButton.dataset.enabled === 'true');
-                break;
-            }
-            case 'edit-form-field': {
-                const id = parseId(actionButton.dataset.fieldId);
-                if (id !== null) editFormField(id);
-                break;
-            }
-            case 'delete-form-field': {
-                const id = parseId(actionButton.dataset.fieldId);
-                if (id !== null) deleteFormField(id);
-                break;
-            }
-            case 'edit-bank-account': {
-                const id = parseId(actionButton.dataset.bankAccountId);
-                if (id !== null) editBankAccount(id);
-                break;
-            }
+            case 'toggle-field-enabled':
+            case 'edit-form-field':
+            case 'delete-form-field':
+            case 'edit-bank-account':
             case 'delete-bank-account': {
-                const id = parseId(actionButton.dataset.bankAccountId);
-                if (id !== null) deleteBankAccount(id);
+                const handler = dashboardActionHandlers[action];
+                if (handler) handler(actionButton, event);
                 break;
             }
             default:
@@ -323,13 +283,8 @@ function showTab(tab) {
     document.getElementById(`tab-${tab}`).classList.add('tab-active');
     document.getElementById(`tab-${tab}`).classList.remove('bg-white', 'text-gray-600');
     document.getElementById(`${tab}-section`).classList.remove('hidden');
-    if (tab === 'orders') loadOrders();
-    else if (tab === 'promotions') loadPromotions();
-    else if (tab === 'settings') loadSettings();
-    else if (tab === 'categories') renderCategories();
-    else if (tab === 'users') loadUsers();
-    else if (tab === 'blacklist') loadBlacklist();
-    else if (tab === 'formfields') loadFormFields();
+    const loader = dashboardTabLoaders[tab];
+    if (loader) loader();
 }
 
 // ============ 訂單管理 ============
