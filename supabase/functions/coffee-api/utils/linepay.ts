@@ -52,14 +52,43 @@ export async function requestLinePayAPI(
   };
 
   const url = `${baseUrl}${apiPath}`;
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: bodyStr || null,
-  });
+  const maxRetries = 2;
+  const timeoutMs = 8000;
+  let attempt = 0;
 
-  const text = await res.text();
-  // LINE Pay transactionId 可能超過 JS Number 精度，以字串處理
-  const processed = text.replace(/("transactionId"\s*:\s*)(\d+)/g, '$1"$2"');
-  return JSON.parse(processed);
+  while (attempt <= maxRetries) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: bodyStr || null,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      const text = await res.text();
+      const processed = text.replace(
+        /("transactionId"\s*:\s*)(\d+)/g,
+        '$1"$2"',
+      );
+      return JSON.parse(processed);
+    } catch (err: unknown) {
+      attempt++;
+      if (attempt > maxRetries) {
+        let msg = "LINE Pay 網路請求失敗";
+        if (err instanceof Error) {
+          msg = err.name === "AbortError"
+            ? "LINE Pay 請求逾時 (Timeout)"
+            : err.message;
+        }
+        throw new Error(msg);
+      }
+      await new Promise((r) => setTimeout(r, 500)); // 等待 500ms 重試
+    }
+  }
+
+  return { success: false, error: "LINE Pay 網路異常" };
 }

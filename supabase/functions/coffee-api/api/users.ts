@@ -1,28 +1,32 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin, requireSuperAdmin } from "../utils/auth.ts";
 
-export async function getUsers(data: Record<string, unknown>, req: Request) {
+export async function getUsers(req: Request) {
   await requireSuperAdmin(req);
-  const { data: users, error } = await supabase.from("coffee_users").select(
-    "*",
-  )
-    .order("last_login", { ascending: false });
-  if (error) return { success: false, error: error.message };
+  const url = new URL(req.url);
+  const search = url.searchParams.get("search") || "";
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+  const pageSize = Math.min(
+    100,
+    Math.max(1, parseInt(url.searchParams.get("pageSize") || "50")),
+  );
+  const offset = (page - 1) * pageSize;
 
-  const search = String(data.search || "").toLowerCase();
-  const allUsers = users || [];
-  let filtered = allUsers;
+  let query = supabase.from("coffee_users").select("*", { count: "exact" });
   if (search) {
-    filtered = allUsers.filter((u: Record<string, unknown>) =>
-      (u.display_name &&
-        String(u.display_name).toLowerCase().includes(search)) ||
-      (u.line_user_id &&
-        String(u.line_user_id).toLowerCase().includes(search)) ||
-      (u.phone && String(u.phone).includes(search)) ||
-      (u.email && String(u.email).includes(search))
+    query = query.or(
+      `display_name.ilike.%${search}%,line_user_id.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`,
     );
   }
-  const formatted = filtered.map((u: Record<string, unknown>) => ({
+  query = query.order("last_login", { ascending: false }).range(
+    offset,
+    offset + pageSize - 1,
+  );
+
+  const { data: users, count, error } = await query;
+  if (error) return { success: false, error: error.message };
+
+  const formatted = (users || []).map((u: Record<string, unknown>) => ({
     userId: u.line_user_id,
     displayName: u.display_name,
     pictureUrl: u.picture_url,
@@ -38,7 +42,17 @@ export async function getUsers(data: Record<string, unknown>, req: Request) {
     defaultDistrict: u.default_district || "",
     defaultAddress: u.default_address || "",
   }));
-  return { success: true, users: formatted };
+
+  return {
+    success: true,
+    users: formatted,
+    pagination: {
+      totalCount: count || 0,
+      totalPages: Math.ceil((count || 0) / pageSize),
+      page,
+      pageSize,
+    },
+  };
 }
 
 export async function updateUserRole(
