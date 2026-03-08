@@ -2,10 +2,10 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=50";
-import { Toast } from "./utils.js?v=50";
-import { loginWithLine } from "./auth.js?v=50";
-import { state } from "./state.js?v=50";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=51";
+import { Toast } from "./utils.js?v=51";
+import { loginWithLine } from "./auth.js?v=51";
+import { state } from "./state.js?v=51";
 import {
   addToCart,
   cart,
@@ -15,8 +15,8 @@ import {
   updateCartItemQty,
   updateCartItemQtyByKeys,
   updateCartUI,
-} from "./cart.js?v=50";
-import { renderProducts } from "./products.js?v=50";
+} from "./cart.js?v=51";
+import { renderProducts } from "./products.js?v=51";
 import {
   checkStoreToken,
   clearSelectedStore,
@@ -26,11 +26,11 @@ import {
   selectDelivery,
   selectStoreFromList,
   updateDistricts,
-} from "./delivery.js?v=50";
-import { showMyOrders, submitOrder } from "./orders.js?v=50";
-import { applyBranding, renderDynamicFields } from "./form-renderer.js?v=50";
-import { authFetch } from "./auth.js?v=50";
-import { escapeHtml } from "./utils.js?v=50";
+} from "./delivery.js?v=51";
+import { showMyOrders, submitOrder } from "./orders.js?v=51";
+import { applyBranding, renderDynamicFields } from "./form-renderer.js?v=51";
+import { authFetch } from "./auth.js?v=51";
+import { escapeHtml } from "./utils.js?v=51";
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
 // 取代原本散落在 HTML 各處的內嵌事件掛載方式。
@@ -72,6 +72,13 @@ const actionHandlers = {
   "copy-transfer-account": (el, event) => {
     event.stopPropagation();
     copyTransferAccount(el, el.dataset.account || "");
+  },
+  "copy-tracking-number": (el) => {
+    const trackingNumber = String(el.dataset.trackingNumber || "").trim();
+    if (!trackingNumber) return;
+    navigator.clipboard.writeText(trackingNumber)
+      .then(() => Toast.fire({ icon: "success", title: "單號已複製" }))
+      .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
   },
 };
 

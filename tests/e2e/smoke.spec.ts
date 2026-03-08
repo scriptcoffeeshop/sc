@@ -50,12 +50,27 @@ async function installGlobalStubs(page: Page) {
 
   await page.addInitScript(() => {
     const noop = () => { };
+    const clipboardWrites: string[] = [];
     (window as any).Swal = {
       fire: async () => ({ isConfirmed: true }),
       close: noop,
       showLoading: noop,
       mixin: () => ({ fire: async () => ({}) }),
     };
+    (window as any).__clipboardWrites = clipboardWrites;
+    const clipboardMock = {
+      writeText: async (text: string) => {
+        clipboardWrites.push(String(text));
+      },
+    };
+    try {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: clipboardMock,
+      });
+    } catch {
+      (navigator as any).clipboard = clipboardMock;
+    }
   });
 }
 
@@ -329,6 +344,63 @@ test.describe("smoke", () => {
     await expect(page.locator("#transfer-info-section")).toBeVisible();
     await expect(accountCards.nth(1)).toHaveClass(/ring-2/);
     await expect(accountRadios.nth(1)).toBeChecked();
+  });
+
+  test("storefront my orders can copy tracking number", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
+      await fulfillJson(route, {
+        success: true,
+        orders: [
+          {
+            orderId: "MY001",
+            timestamp: "2026-03-02T00:00:00.000Z",
+            deliveryMethod: "home_delivery",
+            status: "shipped",
+            lineName: "測試客戶",
+            city: "新竹市",
+            address: "測試路 1 號",
+            items: "測試豆 x1",
+            total: 220,
+            paymentMethod: "cod",
+            paymentStatus: "",
+            shippingProvider: "黑貓宅急便",
+            trackingNumber: "AB123456789",
+          },
+        ],
+      });
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+    await page.locator('[data-action="show-my-orders"]').click();
+    await expect(page.locator("#my-orders-modal")).toBeVisible();
+
+    const copyButton = page.locator(
+      '#my-orders-list [data-action="copy-tracking-number"][data-tracking-number="AB123456789"]',
+    );
+    await expect(copyButton).toBeVisible();
+    await copyButton.click();
+
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__clipboardWrites.length)
+    ).toBe(1);
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__clipboardWrites[0])
+    ).toBe("AB123456789");
   });
 
   test("storefront submit order happy path works", async ({ page }) => {
