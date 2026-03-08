@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   payment_status TEXT DEFAULT '',
   payment_id TEXT DEFAULT '',
   payment_method TEXT DEFAULT 'cod',
-  transfer_account_last5 TEXT DEFAULT ''
+  transfer_account_last5 TEXT DEFAULT '',
+  tracking_number TEXT DEFAULT '',
+  idempotency_key TEXT UNIQUE
 );
 
 -- 4. 系統設定 (Key-Value)
