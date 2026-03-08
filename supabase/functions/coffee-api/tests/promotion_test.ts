@@ -1,6 +1,4 @@
-import {
-  assertEquals,
-} from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
 import {
   calcPercentDiscountAmount,
   isPromotionActive,
@@ -23,7 +21,11 @@ Deno.test("calcPercentDiscountAmount 正確計算折扣金額", () => {
 Deno.test("isPromotionActive 能處理起訖時間", () => {
   const now = new Date("2026-03-08T12:00:00.000Z");
   assertEquals(
-    isPromotionActive("2026-03-08T00:00:00.000Z", "2026-03-09T00:00:00.000Z", now),
+    isPromotionActive(
+      "2026-03-08T00:00:00.000Z",
+      "2026-03-09T00:00:00.000Z",
+      now,
+    ),
     true,
   );
   assertEquals(
