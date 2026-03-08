@@ -43,13 +43,17 @@ jobs:
         run: npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ts --reporter=line
 
       - name: Verify formatting
-        run: deno fmt --check supabase/functions/coffee-api/
+        run: deno fmt --check .
+        working-directory: supabase/functions/coffee-api
 
       - name: Linting
-        run: deno lint supabase/functions/coffee-api/
+        run: deno lint .
+        working-directory: supabase/functions/coffee-api
 
       - name: Type Check
-        run: deno check supabase/functions/coffee-api/index.ts
+        run: deno check index.ts
+        working-directory: supabase/functions/coffee-api
 
       - name: Run Tests
-        run: deno test --allow-all supabase/functions/coffee-api/tests/
+        run: deno test --allow-all tests/
+        working-directory: supabase/functions/coffee-api
