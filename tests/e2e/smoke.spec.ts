@@ -551,6 +551,16 @@ test.describe("smoke", () => {
     const statusSelect = page.locator(
       'select[data-action="change-order-status"][data-order-id="ORD001"]',
     );
+    await statusSelect.click();
+    await page.waitForTimeout(250);
+    expect(updateStatusCalls).toBe(0);
+
+    await statusSelect.evaluate((el) => {
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await page.waitForTimeout(250);
+    expect(updateStatusCalls).toBe(0);
+
     await statusSelect.selectOption("processing");
     await expect.poll(() => updateStatusCalls).toBeGreaterThan(0);
 

@@ -2,26 +2,26 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=48";
-import { esc, Toast } from "./utils.js?v=48";
-import { authFetch, loginWithLine } from "./auth.js?v=48";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=50";
+import { esc, Toast } from "./utils.js?v=50";
+import { authFetch, loginWithLine } from "./auth.js?v=50";
 import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
-} from "./dashboard/modules/orders.js?v=48";
+} from "./dashboard/modules/orders.js?v=50";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
-} from "./dashboard/modules/products.js?v=48";
+} from "./dashboard/modules/products.js?v=50";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
-} from "./dashboard/modules/settings.js?v=48";
+} from "./dashboard/modules/settings.js?v=50";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
-} from "./dashboard/modules/users.js?v=48";
-import { createDashboardEvents } from "./dashboard/events.js?v=48";
+} from "./dashboard/modules/users.js?v=50";
+import { createDashboardEvents } from "./dashboard/events.js?v=50";
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -554,7 +554,7 @@ function renderOrders() {
                     ${refundBtn}
                     ${confirmPayBtn}
                     <select data-action="change-order-status" data-order-id="${esc(o.orderId)
-      }" class="text-xs border rounded px-2 py-1">
+      }" data-current-status="${esc(o.status || "")}" class="text-xs border rounded px-2 py-1">
                         ${["pending", "processing", "shipped", "completed", "cancelled"].map((s) =>
         `<option value="${s}" ${o.status === s ? "selected" : ""}>${orderStatusLabel[s]
         }</option>`

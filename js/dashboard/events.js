@@ -1,3 +1,23 @@
+const ORDER_STATUS_ALIASES = {
+    pending: "pending",
+    processing: "processing",
+    shipped: "shipped",
+    completed: "completed",
+    cancelled: "cancelled",
+    "待處理": "pending",
+    "處理中": "processing",
+    "已出貨": "shipped",
+    "已完成": "completed",
+    "已取消": "cancelled",
+};
+
+function normalizeOrderStatus(value) {
+    const rawValue = String(value || "").trim();
+    if (!rawValue) return "";
+    const lowered = rawValue.toLowerCase();
+    return ORDER_STATUS_ALIASES[rawValue] || ORDER_STATUS_ALIASES[lowered] || lowered;
+}
+
 export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadUsers, previewIcon, saveProduct, savePromotion, changeOrderStatus, renderOrders) {
     function initializeDashboardEventDelegation() {
         document.addEventListener("click", (event) => {
@@ -17,6 +37,9 @@ export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadU
 
             const action = actionButton.dataset.action;
             if (!action) return;
+            // 訂單狀態下拉選單只應在 change 事件觸發更新，
+            // 避免點開選單時就誤觸發更新。
+            if (action === "change-order-status") return;
             const isCheckboxInput = actionButton instanceof HTMLInputElement &&
                 actionButton.type === "checkbox";
             if (isCheckboxInput) return;
@@ -33,7 +56,11 @@ export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadU
             if (target instanceof HTMLSelectElement && target.dataset.action === "change-order-status") {
                 const orderId = target.dataset.orderId;
                 if (!orderId) return;
-                changeOrderStatus(orderId, target.value);
+                const currentStatus = normalizeOrderStatus(target.dataset.currentStatus);
+                const nextStatus = normalizeOrderStatus(target.value);
+                if (!nextStatus || currentStatus === nextStatus) return;
+                target.dataset.currentStatus = nextStatus;
+                changeOrderStatus(orderId, nextStatus);
                 return;
             }
             if (target instanceof HTMLInputElement && target.dataset.action) {
