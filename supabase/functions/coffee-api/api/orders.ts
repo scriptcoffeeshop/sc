@@ -1,5 +1,5 @@
 import { supabase } from "../utils/supabase.ts";
-import { extractAuth, requireAdmin, requireAuth } from "../utils/auth.ts";
+import { requireAdmin, requireAuth } from "../utils/auth.ts";
 import {
   FRONTEND_URL,
   SMTP_USER,
@@ -14,34 +14,20 @@ import {
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
 
-// Note: registerOrUpdateUser is currently in api/auth.ts.
-// For now, I'll copy or move it to a shared place if needed.
-// Actually, I'll move it to utils/user-updater.ts or similar if I want to keep it dry.
-// But as per plan, I'll keep it simple for now and maybe just import it if I export it.
-
-// For now, let's assume we can import it from auth.ts if we export it,
-// but it's better to avoid circular dependencies if later auth imports orders.
-// I'll move registerOrUpdateUser to utils/users.ts.
-
 import { registerOrUpdateUser } from "../utils/users.ts";
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
-  const auth = await extractAuth(req);
-  const lineUserId = auth?.userId || "";
-  const phoneNum = String(data.phone || "").replace(/[\s-]/g, "");
+  const auth = await requireAuth(req);
+  const lineUserId = auth.userId;
 
-  if (lineUserId || phoneNum) {
-    let q = supabase.from("coffee_users").select(
-      "status, blocked_at, blacklist_reason",
-    );
-    if (lineUserId) q = q.eq("line_user_id", lineUserId);
-    else q = q.eq("phone", phoneNum);
+  const q = supabase.from("coffee_users").select(
+    "status, blocked_at, blacklist_reason",
+  ).eq("line_user_id", lineUserId);
 
-    const { data: userRow } = await q.maybeSingle();
-    if (userRow && (userRow.status === "BLACKLISTED" || userRow.blocked_at)) {
-      const reason = userRow.blacklist_reason || "違反系統使用規範";
-      return { success: false, error: `帳號已被停權，原因：${reason}` };
-    }
+  const { data: userRow } = await q.maybeSingle();
+  if (userRow && (userRow.status === "BLACKLISTED" || userRow.blocked_at)) {
+    const reason = userRow.blacklist_reason || "違反系統使用規範";
+    return { success: false, error: `帳號已被停權，原因：${reason}` };
   }
 
   if (!data.lineName) {
@@ -91,9 +77,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const pad = (n: number) => String(n).padStart(2, "0");
   const uuidHex = crypto.randomUUID().replace(/-/g, "").slice(0, 8)
     .toUpperCase();
-  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
-    pad(now.getDate())
-  }-${uuidHex}`;
+  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())
+    }-${uuidHex}`;
 
   const insertPayload: Record<string, unknown> = {
     id: orderId,
@@ -111,8 +96,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     store_type: deliveryMethod === "seven_eleven"
       ? "7-11"
       : deliveryMethod === "family_mart"
-      ? "全家"
-      : "",
+        ? "全家"
+        : "",
     store_id: data.storeId || "",
     store_name: data.storeName || "",
     store_address: data.storeAddress || "",
@@ -176,25 +161,22 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
             for (const field of formFields) {
               const key = field.field_key;
               if (parsedFields[key] !== undefined) {
-                customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
-                  sanitize(field.label)
-                }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
+                customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${sanitize(field.label)
+                  }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
                 delete parsedFields[key]; // 已處理過的移除
               }
             }
           }
           // 處理剩餘不在設定中的欄位（若有）
           for (const [key, val] of Object.entries(parsedFields)) {
-            customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
-              sanitize(key)
-            }：</strong> ${sanitize(String(val))}</p>`;
+            customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${sanitize(key)
+              }：</strong> ${sanitize(String(val))}</p>`;
           }
         }
       } catch {
         // 解析失敗則直接以字串顯示
         customFieldsHtml +=
-          `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
-            sanitize(data.customFields)
+          `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${sanitize(data.customFields)
           }</p>`;
       }
     }
@@ -287,9 +269,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         }).eq("id", orderId);
         return {
           success: false,
-          error: `LINE Pay 請求失敗: ${
-            lpRes.returnMessage || lpRes.returnCode
-          }`,
+          error: `LINE Pay 請求失敗: ${lpRes.returnMessage || lpRes.returnCode
+            }`,
           orderId,
         };
       }
