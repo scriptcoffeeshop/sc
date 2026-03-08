@@ -1,4 +1,4 @@
-import { assertEquals, assertStringIncludes } from "std/testing/asserts";
+import { assertEquals } from "std/testing/asserts";
 import {
   buildOrderConfirmationHtml,
   buildShippingNotificationHtml,
