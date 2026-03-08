@@ -1,6 +1,7 @@
 import { supabase } from "../utils/supabase.ts";
 import { signJwt } from "../utils/auth.ts";
 import {
+  ALLOWED_REDIRECT_ORIGINS,
   LINE_ADMIN_USER_ID,
   LINE_LOGIN_CHANNEL_ID,
   LINE_LOGIN_CHANNEL_SECRET,
@@ -8,6 +9,17 @@ import {
 
 export function getLineLoginUrl(redirectUri: string) {
   if (!redirectUri) return { success: false, error: "缺少 redirectUri" };
+
+  try {
+    const urlObj = new URL(redirectUri);
+    // 驗證 redirectUri 是否在 ALLOWED_REDIRECT_ORIGINS 內
+    if (!ALLOWED_REDIRECT_ORIGINS.includes(urlObj.origin)) {
+      return { success: false, error: "不允許的 redirectUri 來源" };
+    }
+  } catch {
+    return { success: false, error: "無效的 redirectUri 格式" };
+  }
+
   const state = crypto.randomUUID();
   const authUrl = "https://access.line.me/oauth2/v2.1/authorize?" +
     "response_type=code&" +

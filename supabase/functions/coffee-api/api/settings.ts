@@ -6,12 +6,35 @@ import { getFormFields } from "./form-fields.ts";
 import { getBankAccounts } from "./bank-accounts.ts";
 import { getPromotions } from "./promotions.ts";
 
+const PUBLIC_SETTINGS_KEYS = [
+  "is_open",
+  "announcement",
+  "announcement_enabled",
+  "store_name",
+  "delivery_pricing_rules",
+  "site_title",
+  "site_subtitle",
+  "site_icon_url",
+  "site_icon_emoji",
+  "products_section_title",
+  "delivery_section_title",
+  "notes_section_title",
+  "payment_enabled",
+  "linepay_enabled",
+  "transfer_enabled",
+  "delivery_options_config",
+];
+
 // ============ 設定 ============
 export async function getSettings() {
   const { data, error } = await supabase.from("coffee_settings").select("*");
   if (error) return { success: false, error: error.message };
   const settings: Record<string, string> = {};
-  for (const row of (data || [])) settings[row.key] = row.value;
+  for (const row of (data || [])) {
+    if (PUBLIC_SETTINGS_KEYS.includes(row.key)) {
+      settings[row.key] = row.value;
+    }
+  }
   return { success: true, settings };
 }
 
