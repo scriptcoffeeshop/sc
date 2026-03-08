@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>咖啡豆訂購 — 訂單追蹤</title>
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co ws://localhost:* http://localhost:*;">
+  <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+  <link rel="stylesheet" href="css/common.css">
+</head>
+
+<body class="p-4 md:p-6">
+  <div class="max-w-3xl mx-auto glass-card p-6 md:p-8">
+    <div class="flex items-center justify-between gap-3 mb-6">
+      <div class="flex items-center gap-3">
+        <span class="text-4xl">📦</span>
+        <div>
+          <h1 class="text-2xl font-bold" style="color: var(--primary)">訂單追蹤</h1>
+          <p class="text-sm text-gray-500">輸入訂單編號與手機末碼查詢進度與物流狀態</p>
+        </div>
+      </div>
+      <a href="main.html" class="text-sm font-medium" style="color: var(--primary)">返回訂購頁</a>
+    </div>
+
+    <form id="track-form" class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <div class="md:col-span-2">
+        <label class="block text-sm text-gray-600 mb-1" for="track-order-id">訂單編號</label>
+        <input id="track-order-id" class="input-field" placeholder="例如：C20260309-ABC12345" required>
+      </div>
+      <div>
+        <label class="block text-sm text-gray-600 mb-1" for="track-phone-suffix">手機末碼</label>
+        <input id="track-phone-suffix" class="input-field" inputmode="numeric" pattern="[0-9]*" maxlength="10"
+          placeholder="至少 4 碼" required>
+      </div>
+      <div class="md:col-span-3 flex gap-2">
+        <button id="track-submit" type="submit" class="btn-primary">查詢訂單</button>
+      </div>
+    </form>
+
+    <p id="track-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4"></p>
+
+    <div id="track-result" class="hidden border rounded-xl p-4" style="border-color:#e5ddd5; background:#fff">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+          <p class="text-sm text-gray-500">訂單編號</p>
+          <p id="result-order-id" class="font-bold text-lg" style="color:var(--primary)"></p>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-gray-500">建立時間</p>
+          <p id="result-created-at" class="text-sm"></p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">
+        <div><span class="text-gray-500">收件人：</span><span id="result-line-name"></span></div>
+        <div><span class="text-gray-500">手機：</span><span id="result-phone"></span></div>
+        <div><span class="text-gray-500">配送方式：</span><span id="result-delivery"></span></div>
+        <div><span class="text-gray-500">付款狀態：</span><span id="result-payment"></span></div>
+        <div class="md:col-span-2"><span class="text-gray-500">收件資訊：</span><span id="result-address"></span></div>
+      </div>
+
+      <div class="mb-3 p-3 rounded-lg" style="background:#faf6f2">
+        <p class="text-sm text-gray-500 mb-1">目前狀態</p>
+        <p id="result-status" class="font-semibold"></p>
+      </div>
+
+      <div id="result-tracking" class="hidden mb-3 p-3 rounded-lg border" style="border-color:#dbeafe;background:#f8fbff">
+        <p class="text-sm text-gray-500 mb-1">物流資訊</p>
+        <p class="text-sm">單號：<span id="result-tracking-number" class="font-mono font-semibold"></span></p>
+        <a id="result-tracking-link" class="text-sm text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">前往物流查詢</a>
+      </div>
+
+      <div>
+        <p class="text-sm text-gray-500 mb-2">進度時間軸</p>
+        <div id="result-timeline" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/track-app.js?v=47"></script>
+</body>
+
+</html>

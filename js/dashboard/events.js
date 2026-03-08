@@ -34,10 +34,13 @@ export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadU
             changeOrderStatus(orderId, target.value);
         });
 
-        const orderFilter = document.getElementById("order-filter");
-        if (orderFilter) {
-            orderFilter.addEventListener("change", renderOrders);
-        }
+        const orderFilters = document.querySelectorAll("[data-order-filter]");
+        orderFilters.forEach((el) => {
+            el.addEventListener("change", renderOrders);
+            if (el instanceof HTMLInputElement && (el.type === "number" || el.type === "date")) {
+                el.addEventListener("input", renderOrders);
+            }
+        });
 
         const userSearchInput = document.getElementById("user-search");
         if (userSearchInput) {

@@ -18,10 +18,13 @@ import {
 import { getUserProfile, updateUserProfile } from "./api/profile.ts";
 
 import {
+  batchDeleteOrders,
+  batchUpdateOrderStatus,
   deleteOrder,
   getMyOrders,
   getOrders,
   submitOrder,
+  trackOrder,
   updateOrderStatus,
 } from "./api/orders.ts";
 import { quoteOrder } from "./api/quote.ts";
@@ -103,9 +106,12 @@ import { testEmail } from "./api/misc.ts";
 import { validate } from "./utils/validate.ts";
 import { lineLoginSchema, transferInfoSchema } from "./schemas/auth.ts";
 import {
+  batchDeleteOrdersSchema,
+  batchUpdateOrderStatusSchema,
   deleteOrderSchema,
   quoteOrderSchema,
   submitOrderSchema,
+  trackOrderSchema,
   updateOrderStatusSchema,
 } from "./schemas/order.ts";
 import { updateUserProfileSchema } from "./schemas/profile.ts";
@@ -261,6 +267,11 @@ const actionMap: Record<string, ActionHandler> = {
   pcscMapCallback: async (data) => await handlePcscMapCallback(data),
   linePayConfirm: async (data) => await linePayConfirm(data),
   linePayCancel: async (data, req) => await linePayCancel(data, req),
+  trackOrder: async (data) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(trackOrderSchema, data)) as any;
+    return await trackOrder(v);
+  },
 
   // ====== 需登入 ======
   submitOrder: async (data, req) => {
@@ -365,10 +376,20 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(updateOrderStatusSchema, data)) as any;
     return await updateOrderStatus(v, req);
   },
+  batchUpdateOrderStatus: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(batchUpdateOrderStatusSchema, data)) as any;
+    return await batchUpdateOrderStatus(v, req);
+  },
   deleteOrder: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(deleteOrderSchema, data)) as any;
     return await deleteOrder(v, req);
+  },
+  batchDeleteOrders: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(batchDeleteOrdersSchema, data)) as any;
+    return await batchDeleteOrders(v, req);
   },
   getUsers: async (_data, req) => await getUsers(req),
   updateUserRole: async (data, req) => {
