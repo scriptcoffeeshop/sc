@@ -18,7 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD_HTML = ROOT / "dashboard.html"
 DASHBOARD_APP = ROOT / "js" / "dashboard-app.js"
 DASHBOARD_MODULES = list((ROOT / "js" / "dashboard" / "modules").glob("*.js"))
-TARGETS = [DASHBOARD_HTML, DASHBOARD_APP] + DASHBOARD_MODULES
+DASHBOARD_EVENTS = ROOT / "js" / "dashboard" / "events.js"
+TARGETS = [DASHBOARD_HTML, DASHBOARD_APP, DASHBOARD_EVENTS] + DASHBOARD_MODULES
 
 INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
