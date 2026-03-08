@@ -24,7 +24,7 @@ INLINE_EVENT_RE = re.compile(r"\bon(?:click|change|keyup|keydown|submit|input)\s
 LEGACY_ONCLICK_SELECTOR_RE = re.compile(r"\[onclick\*")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
 HANDLERS_BLOCK_RE = re.compile(r"const\s+actionHandlers\s*=\s*\{(?P<body>[\s\S]*?)\n\};")
-HANDLER_KEY_RE = re.compile(r"'([^']+)'\s*:")
+HANDLER_KEY_RE = re.compile(r'["\']([^"\']+)["\']\s*:')
 
 
 def read_text(path: Path) -> str:
