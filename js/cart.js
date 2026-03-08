@@ -2,8 +2,8 @@
 // cart.js — 購物車 CRUD & UI
 // ============================================
 
-import { escapeHtml, Toast } from './utils.js?v=40';
-import { state } from './state.js?v=40';
+import { escapeHtml, Toast } from './utils.js?v=41';
+import { state } from './state.js?v=41';
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
@@ -122,9 +122,7 @@ export function updateCartUI() {
         const transferTotalEl = document.getElementById('transfer-total-amount');
         if (transferTotalEl) transferTotalEl.textContent = '$0';
 
-        // 更新購物車內按鈕狀態
-        const cartSubmitBtn = document.getElementById('cart-submit-btn');
-        if (cartSubmitBtn) cartSubmitBtn.disabled = true;
+        if (window.updateFormState) window.updateFormState();
         return;
     }
 
@@ -161,11 +159,8 @@ export function updateCartUI() {
         transferTotalEl.textContent = `$${summary.finalTotal}`;
     }
 
-    // 確保有商品時解鎖按鈕（前提是已登入與營業）
-    const cartSubmitBtn = document.getElementById('cart-submit-btn');
-    if (cartSubmitBtn && state.currentUser && state.isStoreOpen) {
-        cartSubmitBtn.disabled = false;
-    }
+    // 呼叫全域 updateFormState，讓 main-app 統一處理按鈕狀態（文字與 disabled 特性）
+    if (window.updateFormState) window.updateFormState();
 
     container.innerHTML = cart.map((c, i) => {
         const isDiscounted = summary.discountedItemKeys && summary.discountedItemKeys.has(`${c.productId}-${c.specKey}`);

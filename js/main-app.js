@@ -2,18 +2,18 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=40';
-import { Toast } from './utils.js?v=40';
-import { loginWithLine } from './auth.js?v=40';
-import { state } from './state.js?v=40';
-import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=40';
-import { renderProducts } from './products.js?v=40';
-import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=40';
-import { submitOrder, showMyOrders } from './orders.js?v=40';
-import { renderDynamicFields, applyBranding } from './form-renderer.js?v=40';
-import { authFetch } from './auth.js?v=40';
-import { escapeHtml } from './utils.js?v=40';
-import { supabase } from './supabase-client.js?v=40';
+import { API_URL, LINE_REDIRECT } from './config.js?v=41';
+import { Toast } from './utils.js?v=41';
+import { loginWithLine } from './auth.js?v=41';
+import { state } from './state.js?v=41';
+import { cart, addToCart, updateCartItemQty, updateCartItemQtyByKeys, removeCartItem, toggleCart, loadCart, calcCartSummary, updateCartUI } from './cart.js?v=41';
+import { renderProducts } from './products.js?v=41';
+import { selectDelivery, updateDistricts, openStoreMap, openStoreSearchModal, selectStoreFromList, clearSelectedStore, loadDeliveryPrefs, checkStoreToken } from './delivery.js?v=41';
+import { submitOrder, showMyOrders } from './orders.js?v=41';
+import { renderDynamicFields, applyBranding } from './form-renderer.js?v=41';
+import { authFetch } from './auth.js?v=41';
+import { escapeHtml } from './utils.js?v=41';
+import { supabase } from './supabase-client.js?v=41';
 
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
@@ -68,6 +68,7 @@ window.selectPayment = selectPayment;
 window.copyTransferAccount = copyTransferAccount;
 window.selectBankAccount = selectBankAccount;
 window.updateCartUI = updateCartUI;
+window.updateFormState = updateFormState;
 window.rerenderFormFields = function () {
     renderDynamicFields(state.formFields, document.getElementById('dynamic-fields-container'), state.selectedDelivery);
     // 回填使用者資料（包含所有動態表單欄位）
