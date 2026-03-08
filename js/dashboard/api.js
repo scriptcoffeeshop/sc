@@ -1,5 +1,5 @@
-import { API_URL } from "../config.js?v=50";
-import { authFetch } from "../auth.js?v=50";
+import { API_URL } from "../config.js?v=51";
+import { authFetch } from "../auth.js?v=51";
 
 export const API = {
     getOrders: async (userId) => {

@@ -2,12 +2,12 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from "./config.js?v=50";
-import { authFetch } from "./auth.js?v=50";
-import { escapeHtml } from "./utils.js?v=50";
-import { state } from "./state.js?v=50";
-import { cart, clearCart } from "./cart.js?v=50";
-import { collectDynamicFields } from "./form-renderer.js?v=50";
+import { API_URL } from "./config.js?v=51";
+import { authFetch } from "./auth.js?v=51";
+import { escapeHtml } from "./utils.js?v=51";
+import { state } from "./state.js?v=51";
+import { cart, clearCart } from "./cart.js?v=51";
+import { collectDynamicFields } from "./form-renderer.js?v=51";
 
 function normalizeTrackingUrl(url) {
   const raw = String(url || "").trim();
@@ -457,7 +457,9 @@ export async function showMyOrders() {
           : ""
         }
                 ${o.trackingNumber
-          ? `<div>物流單號：<span class="font-mono">${escapeHtml(o.trackingNumber)}</span></div>`
+          ? `<div class="mt-1">物流單號：<span class="font-mono">${escapeHtml(o.trackingNumber)}</span>
+                    <button type="button" data-action="copy-tracking-number" data-tracking-number="${escapeHtml(o.trackingNumber)}" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">📋 複製</button>
+                  </div>`
           : ""
         }
                 ${trackingUrl
