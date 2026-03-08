@@ -24,7 +24,32 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v46)
+## 🚀 近期重大更新 (v40 - v47)
+
+### 📅 v47 — 訂單中心升級與顧客訂單追蹤上線
+
+- **後台訂單中心升級（多條件篩選 + 批次操作 + CSV 匯出）**：
+  - `dashboard.html` 訂單區塊新增多條件篩選控件（訂單狀態、付款方式、付款狀態、配送方式、時間區間、金額區間）。
+  - `js/dashboard-app.js` 訂單渲染邏輯改為「可組合篩選」，並新增勾選機制與「全選目前篩選結果」。
+  - 新增批次操作：`batchUpdateOrderStatus`（批次狀態更新，可附付款狀態與共用物流單號）、`batchDeleteOrders`（批次刪除）。
+  - 新增 CSV 匯出：可匯出「目前篩選結果」或「目前勾選訂單」，含 UTF-8 BOM 以提升 Excel 開啟相容性。
+- **顧客端訂單追蹤頁（降低客服詢問）**：
+  - 新增 `track.html` 與 `js/track-app.js`，提供顧客以「訂單編號 + 手機末碼」查詢進度。
+  - 顯示內容含：訂單目前狀態、配送/付款資訊、收件資訊、物流單號與物流連結、狀態時間軸。
+  - `main.html` 新增「訂單追蹤（免登入）」入口。
+- **後端 API 擴充（模組化 + Schema 驗證）**：
+  - `schemas/order.ts` 新增：
+    - `batchUpdateOrderStatusSchema`
+    - `batchDeleteOrdersSchema`
+    - `trackOrderSchema`
+  - `api/orders.ts` 新增：
+    - `batchUpdateOrderStatus`（逐筆沿用既有 `updateOrderStatus` 流程）
+    - `batchDeleteOrders`
+    - `trackOrder`
+  - `index.ts` 正式註冊上述 action 與 validate。
+- **版本與驗證**：
+  - 前端版號升級至 `v47`（`?v=47`）。
+  - 本機檢查已通過：`npm run guardrails`、`npm run ci-local`、`npm run e2e`。
 
 ### 📅 v46 — 資安標頭 (CSP/SRI)、分頁搜尋下推與 CI 穩定化
 

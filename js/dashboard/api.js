@@ -1,5 +1,5 @@
-import { API_URL } from "../config.js?v=45";
-import { authFetch } from "../auth.js?v=45";
+import { API_URL } from "../config.js?v=47";
+import { authFetch } from "../auth.js?v=47";
 
 export const API = {
     getOrders: async (userId) => {
@@ -16,6 +16,22 @@ export const API = {
     },
     deleteOrder: async (payload) => {
         const r = await authFetch(`${API_URL}?action=deleteOrder`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        return r.json();
+    },
+    batchUpdateOrderStatus: async (payload) => {
+        const r = await authFetch(`${API_URL}?action=batchUpdateOrderStatus`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        return r.json();
+    },
+    batchDeleteOrders: async (payload) => {
+        const r = await authFetch(`${API_URL}?action=batchDeleteOrders`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

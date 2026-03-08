@@ -2,33 +2,33 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=46";
-import { esc, Toast } from "./utils.js?v=46";
-import { authFetch, loginWithLine } from "./auth.js?v=46";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=47";
+import { esc, Toast } from "./utils.js?v=47";
+import { authFetch, loginWithLine } from "./auth.js?v=47";
 import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
-} from "./dashboard/modules/orders.js?v=46";
+} from "./dashboard/modules/orders.js?v=47";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
-} from "./dashboard/modules/products.js?v=46";
+} from "./dashboard/modules/products.js?v=47";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
-} from "./dashboard/modules/settings.js?v=46";
+} from "./dashboard/modules/settings.js?v=47";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
-} from "./dashboard/modules/users.js?v=46";
-import { createDashboardEvents } from "./dashboard/events.js?v=46";
-import { API } from "./dashboard/api.js?v=46";
+} from "./dashboard/modules/users.js?v=47";
+import { createDashboardEvents } from "./dashboard/events.js?v=47";
 
 // ============ 共享狀態 ============
 let currentUser = null;
 let products = [];
 let categories = [];
 let orders = [];
+let selectedOrderIds = new Set();
 let users = [];
 let blacklist = [];
 let bankAccounts = [];
@@ -93,6 +93,12 @@ const dashboardActionHandlers = {
     deleteOrderById,
     linePayRefundOrder,
     confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
+    toggleOrderSelection,
+    toggleSelectAllOrders,
+    batchUpdateOrders,
+    batchDeleteOrders,
+    exportFilteredOrdersCsv,
+    exportSelectedOrdersCsv,
     Toast,
   }),
   ...createProductsActionHandlers({
@@ -256,6 +262,147 @@ function showTab(tab) {
 }
 
 // ============ 訂單管理 ============
+const orderStatusLabel = {
+  pending: "待處理",
+  processing: "處理中",
+  shipped: "已出貨",
+  completed: "已完成",
+  cancelled: "已取消",
+};
+
+const orderMethodLabel = {
+  delivery: "🏠 配送到府",
+  home_delivery: "📦 全台宅配",
+  seven_eleven: "🏪 7-11",
+  family_mart: "🏬 全家",
+  in_store: "🚶 來店取貨",
+};
+
+const orderPayMethodLabel = {
+  cod: "💵 貨到付款",
+  linepay: "💚 LINE Pay",
+  transfer: "🏦 轉帳",
+};
+
+const orderPayStatusLabel = {
+  pending: "⚓ 待付款",
+  paid: "✅ 已付款",
+  failed: "❌ 失敗",
+  cancelled: "❌ 取消",
+  refunded: "↩️ 已退款",
+};
+
+function getOrderFilterValue(id, fallback = "all") {
+  const el = document.getElementById(id);
+  if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement)) {
+    return fallback;
+  }
+  return String(el.value || fallback).trim();
+}
+
+function parseDateBound(dateStr, isEnd = false) {
+  if (!dateStr) return null;
+  const parsed = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  if (isEnd) {
+    parsed.setHours(23, 59, 59, 999);
+  }
+  return parsed;
+}
+
+function getFilteredOrders() {
+  const status = getOrderFilterValue("order-filter");
+  const paymentMethod = getOrderFilterValue("order-payment-filter");
+  const paymentStatus = getOrderFilterValue("order-payment-status-filter");
+  const deliveryMethod = getOrderFilterValue("order-delivery-filter");
+  const dateFrom = parseDateBound(getOrderFilterValue("order-date-from", ""));
+  const dateTo = parseDateBound(getOrderFilterValue("order-date-to", ""), true);
+  const minAmountRaw = getOrderFilterValue("order-amount-min", "");
+  const maxAmountRaw = getOrderFilterValue("order-amount-max", "");
+  const minAmount = minAmountRaw === "" ? null : Number(minAmountRaw);
+  const maxAmount = maxAmountRaw === "" ? null : Number(maxAmountRaw);
+
+  return orders.filter((order) => {
+    if (status !== "all" && order.status !== status) return false;
+
+    const pm = order.paymentMethod || "cod";
+    if (paymentMethod !== "all" && pm !== paymentMethod) return false;
+
+    const ps = String(order.paymentStatus || "");
+    if (paymentStatus !== "all") {
+      if (paymentStatus === "empty" && ps !== "") return false;
+      if (paymentStatus !== "empty" && ps !== paymentStatus) return false;
+    }
+
+    if (deliveryMethod !== "all" && order.deliveryMethod !== deliveryMethod) {
+      return false;
+    }
+
+    const ts = new Date(order.timestamp);
+    if (dateFrom && ts < dateFrom) return false;
+    if (dateTo && ts > dateTo) return false;
+
+    const total = Number(order.total) || 0;
+    if (minAmount !== null && !Number.isNaN(minAmount) && total < minAmount) {
+      return false;
+    }
+    if (maxAmount !== null && !Number.isNaN(maxAmount) && total > maxAmount) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+function updateOrdersSelectionUi(filteredOrders) {
+  const selected = [...selectedOrderIds].filter((orderId) =>
+    orders.some((order) => order.orderId === orderId)
+  );
+  selectedOrderIds = new Set(selected);
+
+  const selectedCountEl = document.getElementById("orders-selected-count");
+  if (selectedCountEl) {
+    selectedCountEl.textContent = `已選 ${selected.length} 筆`;
+  }
+
+  const selectAllEl = document.getElementById("orders-select-all");
+  if (!(selectAllEl instanceof HTMLInputElement)) return;
+  const filteredIds = filteredOrders.map((order) => order.orderId);
+  const selectedVisible = filteredIds.filter((id) => selectedOrderIds.has(id))
+    .length;
+  selectAllEl.checked = filteredIds.length > 0 &&
+    selectedVisible === filteredIds.length;
+  selectAllEl.indeterminate = selectedVisible > 0 &&
+    selectedVisible < filteredIds.length;
+}
+
+function renderOrdersSummary(filteredOrders) {
+  const summaryEl = document.getElementById("orders-summary");
+  if (!summaryEl) return;
+  const totalAmount = filteredOrders.reduce(
+    (sum, order) => sum + (Number(order.total) || 0),
+    0,
+  );
+  summaryEl.textContent = `總訂單 ${orders.length} 筆｜篩選結果 ${filteredOrders.length} 筆｜金額合計 $${totalAmount.toLocaleString("zh-TW")}`;
+}
+
+function getTrackingLinkHtml(order) {
+  if (!order.trackingNumber) return "";
+  if (order.deliveryMethod === "seven_eleven") {
+    return `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 7-11貨態查詢</a>`;
+  }
+  if (order.deliveryMethod === "family_mart") {
+    return `<a href="https://fmec.famiport.com.tw/FP_Entrance/QueryBox" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 全家貨態查詢</a>`;
+  }
+  if (
+    order.deliveryMethod === "delivery" ||
+    order.deliveryMethod === "home_delivery"
+  ) {
+    return `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 中華郵政查詢</a>`;
+  }
+  return "";
+}
+
 async function loadOrders() {
   try {
     const r = await authFetch(
@@ -263,7 +410,10 @@ async function loadOrders() {
     );
     const d = await r.json();
     if (d.success) {
-      orders = d.orders;
+      orders = Array.isArray(d.orders) ? d.orders : [];
+      selectedOrderIds = new Set([...selectedOrderIds].filter((orderId) =>
+        orders.some((order) => order.orderId === orderId)
+      ));
       renderOrders();
     }
   } catch (e) {
@@ -272,46 +422,20 @@ async function loadOrders() {
 }
 
 function renderOrders() {
-  const filter = document.getElementById("order-filter").value;
-  const filtered = filter === "all"
-    ? orders
-    : orders.filter((o) => o.status === filter);
+  const filtered = getFilteredOrders();
   const container = document.getElementById("orders-list");
+  renderOrdersSummary(filtered);
+
   if (!filtered.length) {
     container.innerHTML =
       '<p class="text-center text-gray-500 py-8">沒有符合的訂單</p>';
+    updateOrdersSelectionUi(filtered);
     return;
   }
 
-  const statusLabel = {
-    pending: "待處理",
-    processing: "處理中",
-    shipped: "已出貨",
-    completed: "已完成",
-    cancelled: "已取消",
-  };
-  const methodLabel = {
-    delivery: "🏠 配送到府",
-    home_delivery: "📦 全台宅配",
-    seven_eleven: "🏪 7-11",
-    family_mart: "🏬 全家",
-    in_store: "🚶 來店取貨",
-  };
-  const payMethodLabel = {
-    cod: "💵 貨到付款",
-    linepay: "💚 LINE Pay",
-    transfer: "🏦 轉帳",
-  };
-  const payStatusLabel = {
-    pending: "⚓ 待付款",
-    paid: "✅ 已付款",
-    failed: "❌ 失敗",
-    cancelled: "❌ 取消",
-    refunded: "↩️ 已退款",
-  };
-
   container.innerHTML = filtered.map((o) => {
     const time = new Date(o.timestamp).toLocaleString("zh-TW");
+    const isSelected = selectedOrderIds.has(o.orderId);
     const addrInfo =
       (o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery")
         ? `${o.city || ""}${o.district || ""} ${o.address || ""}`
@@ -328,7 +452,7 @@ function renderOrders() {
           : ps === "pending"
             ? "bg-yellow-50 text-yellow-700"
             : "bg-gray-100 text-gray-600"
-      }">${payMethodLabel[pm] || pm} ${payStatusLabel[ps] || ps}</span>`
+      }">${orderPayMethodLabel[pm] || pm} ${orderPayStatusLabel[ps] || ps}</span>`
       : "";
     const transferInfo = pm === "transfer"
       ? `<div class="text-xs text-blue-800 mt-2 bg-blue-50 p-2 rounded">
@@ -347,41 +471,29 @@ function renderOrders() {
       }" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
       : "";
 
-    let trackingHtml = "";
-    if (o.trackingNumber) {
-      let trackingLink = "";
-      if (o.deliveryMethod === "seven_eleven") {
-        trackingLink =
-          `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 7-11貨態查詢</a>`;
-      } else if (o.deliveryMethod === "family_mart") {
-        trackingLink =
-          `<a href="https://fmec.famiport.com.tw/FP_Entrance/QueryBox" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 全家貨態查詢</a>`;
-      } else if (
-        o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery"
-      ) {
-        trackingLink =
-          `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 中華郵政查詢</a>`;
-      }
-
-      trackingHtml = `
-                <div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
+    const trackingHtml = o.trackingNumber
+      ? `<div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
                     <span class="text-gray-500">物流單號：</span>
                     <span class="font-mono font-bold">${esc(o.trackingNumber)
-        }</span>
+      }</span>
                     <button type="button" data-action="copy-tracking-number" data-tracking-number="${esc(o.trackingNumber)
-        }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button>
-                    ${trackingLink}
-                </div>`;
-    }
+      }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button>
+                    ${getTrackingLinkHtml(o)}
+                </div>`
+      : "";
 
     return `
         <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center gap-2 flex-wrap">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="checkbox" data-action="toggle-order-selection" data-order-id="${esc(o.orderId)
+      }" class="w-4 h-4" ${isSelected ? "checked" : ""}>
+                    </label>
                     <span class="font-bold text-sm" style="color:var(--primary)">#${o.orderId}</span>
-                    <span class="delivery-tag delivery-${o.deliveryMethod}">${methodLabel[o.deliveryMethod] || o.deliveryMethod
+                    <span class="delivery-tag delivery-${o.deliveryMethod}">${orderMethodLabel[o.deliveryMethod] || o.deliveryMethod
       }</span>
-                    <span class="status-badge status-${o.status}">${statusLabel[o.status] || o.status
+                    <span class="status-badge status-${o.status}">${orderStatusLabel[o.status] || o.status
       }</span>
                     ${payBadge}
                 </div>
@@ -417,7 +529,7 @@ function renderOrders() {
                     <select data-action="change-order-status" data-order-id="${esc(o.orderId)
       }" class="text-xs border rounded px-2 py-1">
                         ${["pending", "processing", "shipped", "completed", "cancelled"].map((s) =>
-        `<option value="${s}" ${o.status === s ? "selected" : ""}>${statusLabel[s]
+        `<option value="${s}" ${o.status === s ? "selected" : ""}>${orderStatusLabel[s]
         }</option>`
       ).join("")
       }
@@ -428,6 +540,7 @@ function renderOrders() {
             </div>
         </div>`;
   }).join("");
+  updateOrdersSelectionUi(filtered);
 }
 
 async function changeOrderStatus(orderId, status) {
@@ -490,12 +603,229 @@ async function deleteOrderById(orderId) {
     });
     const d = await r.json();
     if (d.success) {
+      selectedOrderIds.delete(orderId);
       Toast.fire({ icon: "success", title: "已刪除" });
       loadOrders();
     }
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
   }
+}
+
+function toggleOrderSelection(orderId, checked) {
+  if (checked) selectedOrderIds.add(orderId);
+  else selectedOrderIds.delete(orderId);
+  updateOrdersSelectionUi(getFilteredOrders());
+}
+
+function toggleSelectAllOrders(checked) {
+  const filtered = getFilteredOrders();
+  filtered.forEach((order) => {
+    if (checked) selectedOrderIds.add(order.orderId);
+    else selectedOrderIds.delete(order.orderId);
+  });
+  renderOrders();
+}
+
+function getSelectedOrderIds() {
+  return [...selectedOrderIds].filter((orderId) =>
+    orders.some((order) => order.orderId === orderId)
+  );
+}
+
+async function batchUpdateOrders() {
+  const orderIds = getSelectedOrderIds();
+  if (!orderIds.length) {
+    Swal.fire("提醒", "請先勾選至少一筆訂單", "warning");
+    return;
+  }
+
+  const status = getOrderFilterValue("batch-order-status", "");
+  if (!status) {
+    Swal.fire("提醒", "請先選擇批次狀態", "warning");
+    return;
+  }
+
+  let trackingNumber;
+  if (status === "shipped") {
+    const { value, isConfirmed } = await Swal.fire({
+      title: "批次出貨設定",
+      text: "可輸入共用物流單號（可留空）",
+      input: "text",
+      inputPlaceholder: "請輸入物流單號",
+      showCancelButton: true,
+      confirmButtonText: "確定",
+      cancelButtonText: "取消",
+      confirmButtonColor: "#3C2415",
+    });
+    if (!isConfirmed) return;
+    trackingNumber = value ? value.trim() : "";
+  }
+
+  const paymentStatus = getOrderFilterValue("batch-payment-status", "__keep__");
+  const payload = {
+    userId: getAuthUserId(),
+    orderIds,
+    status,
+  };
+  if (paymentStatus !== "__keep__") payload.paymentStatus = paymentStatus;
+  if (trackingNumber !== undefined) payload.trackingNumber = trackingNumber;
+
+  try {
+    const r = await authFetch(`${API_URL}?action=batchUpdateOrderStatus`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (d.success) {
+      Toast.fire({ icon: "success", title: d.message || "批次更新完成" });
+    } else {
+      const msg = d.error || "批次更新失敗";
+      await Swal.fire("提醒", msg, d.updatedCount ? "warning" : "error");
+    }
+    await loadOrders();
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+async function batchDeleteOrders() {
+  const orderIds = getSelectedOrderIds();
+  if (!orderIds.length) {
+    Swal.fire("提醒", "請先勾選至少一筆訂單", "warning");
+    return;
+  }
+
+  const confirmDelete = await Swal.fire({
+    title: `確定刪除 ${orderIds.length} 筆訂單？`,
+    text: "此動作無法復原",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    confirmButtonText: "批次刪除",
+    cancelButtonText: "取消",
+  });
+  if (!confirmDelete.isConfirmed) return;
+
+  try {
+    const r = await authFetch(`${API_URL}?action=batchDeleteOrders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: getAuthUserId(),
+        orderIds,
+      }),
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || "批次刪除失敗");
+    selectedOrderIds = new Set();
+    Toast.fire({ icon: "success", title: d.message || "批次刪除完成" });
+    await loadOrders();
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+function csvEscape(value) {
+  const str = String(value ?? "").replace(/\r?\n/g, " | ");
+  if (/[",\n]/.test(str)) {
+    return `"${str.replace(/"/g, "\"\"")}"`;
+  }
+  return str;
+}
+
+function buildOrdersCsv(orderList) {
+  const header = [
+    "訂單編號",
+    "建立時間",
+    "顧客",
+    "電話",
+    "Email",
+    "配送方式",
+    "訂單狀態",
+    "付款方式",
+    "付款狀態",
+    "金額",
+    "物流單號",
+    "地址或門市",
+    "訂單內容",
+    "備註",
+  ];
+  const rows = orderList.map((o) => {
+    const addrInfo =
+      (o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery")
+        ? `${o.city || ""}${o.district || ""} ${o.address || ""}`.trim()
+        : `${o.storeName || ""}${o.storeId ? ` [${o.storeId}]` : ""}${
+          o.storeAddress ? ` (${o.storeAddress})` : ""
+        }`.trim();
+    return [
+      o.orderId || "",
+      o.timestamp || "",
+      o.lineName || "",
+      o.phone || "",
+      o.email || "",
+      orderMethodLabel[o.deliveryMethod] || o.deliveryMethod || "",
+      orderStatusLabel[o.status] || o.status || "",
+      orderPayMethodLabel[o.paymentMethod || "cod"] || o.paymentMethod || "",
+      orderPayStatusLabel[o.paymentStatus || ""] || o.paymentStatus || "",
+      Number(o.total) || 0,
+      o.trackingNumber || "",
+      addrInfo,
+      o.items || "",
+      o.note || "",
+    ];
+  });
+  return [header, ...rows].map((cols) => cols.map(csvEscape).join(",")).join(
+    "\r\n",
+  );
+}
+
+function triggerCsvDownload(fileName, csvText) {
+  const blob = new Blob(["\uFEFF" + csvText], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function getCsvTimestamp() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const h = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  return `${y}${m}${d}-${h}${min}`;
+}
+
+function exportFilteredOrdersCsv() {
+  const filtered = getFilteredOrders();
+  if (!filtered.length) {
+    Swal.fire("提醒", "目前沒有可匯出的訂單", "warning");
+    return;
+  }
+  const csvText = buildOrdersCsv(filtered);
+  triggerCsvDownload(`orders-filtered-${getCsvTimestamp()}.csv`, csvText);
+  Toast.fire({ icon: "success", title: `已匯出 ${filtered.length} 筆` });
+}
+
+function exportSelectedOrdersCsv() {
+  const selectedIds = new Set(getSelectedOrderIds());
+  const selectedOrders = orders.filter((order) => selectedIds.has(order.orderId));
+  if (!selectedOrders.length) {
+    Swal.fire("提醒", "請先勾選要匯出的訂單", "warning");
+    return;
+  }
+  const csvText = buildOrdersCsv(selectedOrders);
+  triggerCsvDownload(`orders-selected-${getCsvTimestamp()}.csv`, csvText);
+  Toast.fire({ icon: "success", title: `已匯出 ${selectedOrders.length} 筆` });
 }
 
 // ============ 商品管理 ============

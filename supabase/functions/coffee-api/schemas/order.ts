@@ -62,3 +62,33 @@ export const updateOrderStatusSchema = z.object({
 export const deleteOrderSchema = z.object({
   orderId: z.string().min(1, "缺少訂單編號"),
 });
+
+export const batchUpdateOrderStatusSchema = z.object({
+  orderIds: z.array(z.string().min(1, "缺少訂單編號")).min(
+    1,
+    "請至少選擇一筆訂單",
+  )
+    .max(200, "單次最多處理 200 筆"),
+  status: z.enum([
+    "pending",
+    "processing",
+    "shipped",
+    "completed",
+    "cancelled",
+  ]),
+  paymentStatus: z.string().optional(),
+  trackingNumber: z.string().optional(),
+});
+
+export const batchDeleteOrdersSchema = z.object({
+  orderIds: z.array(z.string().min(1, "缺少訂單編號")).min(
+    1,
+    "請至少選擇一筆訂單",
+  )
+    .max(200, "單次最多處理 200 筆"),
+});
+
+export const trackOrderSchema = z.object({
+  orderId: z.string().trim().min(1, "缺少訂單編號"),
+  phoneSuffix: z.string().trim().regex(/^\d{4,10}$/, "請輸入手機末 4-10 碼"),
+});

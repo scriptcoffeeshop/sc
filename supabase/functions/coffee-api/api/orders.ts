@@ -472,3 +472,139 @@ export async function deleteOrder(data: Record<string, unknown>, req: Request) {
   if (error) return { success: false, error: error.message };
   return { success: true, message: "訂單已刪除" };
 }
+
+export async function batchUpdateOrderStatus(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  await requireAdmin(req);
+  const orderIdsRaw = Array.isArray(data.orderIds) ? data.orderIds : [];
+  const orderIds = [...new Set(orderIdsRaw.map((id) => String(id).trim()))]
+    .filter((id) => id.length > 0);
+  if (!orderIds.length) {
+    return { success: false, error: "請至少選擇一筆訂單" };
+  }
+
+  const failedOrderIds: string[] = [];
+  const status = String(data.status || "");
+  const payload: Record<string, unknown> = { status };
+  if (data.paymentStatus !== undefined) {
+    payload.paymentStatus = String(data.paymentStatus);
+  }
+  if (data.trackingNumber !== undefined) {
+    payload.trackingNumber = String(data.trackingNumber);
+  }
+
+  for (const orderId of orderIds) {
+    const result = await updateOrderStatus({ ...payload, orderId }, req);
+    if (!(result as Record<string, unknown>)?.success) {
+      failedOrderIds.push(orderId);
+    }
+  }
+
+  const updatedCount = orderIds.length - failedOrderIds.length;
+  if (failedOrderIds.length > 0) {
+    return {
+      success: false,
+      error: `部分訂單更新失敗（成功 ${updatedCount} / ${orderIds.length}）`,
+      updatedCount,
+      failedOrderIds,
+    };
+  }
+
+  return {
+    success: true,
+    message: `已更新 ${updatedCount} 筆訂單狀態`,
+    updatedCount,
+  };
+}
+
+export async function batchDeleteOrders(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  await requireAdmin(req);
+  const orderIdsRaw = Array.isArray(data.orderIds) ? data.orderIds : [];
+  const orderIds = [...new Set(orderIdsRaw.map((id) => String(id).trim()))]
+    .filter((id) => id.length > 0);
+  if (!orderIds.length) {
+    return { success: false, error: "請至少選擇一筆訂單" };
+  }
+
+  const { error } = await supabase.from("coffee_orders").delete().in(
+    "id",
+    orderIds,
+  );
+  if (error) return { success: false, error: error.message };
+  return {
+    success: true,
+    message: `已刪除 ${orderIds.length} 筆訂單`,
+    deletedCount: orderIds.length,
+  };
+}
+
+function getTrackingUrl(
+  deliveryMethod: string,
+  trackingNumber: string,
+): string {
+  if (!trackingNumber) return "";
+  if (deliveryMethod === "seven_eleven") {
+    return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
+  }
+  if (deliveryMethod === "family_mart") {
+    return "https://fmec.famiport.com.tw/FP_Entrance/QueryBox";
+  }
+  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
+    return "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
+  }
+  return "";
+}
+
+export async function trackOrder(data: Record<string, unknown>) {
+  const orderId = String(data.orderId || "").trim();
+  const phoneSuffix = String(data.phoneSuffix || "").replace(/\D/g, "");
+  if (!orderId || !phoneSuffix) {
+    return { success: false, error: "請輸入訂單編號與手機末碼" };
+  }
+
+  const { data: order, error } = await supabase.from("coffee_orders").select(
+    "id, created_at, line_name, phone, total, status, payment_method, payment_status, delivery_method, city, district, address, store_name, store_address, tracking_number",
+  ).eq("id", orderId).maybeSingle();
+
+  if (error || !order) {
+    return { success: false, error: "查無符合資料，請確認訂單編號與手機末碼" };
+  }
+
+  const phone = String(order.phone || "").replace(/\D/g, "");
+  if (!phone.endsWith(phoneSuffix)) {
+    return { success: false, error: "查無符合資料，請確認訂單編號與手機末碼" };
+  }
+
+  const maskedPhone = phone.length > 4
+    ? `${"*".repeat(phone.length - 4)}${phone.slice(-4)}`
+    : phone;
+  const deliveryMethod = String(order.delivery_method || "");
+  const trackingNumber = String(order.tracking_number || "");
+
+  return {
+    success: true,
+    order: {
+      orderId: order.id,
+      createdAt: order.created_at,
+      lineName: order.line_name,
+      phoneMasked: maskedPhone,
+      total: Number(order.total) || 0,
+      status: order.status || "pending",
+      paymentMethod: order.payment_method || "cod",
+      paymentStatus: order.payment_status || "",
+      deliveryMethod,
+      city: order.city || "",
+      district: order.district || "",
+      address: order.address || "",
+      storeName: order.store_name || "",
+      storeAddress: order.store_address || "",
+      trackingNumber,
+      trackingUrl: getTrackingUrl(deliveryMethod, trackingNumber),
+    },
+  };
+}

@@ -1,4 +1,8 @@
 export function createOrdersActionHandlers(deps) {
+  function getCheckedFromElement(el) {
+    return el instanceof HTMLInputElement ? el.checked : false;
+  }
+
   return {
     "reload-orders": () => deps.loadOrders(),
     "refund-linepay-order": (el) => {
@@ -17,6 +21,18 @@ export function createOrdersActionHandlers(deps) {
     "delete-order": (el) => {
       if (el.dataset.orderId) deps.deleteOrderById(el.dataset.orderId);
     },
+    "toggle-order-selection": (el) => {
+      if (el.dataset.orderId) {
+        deps.toggleOrderSelection(el.dataset.orderId, getCheckedFromElement(el));
+      }
+    },
+    "toggle-select-all-orders": (el) => {
+      deps.toggleSelectAllOrders(getCheckedFromElement(el));
+    },
+    "batch-update-orders": () => deps.batchUpdateOrders(),
+    "batch-delete-orders": () => deps.batchDeleteOrders(),
+    "export-orders-csv": () => deps.exportFilteredOrdersCsv(),
+    "export-selected-orders-csv": () => deps.exportSelectedOrdersCsv(),
   };
 }
 
