@@ -1,5 +1,5 @@
 // @ts-ignore: deno
-import nodemailer from "npm:nodemailer@6.9.11";
+import nodemailer from "nodemailer";
 import { SMTP_PASS, SMTP_USER } from "./config.ts";
 
 export async function sendEmail(

@@ -1,4 +1,4 @@
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "zod";
 
 const optionalTrimmed = z.string().optional().transform((v) =>
   typeof v === "string" ? v.trim() : v

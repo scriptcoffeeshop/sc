@@ -1,4 +1,4 @@
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "zod";
 
 export const orderItemSchema = z.object({
   productId: z.number(),
