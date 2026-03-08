@@ -17,6 +17,9 @@ export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadU
 
             const action = actionButton.dataset.action;
             if (!action) return;
+            const isCheckboxInput = actionButton instanceof HTMLInputElement &&
+                actionButton.type === "checkbox";
+            if (isCheckboxInput) return;
             event.preventDefault();
 
             const handler = actionHandlers[action];
@@ -27,11 +30,18 @@ export function createDashboardEvents(actionHandlers, tabLoaders, showTab, loadU
 
         document.addEventListener("change", (event) => {
             const target = event.target;
-            if (!(target instanceof HTMLSelectElement)) return;
-            if (target.dataset.action !== "change-order-status") return;
-            const orderId = target.dataset.orderId;
-            if (!orderId) return;
-            changeOrderStatus(orderId, target.value);
+            if (target instanceof HTMLSelectElement && target.dataset.action === "change-order-status") {
+                const orderId = target.dataset.orderId;
+                if (!orderId) return;
+                changeOrderStatus(orderId, target.value);
+                return;
+            }
+            if (target instanceof HTMLInputElement && target.dataset.action) {
+                const handler = actionHandlers[target.dataset.action];
+                if (handler) {
+                    handler(target, event);
+                }
+            }
         });
 
         const orderFilters = document.querySelectorAll("[data-order-filter]");

@@ -24,7 +24,6 @@ import {
   getMyOrders,
   getOrders,
   submitOrder,
-  trackOrder,
   updateOrderStatus,
 } from "./api/orders.ts";
 import { quoteOrder } from "./api/quote.ts";
@@ -111,7 +110,6 @@ import {
   deleteOrderSchema,
   quoteOrderSchema,
   submitOrderSchema,
-  trackOrderSchema,
   updateOrderStatusSchema,
 } from "./schemas/order.ts";
 import { updateUserProfileSchema } from "./schemas/profile.ts";
@@ -267,11 +265,6 @@ const actionMap: Record<string, ActionHandler> = {
   pcscMapCallback: async (data) => await handlePcscMapCallback(data),
   linePayConfirm: async (data) => await linePayConfirm(data),
   linePayCancel: async (data, req) => await linePayCancel(data, req),
-  trackOrder: async (data) => {
-    // deno-lint-ignore no-explicit-any
-    const v = (await validate(trackOrderSchema, data)) as any;
-    return await trackOrder(v);
-  },
 
   // ====== 需登入 ======
   submitOrder: async (data, req) => {

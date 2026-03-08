@@ -57,6 +57,8 @@ export const updateOrderStatusSchema = z.object({
   ]),
   paymentStatus: z.string().optional(),
   trackingNumber: z.string().optional(),
+  shippingProvider: z.string().optional(),
+  trackingUrl: z.string().optional(),
 });
 
 export const deleteOrderSchema = z.object({
@@ -78,6 +80,8 @@ export const batchUpdateOrderStatusSchema = z.object({
   ]),
   paymentStatus: z.string().optional(),
   trackingNumber: z.string().optional(),
+  shippingProvider: z.string().optional(),
+  trackingUrl: z.string().optional(),
 });
 
 export const batchDeleteOrdersSchema = z.object({
@@ -86,9 +90,4 @@ export const batchDeleteOrdersSchema = z.object({
     "請至少選擇一筆訂單",
   )
     .max(200, "單次最多處理 200 筆"),
-});
-
-export const trackOrderSchema = z.object({
-  orderId: z.string().trim().min(1, "缺少訂單編號"),
-  phoneSuffix: z.string().trim().regex(/^\d{4,10}$/, "請輸入手機末 4-10 碼"),
 });

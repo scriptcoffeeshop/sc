@@ -2,12 +2,37 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from "./config.js?v=47";
-import { authFetch } from "./auth.js?v=47";
-import { escapeHtml } from "./utils.js?v=47";
-import { state } from "./state.js?v=47";
-import { cart, clearCart } from "./cart.js?v=47";
-import { collectDynamicFields } from "./form-renderer.js?v=47";
+import { API_URL } from "./config.js?v=48";
+import { authFetch } from "./auth.js?v=48";
+import { escapeHtml } from "./utils.js?v=48";
+import { state } from "./state.js?v=48";
+import { cart, clearCart } from "./cart.js?v=48";
+import { collectDynamicFields } from "./form-renderer.js?v=48";
+
+function normalizeTrackingUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
+function getDefaultTrackingUrl(deliveryMethod) {
+  if (deliveryMethod === "seven_eleven") {
+    return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
+  }
+  if (deliveryMethod === "family_mart") {
+    return "https://fmec.famiport.com.tw/FP_Entrance/QueryBox";
+  }
+  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
+    return "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
+  }
+  return "";
+}
 
 /** 送出訂單 */
 export async function submitOrder() {
@@ -402,6 +427,7 @@ export async function showMyOrders() {
     };
     const methodMap = {
       delivery: "🏠 宅配",
+      home_delivery: "📦 全台宅配",
       seven_eleven: "🏪 7-11",
       family_mart: "🏬 全家",
       in_store: "🚶 來店取貨",
@@ -420,6 +446,26 @@ export async function showMyOrders() {
     };
 
     list.innerHTML = result.orders.map((o) => {
+      const customTrackingUrl = normalizeTrackingUrl(o.trackingUrl || "");
+      const defaultTrackingUrl = getDefaultTrackingUrl(o.deliveryMethod);
+      const trackingUrl = customTrackingUrl || defaultTrackingUrl;
+      const shippingInfoHtml = (o.shippingProvider || o.trackingNumber ||
+        trackingUrl)
+        ? `<div class="text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2">
+                ${o.shippingProvider
+          ? `<div>物流商：${escapeHtml(o.shippingProvider)}</div>`
+          : ""
+        }
+                ${o.trackingNumber
+          ? `<div>物流單號：<span class="font-mono">${escapeHtml(o.trackingNumber)}</span></div>`
+          : ""
+        }
+                ${trackingUrl
+          ? `<a href="${escapeHtml(trackingUrl)}" target="_blank" class="text-blue-600 hover:underline">🔗 物流追蹤頁面</a>`
+          : ""
+        }
+            </div>`
+        : "";
       const payBadge = o.paymentMethod && o.paymentMethod !== "cod"
         ? `<span class="text-xs px-2 py-0.5 rounded-full ${o.paymentStatus === "paid"
           ? "bg-green-50 text-green-700"
@@ -445,6 +491,7 @@ export async function showMyOrders() {
         }
                     ${payBadge}
                 </div>
+                ${shippingInfoHtml}
                 <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${escapeHtml(o.items)
         }</div>
                 <div class="text-right font-bold" style="color:var(--primary)">$${o.total}</div>

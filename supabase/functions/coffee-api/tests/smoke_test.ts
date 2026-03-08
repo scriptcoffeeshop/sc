@@ -69,10 +69,14 @@ Deno.test("Email Templates - Shipping Notification", () => {
     paymentMethod: "transfer",
     paymentStatus: "paid",
     trackingNumber: "700123456",
+    shippingProvider: "黑貓宅急便",
+    trackingUrl: "https://example.com/track/700123456",
   });
 
   assertEquals(html.includes("7-11 取貨"), true, "Missing delivery method");
   assertEquals(html.includes("已付款"), true, "Missing payment status");
   assertEquals(html.includes("700123456"), true, "Missing tracking number");
+  assertEquals(html.includes("黑貓宅急便"), true, "Missing shipping provider");
+  assertEquals(html.includes("物流追蹤頁面"), true, "Missing tracking link");
   assertEquals(html.includes("統智門市"), true, "Missing store name");
 });

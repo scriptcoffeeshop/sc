@@ -114,6 +114,33 @@ export interface ShippingNotificationParams {
   paymentMethod: string;
   paymentStatus: string;
   trackingNumber: string;
+  shippingProvider: string;
+  trackingUrl: string;
+}
+
+function getDefaultTrackingUrl(deliveryMethod: string): string {
+  if (deliveryMethod === "seven_eleven") {
+    return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
+  }
+  if (deliveryMethod === "family_mart") {
+    return "https://fmec.famiport.com.tw/FP_Entrance/QueryBox";
+  }
+  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
+    return "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
+  }
+  return "";
+}
+
+function normalizeTrackingUrl(url: string): string {
+  const raw = String(url || "").trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
 }
 
 export function buildShippingNotificationHtml(
@@ -135,24 +162,30 @@ export function buildShippingNotificationHtml(
     ? "#2e7d32"
     : (params.paymentMethod === "cod" ? "#0288d1" : "#d32f2f");
 
-  let trackingSection = "";
-  if (params.trackingNumber) {
-    let trackingLink = "";
-    if (params.deliveryMethod === "seven_eleven") {
-      trackingLink =
-        `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#1e40af; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 7-11 貨態查詢</a>`;
-    } else if (params.deliveryMethod === "family_mart") {
-      trackingLink =
-        `<a href="https://fmec.famiport.com.tw/FP_Entrance/QueryBox" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#059669; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 全家貨態查詢</a>`;
-    } else if (isDelivery) {
-      trackingLink =
-        `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#047857; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 中華郵政貨態查詢</a>`;
-    }
-    trackingSection =
-      `<p style="margin: 10px 0 0 0; padding-top: 10px; border-top: 1px dashed #dcd3cb;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${
-        sanitize(params.trackingNumber)
-      }</span><br>${trackingLink}</p>`;
-  }
+  const customTrackingUrl = normalizeTrackingUrl(params.trackingUrl || "");
+  const defaultTrackingUrl = getDefaultTrackingUrl(params.deliveryMethod);
+  const finalTrackingUrl = customTrackingUrl || defaultTrackingUrl;
+  const hasShippingInfo = !!params.trackingNumber ||
+    !!params.shippingProvider ||
+    !!finalTrackingUrl;
+  const trackingLinkHtml = finalTrackingUrl
+    ? `<a href="${
+      sanitize(finalTrackingUrl)
+    }" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background-color:#1e40af; color:#ffffff; text-decoration:none; border-radius:4px; font-size:13px;">🔗 物流追蹤頁面</a>`
+    : "";
+  const providerHtml = params.shippingProvider
+    ? `<p style="margin: 0 0 8px 0;"><strong>物流商：</strong> ${
+      sanitize(params.shippingProvider)
+    }</p>`
+    : "";
+  const trackingNumberHtml = params.trackingNumber
+    ? `<p style="margin: 0 0 8px 0;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${
+      sanitize(params.trackingNumber)
+    }</span></p>`
+    : "";
+  const trackingSection = hasShippingInfo
+    ? `<div style="margin: 10px 0 0 0; padding-top: 10px; border-top: 1px dashed #dcd3cb;">${providerHtml}${trackingNumberHtml}${trackingLinkHtml}</div>`
+    : "";
 
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
