@@ -34,9 +34,18 @@ export interface OrderConfirmationParams {
   customFieldsHtml: string;
 }
 
+export function normalizeEmailSiteTitle(siteTitle: string): string {
+  const rawTitle = String(siteTitle || "").trim();
+  if (!rawTitle) return "咖啡訂購";
+  const cleanedTitle = rawTitle.replace(/[\s\u3000]*訂購確認[\s\u3000]*$/u, "")
+    .trim();
+  return cleanedTitle || "咖啡訂購";
+}
+
 export function buildOrderConfirmationHtml(
   params: OrderConfirmationParams,
 ): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
   const isDelivery = params.deliveryMethod === "delivery" ||
     params.deliveryMethod === "home_delivery";
   const deliveryText = isDelivery
@@ -63,7 +72,7 @@ export function buildOrderConfirmationHtml(
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">${sanitize(params.siteTitle)}</h1>
+    <h1 style="margin: 0; font-size: 24px;">${sanitize(displaySiteTitle)}</h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
