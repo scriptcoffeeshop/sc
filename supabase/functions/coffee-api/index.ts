@@ -86,13 +86,32 @@ import { testEmail } from "./api/misc.ts";
 
 import { validate } from "./utils/validate.ts";
 import { lineLoginSchema, transferInfoSchema } from "./schemas/auth.ts";
-import { submitOrderSchema, updateOrderStatusSchema } from "./schemas/order.ts";
 import {
+  deleteOrderSchema,
+  submitOrderSchema,
+  updateOrderStatusSchema,
+} from "./schemas/order.ts";
+import { updateUserProfileSchema } from "./schemas/profile.ts";
+import {
+  addBankAccountSchema,
+  addFormFieldSchema,
   categorySchema,
+  deleteBankAccountSchema,
+  deleteByIdSchema,
+  deleteFormFieldSchema,
   productSchema,
   promotionSchema,
+  reorderIdsSchema,
+  reorderProductSchema,
+  updateBankAccountSchema,
+  updateFormFieldSchema,
   updateSettingsSchema,
 } from "./schemas/settings.ts";
+import {
+  addToBlacklistSchema,
+  removeFromBlacklistSchema,
+  updateUserRoleSchema,
+} from "./schemas/users.ts";
 
 // ============ 建立 Hono 應用程式 ============
 const app = new Hono();
@@ -197,7 +216,11 @@ const actionMap: Record<string, ActionHandler> = {
   },
   getMyOrders: async (_data, req) => await getMyOrders(req),
   getUserProfile: async (data, req) => await getUserProfile(data, req),
-  updateUserProfile: async (data, req) => await updateUserProfile(data, req),
+  updateUserProfile: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(updateUserProfileSchema, data)) as any;
+    return await updateUserProfile(v, req);
+  },
   updateTransferInfo: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(transferInfoSchema, data)) as any;
@@ -223,9 +246,16 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(promotionSchema, data)) as any;
     return await updatePromotion(v, req);
   },
-  deletePromotion: async (data, req) => await deletePromotion(data, req),
-  reorderPromotionsBulk: async (data, req) =>
-    await reorderPromotionsBulk(data, req),
+  deletePromotion: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(deleteByIdSchema, data)) as any;
+    return await deletePromotion(v, req);
+  },
+  reorderPromotionsBulk: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(reorderIdsSchema, data)) as any;
+    return await reorderPromotionsBulk(v, req);
+  },
   addProduct: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(productSchema, data)) as any;
@@ -236,10 +266,21 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(productSchema, data)) as any;
     return await updateProduct(v, req);
   },
-  deleteProduct: async (data, req) => await deleteProduct(data, req),
-  reorderProduct: async (data, req) => await reorderProduct(data, req),
-  reorderProductsBulk: async (data, req) =>
-    await reorderProductsBulk(data, req),
+  deleteProduct: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(deleteByIdSchema, data)) as any;
+    return await deleteProduct(v, req);
+  },
+  reorderProduct: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(reorderProductSchema, data)) as any;
+    return await reorderProduct(v, req);
+  },
+  reorderProductsBulk: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(reorderIdsSchema, data)) as any;
+    return await reorderProductsBulk(v, req);
+  },
   addCategory: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(categorySchema, data)) as any;
@@ -250,8 +291,16 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(categorySchema, data)) as any;
     return await updateCategory(v, req);
   },
-  deleteCategory: async (data, req) => await deleteCategory(data, req),
-  reorderCategory: async (data, req) => await reorderCategory(data, req),
+  deleteCategory: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(deleteByIdSchema, data)) as any;
+    return await deleteCategory(v, req);
+  },
+  reorderCategory: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(reorderIdsSchema, data)) as any;
+    return await reorderCategory(v, req);
+  },
   updateSettings: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(updateSettingsSchema, data)) as any;
@@ -262,23 +311,66 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(updateOrderStatusSchema, data)) as any;
     return await updateOrderStatus(v, req);
   },
-  deleteOrder: async (data, req) => await deleteOrder(data, req),
+  deleteOrder: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(deleteOrderSchema, data)) as any;
+    return await deleteOrder(v, req);
+  },
   getUsers: async (data, req) => await getUsers(data, req),
-  updateUserRole: async (data, req) => await updateUserRole(data, req),
+  updateUserRole: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(updateUserRoleSchema, data)) as any;
+    return await updateUserRole(v, req);
+  },
   getBlacklist: async (_data, req) => await getBlacklist(req),
-  addToBlacklist: async (data, req) => await addToBlacklist(data, req),
-  removeFromBlacklist: async (data, req) =>
-    await removeFromBlacklist(data, req),
+  addToBlacklist: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(addToBlacklistSchema, data)) as any;
+    return await addToBlacklist(v, req);
+  },
+  removeFromBlacklist: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(removeFromBlacklistSchema, data)) as any;
+    return await removeFromBlacklist(v, req);
+  },
   testEmail: async (data, req) => await testEmail(data, req),
-  addFormField: async (data, req) => await addFormField(data, req),
-  updateFormField: async (data, req) => await updateFormField(data, req),
-  deleteFormField: async (data, req) => await deleteFormField(data, req),
-  reorderFormFields: async (data, req) => await reorderFormFields(data, req),
+  addFormField: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(addFormFieldSchema, data)) as any;
+    return await addFormField(v, req);
+  },
+  updateFormField: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(updateFormFieldSchema, data)) as any;
+    return await updateFormField(v, req);
+  },
+  deleteFormField: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(deleteFormFieldSchema, data)) as any;
+    return await deleteFormField(v, req);
+  },
+  reorderFormFields: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(reorderIdsSchema, data)) as any;
+    return await reorderFormFields(v, req);
+  },
   uploadSiteIcon: async (data, req) => await uploadSiteIcon(data, req),
   linePayRefund: async (data, req) => await linePayRefund(data, req),
-  addBankAccount: async (data, req) => await addBankAccount(data, req),
-  updateBankAccount: async (data, req) => await updateBankAccount(data, req),
-  deleteBankAccount: async (data, req) => await deleteBankAccount(data, req),
+  addBankAccount: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(addBankAccountSchema, data)) as any;
+    return await addBankAccount(v, req);
+  },
+  updateBankAccount: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(updateBankAccountSchema, data)) as any;
+    return await updateBankAccount(v, req);
+  },
+  deleteBankAccount: async (data, req) => {
+    // deno-lint-ignore no-explicit-any
+    const v = (await validate(deleteBankAccountSchema, data)) as any;
+    return await deleteBankAccount(v, req);
+  },
 };
 
 // ============ 主路由：?action=xxx 相容模式 ============

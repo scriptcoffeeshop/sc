@@ -13,6 +13,36 @@
 
 ---
 
+## 📅 v43 — P0/P1 修復：用戶管理契約、促銷計價一致性、Schema 驗證補強
+
+- **P0：用戶管理 API 契約對齊**
+  - 後台前端 `dashboard-app.js` 的用戶操作 payload 統一改為 `targetUserId`（`updateUserRole` / `addToBlacklist` / `removeFromBlacklist`）。
+  - 後端 `api/users.ts` 同步改為使用 `targetUserId/newRole`，修復先前欄位不一致導致的角色更新/黑名單操作錯位問題。
+  - `getBlacklist` 回傳改為前端可直接使用的 camelCase（`lineUserId`, `reason`, `blockedAt`）。
+
+- **P0：促銷折扣公式修正與前後端一致**
+  - 新增 `utils/promotion.ts`：`normalizeDiscountRate` / `calcPercentDiscountAmount`。
+  - 折扣值相容 `0.9 / 9 / 90` 三種格式，避免舊公式把 `9 折` 誤算成 `91% 折扣`。
+  - 前端 `js/cart.js` 與後端 `api/orders.ts` 同步套用同一邏輯，並加上折扣金額上限保護（不超過該組合小計）。
+
+- **P1：促銷生效時間判斷**
+  - 前後端都加入 `start_time/end_time` 時窗判斷，只有在有效期間內才套用活動。
+
+- **P1：Zod 驗證覆蓋補強**
+  - 新增 `schemas/profile.ts`、`schemas/users.ts`。
+  - 擴充 `schemas/settings.ts`：補上 `reorder/delete/formField/bankAccount` 等 mutation schema。
+  - `index.ts` 對應 action 新增 validate 流程：`updateUserProfile`、用戶管理、分類/商品/促銷刪改排、表單欄位、匯款帳號、刪單等。
+
+- **測試與版本**
+  - 新增 `tests/promotion_test.ts`（促銷折扣與時間窗邏輯）。
+  - 前端快取版號由 `42` 升至 `43`，並以 `scripts/sync_frontend_version.py` 同步所有引用。
+
+## 📅 v42 — 解決商品編輯時分類選項失效的 Race Condition 問題
+
+- `dashboard-app.js`：修正 `showProductModal` 與 `editProduct` 的邏輯，在進入開啟互動視窗前若全域 `categories` 為空或未就緒，將強制等待 `await loadCategories()` 取得最新分類列表。以解決商品列表載入速度快於分類列表時，使用者馬上點擊「編輯商品」造成的選項渲染空白之 Bug。
+
+---
+
 ## 📅 v37 — 移除系統欄位保護 + Email 連動表單欄位 + 標題動態化
 
 - 前台 `dashboard-app.js`：移除 `protectedKeys`，phone/email 不再有 🔒 系統標記，可被停用或刪除。
