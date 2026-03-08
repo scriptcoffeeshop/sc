@@ -20,7 +20,7 @@ DASHBOARD_APP = ROOT / "js" / "dashboard-app.js"
 DASHBOARD_MODULES = list((ROOT / "js" / "dashboard" / "modules").glob("*.js"))
 TARGETS = [DASHBOARD_HTML, DASHBOARD_APP] + DASHBOARD_MODULES
 
-INLINE_EVENT_RE = re.compile(r"\bon(?:click|change|keyup|keydown|submit|input)\s*=")
+INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
 SWITCH_CASE_RE = re.compile(r'case ["\']([^"\']+)["\']')
 CHANGE_HANDLER_RE = re.compile(r'target\.dataset\.action\s*!==\s*["\']([^"\']+)["\']')

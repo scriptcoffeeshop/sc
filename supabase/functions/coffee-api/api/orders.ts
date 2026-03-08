@@ -80,31 +80,18 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 
   const now = new Date();
 
-  if (lineUserId || phone) {
-    const oneMinuteAgo = new Date(now.getTime() - 60000).toISOString();
-    let query = supabase.from("coffee_orders").select("id").gte(
-      "created_at",
-      oneMinuteAgo,
-    );
-    if (lineUserId) {
-      query = query.eq("line_user_id", lineUserId);
-    } else {
-      query = query.eq("phone", phone);
-    }
-    const { data: recentOrders } = await query.limit(1);
-    if (recentOrders && recentOrders.length > 0) {
-      return { success: false, error: "送出訂單過於頻繁，請於一分鐘後再試" };
-    }
-  }
+  // 冪等鍵：前端傳入，用於 DB unique constraint 防重複提交
+  const idempotencyKey = String(data.idempotencyKey || "").trim();
 
+  // 訂單號：日期前綴 + UUID 前 8 碼，確保唯一性
   const pad = (n: number) => String(n).padStart(2, "0");
+  const uuidHex = crypto.randomUUID().replace(/-/g, "").slice(0, 8)
+    .toUpperCase();
   const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
     pad(now.getDate())
-  }${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}${
-    pad(Math.floor(Math.random() * 100))
-  }`;
+  }-${uuidHex}`;
 
-  const { error } = await supabase.from("coffee_orders").insert({
+  const insertPayload: Record<string, unknown> = {
     id: orderId,
     created_at: now.toISOString(),
     line_user_id: lineUserId,
@@ -136,9 +123,18 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     payment_id: paymentMethod === "transfer"
       ? String(data.transferTargetAccount || "")
       : "",
-  });
+  };
+  if (idempotencyKey) insertPayload.idempotency_key = idempotencyKey;
 
-  if (error) return { success: false, error: error.message };
+  const { error } = await supabase.from("coffee_orders").insert(insertPayload);
+
+  if (error) {
+    // 23505 = unique_violation (PostgreSQL)
+    if (error.code === "23505") {
+      return { success: false, error: "此訂單已提交過，請勿重複送出" };
+    }
+    return { success: false, error: error.message };
+  }
 
   if (lineUserId) {
     try {

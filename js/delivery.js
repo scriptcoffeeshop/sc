@@ -193,9 +193,11 @@ export async function checkStoreToken(token) {
         `.delivery-option[data-id="${method}"]`,
       );
       if (btn) btn.click();
-      else {selectDelivery(method, {
+      else {
+        selectDelivery(method, {
           currentTarget: { classList: { add: () => {} } },
-        });}
+        });
+      }
 
       applyStoreSelection({
         storeId: result.storeId,
@@ -381,8 +383,7 @@ export async function openStoreSearchModal() {
           : `找到 ${matches.length} 間門市`;
         resultsDiv.innerHTML = matches.map((s) => `
                     <div class="store-result-item" data-action="select-store" data-id="${s.id}" data-name="${s.name}" data-addr="${s.address}"
-                         style="padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; transition:background 0.2s;"
-                         onmouseover="this.style.background='#f0faf0'" onmouseout="this.style.background=''">
+                         style="padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; transition:background 0.2s;">
                         <div style="font-weight:600; font-size:14px;">${s.name}</div>
                         <div style="color:#666; font-size:12px;">${s.address}</div>
                         <div style="color:#aaa; font-size:11px;">代號：${s.id}</div>

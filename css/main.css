@@ -179,3 +179,7 @@
     font-size: 1rem !important;
   }
 }
+
+.store-result-item:hover {
+  background: #f0faf0;
+}
