@@ -5,7 +5,7 @@ const API_URL =
 
 test.describe("Integration Tests against real Edge Function", () => {
     // 預設跳過，避免 CI 對外部環境產生強依賴，可手動執行確認 API 存活
-    test.skip("getInitData should return expected schema", async ({ request }) => {
+    test("getInitData should return expected schema", async ({ request }) => {
         const response = await request.post(`${API_URL}?action=getInitData`, {
             data: {},
             headers: { "Content-Type": "application/json" },
