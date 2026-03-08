@@ -8,6 +8,10 @@ import {
 import { sanitize } from "../utils/html.ts";
 import { sendEmail } from "../utils/email.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import {
+  calcPercentDiscountAmount,
+  isPromotionActive,
+} from "../utils/promotion.ts";
 
 // Note: registerOrUpdateUser is currently in api/auth.ts.
 // For now, I'll copy or move it to a shared place if needed.
@@ -215,13 +219,17 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     ];
   }
 
-  const { data: activePromos } = await supabase.from("coffee_promotions")
+  const promoNow = new Date();
+  const { data: promotionsRaw } = await supabase.from("coffee_promotions")
     .select("*").eq("enabled", true);
+  const activePromos = (promotionsRaw || []).filter((prm) =>
+    isPromotionActive(prm.start_time, prm.end_time, promoNow)
+  );
   let totalDiscount = 0;
   // deno-lint-ignore no-explicit-any
   const appliedPromos: any[] = [];
 
-  if (activePromos) {
+  if (activePromos.length > 0) {
     for (const prm of activePromos) {
       if (prm.type !== "bundle") continue;
       const targetIds = typeof prm.target_product_ids === "string"
@@ -271,13 +279,16 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       if (matchQty >= (prm.min_quantity || 1)) {
         let dAmt = 0;
         if (prm.discount_type === "percent") {
-          const discountValue = Number(prm.discount_value) || 0;
-          dAmt = Math.round(matchItemsSubtotal * (100 - discountValue) / 100);
+          dAmt = calcPercentDiscountAmount(
+            matchItemsSubtotal,
+            Number(prm.discount_value) || 0,
+          );
         } else if (prm.discount_type === "amount") {
           const minQty = Number(prm.min_quantity) || 1;
           const sets = Math.floor(matchQty / minQty);
           dAmt = sets * (Number(prm.discount_value) || 0);
         }
+        dAmt = Math.min(dAmt, Math.max(0, matchItemsSubtotal));
         if (dAmt > 0) {
           totalDiscount += dAmt;
           appliedPromos.push({ name: prm.name, amount: dAmt });

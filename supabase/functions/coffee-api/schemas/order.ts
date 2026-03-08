@@ -35,8 +35,18 @@ export const submitOrderSchema = z.object({
 });
 
 export const updateOrderStatusSchema = z.object({
-  orderId: z.string(),
-  status: z.string(),
+  orderId: z.string().min(1, "缺少訂單編號"),
+  status: z.enum([
+    "pending",
+    "processing",
+    "shipped",
+    "completed",
+    "cancelled",
+  ]),
   paymentStatus: z.string().optional(),
   trackingNumber: z.string().optional(),
+});
+
+export const deleteOrderSchema = z.object({
+  orderId: z.string().min(1, "缺少訂單編號"),
 });

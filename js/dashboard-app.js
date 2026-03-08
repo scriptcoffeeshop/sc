@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=42';
-import { esc, Toast } from './utils.js?v=42';
-import { loginWithLine, authFetch } from './auth.js?v=42';
+import { API_URL, LINE_REDIRECT } from './config.js?v=43';
+import { esc, Toast } from './utils.js?v=43';
+import { loginWithLine, authFetch } from './auth.js?v=43';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -1350,7 +1350,7 @@ async function toggleUserRole(targetUserId, newRole) {
     if (!c.isConfirmed) return;
     try {
         Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-        const r = await authFetch(`${API_URL}?action=updateUserRole`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), targetUserId, newRole }) });
+        const r = await authFetch(`${API_URL}?action=updateUserRole`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetUserId, newRole }) });
         const d = await r.json();
         if (d.success) { Toast.fire({ icon: 'success', title: '權限已更新' }); loadUsers(); }
         else throw new Error(d.error);
@@ -1363,7 +1363,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
         if (reason === undefined) return;
         try {
             Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const r = await authFetch(`${API_URL}?action=addToBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId, reason }) });
+            const r = await authFetch(`${API_URL}?action=addToBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetUserId, reason }) });
             const d = await r.json();
             if (d.success) { Toast.fire({ icon: 'success', title: '已加入黑名單' }); loadUsers(); if (document.getElementById('tab-blacklist').classList.contains('tab-active')) loadBlacklist(); }
             else throw new Error(d.error);
@@ -1373,7 +1373,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
         if (!c.isConfirmed) return;
         try {
             Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            const r = await authFetch(`${API_URL}?action=removeFromBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: getAuthUserId(), lineUserId: targetUserId }) });
+            const r = await authFetch(`${API_URL}?action=removeFromBlacklist`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetUserId }) });
             const d = await r.json();
             if (d.success) { Toast.fire({ icon: 'success', title: '已解除封鎖' }); loadUsers(); if (document.getElementById('tab-blacklist').classList.contains('tab-active')) loadBlacklist(); }
             else throw new Error(d.error);

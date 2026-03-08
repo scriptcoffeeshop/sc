@@ -2,8 +2,8 @@
 // cart.js — 購物車 CRUD & UI
 // ============================================
 
-import { escapeHtml, Toast } from './utils.js?v=42';
-import { state } from './state.js?v=42';
+import { escapeHtml, Toast } from './utils.js?v=43';
+import { state } from './state.js?v=43';
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
@@ -299,11 +299,41 @@ export function getShippingConfig() {
     } catch { return { fee: 0, freeThreshold: 0 }; }
 }
 
+function normalizeDiscountRate(discountValue) {
+    const raw = Number(discountValue);
+    if (!Number.isFinite(raw) || raw <= 0) return 1;
+    if (raw <= 1) return raw;
+    if (raw <= 10) return raw / 10;
+    if (raw <= 100) return raw / 100;
+    return 1;
+}
+
+function calcPercentDiscountAmount(subtotal, discountValue) {
+    const safeSubtotal = Math.max(0, Math.round(Number(subtotal) || 0));
+    if (safeSubtotal <= 0) return 0;
+    const rate = normalizeDiscountRate(discountValue);
+    const discountedTotal = Math.round(safeSubtotal * rate);
+    return Math.max(0, safeSubtotal - discountedTotal);
+}
+
+function isPromotionActiveNow(promo, nowTs) {
+    const start = promo?.startTime ? Date.parse(promo.startTime) : null;
+    if (promo?.startTime && !Number.isFinite(start)) return false;
+    if (Number.isFinite(start) && nowTs < start) return false;
+
+    const end = promo?.endTime ? Date.parse(promo.endTime) : null;
+    if (promo?.endTime && !Number.isFinite(end)) return false;
+    if (Number.isFinite(end) && nowTs > end) return false;
+
+    return true;
+}
+
 /** 計算折扣活動 */
 export function calcPromotions() {
     let totalDiscount = 0;
     const appliedPromos = [];
-    const activePromos = (state.promotions || []).filter(p => p.enabled);
+    const nowTs = Date.now();
+    const activePromos = (state.promotions || []).filter(p => p.enabled && isPromotionActiveNow(p, nowTs));
     const discountedItemKeys = new Set();
 
     for (const prm of activePromos) {
@@ -329,14 +359,15 @@ export function calcPromotions() {
         }
 
         if (matchQty >= prm.minQuantity) {
+            const subtotal = matchItems.reduce((acc, c) => acc + c.qty * c.unitPrice, 0);
             let discountAmount = 0;
             if (prm.discountType === 'percent') {
-                const subtotal = matchItems.reduce((acc, c) => acc + c.qty * c.unitPrice, 0);
-                discountAmount = Math.round(subtotal * (100 - prm.discountValue) / 100);
+                discountAmount = calcPercentDiscountAmount(subtotal, prm.discountValue);
             } else if (prm.discountType === 'amount') {
                 const sets = Math.floor(matchQty / prm.minQuantity);
                 discountAmount = sets * prm.discountValue;
             }
+            discountAmount = Math.min(discountAmount, Math.max(0, subtotal));
             if (discountAmount > 0) {
                 totalDiscount += discountAmount;
                 appliedPromos.push({
