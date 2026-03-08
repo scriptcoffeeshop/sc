@@ -297,7 +297,8 @@ function getOrderFilterValue(id, fallback = "all") {
   if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement)) {
     return fallback;
   }
-  return String(el.value || fallback).trim();
+  if (el.value === undefined || el.value === null) return fallback;
+  return String(el.value).trim();
 }
 
 function parseDateBound(dateStr, isEnd = false) {
