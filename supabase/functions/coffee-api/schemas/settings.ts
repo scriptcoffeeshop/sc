@@ -2,11 +2,11 @@
 import { z } from "zod";
 
 const positiveIdSchema = z.coerce.number().int().positive("ID 必須為正整數");
-const optionalTrimmed = z.string().optional().transform((v) =>
+const optionalTrimmed = z.string().optional().transform((v: unknown) =>
   typeof v === "string" ? v.trim() : v
 );
 const optionalBoolSchema = z.union([z.boolean(), z.string(), z.number()])
-  .optional().transform((v) => {
+  .optional().transform((v: unknown) => {
     if (v === undefined) return undefined;
     return v === true || v === "true" || v === 1 || v === "1";
   });
@@ -31,9 +31,9 @@ export const categorySchema = z.object({
 });
 
 export const settingSchema = z.record(
-  z.union([z.string(), z.number(), z.boolean(), z.null()]).transform((v) =>
-    v === null ? "" : String(v)
-  ),
+  z.union([z.string(), z.number(), z.boolean(), z.null()]).transform((
+    v: unknown,
+  ) => v === null ? "" : String(v)),
 );
 
 export const updateSettingsSchema = z.object({
@@ -91,9 +91,12 @@ export const updateFormFieldSchema = z.object({
   enabled: optionalBoolSchema,
   section: z.string().trim().min(1, "section 不能為空").optional(),
   deliveryVisibility: z.union([z.string(), z.null()]).optional(),
-}).refine((data) => Object.keys(data).some((k) => k !== "id"), {
-  message: "沒有可更新的欄位",
-});
+}).refine(
+  (data: Record<string, unknown>) => Object.keys(data).some((k) => k !== "id"),
+  {
+    message: "沒有可更新的欄位",
+  },
+);
 
 export const deleteFormFieldSchema = z.object({
   id: positiveIdSchema,
@@ -113,9 +116,12 @@ export const updateBankAccountSchema = z.object({
   accountNumber: z.string().trim().min(1, "accountNumber 不能為空").optional(),
   accountName: optionalTrimmed,
   enabled: optionalBoolSchema,
-}).refine((data) => Object.keys(data).some((k) => k !== "id"), {
-  message: "沒有可更新的欄位",
-});
+}).refine(
+  (data: Record<string, unknown>) => Object.keys(data).some((k) => k !== "id"),
+  {
+    message: "沒有可更新的欄位",
+  },
+);
 
 export const deleteBankAccountSchema = z.object({
   id: positiveIdSchema,

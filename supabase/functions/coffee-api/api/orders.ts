@@ -77,8 +77,9 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const pad = (n: number) => String(n).padStart(2, "0");
   const uuidHex = crypto.randomUUID().replace(/-/g, "").slice(0, 8)
     .toUpperCase();
-  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())
-    }-${uuidHex}`;
+  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
+    pad(now.getDate())
+  }-${uuidHex}`;
 
   const insertPayload: Record<string, unknown> = {
     id: orderId,
@@ -96,8 +97,8 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     store_type: deliveryMethod === "seven_eleven"
       ? "7-11"
       : deliveryMethod === "family_mart"
-        ? "全家"
-        : "",
+      ? "全家"
+      : "",
     store_id: data.storeId || "",
     store_name: data.storeName || "",
     store_address: data.storeAddress || "",
@@ -161,22 +162,25 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
             for (const field of formFields) {
               const key = field.field_key;
               if (parsedFields[key] !== undefined) {
-                customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${sanitize(field.label)
-                  }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
+                customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
+                  sanitize(field.label)
+                }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
                 delete parsedFields[key]; // 已處理過的移除
               }
             }
           }
           // 處理剩餘不在設定中的欄位（若有）
           for (const [key, val] of Object.entries(parsedFields)) {
-            customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${sanitize(key)
-              }：</strong> ${sanitize(String(val))}</p>`;
+            customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
+              sanitize(key)
+            }：</strong> ${sanitize(String(val))}</p>`;
           }
         }
       } catch {
         // 解析失敗則直接以字串顯示
         customFieldsHtml +=
-          `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${sanitize(data.customFields)
+          `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
+            sanitize(data.customFields)
           }</p>`;
       }
     }
@@ -269,8 +273,9 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         }).eq("id", orderId);
         return {
           success: false,
-          error: `LINE Pay 請求失敗: ${lpRes.returnMessage || lpRes.returnCode
-            }`,
+          error: `LINE Pay 請求失敗: ${
+            lpRes.returnMessage || lpRes.returnCode
+          }`,
           orderId,
         };
       }
