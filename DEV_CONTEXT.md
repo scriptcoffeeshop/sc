@@ -45,6 +45,13 @@
 
 ---
 
+## 📅 v41 — 修復購物車結帳按鈕狀態
+
+- `main-app.js`：將 `updateFormState` 暴露出以供全域呼叫（`window.updateFormState`）。
+- `cart.js`：移除 `updateCartUI` 中對結帳按鈕文字與停用的不完整更新，改為統一呼叫 `window.updateFormState()` 來正確判斷並變更「確認送出訂單」文字與狀態，解決購物車有物品仍顯示「購物車是空的」之 Bug。
+
+---
+
 ## 📅 v40 — 會員資料功能：自動帶入常用資料
 
 - 新增 `api/profile.ts`：`getUserProfile` / `updateUserProfile` API。
