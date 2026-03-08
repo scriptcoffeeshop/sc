@@ -37,6 +37,7 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - **出貨資訊升級（物流商 + 追蹤網址）**：
   - 後端 `updateOrderStatus / batchUpdateOrderStatus` 支援 `shippingProvider`、`trackingUrl`。
   - 新增 migration：`supabase/migrations/20260309_add_shipping_provider_and_tracking_url.sql`。
+  - 修正 migration 版號衝突：將重複的 `20260309_*` 重編為 `20260310_*`、`20260311_*`，確保可連續 `supabase db push`。
   - `schema_full.sql` 的 `coffee_orders` 新增 `shipping_provider`、`tracking_url` 欄位。
   - 後台在狀態切換為「已出貨」時可填入物流單號、物流商與追蹤網址，並支援批次設定。
   - 顧客端「我的訂單」與出貨通知信會顯示物流商、物流單號與追蹤網址（若有）。
