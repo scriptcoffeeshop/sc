@@ -2,9 +2,9 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from './config.js?v=41';
-import { esc, Toast } from './utils.js?v=41';
-import { loginWithLine, authFetch } from './auth.js?v=41';
+import { API_URL, LINE_REDIRECT } from './config.js?v=42';
+import { esc, Toast } from './utils.js?v=42';
+import { loginWithLine, authFetch } from './auth.js?v=42';
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -639,7 +639,8 @@ function loadSpecsToForm(specsStr) {
     specs.forEach(s => addSpecRow(s));
 }
 
-function showProductModal() {
+async function showProductModal() {
+    if (!categories || !categories.length) await loadCategories();
     document.getElementById('pm-title').textContent = '新增商品';
     document.getElementById('product-form').reset();
     document.getElementById('pm-id').value = '';
@@ -649,7 +650,8 @@ function showProductModal() {
     document.getElementById('product-modal').classList.remove('hidden');
 }
 
-function editProduct(id) {
+async function editProduct(id) {
+    if (!categories || !categories.length) await loadCategories();
     const p = productsMap[id];
     if (!p) { Swal.fire('錯誤', '找不到商品', 'error'); return; }
     document.getElementById('pm-title').textContent = '編輯商品';
