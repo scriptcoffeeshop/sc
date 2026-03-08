@@ -17,12 +17,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DASHBOARD_HTML = ROOT / "dashboard.html"
 DASHBOARD_APP = ROOT / "js" / "dashboard-app.js"
-TARGETS = [DASHBOARD_HTML, DASHBOARD_APP]
+DASHBOARD_MODULES = list((ROOT / "js" / "dashboard" / "modules").glob("*.js"))
+TARGETS = [DASHBOARD_HTML, DASHBOARD_APP] + DASHBOARD_MODULES
 
 INLINE_EVENT_RE = re.compile(r"\bon(?:click|change|keyup|keydown|submit|input)\s*=")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
-SWITCH_CASE_RE = re.compile(r"case '([^']+)'")
-CHANGE_HANDLER_RE = re.compile(r"target\.dataset\.action\s*!==\s*'([^']+)'")
+SWITCH_CASE_RE = re.compile(r'case ["\']([^"\']+)["\']')
+CHANGE_HANDLER_RE = re.compile(r'target\.dataset\.action\s*!==\s*["\']([^"\']+)["\']')
+OBJECT_KEY_RE = re.compile(r'["\']([-a-zA-Z0-9_]+)["\']\s*:')
 
 
 def read_text(path: Path) -> str:
@@ -42,14 +44,18 @@ def check_inline_events() -> list[str]:
 
 
 def check_action_coverage() -> list[str]:
-    html_text = read_text(DASHBOARD_HTML)
-    app_text = read_text(DASHBOARD_APP)
+    actions = set()
+    handled = set()
 
-    actions = set(DATA_ACTION_RE.findall(html_text)) | set(DATA_ACTION_RE.findall(app_text))
-    switch_cases = set(SWITCH_CASE_RE.findall(app_text))
-    change_handlers = set(CHANGE_HANDLER_RE.findall(app_text))
+    for path in TARGETS:
+        text = read_text(path)
+        actions.update(DATA_ACTION_RE.findall(text))
+        
+        if path != DASHBOARD_HTML:
+            handled.update(SWITCH_CASE_RE.findall(text))
+            handled.update(CHANGE_HANDLER_RE.findall(text))
+            handled.update(OBJECT_KEY_RE.findall(text))
 
-    handled = switch_cases | change_handlers
     missing = sorted(action for action in actions if action not in handled)
     return [f"Missing data-action handler: {action}" for action in missing]
 
