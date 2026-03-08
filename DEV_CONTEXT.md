@@ -24,6 +24,20 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ## 🚀 近期重大更新 (v40 - v45)
 
+### 📅 v45.1 — 資安與維護性大升級 (P0-P2 修復)
+
+- **P0 資安防護**：
+  - 將 `.env` 與 `.env.staging` 從版本控制移除，阻絕機密外洩 (`.gitignore` 修正)。
+  - `getInitData` 與 `settings.ts` 加入 `PUBLIC_SETTINGS_KEYS` 白名單，避免給前端暴露如智付通 Hash 等非公開設定。
+  - `orders.ts` 中實作防重複提交，前端產生 UUID 送至後端做 `idempotency_key` 唯一性阻擋；`schema_full.sql` 補齊漂移欄位。
+- **P1 權限與注入防護**：
+  - `submitOrder` 強制改用 `requireAuth` 取代 `extractAuth`，封鎖未登入訪客送單。
+  - `delivery.js` 修復 7-11/全家電子地圖與門市搜尋列表寫入的 `innerHTML`，全面加上 `escapeHtml` 阻擋 XSS 攻擊。
+  - OAuth 登入的 `getLineLoginUrl` 加上原點比對（`ALLOWED_REDIRECT_ORIGINS` 白名單），阻擋惡意 redirect 劫持。
+- **P2 品質與測試涵蓋**：
+  - 解開 `api_integration.spec.ts` 整合測試，將 API 端的合約正式納入 Playwright E2E 回歸保護。
+  - **(CI Hotfix)** 修復了 17 個以上潛藏在 Deno Edge Functions 裡的 TypeScript `any` / `unknown` 型別推導錯誤（引發於 Zod schema 轉換時的 Input/Output 型別非對稱，已調整 `validate.ts` 泛型簽章）。
+
 ### 📅 v45 — Email 模板抽離、後台模組化 (階段二) 與前端資料流統一
 
 - **P2-1：Email 模板抽離**

@@ -329,8 +329,14 @@ export async function buildOrderQuote(data: Record<string, unknown>): Promise<
   const { data: promotionsRaw } = await supabase.from("coffee_promotions")
     .select("*")
     .eq("enabled", true);
-  const activePromos = (promotionsRaw || []).filter((prm) =>
-    isPromotionActive(prm.start_time, prm.end_time, promoNow)
+  const activePromos = (promotionsRaw || []).filter((
+    prm: Record<string, unknown>,
+  ) =>
+    isPromotionActive(
+      String(prm.start_time || ""),
+      String(prm.end_time || ""),
+      promoNow,
+    )
   );
 
   let totalDiscount = 0;

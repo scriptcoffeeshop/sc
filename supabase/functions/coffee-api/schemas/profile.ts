@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const optionalTrimmed = z.string().optional().transform((v) =>
+const optionalTrimmed = z.string().optional().transform((v: unknown) =>
   typeof v === "string" ? v.trim() : v
 );
 
@@ -19,6 +19,6 @@ export const updateUserProfileSchema = z.object({
     z.string(),
     z.record(z.unknown()),
   ]).optional(),
-}).refine((data) => Object.keys(data).length > 0, {
+}).refine((data: Record<string, unknown>) => Object.keys(data).length > 0, {
   message: "沒有提供要更新的欄位",
 });
