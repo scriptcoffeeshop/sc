@@ -44,7 +44,7 @@ export async function signJwt(
       JSON.stringify({
         ...payload,
         iat: Math.floor(Date.now() / 1000),
-        exp: Math.floor(Date.now() / 1000) + 7 * 24 * 3600,
+        exp: Math.floor(Date.now() / 1000) + 12 * 3600, // JWT 有效期改為 12 小時
       }),
     ),
   );

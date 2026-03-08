@@ -146,6 +146,38 @@ app.use(
   }),
 );
 
+// ============ 簡易 IP Rate Limiter ============
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW_MS = 60000;
+const RATE_LIMIT_MAX_REQ = 100;
+
+app.use("*", async (c, next) => {
+  if (c.req.method === "OPTIONS") return await next();
+
+  const ip = c.req.header("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+  } else {
+    record.count++;
+    if (record.count > RATE_LIMIT_MAX_REQ) {
+      return c.json(
+        { success: false, error: "您的請求過於頻繁，請稍後再試" },
+        429,
+      );
+    }
+  }
+
+  if (Math.random() < 0.05) {
+    for (const [key, value] of rateLimitMap.entries()) {
+      if (now > value.resetTime) rateLimitMap.delete(key);
+    }
+  }
+
+  await next();
+});
+
 // ============ 共用的錯誤處理與回應包裝 ============
 function wrapHandler(
   handler: (data: Record<string, unknown>, req: Request) => Promise<unknown>,
@@ -338,7 +370,7 @@ const actionMap: Record<string, ActionHandler> = {
     const v = (await validate(deleteOrderSchema, data)) as any;
     return await deleteOrder(v, req);
   },
-  getUsers: async (data, req) => await getUsers(data, req),
+  getUsers: async (_data, req) => await getUsers(req),
   updateUserRole: async (data, req) => {
     // deno-lint-ignore no-explicit-any
     const v = (await validate(updateUserRoleSchema, data)) as any;

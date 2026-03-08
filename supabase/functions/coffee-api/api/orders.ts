@@ -295,9 +295,29 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 
 export async function getOrders(req: Request) {
   await requireAdmin(req);
-  const { data, error } = await supabase.from("coffee_orders").select("*")
-    .order("created_at", { ascending: false });
+  const url = new URL(req.url);
+  const search = url.searchParams.get("search") || "";
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+  const pageSize = Math.min(
+    100,
+    Math.max(1, parseInt(url.searchParams.get("pageSize") || "50")),
+  );
+  const offset = (page - 1) * pageSize;
+
+  let query = supabase.from("coffee_orders").select("*", { count: "exact" });
+  if (search) {
+    query = query.or(
+      `id.ilike.%${search}%,line_name.ilike.%${search}%,phone.ilike.%${search}%`,
+    );
+  }
+  query = query.order("created_at", { ascending: false }).range(
+    offset,
+    offset + pageSize - 1,
+  );
+
+  const { data, count, error } = await query;
   if (error) return { success: false, error: error.message };
+
   const orders = (data || []).map((r: Record<string, unknown>) => ({
     orderId: r.id,
     timestamp: r.created_at,
@@ -323,15 +343,36 @@ export async function getOrders(req: Request) {
     transferAccountLast5: r.transfer_account_last5 || "",
     trackingNumber: r.tracking_number || "",
   }));
-  return { success: true, orders };
+  return {
+    success: true,
+    orders,
+    pagination: {
+      totalCount: count || 0,
+      totalPages: Math.ceil((count || 0) / pageSize),
+      page,
+      pageSize,
+    },
+  };
 }
 
 export async function getMyOrders(req: Request) {
   const auth = await requireAuth(req);
-  const { data } = await supabase.from("coffee_orders").select("*").eq(
-    "line_user_id",
-    auth.userId,
-  ).order("created_at", { ascending: false });
+  const url = new URL(req.url);
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1"));
+  const pageSize = Math.min(
+    50,
+    Math.max(1, parseInt(url.searchParams.get("pageSize") || "20")),
+  );
+  const offset = (page - 1) * pageSize;
+
+  const { data, count, error } = await supabase.from("coffee_orders")
+    .select("*", { count: "exact" })
+    .eq("line_user_id", auth.userId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + pageSize - 1);
+
+  if (error) return { success: false, error: error.message };
+
   const orders = (data || []).map((r: Record<string, unknown>) => ({
     orderId: r.id,
     timestamp: r.created_at,
@@ -347,7 +388,16 @@ export async function getMyOrders(req: Request) {
     paymentStatus: r.payment_status || "",
     trackingNumber: r.tracking_number || "",
   }));
-  return { success: true, orders };
+  return {
+    success: true,
+    orders,
+    pagination: {
+      totalCount: count || 0,
+      totalPages: Math.ceil((count || 0) / pageSize),
+      page,
+      pageSize,
+    },
+  };
 }
 
 export async function updateOrderStatus(
