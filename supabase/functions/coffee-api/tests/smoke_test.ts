@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.177.0/testing/asserts.ts";
+import { assertEquals } from "std/testing/asserts";
 
 Deno.test("Basic Router Test - Health Check", () => {
   // 這裡可以匯入 router 邏輯進行單元測試

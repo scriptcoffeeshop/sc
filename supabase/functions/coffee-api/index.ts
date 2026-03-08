@@ -2,8 +2,8 @@
 // 咖啡豆訂購系統 — Supabase Edge Function (Hono Router)
 // ============================================
 
-import { Hono } from "npm:hono@3.12.0";
-import { cors } from "npm:hono@3.12.0/cors";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
 import { extractAuth } from "./utils/auth.ts";

@@ -1,4 +1,4 @@
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "zod";
 
 export const updateUserRoleSchema = z.object({
   targetUserId: z.string().trim().min(1, "缺少 targetUserId"),

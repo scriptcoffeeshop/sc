@@ -1,4 +1,4 @@
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "zod";
 
 export const lineLoginSchema = z.object({
   code: z.string().min(1, "授權碼不能為空"),
