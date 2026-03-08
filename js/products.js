@@ -2,39 +2,60 @@
 // products.js — 商品卡片式渲染
 // ============================================
 
-import { escapeHtml } from './utils.js?v=44';
-import { state } from './state.js?v=44';
+import { escapeHtml } from "./utils.js?v=44";
+import { state } from "./state.js?v=44";
 
 /** 渲染商品列表（卡片式、規格按鈕） */
 export function renderProducts() {
-    const container = document.getElementById('products-container');
-    const { products, categories } = state;
-    if (!products.length) { container.innerHTML = '<p class="text-center text-gray-500 py-8">目前沒有商品</p>'; return; }
+  const container = document.getElementById("products-container");
+  const { products, categories } = state;
+  if (!products.length) {
+    container.innerHTML =
+      '<p class="text-center text-gray-500 py-8">目前沒有商品</p>';
+    return;
+  }
 
-    const grouped = {};
-    products.forEach(p => { if (!grouped[p.category]) grouped[p.category] = []; grouped[p.category].push(p); });
-    const catOrder = categories.map(c => c.name);
-    const sorted = Object.keys(grouped).sort((a, b) => {
-        const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
-        if (ia === -1) return 1; if (ib === -1) return -1; return ia - ib;
-    });
+  const grouped = {};
+  products.forEach((p) => {
+    if (!grouped[p.category]) grouped[p.category] = [];
+    grouped[p.category].push(p);
+  });
+  const catOrder = categories.map((c) => c.name);
+  const sorted = Object.keys(grouped).sort((a, b) => {
+    const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
 
-    let html = '';
-    sorted.forEach(cat => {
-        html += `<div class="mb-4">
-            <div class="category-header rounded-t-xl px-4 py-2 font-semibold">${escapeHtml(cat)}</div>
+  let html = "";
+  sorted.forEach((cat) => {
+    html += `<div class="mb-4">
+            <div class="category-header rounded-t-xl px-4 py-2 font-semibold">${
+      escapeHtml(cat)
+    }</div>
             <div class="space-y-0 border border-t-0 rounded-b-xl overflow-hidden" style="border-color:#e5ddd5;">`;
-        grouped[cat].forEach(p => {
-            const desc = p.description ? `<span class="text-xs text-gray-500">${escapeHtml(p.description)}</span>` : '';
-            const roast = p.roastLevel ? `<span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">${escapeHtml(p.roastLevel)}</span>` : '';
+    grouped[cat].forEach((p) => {
+      const desc = p.description
+        ? `<span class="text-xs text-gray-500">${
+          escapeHtml(p.description)
+        }</span>`
+        : "";
+      const roast = p.roastLevel
+        ? `<span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1">${
+          escapeHtml(p.roastLevel)
+        }</span>`
+        : "";
 
-            let specs = [];
-            try { specs = JSON.parse(p.specs || '[]'); } catch { }
-            const enabledSpecs = specs.filter(s => s.enabled);
+      let specs = [];
+      try {
+        specs = JSON.parse(p.specs || "[]");
+      } catch {}
+      const enabledSpecs = specs.filter((s) => s.enabled);
 
-            let specBtns = '';
-            if (enabledSpecs.length) {
-                specBtns = enabledSpecs.map(s => `
+      let specBtns = "";
+      if (enabledSpecs.length) {
+        specBtns = enabledSpecs.map((s) => `
                     <div class="spec-container flex-1 min-w-[80px] relative" data-pid="${p.id}" data-spec="${s.key}">
                         <!-- 預設按鈕 (未加入購物車) -->
                         <button data-action="add-to-cart" data-pid="${p.id}" data-spec="${s.key}"
@@ -60,9 +81,9 @@ export function renderProducts() {
                             </div>
                         </div>
                     </div>
-                `).join('');
-            } else {
-                specBtns = `
+                `).join("");
+      } else {
+        specBtns = `
                     <div class="spec-container flex-1 relative" data-pid="${p.id}" data-spec="default">
                         <button data-action="add-to-cart" data-pid="${p.id}" data-spec="default"
                             class="spec-btn-add text-sm py-2 px-4 rounded-lg border-2 font-medium transition-all min-h-[48px] w-full flex flex-col items-center justify-center" 
@@ -87,20 +108,22 @@ export function renderProducts() {
                         </div>
                     </div>
                 `;
-            }
+      }
 
-            html += `
+      html += `
                 <div class="product-row p-3 border-b flex flex-col gap-2" style="border-color:#f0e6db;">
                     <div class="flex items-start justify-between">
                         <div>
-                            <div class="font-medium">${escapeHtml(p.name)} ${roast}</div>
+                            <div class="font-medium">${
+        escapeHtml(p.name)
+      } ${roast}</div>
                             ${desc}
                         </div>
                     </div>
                     <div class="flex gap-2 flex-wrap">${specBtns}</div>
                 </div>`;
-        });
-        html += '</div></div>';
     });
-    container.innerHTML = html;
+    html += "</div></div>";
+  });
+  container.innerHTML = html;
 }

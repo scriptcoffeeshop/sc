@@ -65,6 +65,7 @@ description: 推送後自動偵測 CI 報錯並修復
    - 若仍然失敗，重複步驟 3-6（最多重試 3 次）
 
 ## 注意事項
+
 - Deno 安裝路徑為 `~/.deno/bin/deno`，若不存在需先安裝：
   ```bash
   curl -fsSL https://deno.land/install.sh | sh
