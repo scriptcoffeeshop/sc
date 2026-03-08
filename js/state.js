@@ -3,15 +3,15 @@
 // ============================================
 
 export const state = {
-    products: [],
-    categories: [],
-    formFields: [],
-    currentUser: null,
-    selectedDelivery: '',
-    isStoreOpen: true,
-    selectedPayment: 'cod',
-    selectedBankAccountId: '',
-    bankAccounts: [],
-    orderQuote: null,
-    quoteError: '',
+  products: [],
+  categories: [],
+  formFields: [],
+  currentUser: null,
+  selectedDelivery: "",
+  isStoreOpen: true,
+  selectedPayment: "cod",
+  selectedBankAccountId: "",
+  bankAccounts: [],
+  orderQuote: null,
+  quoteError: "",
 };

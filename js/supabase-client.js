@@ -2,8 +2,8 @@
 // supabase-client.js — 前端 Supabase 直連客戶端
 // ============================================
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js?v=44';
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "./config.js?v=44";
 
 /**
  * 初始化 Supabase Client（前端用，受 RLS 保護）
