@@ -24,7 +24,22 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v47)
+## 🚀 近期重大更新 (v40 - v48)
+
+### 📅 v48 — 移除公開追蹤頁、修復勾選 UI、出貨資訊擴充
+
+- **移除訂單追蹤功能**：
+  - 刪除 `track.html` 與 `js/track-app.js`。
+  - `main.html` 移除「訂單追蹤」入口，並在後端移除 `trackOrder` action 與對應 schema 路由綁定。
+- **修復後台訂單勾選顯示問題**：
+  - 原因是事件代理對 checkbox 也套用了 `preventDefault`，導致勾選狀態無法切換。
+  - `js/dashboard/events.js` 已改為：checkbox 走 `change` 事件處理，不再被 click 代理阻止預設行為。
+- **出貨資訊升級（物流商 + 追蹤網址）**：
+  - 後端 `updateOrderStatus / batchUpdateOrderStatus` 支援 `shippingProvider`、`trackingUrl`。
+  - 新增 migration：`supabase/migrations/20260309_add_shipping_provider_and_tracking_url.sql`。
+  - `schema_full.sql` 的 `coffee_orders` 新增 `shipping_provider`、`tracking_url` 欄位。
+  - 後台在狀態切換為「已出貨」時可填入物流單號、物流商與追蹤網址，並支援批次設定。
+  - 顧客端「我的訂單」與出貨通知信會顯示物流商、物流單號與追蹤網址（若有）。
 
 ### 📅 v47 — 訂單中心升級與顧客訂單追蹤上線
 

@@ -11,6 +11,11 @@ export function createOrdersActionHandlers(deps) {
     "confirm-transfer-payment": (el) => {
       if (el.dataset.orderId) deps.confirmTransferPayment(el.dataset.orderId);
     },
+    "change-order-status": (el) => {
+      if (el.dataset.orderId) {
+        deps.changeOrderStatus(el.dataset.orderId, el.value);
+      }
+    },
     "copy-tracking-number": (el) => {
       const trackingNumber = el.dataset.trackingNumber;
       if (!trackingNumber) return;

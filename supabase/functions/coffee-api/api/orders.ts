@@ -342,6 +342,8 @@ export async function getOrders(req: Request) {
     paymentId: r.payment_id || "",
     transferAccountLast5: r.transfer_account_last5 || "",
     trackingNumber: r.tracking_number || "",
+    shippingProvider: r.shipping_provider || "",
+    trackingUrl: r.tracking_url || "",
   }));
   return {
     success: true,
@@ -387,6 +389,8 @@ export async function getMyOrders(req: Request) {
     paymentMethod: r.payment_method || "cod",
     paymentStatus: r.payment_status || "",
     trackingNumber: r.tracking_number || "",
+    shippingProvider: r.shipping_provider || "",
+    trackingUrl: r.tracking_url || "",
   }));
   return {
     success: true,
@@ -415,15 +419,21 @@ export async function updateOrderStatus(
   }
 
   const updates: Record<string, unknown> = { status: newStatus };
-  if (data.paymentStatus) {
+  if (data.paymentStatus !== undefined) {
     updates.payment_status = String(data.paymentStatus);
   }
   if (data.trackingNumber !== undefined) {
     updates.tracking_number = String(data.trackingNumber);
   }
+  if (data.shippingProvider !== undefined) {
+    updates.shipping_provider = String(data.shippingProvider);
+  }
+  if (data.trackingUrl !== undefined) {
+    updates.tracking_url = String(data.trackingUrl);
+  }
 
   const { data: orderData } = await supabase.from("coffee_orders").select(
-    "email, line_name, delivery_method, city, district, address, store_name, store_address, payment_method, payment_status",
+    "email, line_name, delivery_method, city, district, address, store_name, store_address, payment_method, payment_status, shipping_provider, tracking_url, tracking_number",
   ).eq("id", data.orderId).single();
 
   const { error } = await supabase.from("coffee_orders").update(updates).eq(
@@ -438,6 +448,16 @@ export async function updateOrderStatus(
       .select("value").eq("key", "site_title").single();
     const shippedSiteTitle = siteTitleRow?.value || "咖啡訂購";
 
+    const finalTrackingNumber = data.trackingNumber !== undefined
+      ? String(data.trackingNumber || "")
+      : String(orderData.tracking_number || "");
+    const finalShippingProvider = data.shippingProvider !== undefined
+      ? String(data.shippingProvider || "")
+      : String(orderData.shipping_provider || "");
+    const finalTrackingUrl = data.trackingUrl !== undefined
+      ? String(data.trackingUrl || "")
+      : String(orderData.tracking_url || "");
+
     const content = buildShippingNotificationHtml({
       orderId: String(data.orderId),
       siteTitle: shippedSiteTitle,
@@ -450,7 +470,9 @@ export async function updateOrderStatus(
       storeAddress: String(orderData.store_address || ""),
       paymentMethod: String(orderData.payment_method),
       paymentStatus: String(orderData.payment_status),
-      trackingNumber: String(data.trackingNumber || ""),
+      trackingNumber: finalTrackingNumber,
+      shippingProvider: finalShippingProvider,
+      trackingUrl: finalTrackingUrl,
     });
 
     await sendEmail(
@@ -493,6 +515,12 @@ export async function batchUpdateOrderStatus(
   }
   if (data.trackingNumber !== undefined) {
     payload.trackingNumber = String(data.trackingNumber);
+  }
+  if (data.shippingProvider !== undefined) {
+    payload.shippingProvider = String(data.shippingProvider);
+  }
+  if (data.trackingUrl !== undefined) {
+    payload.trackingUrl = String(data.trackingUrl);
   }
 
   for (const orderId of orderIds) {
@@ -540,71 +568,5 @@ export async function batchDeleteOrders(
     success: true,
     message: `已刪除 ${orderIds.length} 筆訂單`,
     deletedCount: orderIds.length,
-  };
-}
-
-function getTrackingUrl(
-  deliveryMethod: string,
-  trackingNumber: string,
-): string {
-  if (!trackingNumber) return "";
-  if (deliveryMethod === "seven_eleven") {
-    return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
-  }
-  if (deliveryMethod === "family_mart") {
-    return "https://fmec.famiport.com.tw/FP_Entrance/QueryBox";
-  }
-  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
-    return "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
-  }
-  return "";
-}
-
-export async function trackOrder(data: Record<string, unknown>) {
-  const orderId = String(data.orderId || "").trim();
-  const phoneSuffix = String(data.phoneSuffix || "").replace(/\D/g, "");
-  if (!orderId || !phoneSuffix) {
-    return { success: false, error: "請輸入訂單編號與手機末碼" };
-  }
-
-  const { data: order, error } = await supabase.from("coffee_orders").select(
-    "id, created_at, line_name, phone, total, status, payment_method, payment_status, delivery_method, city, district, address, store_name, store_address, tracking_number",
-  ).eq("id", orderId).maybeSingle();
-
-  if (error || !order) {
-    return { success: false, error: "查無符合資料，請確認訂單編號與手機末碼" };
-  }
-
-  const phone = String(order.phone || "").replace(/\D/g, "");
-  if (!phone.endsWith(phoneSuffix)) {
-    return { success: false, error: "查無符合資料，請確認訂單編號與手機末碼" };
-  }
-
-  const maskedPhone = phone.length > 4
-    ? `${"*".repeat(phone.length - 4)}${phone.slice(-4)}`
-    : phone;
-  const deliveryMethod = String(order.delivery_method || "");
-  const trackingNumber = String(order.tracking_number || "");
-
-  return {
-    success: true,
-    order: {
-      orderId: order.id,
-      createdAt: order.created_at,
-      lineName: order.line_name,
-      phoneMasked: maskedPhone,
-      total: Number(order.total) || 0,
-      status: order.status || "pending",
-      paymentMethod: order.payment_method || "cod",
-      paymentStatus: order.payment_status || "",
-      deliveryMethod,
-      city: order.city || "",
-      district: order.district || "",
-      address: order.address || "",
-      storeName: order.store_name || "",
-      storeAddress: order.store_address || "",
-      trackingNumber,
-      trackingUrl: getTrackingUrl(deliveryMethod, trackingNumber),
-    },
   };
 }

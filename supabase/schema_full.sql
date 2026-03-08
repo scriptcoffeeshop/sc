@@ -54,6 +54,8 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   payment_method TEXT DEFAULT 'cod',
   transfer_account_last5 TEXT DEFAULT '',
   tracking_number TEXT DEFAULT '',
+  shipping_provider TEXT DEFAULT '',
+  tracking_url TEXT DEFAULT '',
   idempotency_key TEXT UNIQUE
 );
 

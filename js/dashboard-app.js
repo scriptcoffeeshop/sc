@@ -2,26 +2,26 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=47";
-import { esc, Toast } from "./utils.js?v=47";
-import { authFetch, loginWithLine } from "./auth.js?v=47";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=48";
+import { esc, Toast } from "./utils.js?v=48";
+import { authFetch, loginWithLine } from "./auth.js?v=48";
 import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
-} from "./dashboard/modules/orders.js?v=47";
+} from "./dashboard/modules/orders.js?v=48";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
-} from "./dashboard/modules/products.js?v=47";
+} from "./dashboard/modules/products.js?v=48";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
-} from "./dashboard/modules/settings.js?v=47";
+} from "./dashboard/modules/settings.js?v=48";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
-} from "./dashboard/modules/users.js?v=47";
-import { createDashboardEvents } from "./dashboard/events.js?v=47";
+} from "./dashboard/modules/users.js?v=48";
+import { createDashboardEvents } from "./dashboard/events.js?v=48";
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -90,6 +90,7 @@ const dashboardActionHandlers = {
   "logout": () => logout(),
   ...createOrdersActionHandlers({
     loadOrders,
+    changeOrderStatus,
     deleteOrderById,
     linePayRefundOrder,
     confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
@@ -387,7 +388,23 @@ function renderOrdersSummary(filteredOrders) {
   summaryEl.textContent = `總訂單 ${orders.length} 筆｜篩選結果 ${filteredOrders.length} 筆｜金額合計 $${totalAmount.toLocaleString("zh-TW")}`;
 }
 
+function normalizeTrackingUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 function getTrackingLinkHtml(order) {
+  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
+  if (customTrackingUrl) {
+    return `<a href="${esc(customTrackingUrl)}" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 物流追蹤頁面</a>`;
+  }
   if (!order.trackingNumber) return "";
   if (order.deliveryMethod === "seven_eleven") {
     return `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 7-11貨態查詢</a>`;
@@ -472,14 +489,23 @@ function renderOrders() {
       }" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
       : "";
 
-    const trackingHtml = o.trackingNumber
-      ? `<div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
-                    <span class="text-gray-500">物流單號：</span>
-                    <span class="font-mono font-bold">${esc(o.trackingNumber)
-      }</span>
+    const trackingLinkHtml = getTrackingLinkHtml(o);
+    const hasShippingInfo = !!o.trackingNumber || !!o.shippingProvider ||
+      !!trackingLinkHtml;
+    const shippingProviderHtml = o.shippingProvider
+      ? `<div><span class="text-gray-500">物流商：</span>${esc(o.shippingProvider)}</div>`
+      : "";
+    const trackingNumberHtml = o.trackingNumber
+      ? `<div class="mt-1"><span class="text-gray-500">物流單號：</span>
+                    <span class="font-mono font-bold">${esc(o.trackingNumber)}</span>
                     <button type="button" data-action="copy-tracking-number" data-tracking-number="${esc(o.trackingNumber)
-      }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button>
-                    ${getTrackingLinkHtml(o)}
+      }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button></div>`
+      : "";
+    const trackingHtml = hasShippingInfo
+      ? `<div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
+                    ${shippingProviderHtml}
+                    ${trackingNumberHtml}
+                    ${trackingLinkHtml ? `<div class="mt-1">${trackingLinkHtml}</div>` : ""}
                 </div>`
       : "";
 
@@ -546,29 +572,65 @@ function renderOrders() {
 
 async function changeOrderStatus(orderId, status) {
   try {
-    let trackingNumber = "";
+    let trackingNumber;
+    let shippingProvider;
+    let trackingUrl;
     if (status === "shipped") {
-      const { value: inputNum, isConfirmed } = await Swal.fire({
+      const targetOrder = orders.find((order) => order.orderId === orderId) ||
+        {};
+      const { value: shippingInfo, isConfirmed } = await Swal.fire({
         title: "設定已出貨",
-        text: "請輸入物流單號 (可選填)",
-        input: "text",
-        inputPlaceholder: "請輸入單號",
+        html: `
+          <div class="text-left space-y-2">
+            <label class="text-sm text-gray-600 block">物流單號（可選）</label>
+            <input id="swal-tracking-number" class="swal2-input" placeholder="請輸入物流單號" value="${esc(targetOrder.trackingNumber || "")}">
+            <label class="text-sm text-gray-600 block">物流商（可選）</label>
+            <input id="swal-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便" value="${esc(targetOrder.shippingProvider || "")}">
+            <label class="text-sm text-gray-600 block">物流追蹤網址（可選）</label>
+            <input id="swal-tracking-url" class="swal2-input" placeholder="https://..." value="${esc(targetOrder.trackingUrl || "")}">
+          </div>
+        `,
         showCancelButton: true,
         confirmButtonText: "確定",
         cancelButtonText: "取消",
         confirmButtonColor: "#3C2415",
+        focusConfirm: false,
+        preConfirm: () => {
+          const trackingNumEl = document.getElementById("swal-tracking-number");
+          const providerEl = document.getElementById("swal-shipping-provider");
+          const urlEl = document.getElementById("swal-tracking-url");
+          const trackingNumberValue = String(trackingNumEl?.value || "").trim();
+          const shippingProviderValue = String(providerEl?.value || "").trim();
+          const trackingUrlValue = String(urlEl?.value || "").trim();
+          if (
+            trackingUrlValue &&
+            !/^https?:\/\//i.test(trackingUrlValue)
+          ) {
+            Swal.showValidationMessage("物流追蹤網址需以 http:// 或 https:// 開頭");
+            return false;
+          }
+          return {
+            trackingNumber: trackingNumberValue,
+            shippingProvider: shippingProviderValue,
+            trackingUrl: trackingUrlValue,
+          };
+        },
       });
       if (!isConfirmed) {
         // 如果取消，則恢復原本的選單狀態 (重新載入一次列表)
         loadOrders();
         return;
       }
-      trackingNumber = inputNum ? inputNum.trim() : "";
+      trackingNumber = shippingInfo?.trackingNumber || "";
+      shippingProvider = shippingInfo?.shippingProvider || "";
+      trackingUrl = shippingInfo?.trackingUrl || "";
     }
 
     const payload = { userId: getAuthUserId(), orderId, status };
-    if (trackingNumber) {
+    if (status === "shipped") {
       payload.trackingNumber = trackingNumber;
+      payload.shippingProvider = shippingProvider;
+      payload.trackingUrl = trackingUrl;
     }
 
     const r = await authFetch(`${API_URL}?action=updateOrderStatus`, {
@@ -648,19 +710,52 @@ async function batchUpdateOrders() {
   }
 
   let trackingNumber;
+  let shippingProvider;
+  let trackingUrl;
   if (status === "shipped") {
     const { value, isConfirmed } = await Swal.fire({
       title: "批次出貨設定",
-      text: "可輸入共用物流單號（可留空）",
-      input: "text",
-      inputPlaceholder: "請輸入物流單號",
+      html: `
+        <div class="text-left space-y-2">
+          <label class="text-sm text-gray-600 block">共用物流單號（可選）</label>
+          <input id="swal-batch-tracking-number" class="swal2-input" placeholder="請輸入物流單號">
+          <label class="text-sm text-gray-600 block">共用物流商（可選）</label>
+          <input id="swal-batch-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便">
+          <label class="text-sm text-gray-600 block">共用物流追蹤網址（可選）</label>
+          <input id="swal-batch-tracking-url" class="swal2-input" placeholder="https://...">
+        </div>
+      `,
       showCancelButton: true,
       confirmButtonText: "確定",
       cancelButtonText: "取消",
       confirmButtonColor: "#3C2415",
+      focusConfirm: false,
+      preConfirm: () => {
+        const trackingNumEl = document.getElementById(
+          "swal-batch-tracking-number",
+        );
+        const providerEl = document.getElementById(
+          "swal-batch-shipping-provider",
+        );
+        const urlEl = document.getElementById("swal-batch-tracking-url");
+        const trackingNumberValue = String(trackingNumEl?.value || "").trim();
+        const shippingProviderValue = String(providerEl?.value || "").trim();
+        const trackingUrlValue = String(urlEl?.value || "").trim();
+        if (trackingUrlValue && !/^https?:\/\//i.test(trackingUrlValue)) {
+          Swal.showValidationMessage("物流追蹤網址需以 http:// 或 https:// 開頭");
+          return false;
+        }
+        return {
+          trackingNumber: trackingNumberValue,
+          shippingProvider: shippingProviderValue,
+          trackingUrl: trackingUrlValue,
+        };
+      },
     });
     if (!isConfirmed) return;
-    trackingNumber = value ? value.trim() : "";
+    trackingNumber = value?.trackingNumber || "";
+    shippingProvider = value?.shippingProvider || "";
+    trackingUrl = value?.trackingUrl || "";
   }
 
   const paymentStatus = getOrderFilterValue("batch-payment-status", "__keep__");
@@ -670,7 +765,11 @@ async function batchUpdateOrders() {
     status,
   };
   if (paymentStatus !== "__keep__") payload.paymentStatus = paymentStatus;
-  if (trackingNumber !== undefined) payload.trackingNumber = trackingNumber;
+  if (status === "shipped") {
+    payload.trackingNumber = trackingNumber;
+    payload.shippingProvider = shippingProvider;
+    payload.trackingUrl = trackingUrl;
+  }
 
   try {
     const r = await authFetch(`${API_URL}?action=batchUpdateOrderStatus`, {
@@ -748,7 +847,9 @@ function buildOrdersCsv(orderList) {
     "付款方式",
     "付款狀態",
     "金額",
+    "物流商",
     "物流單號",
+    "追蹤網址",
     "地址或門市",
     "訂單內容",
     "備註",
@@ -771,7 +872,9 @@ function buildOrdersCsv(orderList) {
       orderPayMethodLabel[o.paymentMethod || "cod"] || o.paymentMethod || "",
       orderPayStatusLabel[o.paymentStatus || ""] || o.paymentStatus || "",
       Number(o.total) || 0,
+      o.shippingProvider || "",
       o.trackingNumber || "",
+      o.trackingUrl || "",
       addrInfo,
       o.items || "",
       o.note || "",
