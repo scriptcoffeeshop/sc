@@ -6,7 +6,8 @@ const optionalTrimmed = z.string().optional().transform((v) =>
 
 export const updateUserProfileSchema = z.object({
   phone: optionalTrimmed,
-  email: z.union([z.string().email("Email 格式不正確"), z.literal("")]).optional(),
+  email: z.union([z.string().email("Email 格式不正確"), z.literal("")])
+    .optional(),
   defaultCity: optionalTrimmed,
   defaultDistrict: optionalTrimmed,
   defaultAddress: optionalTrimmed,
