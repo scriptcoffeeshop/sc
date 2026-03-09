@@ -425,4 +425,3 @@ app.all(
 // ============ 匯出 ============
 export default app;
 
-const testVal = 1; // Intentional bad formatting
