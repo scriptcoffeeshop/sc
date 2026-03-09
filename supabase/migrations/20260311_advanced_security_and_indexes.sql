@@ -1,5 +1,6 @@
--- 啟用 pg_trgm 擴充以支援 ilike 的 GIN 索引
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- 啟用 pg_trgm 擴充以支援 ilike 的 GIN 索引，並指定安裝在 extensions schema
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
 
 -- ============================================
 -- 1. 安全性收斂：修改 coffee_settings RLS
