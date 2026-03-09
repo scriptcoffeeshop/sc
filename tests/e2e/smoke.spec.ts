@@ -49,7 +49,7 @@ async function installGlobalStubs(page: Page) {
   );
 
   await page.addInitScript(() => {
-    const noop = () => { };
+    const noop = () => {};
     const clipboardWrites: string[] = [];
     (window as any).Swal = {
       fire: async () => ({ isConfirmed: true }),

@@ -19,8 +19,16 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
    上，是為了保留舊快取版本的相容性，非必要請勿新增。
 3. **繁體中文規則**：所有對話與代碼內的開發邏輯註解（comments），依照過去的強制要求，請一律使用
    **「繁體中文（Traditional Chinese）」**。
-4. **SRI 與 E2E 測試衝突**：在 HTML 啟用 SRI (`integrity`) 後，Playwright 的 `route.fulfill` 攔截 CDN 腳本會導致 hash 不匹配而被瀏覽器阻擋。**解決方案**：在 `smoke.spec.ts` 的 `installGlobalStubs` 中，攔截 HTML 並動態移除 `integrity` 與 `crossorigin` 屬性，確保測試環境能載入 mock 腳本。
-5. **Deno 模組解析與 CI**：Deno 不允許在 production/CI 環境（透過 `deno.json` 控制時）使用 `npm:` 行內前綴或 https URL 的 bare specifier。**規範**：依賴一律宣告在 `deno.json` 的 `imports` 中，程式碼內直接引用別名（如 `import { z } from "zod"`），否則 `deno lint` 與 `deno check` 會失敗。
+4. **SRI 與 E2E 測試衝突**：在 HTML 啟用 SRI (`integrity`) 後，Playwright 的
+   `route.fulfill` 攔截 CDN 腳本會導致 hash
+   不匹配而被瀏覽器阻擋。**解決方案**：在 `smoke.spec.ts` 的
+   `installGlobalStubs` 中，攔截 HTML 並動態移除 `integrity` 與 `crossorigin`
+   屬性，確保測試環境能載入 mock 腳本。
+5. **Deno 模組解析與 CI**：Deno 不允許在 production/CI 環境（透過 `deno.json`
+   控制時）使用 `npm:` 行內前綴或 https URL 的 bare
+   specifier。**規範**：依賴一律宣告在 `deno.json` 的 `imports`
+   中，程式碼內直接引用別名（如 `import { z } from "zod"`），否則 `deno lint` 與
+   `deno check` 會失敗。
 
 ---
 
@@ -37,7 +45,8 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - **Email 模板調整**：
   - 訂購確認信標題改為只顯示站名（不再附加 `訂購確認` 字樣）。
   - 已出貨通知信在物流單號旁新增 `📋 複製單號` 按鈕。
-  - 新增 `normalizeEmailSiteTitle()`，若站名尾端誤設為 `... 訂購確認` 會自動去除，並同步套用到確認信/出貨信主旨。
+  - 新增 `normalizeEmailSiteTitle()`，若站名尾端誤設為 `... 訂購確認`
+    會自動去除，並同步套用到確認信/出貨信主旨。
 - **部署注意**：
   - 此次有修改 Edge Function（`supabase/functions/coffee-api`），已執行：
     `supabase functions deploy coffee-api --no-verify-jwt`。
@@ -46,27 +55,37 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 - **移除訂單追蹤功能**：
   - 刪除 `track.html` 與 `js/track-app.js`。
-  - `main.html` 移除「訂單追蹤」入口，並在後端移除 `trackOrder` action 與對應 schema 路由綁定。
+  - `main.html` 移除「訂單追蹤」入口，並在後端移除 `trackOrder` action 與對應
+    schema 路由綁定。
 - **修復後台訂單勾選顯示問題**：
   - 原因是事件代理對 checkbox 也套用了 `preventDefault`，導致勾選狀態無法切換。
-  - `js/dashboard/events.js` 已改為：checkbox 走 `change` 事件處理，不再被 click 代理阻止預設行為。
+  - `js/dashboard/events.js` 已改為：checkbox 走 `change` 事件處理，不再被 click
+    代理阻止預設行為。
 - **出貨資訊升級（物流商 + 追蹤網址）**：
-  - 後端 `updateOrderStatus / batchUpdateOrderStatus` 支援 `shippingProvider`、`trackingUrl`。
-  - 新增 migration：`supabase/migrations/20260309_add_shipping_provider_and_tracking_url.sql`。
-  - 修正 migration 版號衝突：將重複的 `20260309_*` 重編為 `20260310_*`、`20260311_*`，確保可連續 `supabase db push`。
-  - `schema_full.sql` 的 `coffee_orders` 新增 `shipping_provider`、`tracking_url` 欄位。
+  - 後端 `updateOrderStatus / batchUpdateOrderStatus` 支援
+    `shippingProvider`、`trackingUrl`。
+  - 新增
+    migration：`supabase/migrations/20260309_add_shipping_provider_and_tracking_url.sql`。
+  - 修正 migration 版號衝突：將重複的 `20260309_*` 重編為
+    `20260310_*`、`20260311_*`，確保可連續 `supabase db push`。
+  - `schema_full.sql` 的 `coffee_orders` 新增
+    `shipping_provider`、`tracking_url` 欄位。
   - 後台在狀態切換為「已出貨」時可填入物流單號、物流商與追蹤網址，並支援批次設定。
   - 顧客端「我的訂單」與出貨通知信會顯示物流商、物流單號與追蹤網址（若有）。
 
 ### 📅 v47 — 訂單中心升級與顧客訂單追蹤上線
 
 - **後台訂單中心升級（多條件篩選 + 批次操作 + CSV 匯出）**：
-  - `dashboard.html` 訂單區塊新增多條件篩選控件（訂單狀態、付款方式、付款狀態、配送方式、時間區間、金額區間）。
-  - `js/dashboard-app.js` 訂單渲染邏輯改為「可組合篩選」，並新增勾選機制與「全選目前篩選結果」。
+  - `dashboard.html`
+    訂單區塊新增多條件篩選控件（訂單狀態、付款方式、付款狀態、配送方式、時間區間、金額區間）。
+  - `js/dashboard-app.js`
+    訂單渲染邏輯改為「可組合篩選」，並新增勾選機制與「全選目前篩選結果」。
   - 新增批次操作：`batchUpdateOrderStatus`（批次狀態更新，可附付款狀態與共用物流單號）、`batchDeleteOrders`（批次刪除）。
-  - 新增 CSV 匯出：可匯出「目前篩選結果」或「目前勾選訂單」，含 UTF-8 BOM 以提升 Excel 開啟相容性。
+  - 新增 CSV 匯出：可匯出「目前篩選結果」或「目前勾選訂單」，含 UTF-8 BOM 以提升
+    Excel 開啟相容性。
 - **顧客端訂單追蹤頁（降低客服詢問）**：
-  - 新增 `track.html` 與 `js/track-app.js`，提供顧客以「訂單編號 + 手機末碼」查詢進度。
+  - 新增 `track.html` 與 `js/track-app.js`，提供顧客以「訂單編號 +
+    手機末碼」查詢進度。
   - 顯示內容含：訂單目前狀態、配送/付款資訊、收件資訊、物流單號與物流連結、狀態時間軸。
   - `main.html` 新增「訂單追蹤（免登入）」入口。
 - **後端 API 擴充（模組化 + Schema 驗證）**：
@@ -86,13 +105,19 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 ### 📅 v46 — 資安標頭 (CSP/SRI)、分頁搜尋下推與 CI 穩定化
 
 - **P1 安全強化 (CSP & SRI)**：
-  - 在 `main.html` 與 `dashboard.html` 導入 **CSP (Content Security Policy)** 標頭，限制來源安全性。
-  - 對所有外部 CDN (SweetAlert2, Tailwind, 7-11 Map) 加入 **SRI (Subresource Integrity)** 校驗，並修正 E2E 測試中 SRI 導致的 Mock 失敗問題。
+  - 在 `main.html` 與 `dashboard.html` 導入 **CSP (Content Security Policy)**
+    標頭，限制來源安全性。
+  - 對所有外部 CDN (SweetAlert2, Tailwind, 7-11 Map) 加入 **SRI (Subresource
+    Integrity)** 校驗，並修正 E2E 測試中 SRI 導致的 Mock 失敗問題。
 - **P1/P2 查詢效能下推 (Pagination & Search)**：
-  - `orders.ts` 與 `users.ts` API 全面改寫，支援 `limit`, `offset` 與 `search` 參數，將分頁與 `ilike` 模糊搜尋邏輯下推至 PostgreSQL 執行，大幅降低大數據量下的記憶體負擔。
+  - `orders.ts` 與 `users.ts` API 全面改寫，支援 `limit`, `offset` 與 `search`
+    參數，將分頁與 `ilike` 模糊搜尋邏輯下推至 PostgreSQL
+    執行，大幅降低大數據量下的記憶體負擔。
 - **P2 前端架構模組化 (階段三)**：
-  - 從 `js/dashboard-app.js` 中抽離出 `js/dashboard/events.js` (全域事件代理) 與 `js/dashboard/api.js` (API 封裝)，成功降低主檔案維護難度。
-  - 同步修正 `scripts/check_dashboard_event_delegation.py` 驗證腳本以適配新路徑。
+  - 從 `js/dashboard-app.js` 中抽離出 `js/dashboard/events.js` (全域事件代理) 與
+    `js/dashboard/api.js` (API 封裝)，成功降低主檔案維護難度。
+  - 同步修正 `scripts/check_dashboard_event_delegation.py`
+    驗證腳本以適配新路徑。
 - **CI/CD 穩定化**：
   - 統一 Deno 依賴管理，消除 `npm:` 行內前綴引起的 `deno check/lint` 報錯。
   - 修復 `std/testing/asserts` 斷鏈問題。
@@ -100,31 +125,43 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 ### 📅 v45.1 — 資安與維護性大升級 (P0-P2 修復)
 
 - **P0 資安防護**：
-  - 將 `.env` 與 `.env.staging` 從版本控制移除，阻絕機密外洩 (`.gitignore` 修正)。
-  - `getInitData` 與 `settings.ts` 加入 `PUBLIC_SETTINGS_KEYS` 白名單，避免給前端暴露如智付通 Hash 等非公開設定。
-  - `orders.ts` 中實作防重複提交，前端產生 UUID 送至後端做 `idempotency_key` 唯一性阻擋；`schema_full.sql` 補齊漂移欄位。
+  - 將 `.env` 與 `.env.staging` 從版本控制移除，阻絕機密外洩 (`.gitignore`
+    修正)。
+  - `getInitData` 與 `settings.ts` 加入 `PUBLIC_SETTINGS_KEYS`
+    白名單，避免給前端暴露如智付通 Hash 等非公開設定。
+  - `orders.ts` 中實作防重複提交，前端產生 UUID 送至後端做 `idempotency_key`
+    唯一性阻擋；`schema_full.sql` 補齊漂移欄位。
 - **P1 權限與注入防護**：
-  - `submitOrder` 強制改用 `requireAuth` 取代 `extractAuth`，封鎖未登入訪客送單。
-  - `delivery.js` 修復 7-11/全家電子地圖與門市搜尋列表寫入的 `innerHTML`，全面加上 `escapeHtml` 阻擋 XSS 攻擊。
-  - OAuth 登入的 `getLineLoginUrl` 加上原點比對（`ALLOWED_REDIRECT_ORIGINS` 白名單），阻擋惡意 redirect 劫持。
+  - `submitOrder` 強制改用 `requireAuth` 取代
+    `extractAuth`，封鎖未登入訪客送單。
+  - `delivery.js` 修復 7-11/全家電子地圖與門市搜尋列表寫入的
+    `innerHTML`，全面加上 `escapeHtml` 阻擋 XSS 攻擊。
+  - OAuth 登入的 `getLineLoginUrl` 加上原點比對（`ALLOWED_REDIRECT_ORIGINS`
+    白名單），阻擋惡意 redirect 劫持。
 - **P2 品質與測試涵蓋**：
-  - 解開 `api_integration.spec.ts` 整合測試，將 API 端的合約正式納入 Playwright E2E 回歸保護。
-  - **(CI Hotfix)** 修復了 17 個以上潛藏在 Deno Edge Functions 裡的 TypeScript `any` / `unknown` 型別推導錯誤（引發於 Zod schema 轉換時的 Input/Output 型別非對稱，已調整 `validate.ts` 泛型簽章）。
+  - 解開 `api_integration.spec.ts` 整合測試，將 API 端的合約正式納入 Playwright
+    E2E 回歸保護。
+  - **(CI Hotfix)** 修復了 17 個以上潛藏在 Deno Edge Functions 裡的 TypeScript
+    `any` / `unknown` 型別推導錯誤（引發於 Zod schema 轉換時的 Input/Output
+    型別非對稱，已調整 `validate.ts` 泛型簽章）。
 
 ### 📅 v45 — Email 模板抽離、後台模組化 (階段二) 與前端資料流統一
 
 - **P2-1：Email 模板抽離**
-  - 新增 `utils/email-templates.ts`，將 `orders.ts` 中原本混雜的 170 行 HTML 模板提取為獨立工廠函數。
+  - 新增 `utils/email-templates.ts`，將 `orders.ts` 中原本混雜的 170 行 HTML
+    模板提取為獨立工廠函數。
   - 提升了業務邏輯的可讀性與模板的可維護性。
 - **P1-4：測試品質升級**
   - 在 `smoke.spec.ts` 中加入 `quoteOrder` 回傳結構強驗證。
   - 新增 `tests/e2e/api_integration.spec.ts` (非 mock 整合測試)。
   - 刪除過時的 `test_pm_category.spec.ts`。
 - **P2-3：後端模組化 (階段二)**
-  - 將 600 多行的 `api/settings.ts` 拆分為 5 個專屬模組：`products.ts`, `categories.ts`, `promotions.ts`, `form-fields.ts`, `bank-accounts.ts`。
+  - 將 600 多行的 `api/settings.ts` 拆分為 5 個專屬模組：`products.ts`,
+    `categories.ts`, `promotions.ts`, `form-fields.ts`, `bank-accounts.ts`。
   - `index.ts` 路由映射全面轉向子模組。
 - **P2-3：前端資料來源統一**
-  - `main-app.js` 移除 Supabase 直接查詢邏輯，統一改由 Edge Function `getInitData` 獲取資料。
+  - `main-app.js` 移除 Supabase 直接查詢邏輯，統一改由 Edge Function
+    `getInitData` 獲取資料。
   - 刪除已無引用的 `js/supabase-client.js`。
   - 消滅前、後端兩套 Mapping 邏輯，大幅提升安全性與資料一致性。
 

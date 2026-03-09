@@ -47,10 +47,12 @@ window.renderDeliveryOptions = function (config) {
     div.innerHTML = `
             <div class="check-mark">✓</div>
             <div class="text-2xl mb-2">${escapeHtml(opt.icon || "")}</div>
-            <div class="font-semibold" style="font-size: 0.95rem;">${escapeHtml(opt.name || "")
-      }</div>
-            <div class="text-xs text-gray-500 mt-1">${escapeHtml(opt.description || "")
-      }</div>
+            <div class="font-semibold" style="font-size: 0.95rem;">${
+      escapeHtml(opt.name || "")
+    }</div>
+            <div class="text-xs text-gray-500 mt-1">${
+      escapeHtml(opt.description || "")
+    }</div>
         `;
     list.appendChild(div);
   });
@@ -104,7 +106,7 @@ window.selectDelivery = function (method, e, options = {}) {
     if (deliveryConfigStr) {
       try {
         deliveryConfig = JSON.parse(deliveryConfigStr);
-      } catch (e) { }
+      } catch (e) {}
     }
     window.updatePaymentOptionsState(deliveryConfig);
   }
@@ -173,7 +175,8 @@ export async function checkStoreToken(token) {
   });
   try {
     const res = await fetch(
-      `${API_URL}?action=getStoreSelection&token=${encodeURIComponent(token)
+      `${API_URL}?action=getStoreSelection&token=${
+        encodeURIComponent(token)
       }&_=${Date.now()}`,
     );
     const result = await res.json();
@@ -192,7 +195,7 @@ export async function checkStoreToken(token) {
       if (btn) btn.click();
       else {
         selectDelivery(method, {
-          currentTarget: { classList: { add: () => { } } },
+          currentTarget: { classList: { add: () => {} } },
         });
       }
 
@@ -231,7 +234,8 @@ export async function openStoreMap() {
       const clientUrl = window.location.origin + window.location.pathname;
       // 先在後端建立 store selection session（取得 token 與 callback URL）
       const res = await fetch(
-        `${API_URL}?action=createPcscMapSession&clientUrl=${encodeURIComponent(clientUrl)
+        `${API_URL}?action=createPcscMapSession&clientUrl=${
+          encodeURIComponent(clientUrl)
         }`,
       );
       const result = await res.json();
@@ -286,7 +290,8 @@ export async function openStoreMap() {
   try {
     const clientUrl = window.location.origin + window.location.pathname;
     const res = await fetch(
-      `${API_URL}?action=createStoreMapSession&deliveryMethod=${encodeURIComponent(state.selectedDelivery)
+      `${API_URL}?action=createStoreMapSession&deliveryMethod=${
+        encodeURIComponent(state.selectedDelivery)
       }&clientUrl=${encodeURIComponent(clientUrl)}`,
     );
     const result = await res.json();
@@ -377,16 +382,21 @@ export async function openStoreSearchModal() {
           ? `顯示前 50 筆，請輸入更精確的關鍵字`
           : `找到 ${matches.length} 間門市`;
         resultsDiv.innerHTML = matches.map((s) => `
-                    <div class="store-result-item" data-action="select-store" data-id="${escapeHtml(s.id)
-          }" data-name="${escapeHtml(s.name)}" data-addr="${escapeHtml(s.address)
-          }"
+                    <div class="store-result-item" data-action="select-store" data-id="${
+          escapeHtml(s.id)
+        }" data-name="${escapeHtml(s.name)}" data-addr="${
+          escapeHtml(s.address)
+        }"
                          style="padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; transition:background 0.2s;">
-                        <div style="font-weight:600; font-size:14px;">${escapeHtml(s.name)
-          }</div>
-                        <div style="color:#666; font-size:12px;">${escapeHtml(s.address)
-          }</div>
-                        <div style="color:#aaa; font-size:11px;">代號：${escapeHtml(s.id)
-          }</div>
+                        <div style="font-weight:600; font-size:14px;">${
+          escapeHtml(s.name)
+        }</div>
+                        <div style="color:#666; font-size:12px;">${
+          escapeHtml(s.address)
+        }</div>
+                        <div style="color:#aaa; font-size:11px;">代號：${
+          escapeHtml(s.id)
+        }</div>
                     </div>
                 `).join("");
       });
