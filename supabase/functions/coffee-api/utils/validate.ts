@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-export async function validate<T>(
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+export async function validate<T extends z.ZodTypeAny>(
+  schema: T,
   data: unknown,
-): Promise<T> {
+): Promise<z.infer<T>> {
   try {
     return await schema.parseAsync(data);
   } catch (error: unknown) {
