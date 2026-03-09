@@ -228,12 +228,14 @@ export async function submitOrder() {
   };
   let addrText =
     (deliveryMethod === "delivery" || deliveryMethod === "home_delivery")
-      ? `${deliveryInfo.city}${deliveryInfo.district || ""
+      ? `${deliveryInfo.city}${
+        deliveryInfo.district || ""
       } ${deliveryInfo.address}`
       : deliveryMethod === "in_store"
-        ? `來店自取 (${deliveryInfo.storeAddress})`
-        : `${deliveryInfo.storeName} [店號：${deliveryInfo.storeId}]${deliveryInfo.storeAddress ? " (" + deliveryInfo.storeAddress + ")" : ""
-        }`;
+      ? `來店自取 (${deliveryInfo.storeAddress})`
+      : `${deliveryInfo.storeName} [店號：${deliveryInfo.storeId}]${
+        deliveryInfo.storeAddress ? " (" + deliveryInfo.storeAddress + ")" : ""
+      }`;
   const orderLinesHtml = orderLines.map((line) => escapeHtml(String(line)))
     .join("<br>");
 
@@ -244,17 +246,20 @@ export async function submitOrder() {
         <b>訂單內容：</b><br>${orderLinesHtml}<br><br>
         <b>總金額：</b>$${total}
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ""}
-        <br><br><b>付款方式：</b>${{
+        <br><br><b>付款方式：</b>${
+    {
       cod: "貨到付款",
       linepay: "LINE Pay",
       transfer: "線上轉帳",
     }[paymentMethod]
-    }
-        ${paymentMethod === "transfer" && transferTargetAccountInfo
-      ? `<br><span style="color:#2E7D32; font-size:0.85rem">└ 匯入：${escapeHtml(transferTargetAccountInfo)
+  }
+        ${
+    paymentMethod === "transfer" && transferTargetAccountInfo
+      ? `<br><span style="color:#2E7D32; font-size:0.85rem">└ 匯入：${
+        escapeHtml(transferTargetAccountInfo)
       }</span>`
       : ""
-    }
+  }
         </div>`;
 
   const confirmResult = await Swal.fire({
@@ -314,7 +319,7 @@ export async function submitOrder() {
           "coffee_delivery_prefs",
           JSON.stringify({ method: deliveryMethod, ...deliveryInfo }),
         );
-      } catch { }
+      } catch {}
 
       // 背景同步使用者資料到後端
       try {
@@ -327,8 +332,8 @@ export async function submitOrder() {
             defaultDeliveryMethod: deliveryMethod || "",
             ...deliveryInfo,
           }),
-        }).catch(() => { });
-      } catch { }
+        }).catch(() => {});
+      } catch {}
 
       // LINE Pay: 跳轉到付款頁面
       if (result.paymentUrl) {
@@ -352,14 +357,17 @@ export async function submitOrder() {
         );
         const bankHtml = b
           ? `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
-                        <b>${escapeHtml(b.bankName)} (${escapeHtml(b.bankCode)
+                        <b>${escapeHtml(b.bankName)} (${
+            escapeHtml(b.bankCode)
           })</b><br>
-                        <span style="font-size:1.1em;font-family:monospace;">${escapeHtml(b.accountNumber)
+                        <span style="font-size:1.1em;font-family:monospace;">${
+            escapeHtml(b.accountNumber)
           }</span>
-                        ${b.accountName
-            ? '<br><span style="color:#666">戶名: ' +
-            escapeHtml(b.accountName) + "</span>"
-            : ""
+                        ${
+            b.accountName
+              ? '<br><span style="color:#666">戶名: ' +
+                escapeHtml(b.accountName) + "</span>"
+              : ""
           }
                     </div>`
           : "";
@@ -450,52 +458,66 @@ export async function showMyOrders() {
       const defaultTrackingUrl = getDefaultTrackingUrl(o.deliveryMethod);
       const trackingUrl = customTrackingUrl || defaultTrackingUrl;
       const shippingInfoHtml = (o.shippingProvider || o.trackingNumber ||
-        trackingUrl)
+          trackingUrl)
         ? `<div class="text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2">
-                ${o.shippingProvider
-          ? `<div>物流商：${escapeHtml(o.shippingProvider)}</div>`
-          : ""
+                ${
+          o.shippingProvider
+            ? `<div>物流商：${escapeHtml(o.shippingProvider)}</div>`
+            : ""
         }
-                ${o.trackingNumber
-          ? `<div class="mt-1">物流單號：<span class="font-mono">${escapeHtml(o.trackingNumber)}</span>
-                    <button type="button" data-action="copy-tracking-number" data-tracking-number="${escapeHtml(o.trackingNumber)}" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">📋 複製</button>
+                ${
+          o.trackingNumber
+            ? `<div class="mt-1">物流單號：<span class="font-mono">${
+              escapeHtml(o.trackingNumber)
+            }</span>
+                    <button type="button" data-action="copy-tracking-number" data-tracking-number="${
+              escapeHtml(o.trackingNumber)
+            }" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">📋 複製</button>
                   </div>`
-          : ""
+            : ""
         }
-                ${trackingUrl
-          ? `<a href="${escapeHtml(trackingUrl)}" target="_blank" class="text-blue-600 hover:underline">🔗 物流追蹤頁面</a>`
-          : ""
+                ${
+          trackingUrl
+            ? `<a href="${
+              escapeHtml(trackingUrl)
+            }" target="_blank" class="text-blue-600 hover:underline">🔗 物流追蹤頁面</a>`
+            : ""
         }
             </div>`
         : "";
       const payBadge = o.paymentMethod && o.paymentMethod !== "cod"
-        ? `<span class="text-xs px-2 py-0.5 rounded-full ${o.paymentStatus === "paid"
-          ? "bg-green-50 text-green-700"
-          : o.paymentStatus === "pending"
+        ? `<span class="text-xs px-2 py-0.5 rounded-full ${
+          o.paymentStatus === "paid"
+            ? "bg-green-50 text-green-700"
+            : o.paymentStatus === "pending"
             ? "bg-yellow-50 text-yellow-700"
             : "bg-gray-100 text-gray-600"
-        }">${payMethodMap[o.paymentMethod] || ""} ${payStatusMap[o.paymentStatus] || ""
+        }">${payMethodMap[o.paymentMethod] || ""} ${
+          payStatusMap[o.paymentStatus] || ""
         }</span>`
         : "";
       return `
             <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-sm font-bold" style="color:var(--primary)">#${o.orderId}</span>
-                    <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700">${statusMap[o.status] || o.status
-        }</span>
+                    <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700">${
+        statusMap[o.status] || o.status
+      }</span>
                 </div>
                 <div class="text-xs text-gray-500 mb-2 flex flex-wrap gap-1 items-center">
-                    ${methodMap[o.deliveryMethod] || o.deliveryMethod} ${o.storeName
+                    ${methodMap[o.deliveryMethod] || o.deliveryMethod} ${
+        o.storeName
           ? "・" + o.storeName
           : o.city
-            ? "・" + o.city + (o.address || "")
-            : ""
-        }
+          ? "・" + o.city + (o.address || "")
+          : ""
+      }
                     ${payBadge}
                 </div>
                 ${shippingInfoHtml}
-                <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${escapeHtml(o.items)
-        }</div>
+                <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${
+        escapeHtml(o.items)
+      }</div>
                 <div class="text-right font-bold" style="color:var(--primary)">$${o.total}</div>
             </div>
         `;

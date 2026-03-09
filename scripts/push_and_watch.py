@@ -56,8 +56,10 @@ def find_run_for_sha(sha, max_retries=5):
     
     for i in range(max_retries):
         data = api_request(url)
-        if data and data.get("workflow_runs") and len(data["workflow_runs"]) > 0:
-            return data["workflow_runs"][0]
+        if data and data.get("workflow_runs"):
+            for run in data["workflow_runs"]:
+                if run.get("name") == "Backend CI":
+                    return run
         
         print(f"Waiting for GitHub Actions to register run... ({i+1}/{max_retries})")
         time.sleep(5)

@@ -166,7 +166,8 @@ async function handleLineCallback(code, stateParam) {
   });
   try {
     const res = await fetch(
-      `${API_URL}?action=customerLineLogin&code=${encodeURIComponent(code)
+      `${API_URL}?action=customerLineLogin&code=${
+        encodeURIComponent(code)
       }&redirectUri=${encodeURIComponent(LINE_REDIRECT.main)}`,
     );
     const result = await res.json();
@@ -233,7 +234,7 @@ function prefillUserFields() {
       customDefaults = typeof u.defaultCustomFields === "string"
         ? JSON.parse(u.defaultCustomFields)
         : u.defaultCustomFields;
-    } catch { }
+    } catch {}
   }
   for (const [key, val] of Object.entries(customDefaults)) {
     const el = document.getElementById(`field-${key}`);
@@ -258,7 +259,7 @@ async function showProfileModal() {
       customDefaults = typeof u.defaultCustomFields === "string"
         ? JSON.parse(u.defaultCustomFields)
         : u.defaultCustomFields;
-    } catch { }
+    } catch {}
   }
 
   // 產生 HTML 表單
@@ -278,16 +279,18 @@ async function showProfileModal() {
       let opts = [];
       try {
         opts = JSON.parse(f.options || "[]");
-      } catch { }
+      } catch {}
       fieldsHtml += `<div style="margin-bottom:12px">
                 <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
                 <select id="profile-${key}" class="swal2-select" style="margin:0;width:100%">
                     <option value="">-- 請選擇 --</option>
-                    ${opts.map((o) =>
-        `<option value="${escapeHtml(o)}" ${o === currentVal ? "selected" : ""
-        }>${escapeHtml(o)}</option>`
-      ).join("")
-        }
+                    ${
+        opts.map((o) =>
+          `<option value="${escapeHtml(o)}" ${
+            o === currentVal ? "selected" : ""
+          }>${escapeHtml(o)}</option>`
+        ).join("")
+      }
                 </select>
             </div>`;
     } else if (f.field_type === "textarea") {
@@ -298,8 +301,9 @@ async function showProfileModal() {
     } else {
       fieldsHtml += `<div style="margin-bottom:12px">
                 <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
-                <input id="profile-${key}" type="${f.field_type || "text"
-        }" class="swal2-input" value="${escapedVal}" placeholder="${escapedPlaceholder}" style="margin:0;width:100%">
+                <input id="profile-${key}" type="${
+        f.field_type || "text"
+      }" class="swal2-input" value="${escapedVal}" placeholder="${escapedPlaceholder}" style="margin:0;width:100%">
             </div>`;
     }
   }
@@ -512,7 +516,7 @@ function applySettings(s) {
   if (paymentOptionsStr) {
     try {
       paymentOptions = JSON.parse(paymentOptionsStr);
-    } catch (e) { }
+    } catch (e) {}
   }
 
   if (paymentOptions.cod) {
@@ -546,7 +550,7 @@ function applySettings(s) {
   if (deliveryConfigStr) {
     try {
       deliveryConfig = JSON.parse(deliveryConfigStr);
-    } catch (e) { }
+    } catch (e) {}
   }
 
   // 如果尚未轉移格式，進行臨時轉換以保證前台正常運作
@@ -556,7 +560,7 @@ function applySettings(s) {
     if (rStr) {
       try {
         rConfig = JSON.parse(rStr);
-      } catch (e) { }
+      } catch (e) {}
     } else {
       const le = String(s.linepay_enabled) === "true";
       const te = String(s.transfer_enabled) === "true";
@@ -799,24 +803,30 @@ function renderBankAccounts() {
     return `
         <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" data-action="select-bank-account" data-bank-id="${b.id}">
             <div class="flex items-center gap-3 mb-1">
-                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${isSelected ? "checked" : ""
-      }>
-                <div class="font-semibold text-gray-800">${escapeHtml(b.bankName)
-      } (${escapeHtml(b.bankCode)})</div>
+                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${
+      isSelected ? "checked" : ""
+    }>
+                <div class="font-semibold text-gray-800">${
+      escapeHtml(b.bankName)
+    } (${escapeHtml(b.bankCode)})</div>
             </div>
             <div class="flex items-center gap-2 mt-1 pl-7">
-                <span class="text-lg font-mono font-medium" style="color:var(--primary)">${escapeHtml(b.accountNumber)
-      }</span>
-                <button type="button" data-action="copy-transfer-account" data-account="${escapeHtml(b.accountNumber)
-      }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
+                <span class="text-lg font-mono font-medium" style="color:var(--primary)">${
+      escapeHtml(b.accountNumber)
+    }</span>
+                <button type="button" data-action="copy-transfer-account" data-account="${
+      escapeHtml(b.accountNumber)
+    }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
                     📋 複製
                 </button>
             </div>
-            ${b.accountName
-        ? `<div class="text-sm text-gray-500 mt-1 pl-7">戶名: ${escapeHtml(b.accountName)
+            ${
+      b.accountName
+        ? `<div class="text-sm text-gray-500 mt-1 pl-7">戶名: ${
+          escapeHtml(b.accountName)
         }</div>`
         : ""
-      }
+    }
         </div>
         `;
   }).join("");
@@ -899,7 +909,7 @@ async function handleLinePayCallback(lpAction, params) {
     if (orderId) {
       try {
         await authFetch(`${API_URL}?action=linePayCancel&orderId=${orderId}`);
-      } catch { }
+      } catch {}
     }
     Swal.fire({
       icon: "info",

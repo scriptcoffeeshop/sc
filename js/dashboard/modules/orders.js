@@ -28,7 +28,10 @@ export function createOrdersActionHandlers(deps) {
     },
     "toggle-order-selection": (el) => {
       if (el.dataset.orderId) {
-        deps.toggleOrderSelection(el.dataset.orderId, getCheckedFromElement(el));
+        deps.toggleOrderSelection(
+          el.dataset.orderId,
+          getCheckedFromElement(el),
+        );
       }
     },
     "toggle-select-all-orders": (el) => {
