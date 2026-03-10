@@ -35,10 +35,19 @@ let bankAccounts = [];
 window.promotions = [];
 let dashboardSettings = {};
 let settingsLoadToken = 0;
+const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
 
 function getAuthUserId() {
   if (!currentUser?.userId) throw new Error("請先登入");
   return currentUser.userId;
+}
+
+function parseBooleanSetting(value, defaultValue = true) {
+  if (value === undefined || value === null || value === "") {
+    return defaultValue;
+  }
+  const normalized = String(value).trim().toLowerCase();
+  return !["false", "0", "off", "no"].includes(normalized);
 }
 
 // ============ 全域函式掛載（保留舊快取相容性） ============
@@ -83,8 +92,6 @@ window.closePromotionModal = closePromotionModal;
 window.savePromotion = savePromotion;
 window.editPromotion = editPromotion;
 window.delPromotion = delPromotion;
-window.movePromotion = movePromotion;
-window.togglePromoType = togglePromoType;
 
 const dashboardActionHandlers = {
   "login-with-line": () => window.loginWithLine(),
@@ -1621,8 +1628,6 @@ function closePromotionModal() {
   document.getElementById("promotion-modal").classList.add("hidden");
 }
 
-function togglePromoType() {}
-
 async function savePromotion(e) {
   e.preventDefault();
   const id = document.getElementById("prm-id").value;
@@ -1690,8 +1695,6 @@ async function delPromotion(id) {
     Swal.fire("錯誤", e.message, "error");
   }
 }
-function movePromotion() {}
-
 // ============ 設定 ============
 async function loadSettings() {
   const currentLoadToken = ++settingsLoadToken;
@@ -1832,8 +1835,30 @@ async function loadSettings() {
 
       renderDeliveryOptionsAdmin(deliveryConfig);
 
-      document.getElementById("s-linepay-sandbox").checked =
-        String(s.linepay_sandbox) !== "false";
+      const linePaySandboxCheckbox = document.getElementById(
+        "s-linepay-sandbox",
+      );
+      if (linePaySandboxCheckbox) {
+        const hasServerValue = Object.prototype.hasOwnProperty.call(
+          s,
+          "linepay_sandbox",
+        );
+        if (hasServerValue) {
+          const sandboxEnabled = parseBooleanSetting(s.linepay_sandbox, true);
+          linePaySandboxCheckbox.checked = sandboxEnabled;
+          localStorage.setItem(
+            LINEPAY_SANDBOX_CACHE_KEY,
+            String(sandboxEnabled),
+          );
+        } else {
+          const cachedSandbox = localStorage.getItem(
+            LINEPAY_SANDBOX_CACHE_KEY,
+          );
+          linePaySandboxCheckbox.checked = cachedSandbox === null
+            ? true
+            : parseBooleanSetting(cachedSandbox, true);
+        }
+      }
 
       // 金流選項顯示設定載入
       const paymentOptionsStr = s.payment_options_config || "";
@@ -2018,6 +2043,8 @@ function resetSectionTitle(section) {
 
 async function saveSettings() {
   try {
+    const linePaySandboxChecked =
+      document.getElementById("s-linepay-sandbox").checked;
     const payload = {
       userId: getAuthUserId(),
       settings: {
@@ -2058,9 +2085,7 @@ async function saveSettings() {
           document.getElementById("s-notes-bold").checked,
         ),
 
-        linepay_sandbox: String(
-          document.getElementById("s-linepay-sandbox").checked,
-        ),
+        linepay_sandbox: String(linePaySandboxChecked),
       },
     };
 
@@ -2121,6 +2146,10 @@ async function saveSettings() {
     });
     const d = await r.json();
     if (d.success) {
+      localStorage.setItem(
+        LINEPAY_SANDBOX_CACHE_KEY,
+        String(linePaySandboxChecked),
+      );
       Toast.fire({ icon: "success", title: "設定已儲存" });
       await loadSettings();
     }
