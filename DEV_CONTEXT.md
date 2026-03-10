@@ -32,7 +32,21 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v54)
+## 🚀 近期重大更新 (v40 - v55)
+
+### 📅 v55 — Vite + Vue 3 架構稽核與遷移現況確認
+
+- **Vite + Vue 3 入口已完成**
+  - 新增 `frontend/` 多頁入口（`index/main/dashboard/policy`）與 `vite.config.js`。
+  - `package.json` 已提供 `npm run dev/build/preview`，並在 `predev/prebuild` 自動執行 `sync:legacy`。
+- **目前為「相容遷移架構」，非純 Vue 重寫**
+  - Vue 僅負責頁面殼層與啟動流程（`LegacyPage.vue` + entries），實際業務流程仍由既有 `js/main-app.js`、`js/dashboard-app.js` 等 legacy 模組執行。
+  - 根目錄 `main.html/dashboard.html/policy.html` 仍保留作為 legacy source，透過 `scripts/sync_legacy_to_vite.js` 同步到 `frontend/public/legacy`。
+- **稽核結論（是否都使用 Vite+Vue3）**
+  - 若以「啟動/打包流程」判斷：**是**（已改由 Vite）。
+  - 若以「全部 UI 與商業邏輯皆為 Vue 元件」判斷：**否**（仍是 Vue 殼 + legacy 邏輯）。
+- **驗證**
+  - `npm run build` 已通過（Vite 產物正常）。
 
 ### 📅 v54 — 匯款帳號支援拖曳排序（後台）
 
