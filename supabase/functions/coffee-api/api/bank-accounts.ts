@@ -77,3 +77,23 @@ export async function deleteBankAccount(
   if (error) return { success: false, error: error.message };
   return { success: true, message: "帳號已刪除" };
 }
+
+export async function reorderBankAccounts(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  await requireAdmin(req);
+  const ids = data.ids as number[];
+  if (!Array.isArray(ids)) return { success: false, error: "缺少排序資料" };
+
+  const itemsToUpdate = ids.map((id, index) => ({
+    id: parseInt(String(id)),
+    sort_order: index + 1,
+  }));
+  const { error } = await supabase.rpc("batch_update_sort", {
+    table_name: "coffee_bank_accounts",
+    items: itemsToUpdate,
+  });
+  if (error) return { success: false, error: error.message };
+  return { success: true, message: "匯款帳號排序已更新" };
+}

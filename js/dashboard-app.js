@@ -2,26 +2,26 @@
 // dashboard-app.js — 後台頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=51";
-import { esc, Toast } from "./utils.js?v=51";
-import { authFetch, loginWithLine } from "./auth.js?v=51";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=52";
+import { esc, Toast } from "./utils.js?v=52";
+import { authFetch, loginWithLine } from "./auth.js?v=52";
 import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
-} from "./dashboard/modules/orders.js?v=51";
+} from "./dashboard/modules/orders.js?v=52";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
-} from "./dashboard/modules/products.js?v=51";
+} from "./dashboard/modules/products.js?v=52";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
-} from "./dashboard/modules/settings.js?v=51";
+} from "./dashboard/modules/settings.js?v=52";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
-} from "./dashboard/modules/users.js?v=51";
-import { createDashboardEvents } from "./dashboard/events.js?v=51";
+} from "./dashboard/modules/users.js?v=52";
+import { createDashboardEvents } from "./dashboard/events.js?v=52";
 
 // ============ 共享狀態 ============
 let currentUser = null;
@@ -32,6 +32,7 @@ let selectedOrderIds = new Set();
 let users = [];
 let blacklist = [];
 let bankAccounts = [];
+let bankAccountsSortable = null;
 window.promotions = [];
 let dashboardSettings = {};
 let settingsLoadToken = 0;
@@ -2995,30 +2996,76 @@ function renderBankAccountsAdmin() {
   const container = document.getElementById("bank-accounts-admin-list");
   if (!container) return;
   if (!bankAccounts.length) {
+    if (bankAccountsSortable) {
+      bankAccountsSortable.destroy();
+      bankAccountsSortable = null;
+    }
     container.innerHTML = '<p class="text-sm text-gray-500">尚無匯款帳號</p>';
     return;
   }
-  container.innerHTML = bankAccounts.map((b) => `
-        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;">
-            <div>
-                <div class="font-medium">${esc(b.bankName)} (${
-    esc(b.bankCode)
-  })</div>
-                <div class="text-sm font-mono text-gray-600">${
-    esc(b.accountNumber)
-  }</div>
-                ${
-    b.accountName
-      ? `<div class="text-xs text-gray-400">戶名: ${esc(b.accountName)}</div>`
-      : ""
+  container.innerHTML = `
+    <p class="text-xs text-gray-500 mb-2">可拖曳左側 ☰ 自由排序匯款帳號</p>
+    <div id="bank-accounts-sortable" class="space-y-2">
+      ${
+    bankAccounts.map((b) => `
+          <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#faf6f2; border:1px solid #e5ddd5;">
+              <div class="flex items-start gap-3 min-w-0">
+                  <span class="drag-handle-bank cursor-move text-gray-400 hover:text-gray-600 select-none pt-1" title="拖曳排序">☰</span>
+                  <div>
+                      <div class="font-medium">${esc(b.bankName)} (${
+      esc(b.bankCode)
+    })</div>
+                      <div class="text-sm font-mono text-gray-600">${
+      esc(b.accountNumber)
+    }</div>
+                      ${
+      b.accountName
+        ? `<div class="text-xs text-gray-400">戶名: ${esc(b.accountName)}</div>`
+        : ""
+    }
+                  </div>
+              </div>
+              <div class="flex gap-2 shrink-0">
+                  <button data-action="edit-bank-account" data-bank-account-id="${b.id}" class="text-sm" style="color:var(--primary)">編輯</button>
+                  <button data-action="delete-bank-account" data-bank-account-id="${b.id}" class="text-sm text-red-500">刪除</button>
+              </div>
+          </div>
+      `).join("")
   }
-            </div>
-            <div class="flex gap-2">
-                <button data-action="edit-bank-account" data-bank-account-id="${b.id}" class="text-sm" style="color:var(--primary)">編輯</button>
-                <button data-action="delete-bank-account" data-bank-account-id="${b.id}" class="text-sm text-red-500">刪除</button>
-            </div>
-        </div>
-    `).join("");
+    </div>`;
+
+  const sortableRoot = document.getElementById("bank-accounts-sortable");
+  if (!sortableRoot || typeof Sortable === "undefined") return;
+  if (bankAccountsSortable) {
+    bankAccountsSortable.destroy();
+  }
+  bankAccountsSortable = new Sortable(sortableRoot, {
+    handle: ".drag-handle-bank",
+    animation: 150,
+    ghostClass: "bg-gray-100",
+    onEnd: async (evt) => {
+      if (evt.oldIndex === evt.newIndex) return;
+      const ids = Array.from(
+        sortableRoot.querySelectorAll("[data-account-id]"),
+      ).map((el) => parseInt(el.dataset.accountId, 10)).filter((id) =>
+        Number.isInteger(id)
+      );
+      if (!ids.length) return;
+      try {
+        const r = await authFetch(`${API_URL}?action=reorderBankAccounts`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: getAuthUserId(), ids }),
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || "排序更新失敗");
+        Toast.fire({ icon: "success", title: "排序已更新" });
+      } catch (e) {
+        Swal.fire("錯誤", e.message, "error");
+        loadBankAccountsAdmin();
+      }
+    },
+  });
 }
 
 async function showAddBankAccountModal() {

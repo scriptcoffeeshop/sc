@@ -2,10 +2,10 @@
 // main-app.js — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "./config.js?v=51";
-import { Toast } from "./utils.js?v=51";
-import { loginWithLine } from "./auth.js?v=51";
-import { state } from "./state.js?v=51";
+import { API_URL, LINE_REDIRECT } from "./config.js?v=52";
+import { Toast } from "./utils.js?v=52";
+import { loginWithLine } from "./auth.js?v=52";
+import { state } from "./state.js?v=52";
 import {
   addToCart,
   cart,
@@ -15,8 +15,8 @@ import {
   updateCartItemQty,
   updateCartItemQtyByKeys,
   updateCartUI,
-} from "./cart.js?v=51";
-import { renderProducts } from "./products.js?v=51";
+} from "./cart.js?v=52";
+import { renderProducts } from "./products.js?v=52";
 import {
   checkStoreToken,
   clearSelectedStore,
@@ -26,11 +26,11 @@ import {
   selectDelivery,
   selectStoreFromList,
   updateDistricts,
-} from "./delivery.js?v=51";
-import { showMyOrders, submitOrder } from "./orders.js?v=51";
-import { applyBranding, renderDynamicFields } from "./form-renderer.js?v=51";
-import { authFetch } from "./auth.js?v=51";
-import { escapeHtml } from "./utils.js?v=51";
+} from "./delivery.js?v=52";
+import { showMyOrders, submitOrder } from "./orders.js?v=52";
+import { applyBranding, renderDynamicFields } from "./form-renderer.js?v=52";
+import { authFetch } from "./auth.js?v=52";
+import { escapeHtml } from "./utils.js?v=52";
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
 // 取代原本散落在 HTML 各處的內嵌事件掛載方式。

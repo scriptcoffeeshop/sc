@@ -32,7 +32,22 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v53)
+## 🚀 近期重大更新 (v40 - v54)
+
+### 📅 v54 — 匯款帳號支援拖曳排序（後台）
+
+- **後台匯款帳號排序**
+  - `dashboard-app.js` 的匯款帳號管理區塊改為可拖曳排序（左側 `☰` 拖曳手把）。
+  - 使用 `Sortable` 在 `#bank-accounts-sortable` 啟用排序，拖曳完成後呼叫 API 即時儲存。
+  - 排序失敗時會顯示錯誤並自動重新載入列表，避免 UI 與 DB 狀態不一致。
+- **後端 API 新增**
+  - `api/bank-accounts.ts` 新增 `reorderBankAccounts`，沿用 `batch_update_sort` RPC 寫入 `coffee_bank_accounts.sort_order`。
+  - `index.ts` 新增 `reorderBankAccounts` action 路由，沿用 `reorderIdsSchema` 驗證。
+- **快取版號同步**
+  - 依專案規則將前端資源版本由 `v=51` 升級為 `v=52`（含 `.frontend-version` 與 HTML/JS 參照）。
+- **驗證與部署**
+  - `npm run ci-local` 全數通過。
+  - 已執行 `supabase functions deploy coffee-api --no-verify-jwt`。
 
 ### 📅 v53 — 設定穩定性修復、LINE Pay Sandbox 回填與冗餘清理
 
