@@ -26,12 +26,12 @@ const PUBLIC_SETTINGS_KEYS = [
 ];
 
 // ============ 設定 ============
-export async function getSettings() {
+export async function getSettings(isAdmin = false) {
   const { data, error } = await supabase.from("coffee_settings").select("*");
   if (error) return { success: false, error: error.message };
   const settings: Record<string, string> = {};
   for (const row of (data || [])) {
-    if (PUBLIC_SETTINGS_KEYS.includes(row.key)) {
+    if (isAdmin || PUBLIC_SETTINGS_KEYS.includes(row.key)) {
       settings[row.key] = row.value;
     }
   }
@@ -86,11 +86,11 @@ export async function uploadSiteIcon(
 }
 
 // ============ 初始化資料 ============
-export async function getInitData() {
+export async function getInitData(isAdmin = false) {
   const [p, c, s, f, b, pr] = await Promise.all([
     getProducts(),
     getCategories(),
-    getSettings(),
+    getSettings(isAdmin),
     getFormFields(false),
     getBankAccounts(),
     getPromotions(),
