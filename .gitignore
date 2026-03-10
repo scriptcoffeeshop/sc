@@ -1,6 +1,8 @@
 .env
 .env.*
 node_modules/
+frontend/public/legacy/
 package-lock.json
 test-results/
 .DS_Store
+frontend/dist/

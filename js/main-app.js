@@ -119,7 +119,18 @@ window.rerenderFormFields = function () {
 window.updateDistricts = updateDistricts;
 
 // ============ 初始化 ============
-document.addEventListener("DOMContentLoaded", async () => {
+let mainAppInitialized = false;
+
+function canInitMainApp() {
+  return Boolean(
+    document.getElementById("products-container") &&
+      document.getElementById("cart-drawer"),
+  );
+}
+
+export async function initMainApp() {
+  if (mainAppInitialized || !canInitMainApp()) return;
+  mainAppInitialized = true;
   initEventDelegation(); // 啟動事件代理
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
@@ -148,7 +159,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.history.replaceState({}, "", "main.html");
     await checkStoreToken(storeToken);
   }
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    void initMainApp();
+  });
+} else {
+  void initMainApp();
+}
 
 // ============ LINE Login 回呼 ============
 async function handleLineCallback(code, stateParam) {

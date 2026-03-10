@@ -1,6 +1,12 @@
 {
   "private": true,
   "scripts": {
+    "sync:legacy": "node scripts/sync_legacy_to_vite.js",
+    "predev": "npm run sync:legacy",
+    "dev": "vite --config frontend/vite.config.js",
+    "prebuild": "npm run sync:legacy",
+    "build": "vite build --config frontend/vite.config.js",
+    "preview": "vite preview --config frontend/vite.config.js",
     "fmt": "cd supabase/functions/coffee-api && deno fmt .",
     "fmt:check": "cd supabase/functions/coffee-api && deno fmt --check .",
     "lint": "cd supabase/functions/coffee-api && deno lint .",
@@ -13,6 +19,11 @@
     "serve": "python3 -m http.server 5500"
   },
   "dependencies": {
+    "vue": "^3.5.30",
     "@playwright/test": "^1.53.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.4",
+    "vite": "^7.3.1"
   }
 }
