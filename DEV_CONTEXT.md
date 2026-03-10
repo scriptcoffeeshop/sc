@@ -37,11 +37,14 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 ### 📅 v52 — 型別安全強化、CI 自動修復與 E2E 測試擴充
 
 - **型別安全性優化 (Type Safety)**：
-  - 重構 `utils/validate.ts` 中的 `validate` 函數，採用更健壯的泛型簽名以正確處理 Zod Schema 的 `.transform()`。
-  - 清理 Edge Functions (`index.ts`) 中所有不必要的 `any` 型別斷言，確保 API 合約在編譯期即受保護。
+  - 重構 `utils/validate.ts` 中的 `validate`
+    函數，採用更健壯的泛型簽名以正確處理 Zod Schema 的 `.transform()`。
+  - 清理 Edge Functions (`index.ts`) 中所有不必要的 `any` 型別斷言，確保 API
+    合約在編譯期即受保護。
 - **CI 自動修復工作流實作**：
   - 開發 `scripts/push_and_watch.py` 取代傳統 `git push`。
-  - 該腳本會監控 GitHub Actions 狀況，若執行 `deno fmt` 失敗（格式錯誤），腳本會自動修復、commit 並重新推送。
+  - 該腳本會監控 GitHub Actions 狀況，若執行 `deno fmt`
+    失敗（格式錯誤），腳本會自動修復、commit 並重新推送。
   - 有助於維持程式碼風格一致性並減少 CI 阻塞。
 - **E2E 測試涵蓋率擴充**：
   - 建立 `tests/e2e/features.spec.ts`，新增以下測試案例：
@@ -50,11 +53,15 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
     - **出貨更新**：驗證訂單狀態變更為 `shipped` 時的 API 通訊。
     - **黑名單管理**：驗證後台封鎖用戶流程與 SweetAlert2 交互。
 - **維護注意事項更新**：
-  - 在 `installGlobalStubs` 中補全了對 `Swal` 的完整 Mock（含 `close`, `showLoading`, `mixin`），避免後台初始化掛掉。
+  - 在 `installGlobalStubs` 中補全了對 `Swal` 的完整 Mock（含 `close`,
+    `showLoading`, `mixin`），避免後台初始化掛掉。
 - **資料庫安全性優化**：
-  - 修復 Supabase 針對 public schema 擴充的安全性警告 (Extension in Public SECURITY)。
-  - 新增遷移檔 `20260312_move_pg_trgm_to_extensions.sql` 將 `pg_trgm` 移至 `extensions` schema。
-  - 更新 `20260311_advanced_security_and_indexes.sql` 確保後續初始化正確指定 schema。
+  - 修復 Supabase 針對 public schema 擴充的安全性警告 (Extension in Public
+    SECURITY)。
+  - 新增遷移檔 `20260312_move_pg_trgm_to_extensions.sql` 將 `pg_trgm` 移至
+    `extensions` schema。
+  - 更新 `20260311_advanced_security_and_indexes.sql` 確保後續初始化正確指定
+    schema。
 
 ### 📅 v51 — 訂單狀態防誤觸、物流單號可複製、Email 標題正規化
 

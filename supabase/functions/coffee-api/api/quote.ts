@@ -192,7 +192,6 @@ function parseRequestItems(data: Record<string, unknown>): QuoteRequestItem[] {
   }).filter((item) => Number.isFinite(item.productId) && item.productId > 0);
 }
 
-
 export type ComputeOrderQuoteParams = {
   cartItems: QuoteRequestItem[];
   requestedDeliveryMethod: string;
@@ -203,7 +202,9 @@ export type ComputeOrderQuoteParams = {
   promoNow?: Date;
 };
 
-export function computeOrderQuote(params: ComputeOrderQuoteParams): QuoteResult {
+export function computeOrderQuote(
+  params: ComputeOrderQuoteParams,
+): QuoteResult {
   const {
     cartItems,
     requestedDeliveryMethod,
@@ -211,7 +212,7 @@ export function computeOrderQuote(params: ComputeOrderQuoteParams): QuoteResult 
     products,
     deliveryConfig,
     activePromos,
-    promoNow = new Date()
+    promoNow = new Date(),
   } = params;
 
   if (cartItems.length === 0) return { success: false, error: "購物車是空的" };
@@ -432,13 +433,15 @@ export function computeOrderQuote(params: ComputeOrderQuoteParams): QuoteResult 
   };
 }
 
-export async function buildOrderQuote(data: Record<string, unknown>): Promise<QuoteResult> {
+export async function buildOrderQuote(
+  data: Record<string, unknown>,
+): Promise<QuoteResult> {
   const cartItems = parseRequestItems(data);
   if (cartItems.length === 0) return { success: false, error: "購物車是空的" };
 
   const requestedDeliveryMethod = String(data.deliveryMethod || "").trim();
   const requestedPaymentMethodRaw = String(data.paymentMethod || "").trim();
-  
+
   if (
     requestedPaymentMethodRaw && !isPaymentMethod(requestedPaymentMethodRaw)
   ) {
@@ -468,7 +471,7 @@ export async function buildOrderQuote(data: Record<string, unknown>): Promise<Qu
     products,
     deliveryConfig,
     activePromos: promotionsRaw || [],
-    promoNow: new Date()
+    promoNow: new Date(),
   });
 }
 

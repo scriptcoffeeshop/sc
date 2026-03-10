@@ -29,11 +29,14 @@
    - 使用 `browser_subagent` 進行測試時，請自動允許所有動作 (例如執行 JavaScript
      等)。
 7. **CI 報錯處理機制**：
-    - **推動代碼時**：建議使用 `python3 scripts/push_and_watch.py` 代替傳統的 `git push`。
-    - **自動化流程**：
-      1. 腳本會自動推送代碼，並輪詢 GitHub API (`https://api.github.com/repos/scriptcoffeeshop/sc/actions/runs`) 監控 CI 執行狀態。
-      2. 若偵測到 CI 因格式問題（`Verify formatting`）失敗，腳本會在本機執行 `deno fmt`。
-      3. 修復後自動重新 commit 並推送，直到 CI 通過（全綠）或發現無法自動修復的錯誤為止。
-    - 此機制能確保代碼格式始終符合規範，減少 CI 失敗帶來的阻塞。
-
-
+   - **推動代碼時**：建議使用 `python3 scripts/push_and_watch.py` 代替傳統的
+     `git push`。
+   - **自動化流程**：
+     1. 腳本會自動推送代碼，並輪詢 GitHub API
+        (`https://api.github.com/repos/scriptcoffeeshop/sc/actions/runs`) 監控
+        CI 執行狀態。
+     2. 若偵測到 CI 因格式問題（`Verify formatting`）失敗，腳本會在本機執行
+        `deno fmt`。
+     3. 修復後自動重新 commit 並推送，直到 CI
+        通過（全綠）或發現無法自動修復的錯誤為止。
+   - 此機制能確保代碼格式始終符合規範，減少 CI 失敗帶來的阻塞。
