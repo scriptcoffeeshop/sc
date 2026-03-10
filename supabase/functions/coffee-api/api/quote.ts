@@ -4,13 +4,13 @@ import {
   isPromotionActive,
 } from "../utils/promotion.ts";
 
-type QuoteRequestItem = {
+export type QuoteRequestItem = {
   productId: number;
   specKey?: string;
   qty: number;
 };
 
-type QuoteLineItem = {
+export type QuoteLineItem = {
   productId: number;
   productName: string;
   specKey: string;
@@ -20,7 +20,7 @@ type QuoteLineItem = {
   lineTotal: number;
 };
 
-type QuotePayload = {
+export type QuotePayload = {
   deliveryMethod: string;
   availablePaymentMethods: {
     cod: boolean;
@@ -39,11 +39,11 @@ type QuotePayload = {
   ordersText: string;
 };
 
-type PaymentMethod = "cod" | "linepay" | "transfer";
+export type PaymentMethod = "cod" | "linepay" | "transfer";
 
 type PaymentAvailability = Record<PaymentMethod, boolean>;
 
-type QuoteResult =
+export type QuoteResult =
   | { success: true; quote: QuotePayload }
   | { success: false; error: string };
 
@@ -192,36 +192,36 @@ function parseRequestItems(data: Record<string, unknown>): QuoteRequestItem[] {
   }).filter((item) => Number.isFinite(item.productId) && item.productId > 0);
 }
 
-export async function buildOrderQuote(data: Record<string, unknown>): Promise<
-  QuoteResult
-> {
-  const cartItems = parseRequestItems(data);
+
+export type ComputeOrderQuoteParams = {
+  cartItems: QuoteRequestItem[];
+  requestedDeliveryMethod: string;
+  requestedPaymentMethod: PaymentMethod | "";
+  products: Record<string, unknown>[];
+  deliveryConfig: Record<string, unknown>[];
+  activePromos: Record<string, unknown>[];
+  promoNow?: Date;
+};
+
+export function computeOrderQuote(params: ComputeOrderQuoteParams): QuoteResult {
+  const {
+    cartItems,
+    requestedDeliveryMethod,
+    requestedPaymentMethod,
+    products,
+    deliveryConfig,
+    activePromos,
+    promoNow = new Date()
+  } = params;
+
   if (cartItems.length === 0) return { success: false, error: "購物車是空的" };
 
-  const requestedDeliveryMethod = String(data.deliveryMethod || "").trim();
   if (
     requestedDeliveryMethod &&
     !VALID_DELIVERY_METHODS.includes(requestedDeliveryMethod)
   ) {
     return { success: false, error: "無效的配送方式" };
   }
-
-  const requestedPaymentMethodRaw = String(data.paymentMethod || "").trim();
-  if (
-    requestedPaymentMethodRaw && !isPaymentMethod(requestedPaymentMethodRaw)
-  ) {
-    return { success: false, error: "無效的付款方式" };
-  }
-  const requestedPaymentMethod: PaymentMethod | "" =
-    requestedPaymentMethodRaw && isPaymentMethod(requestedPaymentMethodRaw)
-      ? requestedPaymentMethodRaw
-      : "";
-
-  const productIds = [...new Set(cartItems.map((c) => c.productId))];
-  const { data: products, error: pErr } = await supabase.from("coffee_products")
-    .select("id, name, price, specs, enabled")
-    .in("id", productIds);
-  if (pErr || !products) return { success: false, error: "無法讀取商品資料" };
 
   const productMap = new Map<number, Record<string, unknown>>(
     products.map((p: Record<string, unknown>) => [Number(p.id), p]),
@@ -295,7 +295,6 @@ export async function buildOrderQuote(data: Record<string, unknown>): Promise<
     });
   }
 
-  const deliveryConfig = await loadDeliveryConfig();
   const enabledDeliveryOptions = deliveryConfig.filter(
     (opt) => opt && opt.enabled !== false,
   );
@@ -325,11 +324,7 @@ export async function buildOrderQuote(data: Record<string, unknown>): Promise<
     };
   }
 
-  const promoNow = new Date();
-  const { data: promotionsRaw } = await supabase.from("coffee_promotions")
-    .select("*")
-    .eq("enabled", true);
-  const activePromos = (promotionsRaw || []).filter((
+  const activePromosFiltered = activePromos.filter((
     prm: Record<string, unknown>,
   ) =>
     isPromotionActive(
@@ -343,7 +338,7 @@ export async function buildOrderQuote(data: Record<string, unknown>): Promise<
   const appliedPromos: Array<{ name: string; amount: number }> = [];
   const discountedItemKeys = new Set<string>();
 
-  for (const prm of activePromos) {
+  for (const prm of activePromosFiltered) {
     if (prm.type !== "bundle") continue;
 
     const targetIds = parseMaybeJsonArray<number>(prm.target_product_ids);
@@ -435,6 +430,46 @@ export async function buildOrderQuote(data: Record<string, unknown>): Promise<
       ordersText: orderLines.join("\n"),
     },
   };
+}
+
+export async function buildOrderQuote(data: Record<string, unknown>): Promise<QuoteResult> {
+  const cartItems = parseRequestItems(data);
+  if (cartItems.length === 0) return { success: false, error: "購物車是空的" };
+
+  const requestedDeliveryMethod = String(data.deliveryMethod || "").trim();
+  const requestedPaymentMethodRaw = String(data.paymentMethod || "").trim();
+  
+  if (
+    requestedPaymentMethodRaw && !isPaymentMethod(requestedPaymentMethodRaw)
+  ) {
+    return { success: false, error: "無效的付款方式" };
+  }
+  const requestedPaymentMethod: PaymentMethod | "" =
+    requestedPaymentMethodRaw && isPaymentMethod(requestedPaymentMethodRaw)
+      ? requestedPaymentMethodRaw
+      : "";
+
+  const productIds = [...new Set(cartItems.map((c) => c.productId))];
+  const { data: products, error: pErr } = await supabase.from("coffee_products")
+    .select("id, name, price, specs, enabled")
+    .in("id", productIds);
+  if (pErr || !products) return { success: false, error: "無法讀取商品資料" };
+
+  const deliveryConfig = await loadDeliveryConfig();
+
+  const { data: promotionsRaw } = await supabase.from("coffee_promotions")
+    .select("*")
+    .eq("enabled", true);
+
+  return computeOrderQuote({
+    cartItems,
+    requestedDeliveryMethod,
+    requestedPaymentMethod,
+    products,
+    deliveryConfig,
+    activePromos: promotionsRaw || [],
+    promoNow: new Date()
+  });
 }
 
 export async function quoteOrder(data: Record<string, unknown>) {

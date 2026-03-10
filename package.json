@@ -5,7 +5,7 @@
     "fmt:check": "cd supabase/functions/coffee-api && deno fmt --check .",
     "lint": "cd supabase/functions/coffee-api && deno lint .",
     "check": "cd supabase/functions/coffee-api && deno check index.ts",
-    "test": "cd supabase/functions/coffee-api && deno test --allow-all tests/",
+    "test": "cd supabase/functions/coffee-api && JWT_SECRET=mock SUPABASE_URL=https://mock.supabase.co SUPABASE_SERVICE_ROLE_KEY=mock deno test --allow-env --allow-net --allow-read tests/",
     "e2e": "npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ts",
     "guardrails": "python3 scripts/check_dashboard_event_delegation.py && python3 scripts/check_main_event_delegation.py && python3 scripts/sync_frontend_version.py --check",
     "ci-local": "npm run guardrails && npm run fmt:check && npm run lint && npm run check && npm run test",
