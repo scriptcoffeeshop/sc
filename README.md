@@ -1,42 +1,34 @@
 # 專案開發規則 (Project Rules)
 
-每次進行任何修改後，請務必遵照以下規則：
+本專案是一個結合原生 JavaScript、Tailwind CSS 以及由 Vite+Vue 3 驅動的現代化多頁面應用（MPA）。為了維持程式碼品質、安全性與開發效率，請務必遵循以下規則。
 
-1. **自動部署與推送**：
-   - 每次修改程式碼後，必須自動將更改後的內容推送到 GitHub。
-   - **暫時規則**：目前將整個專案檔案（包含 `supabase/` 目錄）都推送到 GitHub。
-   - **專案完成時的清理動作**：當我表示「已完成此專案」時，必須將 GitHub 上除了
-     GitHub Pages 用得到的檔案以外的所有檔案（例如後端及資料庫部分）都刪除。
-   - 若有修改 Supabase Edge Functions (`supabase/functions/coffee-api/index.ts`
-     等），必須自動部署到 Supabase。**每次推送都需要加上 `--no-verify-jwt`
-     參數**（例如：`supabase functions deploy coffee-api --no-verify-jwt`）。
-2. **使用語言**：
-   - 所有的回應和您的內部推理過程（思考過程）都必須以繁體中文（Traditional
-     Chinese）顯示。
-3. **文字說明修改規定**：
-   - 撰寫程式的過程中，程式呈現的文字說明部分，若沒有明確提及需要修改，則**嚴格禁止擅自修改**。
-   - 若認為有修改必要，必須在修改前先經過我的同意。
-4. **開發架構規範**：
-   - 後端 Edge Functions 的代碼增修必須遵循**模組化架構**。
-   - 業務邏輯型代碼應放入 `api/`，工具型函數放入 `utils/`，並在 `index.ts`
-     進行路由分派。
-   - 所有資料變更的 API 必須定義對應的 **Zod Schema** 進行驗證。
-5. **脈絡繼承與延續開發**：
-   - 每次開啟新對話或重新讀取專案時，**必須優先讀取
-     `DEV_CONTEXT.md`**，以快速掌握該專案過去的重要除錯經驗與排版變更脈絡。
-   - 每次變更的重點摘要，於程式完成最後步驟自動記錄到 `DEV_CONTEXT.md` 中。
-6. **Browser Subagent 授權**：
-   - 使用 `browser_subagent` 進行測試時，請自動允許所有動作 (例如執行 JavaScript
-     等)。
-7. **CI 報錯處理機制**：
-   - **推動代碼時**：建議使用 `python3 scripts/push_and_watch.py` 代替傳統的
-     `git push`。
-   - **自動化流程**：
-     1. 腳本會自動推送代碼，並輪詢 GitHub API
-        (`https://api.github.com/repos/scriptcoffeeshop/sc/actions/runs`) 監控
-        CI 執行狀態。
-     2. 若偵測到 CI 因格式問題（`Verify formatting`）失敗，腳本會在本機執行
-        `deno fmt`。
-     3. 修復後自動重新 commit 並推送，直到 CI
-        通過（全綠）或發現無法自動修復的錯誤為止。
-   - 此機制能確保代碼格式始終符合規範，減少 CI 失敗帶來的阻塞。
+## 1. 核心開發與部署規範
+
+- **使用語言**：所有的回應、代碼註解以及內部推理過程（思考過程）都必須使用 **「繁體中文（Traditional Chinese）」**。
+- **文字說明修改規定**：程式呈現的文字說明（UI Text），若沒有明確提及需要修改，則**嚴格禁止擅自修改**。若認為有必要，必須先徵得同意。
+- **自動化推送與部署**：
+  - 修改 Edge Functions 後，必須部署至 Supabase：`supabase functions deploy coffee-api --no-verify-jwt`。
+  - 建議使用 `python3 scripts/push_and_watch.py` 進行推送，此腳本會自動監控 CI 狀態並嘗試自動修復格式錯誤。
+- **檔案版號與快取**：**不可輕忽的手機 Cache**。只要修改了任何 `.js` 檔案，必須同步修改引用該檔案之 `.html` 或 Vue 元件中的 `v=X` 版號（例如 `?v=52` 提升至 `?v=53`）。
+
+## 2. 前端開發規範 (MPA & Vue 3)
+
+- **事件代理策略**：前台與後台全面採用 **`data-action` + 事件代理** 機制。
+  - **禁止使用 inline event handler**（如 `onclick`, `onchange`）。
+  - 新增互動時，請在 `actionHandlers` (前台) 或 `initializeDashboardEventDelegation` (後台) 的 `switch` 中註冊新動作。
+- **SRI 與 E2E 測試相容性**：HTML 使用了 SRI (`integrity`)。在進行 Playwright 測試時，若需 mock 腳本，必須透過 `installGlobalStubs` 動態移除 `integrity` 屬性，避免瀏覽器阻擋載入。
+- **Vite 整合**：雖然專案包含 legacy 資源，但打包與啟動流程已由 Vite 接管。請透過 `npm run dev` 或 `npm run build` 進行開發與建構。
+
+## 3. 後端與資料庫規範 (Deno & Supabase)
+
+- **Deno 模組解析**：**禁止使用 bare specifiers**。所有依賴必須宣告在 `deno.json` 的 `imports` 中，程式碼內僅引用別名（例如 `import { z } from "zod"`）。
+- **架構設計**：
+  - 業務邏輯放入 `api/`，工具函數放入 `utils/`，並在 `index.ts` 集中分派。
+  - 所有寫入操作 (Mutation) 必須透過 **Zod Schema** 進行驗證。
+  - API 必須支援分頁 (`limit`/`offset`) 與搜尋下推至資料庫層級。
+
+## 4. 維護流程
+
+- **脈絡繼承**：開啟對話後，**優先讀取 `DEV_CONTEXT.md`** 以掌握除錯經驗與排版變更脈絡。
+- **紀錄更新**：每次完成階段性變更後，應自動將重點摘要紀錄於 `DEV_CONTEXT.md` 中。
+
