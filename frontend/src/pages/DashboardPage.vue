@@ -429,7 +429,7 @@
           </button>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full" id="products-main-table">
+          <table class="w-full" id="products-main-table" data-vue-managed="true">
             <thead>
               <tr class="border-b-2" style="border-color: var(--secondary)">
                 <th class="p-3 text-left w-10" style="color: var(--primary)">
@@ -452,13 +452,70 @@
                 </th>
               </tr>
             </thead>
-            <tbody id="products-table">
+            <tbody v-if="productsGroupsView.length === 0">
               <tr>
-                <td colspan="5" class="text-center py-8 text-gray-500">
-                  載入中...
+                <td colspan="6" class="text-center py-8 text-gray-500">
+                  尚無商品
                 </td>
               </tr>
             </tbody>
+            <template v-else>
+              <tbody
+                v-for="group in productsGroupsView"
+                :key="`products-${group.category}`"
+                class="sortable-tbody"
+                :data-cat="group.category"
+              >
+                <tr
+                  v-for="product in group.items"
+                  :key="`product-${product.id}`"
+                  class="border-b"
+                  style="border-color:#f0e6db;"
+                  :data-id="product.id"
+                >
+                  <td class="p-3 text-center">
+                    <span
+                      class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
+                      title="拖曳排序"
+                      style="touch-action: none;"
+                    >☰</span>
+                  </td>
+                  <td class="p-3 text-sm">{{ product.category }}</td>
+                  <td class="p-3">
+                    <div class="font-medium mb-1">{{ product.name }}</div>
+                    <div class="text-xs text-gray-500">
+                      {{ product.description }}<span v-if="product.roastLevel">・{{ product.roastLevel }}</span>
+                    </div>
+                  </td>
+                  <td class="p-3 text-right font-medium">
+                    <template v-for="(line, lineIndex) in product.priceLines" :key="`product-${product.id}-price-${lineIndex}`">
+                      <div v-if="line.isSpec" class="text-xs">{{ line.label }}: ${{ line.price }}</div>
+                      <span v-else>${{ line.price }}</span>
+                    </template>
+                  </td>
+                  <td class="p-3 text-center">
+                    <span :class="product.statusClass">{{ product.statusLabel }}</span>
+                  </td>
+                  <td class="p-3 text-center">
+                    <button
+                      data-action="edit-product"
+                      :data-product-id="product.id"
+                      class="text-sm mr-2"
+                      style="color:var(--primary)"
+                    >
+                      編輯
+                    </button>
+                    <button
+                      data-action="delete-product"
+                      :data-product-id="product.id"
+                      class="text-sm text-red-500"
+                    >
+                      刪除
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </template>
           </table>
         </div>
       </div>
@@ -560,12 +617,57 @@
                 </th>
               </tr>
             </thead>
-            <tbody id="promotions-table" class="sortable-tbody">
-              <tr>
+            <tbody
+              id="promotions-table"
+              class="sortable-tbody"
+              data-vue-managed="true"
+            >
+              <tr v-if="promotionsView.length === 0">
                 <td colspan="5" class="text-center py-8 text-gray-500">
-                  載入中...
+                  尚無活動
                 </td>
               </tr>
+              <template v-else>
+                <tr
+                  v-for="promotion in promotionsView"
+                  :key="`promotion-${promotion.id}`"
+                  class="border-b"
+                  style="border-color:#f0e6db;"
+                  :data-id="promotion.id"
+                >
+                  <td class="p-3 text-center">
+                    <span
+                      class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
+                      title="拖曳排序"
+                      style="touch-action: none;"
+                    >☰</span>
+                  </td>
+                  <td class="p-3 font-medium">{{ promotion.name }}</td>
+                  <td class="p-3 text-sm text-gray-600">
+                    {{ promotion.conditionText }} <span class="font-bold text-red-500">{{ promotion.discountText }}</span>
+                  </td>
+                  <td class="p-3 text-center">
+                    <span :class="promotion.statusClass">{{ promotion.statusLabel }}</span>
+                  </td>
+                  <td class="p-3 text-right">
+                    <button
+                      data-action="edit-promotion"
+                      :data-promotion-id="promotion.id"
+                      class="text-sm mr-2"
+                      style="color:var(--primary)"
+                    >
+                      編輯
+                    </button>
+                    <button
+                      data-action="delete-promotion"
+                      :data-promotion-id="promotion.id"
+                      class="text-sm text-red-500"
+                    >
+                      刪除
+                    </button>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -1280,8 +1382,75 @@
         <p class="text-sm text-gray-500 mb-4">
           管理前台訂購表單的自訂欄位（如聯絡電話、電子郵件、開立收據等）。可拖拽排序、設定必填、啟用/停用。
         </p>
-        <div id="formfields-list">
-          <p class="text-center text-gray-500 py-8">載入中...</p>
+        <div id="formfields-list" data-vue-managed="true">
+          <p v-if="formFieldsView.length === 0" class="text-center text-gray-500 py-8">
+            尚無自訂欄位
+          </p>
+          <div v-else class="space-y-2" id="formfields-sortable">
+            <div
+              v-for="field in formFieldsView"
+              :key="`field-${field.id}`"
+              class="flex items-center gap-3 p-3 bg-white rounded-xl border"
+              style="border-color:#e5ddd5;"
+              :class="field.enabled ? '' : 'opacity-50'"
+              :data-field-id="field.id"
+            >
+              <span class="cursor-grab text-gray-400 drag-handle">⠿</span>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-medium">{{ field.label }}</span>
+                  <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                    {{ field.fieldTypeLabel }}
+                  </span>
+                  <span
+                    v-if="field.required"
+                    class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full"
+                  >
+                    必填
+                  </span>
+                  <span
+                    v-if="!field.enabled"
+                    class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full"
+                  >
+                    已停用
+                  </span>
+                </div>
+                <div class="text-xs text-gray-400 mt-1">
+                  key: {{ field.fieldKey }}<span v-if="field.placeholder">・{{ field.placeholder }}</span>
+                </div>
+                <div v-if="field.hiddenDeliveryMethodsText" class="text-xs text-orange-500 mt-1">
+                  {{ field.hiddenDeliveryMethodsText }}
+                </div>
+              </div>
+              <div class="flex gap-1 items-center">
+                <button
+                  data-action="toggle-field-enabled"
+                  :data-field-id="field.id"
+                  :data-enabled="field.toggleEnabledValue"
+                  class="text-sm px-2 py-1 rounded hover:bg-gray-100"
+                  :title="field.toggleEnabledTitle"
+                >
+                  {{ field.toggleEnabledIcon }}
+                </button>
+                <button
+                  data-action="edit-form-field"
+                  :data-field-id="field.id"
+                  class="text-sm px-2 py-1 rounded hover:bg-gray-100"
+                  title="編輯"
+                >
+                  ✏️
+                </button>
+                <button
+                  data-action="delete-form-field"
+                  :data-field-id="field.id"
+                  class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500"
+                  title="刪除"
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1488,6 +1657,9 @@ import { initDashboardApp } from "../../../js/dashboard-app.js";
 
 const originalBodyClass = document.body.className;
 const ordersView = ref([]);
+const productsGroupsView = ref([]);
+const promotionsView = ref([]);
+const formFieldsView = ref([]);
 const categoriesView = ref([]);
 const usersView = ref([]);
 const blacklistView = ref([]);
@@ -1519,6 +1691,23 @@ function handleDashboardOrdersUpdated(event) {
   }
 }
 
+function handleDashboardProductsUpdated(event) {
+  const detail = event?.detail || {};
+  productsGroupsView.value = Array.isArray(detail.groups) ? detail.groups : [];
+}
+
+function handleDashboardPromotionsUpdated(event) {
+  const detail = event?.detail || {};
+  promotionsView.value = Array.isArray(detail.promotions)
+    ? detail.promotions
+    : [];
+}
+
+function handleDashboardFormFieldsUpdated(event) {
+  const detail = event?.detail || {};
+  formFieldsView.value = Array.isArray(detail.fields) ? detail.fields : [];
+}
+
 function handleDashboardCategoriesUpdated(event) {
   const detail = event?.detail || {};
   categoriesView.value = Array.isArray(detail.categories) ? detail.categories : [];
@@ -1538,6 +1727,12 @@ onMounted(() => {
   document.body.className = "p-4 md:p-6";
   const ordersList = document.getElementById("orders-list");
   if (ordersList) ordersList.dataset.vueManaged = "true";
+  const productsTable = document.getElementById("products-main-table");
+  if (productsTable) productsTable.dataset.vueManaged = "true";
+  const promotionsTable = document.getElementById("promotions-table");
+  if (promotionsTable) promotionsTable.dataset.vueManaged = "true";
+  const formFieldsList = document.getElementById("formfields-list");
+  if (formFieldsList) formFieldsList.dataset.vueManaged = "true";
   const categoriesList = document.getElementById("categories-list");
   if (categoriesList) categoriesList.dataset.vueManaged = "true";
   const usersTable = document.getElementById("users-table");
@@ -1547,6 +1742,18 @@ onMounted(() => {
   window.addEventListener(
     "coffee:dashboard-orders-updated",
     handleDashboardOrdersUpdated,
+  );
+  window.addEventListener(
+    "coffee:dashboard-products-updated",
+    handleDashboardProductsUpdated,
+  );
+  window.addEventListener(
+    "coffee:dashboard-promotions-updated",
+    handleDashboardPromotionsUpdated,
+  );
+  window.addEventListener(
+    "coffee:dashboard-formfields-updated",
+    handleDashboardFormFieldsUpdated,
   );
   window.addEventListener(
     "coffee:dashboard-categories-updated",
@@ -1567,6 +1774,18 @@ onBeforeUnmount(() => {
   window.removeEventListener(
     "coffee:dashboard-orders-updated",
     handleDashboardOrdersUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dashboard-products-updated",
+    handleDashboardProductsUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dashboard-promotions-updated",
+    handleDashboardPromotionsUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dashboard-formfields-updated",
+    handleDashboardFormFieldsUpdated,
   );
   window.removeEventListener(
     "coffee:dashboard-categories-updated",
