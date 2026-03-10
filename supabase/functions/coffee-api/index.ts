@@ -80,6 +80,7 @@ import {
   addBankAccount,
   deleteBankAccount,
   getBankAccounts,
+  reorderBankAccounts,
   updateBankAccount,
 } from "./api/bank-accounts.ts";
 
@@ -410,6 +411,10 @@ const actionMap: Record<string, ActionHandler> = {
   deleteBankAccount: async (data, req) => {
     const v = await validate(deleteBankAccountSchema, data);
     return await deleteBankAccount(v, req);
+  },
+  reorderBankAccounts: async (data, req) => {
+    const v = await validate(reorderIdsSchema, data);
+    return await reorderBankAccounts(v, req);
   },
 };
 
