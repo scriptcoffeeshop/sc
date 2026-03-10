@@ -15,11 +15,11 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DASHBOARD_HTML = ROOT / "dashboard.html"
+DASHBOARD_TEMPLATE = ROOT / "frontend" / "src" / "pages" / "DashboardPage.vue"
 DASHBOARD_APP = ROOT / "js" / "dashboard-app.js"
 DASHBOARD_MODULES = list((ROOT / "js" / "dashboard" / "modules").glob("*.js"))
 DASHBOARD_EVENTS = ROOT / "js" / "dashboard" / "events.js"
-TARGETS = [DASHBOARD_HTML, DASHBOARD_APP, DASHBOARD_EVENTS] + DASHBOARD_MODULES
+TARGETS = [DASHBOARD_TEMPLATE, DASHBOARD_APP, DASHBOARD_EVENTS] + DASHBOARD_MODULES
 
 INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
@@ -52,7 +52,7 @@ def check_action_coverage() -> list[str]:
         text = read_text(path)
         actions.update(DATA_ACTION_RE.findall(text))
         
-        if path != DASHBOARD_HTML:
+        if path != DASHBOARD_TEMPLATE:
             handled.update(SWITCH_CASE_RE.findall(text))
             handled.update(CHANGE_HANDLER_RE.findall(text))
             handled.update(OBJECT_KEY_RE.findall(text))

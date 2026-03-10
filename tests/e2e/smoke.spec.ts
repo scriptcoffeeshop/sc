@@ -452,9 +452,20 @@ test.describe("smoke", () => {
     await page.selectOption("#delivery-city", "新竹市");
     await page.fill("#delivery-detail-address", "測試路 1 號");
 
-    await page.locator('[data-action="add-to-cart"]').first().click();
+    await page.locator("#products-container .spec-btn-add").first().click();
+    await expect.poll(() =>
+      page.evaluate(() => {
+        try {
+          const raw = localStorage.getItem("coffee_cart");
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed.length : 0;
+        } catch {
+          return 0;
+        }
+      })
+    ).toBeGreaterThan(0);
     await page.check("#policy-agree");
-    await page.locator('.bottom-bar [data-action="toggle-cart"]').click();
+    await page.locator('.bottom-bar button:has-text("購物車")').click();
     await expect(page.locator("#cart-drawer")).toBeVisible();
 
     await page.locator("#cart-submit-btn").click();
@@ -516,7 +527,18 @@ test.describe("smoke", () => {
     await page.selectOption("#delivery-city", "新竹市");
     await page.fill("#delivery-detail-address", "測試路 2 號");
 
-    await page.locator('[data-action="add-to-cart"]').first().click();
+    await page.locator("#products-container .spec-btn-add").first().click();
+    await expect.poll(() =>
+      page.evaluate(() => {
+        try {
+          const raw = localStorage.getItem("coffee_cart");
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed.length : 0;
+        } catch {
+          return 0;
+        }
+      })
+    ).toBeGreaterThan(0);
     await page.locator('[data-action="select-payment"][data-method="transfer"]')
       .click();
     await expect(page.locator("#transfer-info-section")).toBeVisible();
@@ -526,7 +548,7 @@ test.describe("smoke", () => {
     await page.fill("#transfer-last5", "12345");
     await page.check("#policy-agree");
 
-    await page.locator('.bottom-bar [data-action="toggle-cart"]').click();
+    await page.locator('.bottom-bar button:has-text("購物車")').click();
     await page.locator("#cart-submit-btn").click();
 
     await expect.poll(() => submitOrderCalls).toBe(1);
@@ -577,14 +599,25 @@ test.describe("smoke", () => {
     ).click();
     await page.selectOption("#delivery-city", "新竹市");
     await page.fill("#delivery-detail-address", "測試路 3 號");
-    await page.locator('[data-action="add-to-cart"]').first().click();
+    await page.locator("#products-container .spec-btn-add").first().click();
+    await expect.poll(() =>
+      page.evaluate(() => {
+        try {
+          const raw = localStorage.getItem("coffee_cart");
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed.length : 0;
+        } catch {
+          return 0;
+        }
+      })
+    ).toBeGreaterThan(0);
 
     await page.locator('[data-action="select-payment"][data-method="linepay"]')
       .click();
     await expect(page.locator("#transfer-info-section")).toBeHidden();
     await page.check("#policy-agree");
 
-    await page.locator('.bottom-bar [data-action="toggle-cart"]').click();
+    await page.locator('.bottom-bar button:has-text("購物車")').click();
     await page.locator("#cart-submit-btn").click();
 
     await expect.poll(() => submitOrderCalls).toBe(1);

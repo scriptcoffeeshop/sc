@@ -13,11 +13,11 @@
     "guardrails": "python3 scripts/check_dashboard_event_delegation.py && python3 scripts/check_main_event_delegation.py && python3 scripts/sync_frontend_version.py --check",
     "ci-local": "npm run guardrails && npm run fmt:check && npm run lint && npm run check && npm run test",
     "deploy": "supabase functions deploy coffee-api --no-verify-jwt",
-    "serve": "python3 -m http.server 5500"
+    "serve": "vite preview --config frontend/vite.config.js --host 0.0.0.0 --port 5500"
   },
   "dependencies": {
-    "vue": "^3.5.30",
-    "@playwright/test": "^1.53.2"
+    "@playwright/test": "^1.53.2",
+    "vue": "^3.5.30"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.4",

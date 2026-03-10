@@ -32,7 +32,30 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v59)
+## 🚀 近期重大更新 (v40 - v60)
+
+### 📅 v60 — 執行架構全面切換至 Vite + Vue3（CI / E2E / Guardrails）
+
+- **測試與 CI 執行路徑改為 Vite**
+  - `playwright.config.ts` 的 webServer 改為 `npm run dev -- --host 127.0.0.1 --port 4173 --strictPort`，不再使用 `python3 -m http.server`。
+  - `.github/workflows/ci.yml` 改為 `npm ci` 後執行 Playwright，移除 CI 內 `npm init -y` 臨時流程。
+- **Guardrails 檢查目標切到 Vue Page Template**
+  - `scripts/check_main_event_delegation.py`：改檢查 `frontend/src/pages/MainPage.vue`。
+  - `scripts/check_dashboard_event_delegation.py`：改檢查 `frontend/src/pages/DashboardPage.vue`。
+  - 事件代理與 `data-action` 規則從 legacy HTML 轉為 Vue 模板為主。
+- **修正 Vite 下模組雙實例問題**
+  - 將 `js/` 內部 import 的 `?v=52`（含舊版 `?v=51`）統一移除，避免同一模組因 query string 差異被載入成不同實例（例：`cart.js` 在 Vue 與 legacy 初始化中狀態分裂）。
+  - 這項修正直接解掉 Vue 路徑下「加入購物車後送單按鈕仍顯示購物車為空」的行為不一致。
+- **E2E smoke 測試同步更新**
+  - `tests/e2e/smoke.spec.ts` selector 對齊 Vue 元件結構（商品加購按鈕、底部購物車按鈕）。
+  - 補上購物車 localStorage 輪詢斷言，降低非同步更新造成的測試不穩定。
+- **樣式修正**
+  - `css/dashboard.css` 新增 `.modal-overlay.hidden { display: none !important; }`，修正 hidden modal 仍攔截點擊事件。
+- **驗證**
+  - `npm run e2e` 通過（6/6）。
+  - `npm run guardrails` 通過。
+  - `npm run build` 通過。
+  - `npm run ci-local` 通過。
 
 ### 📅 v59 — 第二階段延伸：Dashboard 商品/促銷/表單改由 Vue 元件渲染
 

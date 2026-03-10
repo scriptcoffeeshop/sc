@@ -15,10 +15,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN_HTML = ROOT / "main.html"
+MAIN_TEMPLATE = ROOT / "frontend" / "src" / "pages" / "MainPage.vue"
 MAIN_APP = ROOT / "js" / "main-app.js"
 DELIVERY_JS = ROOT / "js" / "delivery.js"
-TARGETS = [MAIN_HTML, MAIN_APP, DELIVERY_JS]
+TARGETS = [MAIN_TEMPLATE, MAIN_APP, DELIVERY_JS]
 
 INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 LEGACY_ONCLICK_SELECTOR_RE = re.compile(r"\[onclick\*")
@@ -44,7 +44,7 @@ def check_inline_events() -> list[str]:
 
 
 def check_action_coverage() -> list[str]:
-    html_text = read_text(MAIN_HTML)
+    html_text = read_text(MAIN_TEMPLATE)
     app_text = read_text(MAIN_APP)
     actions = set(DATA_ACTION_RE.findall(html_text)) | set(DATA_ACTION_RE.findall(app_text))
 
