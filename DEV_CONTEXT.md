@@ -32,7 +32,24 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v55)
+## 🚀 近期重大更新 (v40 - v56)
+
+### 📅 v56 — 全頁面改為 Vue 元件掛載（移除 Legacy HTML 載入器）
+
+- **三個頁面改為 Vue SFC 實體頁面**
+  - 新增 `frontend/src/pages/MainPage.vue`、`DashboardPage.vue`、`PolicyPage.vue`。
+  - `main/dashboard/policy` 的 body 結構已遷移至 Vue template，頁面初始化改由元件生命週期 (`onMounted`) 觸發。
+- **移除 LegacyPage 與同步腳本**
+  - 刪除 `frontend/src/components/LegacyPage.vue`。
+  - 刪除 `scripts/sync_legacy_to_vite.js`，`package.json` 同步移除 `sync:legacy/predev/prebuild`。
+  - 不再依賴 `frontend/public/legacy` 靜態鏡像。
+- **入口與樣式策略更新**
+  - `frontend/src/entries/*.js` 改為直接掛載 `pages/*.vue`。
+  - `common/main/dashboard` CSS 改由 entry 透過 ES module import 打包，不再由 HTML 直接連到 legacy 資源。
+  - `PolicyPage.vue` 補回原先在 `policy.html` head 內的政策頁樣式規則。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v55 — Vite + Vue 3 架構稽核與遷移現況確認
 

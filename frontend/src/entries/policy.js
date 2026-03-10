@@ -1,6 +1,5 @@
 import { createApp } from "vue";
-import LegacyPage from "../components/LegacyPage.vue";
+import PolicyPage from "../pages/PolicyPage.vue";
+import "../../../css/common.css";
 
-createApp(LegacyPage, {
-  legacyPage: "policy.html",
-}).mount("#app");
+createApp(PolicyPage).mount("#app");

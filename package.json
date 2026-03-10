@@ -1,10 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "sync:legacy": "node scripts/sync_legacy_to_vite.js",
-    "predev": "npm run sync:legacy",
     "dev": "vite --config frontend/vite.config.js",
-    "prebuild": "npm run sync:legacy",
     "build": "vite build --config frontend/vite.config.js",
     "preview": "vite preview --config frontend/vite.config.js",
     "fmt": "cd supabase/functions/coffee-api && deno fmt .",

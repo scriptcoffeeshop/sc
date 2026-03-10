@@ -8,6 +8,11 @@ export default defineConfig({
   root,
   base: "./",
   plugins: [vue()],
+  server: {
+    fs: {
+      allow: [resolve(root, "..")],
+    },
+  },
   build: {
     outDir: resolve(root, "dist"),
     emptyOutDir: true,
