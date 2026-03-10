@@ -32,7 +32,21 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v51)
+## 🚀 近期重大更新 (v40 - v53)
+
+### 📅 v53 — 設定穩定性修復、LINE Pay Sandbox 回填與冗餘清理
+
+- **修復 LINE Pay Sandbox 勾選狀態回彈**
+  - 後台 `loadSettings()` 新增 `linepay_sandbox` 的健壯判斷與本地快取 fallback，避免後端暫時缺鍵時被預設值覆蓋。
+  - `saveSettings()` 成功後寫入本地快取並重新載入設定，確保畫面與資料一致。
+- **後端設定鍵補齊**
+  - `api/settings.ts` 將 `linepay_sandbox` 納入 `PUBLIC_SETTINGS_KEYS`，讓 `getSettings` 可回傳此鍵。
+  - 新增 migration：`20260313_allow_anon_read_linepay_sandbox.sql`，將 `linepay_sandbox` 納入 `coffee_settings` 匿名可讀白名單。
+- **冗餘代碼移除**
+  - 移除後台未使用空函式 `togglePromoType`、`movePromotion` 與其 `window` 掛載。
+- **驗證**
+  - `npm run ci-local` 全數通過（guardrails/fmt/lint/check/test）。
+  - 已完成 `supabase functions deploy coffee-api --no-verify-jwt` 與 `supabase db push`。
 
 ### 📅 v52 — 型別安全強化、CI 自動修復與 E2E 測試擴充
 

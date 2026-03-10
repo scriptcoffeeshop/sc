@@ -21,6 +21,7 @@ const PUBLIC_SETTINGS_KEYS = [
   "notes_section_title",
   "payment_enabled",
   "linepay_enabled",
+  "linepay_sandbox",
   "transfer_enabled",
   "delivery_options_config",
 ];
