@@ -95,8 +95,103 @@
         >
           🪶 咖啡豆選購
         </h2>
-        <div id="products-container">
-          <p class="text-center text-gray-500 py-8">載入商品中...</p>
+        <div id="products-container" data-vue-managed="true">
+          <p
+            v-if="productsCategories.length === 0"
+            class="text-center text-gray-500 py-8"
+          >
+            載入商品中...
+          </p>
+          <template v-else>
+            <div
+              v-for="category in productsCategories"
+              :key="category.name"
+              class="mb-4"
+            >
+              <div class="category-header rounded-t-xl px-4 py-2 font-semibold">
+                {{ category.name }}
+              </div>
+              <div
+                class="space-y-0 border border-t-0 rounded-b-xl overflow-hidden"
+                style="border-color:#e5ddd5;"
+              >
+                <div
+                  v-for="product in category.products"
+                  :key="product.id"
+                  class="product-row p-3 border-b flex flex-col gap-2"
+                  style="border-color:#f0e6db;"
+                >
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <div class="font-medium">
+                        {{ product.name }}
+                        <span
+                          v-if="product.roastLevel"
+                          class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 ml-1"
+                        >{{ product.roastLevel }}</span>
+                      </div>
+                      <span
+                        v-if="product.description"
+                        class="text-xs text-gray-500"
+                      >{{ product.description }}</span>
+                    </div>
+                  </div>
+                  <div class="flex gap-2 flex-wrap">
+                    <div
+                      v-for="spec in product.specs"
+                      :key="`${product.id}-${spec.key}`"
+                      class="spec-container flex-1 min-w-[80px] relative"
+                    >
+                      <button
+                        v-if="getSpecQty(product.id, spec.key) <= 0"
+                        class="spec-btn-add w-full text-xs sm:text-sm py-2 px-1 rounded-lg border-2 font-medium transition-all hover:shadow-md active:scale-95 flex flex-col items-center justify-center min-h-[48px]"
+                        style="border-color:var(--secondary); color:var(--primary); background:#fefdf8;"
+                        @click.prevent="changeSpecQty(product.id, spec.key, 1)"
+                      >
+                        <span>{{ spec.label }}</span>
+                        <span class="font-bold">${{ spec.price }}</span>
+                      </button>
+                      <div
+                        v-else
+                        class="spec-btn-stepper w-full rounded-lg border-2 flex flex-col overflow-hidden"
+                        style="border-color:var(--secondary); background:white;"
+                      >
+                        <div
+                          class="text-xs sm:text-sm py-1.5 px-1 bg-amber-50 flex flex-col items-center justify-center border-b"
+                          style="border-color:var(--secondary); color:var(--primary);"
+                        >
+                          <span>{{ spec.label }}</span>
+                          <span class="font-bold">${{ spec.price }}</span>
+                        </div>
+                        <div
+                          class="flex items-center justify-between px-1 py-1"
+                          style="background:var(--secondary);"
+                        >
+                          <button
+                            class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90"
+                            @click.prevent="changeSpecQty(product.id, spec.key, -1)"
+                          >
+                            −
+                          </button>
+                          <div class="flex-1 flex items-center justify-center mx-1 overflow-hidden">
+                            <span class="text-sm sm:text-base font-bold text-white spec-qty-text">
+                              {{ getSpecQty(product.id, spec.key) }}
+                            </span>
+                          </div>
+                          <button
+                            class="w-7 h-7 sm:w-8 sm:h-8 shrink-0 rounded-full bg-white text-gray-800 font-bold shadow-sm flex items-center justify-center active:scale-90"
+                            @click.prevent="changeSpecQty(product.id, spec.key, 1)"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -368,7 +463,7 @@
             <span
               class="text-lg font-bold text-blue-600"
               id="transfer-total-amount"
-            >$0</span>
+            >{{ totalPriceText }}</span>
           </div>
 
           <div id="bank-accounts-list" class="mb-3"></div>
@@ -437,12 +532,34 @@
           style="color: var(--primary)"
           id="total-price"
         >
-          總金額: $0
+          <div
+            v-if="cartSummary.totalDiscount > 0 || (selectedDelivery && cartSummary.quoteAvailable)"
+            class="flex flex-col items-start justify-center"
+          >
+            <div class="flex items-center mb-0.5">
+              <span
+                v-if="cartSummary.totalDiscount > 0"
+                style="background-color: #fee2e2; color: #dc2626; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 4px;"
+              >
+                折 -${{ cartSummary.totalDiscount }}
+              </span>
+              <span
+                v-if="selectedDelivery && cartSummary.quoteAvailable"
+                style="background-color: #dbeafe; color: #2563eb; font-size: 11px; padding: 2px 6px; border-radius: 4px;"
+              >
+                {{ cartSummary.shippingFee === 0 ? "免運費" : `運費 $${cartSummary.shippingFee}` }}
+              </span>
+            </div>
+            <div class="text-xl font-bold leading-tight">
+              應付總額: {{ totalPriceText }}
+            </div>
+          </div>
+          <div v-else class="text-xl font-bold">總金額: {{ totalPriceText }}</div>
         </div>
         <div class="flex gap-2">
           <button
-            data-action="toggle-cart"
             class="relative bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm hover:bg-amber-100 transition-colors"
+            @click.prevent="toggleCartDrawer"
           >
             🛒 購物車 <span
               id="cart-badge"
@@ -459,7 +576,7 @@
     <div
       id="cart-overlay"
       class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60]"
-      data-action="toggle-cart"
+      @click="toggleCartDrawer"
     >
     </div>
     <div
@@ -474,24 +591,119 @@
           🛒 購物車
         </h3>
         <button
-          data-action="toggle-cart"
           class="text-gray-500 hover:text-gray-700 text-2xl"
+          @click.prevent="toggleCartDrawer"
         >
           &times;
         </button>
       </div>
-      <div id="cart-items" class="flex-1 overflow-y-auto p-4">
-        <p class="text-center text-gray-400 py-8">購物車是空的</p>
+      <div id="cart-items" data-vue-managed="true" class="flex-1 overflow-y-auto p-4">
+        <p v-if="cartItems.length === 0" class="text-center text-gray-400 py-8">
+          購物車是空的
+        </p>
+        <template v-else>
+          <div
+            v-for="(item, index) in cartItems"
+            :key="`${item.productId}-${item.specKey}`"
+            class="flex items-center justify-between py-3 border-b"
+            style="border-color:#f0e6db;"
+          >
+            <div class="flex-1 mr-3">
+              <div class="font-medium text-sm flex items-center flex-wrap">
+                {{ item.productName }}
+                <span
+                  v-if="isDiscountedItem(item)"
+                  class="ml-2 inline-block bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded leading-tight"
+                >
+                  適用優惠
+                </span>
+              </div>
+              <div class="text-xs text-gray-500">{{ item.specLabel }} · ${{ item.unitPrice }}</div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button
+                class="quantity-btn"
+                style="width:28px;height:28px;font-size:14px;"
+                @click.prevent="changeCartItemQty(index, -1)"
+              >
+                −
+              </button>
+              <span class="w-8 text-center font-medium">{{ item.qty }}</span>
+              <button
+                class="quantity-btn"
+                style="width:28px;height:28px;font-size:14px;"
+                @click.prevent="changeCartItemQty(index, 1)"
+              >
+                +
+              </button>
+            </div>
+            <div class="text-right ml-3 min-w-[60px]">
+              <div class="font-semibold text-sm" style="color:var(--accent)">
+                ${{ item.qty * item.unitPrice }}
+              </div>
+              <button
+                class="text-xs text-red-400 hover:text-red-600"
+                @click.prevent="removeCartIndex(index)"
+              >
+                移除
+              </button>
+            </div>
+          </div>
+        </template>
       </div>
       <div
         class="p-4 border-t"
         style="border-color: #f0e6db; background: #faf6f2"
       >
-        <div id="cart-shipping-notice" class="mb-3 hidden"></div>
+        <div
+          id="cart-shipping-notice"
+          class="mb-3"
+          :class="{ hidden: !showShippingNotice }"
+        >
+          <div
+            v-if="showShippingNotice"
+            class="px-3 py-2 rounded-lg mb-1"
+            style="background:#fef2f2; border:1px solid #fca5a5;"
+          >
+            <div class="flex justify-between items-center text-sm font-semibold" style="color:#991b1b;">
+              <span>未達🚚 {{ deliveryName }}免運門檻</span>
+              <span>+${{ cartSummary.shippingFee }}</span>
+            </div>
+            <div
+              v-if="shippingDiff > 0"
+              class="text-xs mt-1"
+              style="color:#b91c1c;"
+            >
+              還差 ${{ shippingDiff }} 即可免運
+            </div>
+          </div>
+        </div>
         <div
           id="cart-discount-details"
-          class="mb-3 text-sm text-gray-600 hidden"
+          class="mb-3 text-sm text-gray-600"
+          :class="{ hidden: !showDiscountSection }"
         >
+          <div
+            v-if="showDiscountSection"
+            class="border-b border-dashed border-[#e5ddd5] pb-2 mb-2"
+          >
+            <div class="font-semibold text-gray-700 mb-2">已套用優惠與折抵：</div>
+            <div
+              v-for="promo in cartSummary.appliedPromos"
+              :key="promo.name"
+              class="flex justify-between items-center text-red-600 mb-1"
+            >
+              <span>🏷️ {{ promo.name }}</span>
+              <span>-${{ promo.amount }}</span>
+            </div>
+            <div
+              v-if="isFreeShipping"
+              class="flex justify-between items-center text-blue-600 mb-1"
+            >
+              <span>🚚 {{ deliveryName }}免運{{ freeShippingThresholdText }}</span>
+              <span>免運費</span>
+            </div>
+          </div>
         </div>
         <div class="flex justify-between items-center mb-3">
           <span class="font-semibold text-gray-700">合計</span>
@@ -499,12 +711,12 @@
             id="cart-total"
             class="text-xl font-bold"
             style="color: var(--primary)"
-          >$0</span>
+          >{{ totalPriceText }}</span>
         </div>
         <button
-          data-action="submit-order"
           class="btn-primary w-full"
           id="cart-submit-btn"
+          @click.prevent="submitOrderFromCart"
         >
           確認送出訂單
         </button>
@@ -537,17 +749,176 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import {
+  addToCart,
+  getCartSnapshot,
+  removeCartItem,
+  toggleCart,
+  updateCartItemQty,
+  updateCartItemQtyByKeys,
+} from "../../../js/cart.js";
 import { initMainApp } from "../../../js/main-app.js";
+import { submitOrder } from "../../../js/orders.js";
+import { getProductsViewModel } from "../../../js/products.js";
 
 const originalBodyClass = document.body.className;
+const productsCategories = ref([]);
+const cartItems = ref([]);
+const selectedDelivery = ref("");
+const deliveryName = ref("該配送方式");
+const shippingConfig = ref(null);
+const cartSummary = ref({
+  subtotal: 0,
+  appliedPromos: [],
+  totalDiscount: 0,
+  discountedItemKeys: [],
+  afterDiscount: 0,
+  totalAfterDiscount: 0,
+  shippingFee: 0,
+  finalTotal: 0,
+  quoteAvailable: false,
+});
+
+const discountedItemKeySet = computed(() =>
+  new Set(Array.isArray(cartSummary.value.discountedItemKeys)
+    ? cartSummary.value.discountedItemKeys
+    : []),
+);
+
+const totalPriceText = computed(() =>
+  `$${Number(cartSummary.value.finalTotal || 0)}`,
+);
+
+const hasPromos = computed(() =>
+  cartSummary.value.totalDiscount > 0 &&
+  Array.isArray(cartSummary.value.appliedPromos) &&
+  cartSummary.value.appliedPromos.length > 0,
+);
+
+const isFreeShipping = computed(() =>
+  !!(
+    selectedDelivery.value &&
+    cartSummary.value.quoteAvailable &&
+    Number(cartSummary.value.shippingFee || 0) === 0
+  ),
+);
+
+const showShippingNotice = computed(() =>
+  !!(
+    selectedDelivery.value &&
+    cartSummary.value.quoteAvailable &&
+    !isFreeShipping.value &&
+    Number(cartSummary.value.shippingFee || 0) > 0
+  ),
+);
+
+const showDiscountSection = computed(() =>
+  hasPromos.value || isFreeShipping.value,
+);
+
+const shippingDiff = computed(() => {
+  const threshold = Number(shippingConfig.value?.freeThreshold || 0);
+  if (!threshold) return 0;
+  const diff = threshold - Number(cartSummary.value.totalAfterDiscount || 0);
+  return diff > 0 ? diff : 0;
+});
+
+const freeShippingThresholdText = computed(() => {
+  const threshold = Number(shippingConfig.value?.freeThreshold || 0);
+  return threshold > 0 ? ` (滿$${threshold})` : "";
+});
+
+const cartQtyMap = computed(() => {
+  const map = new Map();
+  cartItems.value.forEach((item) => {
+    map.set(
+      `${Number(item.productId)}-${String(item.specKey || "")}`,
+      Math.max(1, Number(item.qty) || 1),
+    );
+  });
+  return map;
+});
+
+function itemKey(productId, specKey = "") {
+  return `${Number(productId)}-${String(specKey || "")}`;
+}
+
+function getSpecQty(productId, specKey) {
+  return cartQtyMap.value.get(itemKey(productId, specKey)) || 0;
+}
+
+function isDiscountedItem(item) {
+  return discountedItemKeySet.value.has(itemKey(item.productId, item.specKey));
+}
+
+function changeSpecQty(productId, specKey, delta) {
+  if (delta > 0 && getSpecQty(productId, specKey) <= 0) {
+    addToCart(productId, specKey);
+    return;
+  }
+  updateCartItemQtyByKeys(productId, specKey, delta);
+}
+
+function changeCartItemQty(index, delta) {
+  updateCartItemQty(index, delta);
+}
+
+function removeCartIndex(index) {
+  removeCartItem(index);
+}
+
+function toggleCartDrawer() {
+  toggleCart();
+}
+
+function submitOrderFromCart() {
+  toggleCart();
+  void submitOrder();
+}
+
+function handleProductsUpdated(event) {
+  const detail = event?.detail || {};
+  productsCategories.value = Array.isArray(detail.categories)
+    ? detail.categories
+    : [];
+}
+
+function handleCartUpdated(event) {
+  const detail = event?.detail || {};
+  cartItems.value = Array.isArray(detail.items) ? detail.items : [];
+  selectedDelivery.value = String(detail.selectedDelivery || "");
+  deliveryName.value = String(detail.deliveryName || "該配送方式");
+  shippingConfig.value = detail.shippingConfig || null;
+  cartSummary.value = {
+    ...cartSummary.value,
+    ...(detail.summary || {}),
+  };
+}
 
 onMounted(() => {
   document.body.className = "p-4 md:p-6";
+
+  window.addEventListener("coffee:products-updated", handleProductsUpdated);
+  window.addEventListener("coffee:cart-updated", handleCartUpdated);
+
+  const productsContainer = document.getElementById("products-container");
+  const cartContainer = document.getElementById("cart-items");
+  if (productsContainer) productsContainer.dataset.vueManaged = "true";
+  if (cartContainer) cartContainer.dataset.vueManaged = "true";
+
+  const productVm = getProductsViewModel();
+  productsCategories.value = Array.isArray(productVm.categories)
+    ? productVm.categories
+    : [];
+  cartItems.value = getCartSnapshot();
+
   void initMainApp();
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("coffee:products-updated", handleProductsUpdated);
+  window.removeEventListener("coffee:cart-updated", handleCartUpdated);
   document.body.className = originalBodyClass;
 });
 </script>

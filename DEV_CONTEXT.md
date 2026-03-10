@@ -32,7 +32,23 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v56)
+## 🚀 近期重大更新 (v40 - v57)
+
+### 📅 v57 — 第二階段啟動：前台商品與購物車邏輯改由 Vue 元件渲染
+
+- **前台主流程改為 Vue 控制渲染**
+  - `MainPage.vue` 商品列表改為 Vue `v-for` + `@click` 直接控制（不再依賴商品區 `innerHTML`）。
+  - `MainPage.vue` 購物車內容、優惠/運費提示、總額區塊改為 Vue 模板渲染。
+  - 購物車操作（加減數量、移除、開關抽屜、送單入口）改為 Vue 事件綁定。
+- **Legacy 模組加入 Vue 橋接事件**
+  - `products.js` 新增 view model 組裝與 `coffee:products-updated` 事件，支援 Vue 直接接管商品區。
+  - `cart.js` 新增 `coffee:cart-updated` 事件與快照輸出，讓 Vue 接收購物車/總額/優惠資料。
+  - `cart.js` 補上 `default` 規格回退邏輯，避免無規格商品無法加入購物車。
+- **初始化策略調整**
+  - `main-app.js`、`dashboard-app.js` 移除自動 `DOMContentLoaded` 啟動，改為由 Vue 頁面 `onMounted` 顯式初始化。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v56 — 全頁面改為 Vue 元件掛載（移除 Legacy HTML 載入器）
 

@@ -20,6 +20,58 @@ function saveCart() {
   localStorage.setItem("coffee_cart", JSON.stringify(cart));
 }
 
+function isVueManagedCart() {
+  return document.getElementById("cart-items")?.dataset?.vueManaged === "true";
+}
+
+function isVueManagedProducts() {
+  return document.getElementById("products-container")?.dataset?.vueManaged ===
+    "true";
+}
+
+function getDeliveryMeta() {
+  const fallback = {
+    selectedDelivery: state.selectedDelivery || "",
+    deliveryName: "該配送方式",
+  };
+  const configStr = window.appSettings?.delivery_options_config || "[]";
+  try {
+    const parsed = JSON.parse(configStr);
+    const selected = parsed.find((opt) => opt.id === state.selectedDelivery);
+    if (selected?.name) {
+      return {
+        selectedDelivery: state.selectedDelivery || "",
+        deliveryName: String(selected.name),
+      };
+    }
+  } catch {}
+  return fallback;
+}
+
+function emitCartUpdated(summary) {
+  const detail = {
+    items: cart.map((item) => ({ ...item })),
+    summary: {
+      ...summary,
+      discountedItemKeys: Array.isArray(summary.discountedItemKeys)
+        ? summary.discountedItemKeys
+        : Array.from(summary.discountedItemKeys || []),
+    },
+    ...getDeliveryMeta(),
+    shippingConfig: getShippingConfig(),
+  };
+  window.dispatchEvent(
+    new CustomEvent("coffee:cart-updated", {
+      detail,
+    }),
+  );
+}
+
+/** 供 Vue 元件讀取目前購物車快照 */
+export function getCartSnapshot() {
+  return cart.map((item) => ({ ...item }));
+}
+
 export function loadCart() {
   try {
     const d = localStorage.getItem("coffee_cart");
@@ -37,7 +89,10 @@ export function addToCart(productId, specKey) {
   try {
     specs = JSON.parse(p.specs || "[]");
   } catch {}
-  const spec = specs.find((s) => s.key === specKey);
+  const spec = specs.find((s) => s.key === specKey) ||
+    (specKey === "default"
+      ? { key: "default", label: "預設", price: Number(p.price) || 0 }
+      : null);
   if (!spec) return;
 
   const existing = cart.find((c) =>
@@ -112,62 +167,76 @@ export function updateCartUI() {
   // 更新購物車 badge
   const totalItems = cart.reduce((s, c) => s + c.qty, 0);
   const badge = document.getElementById("cart-badge");
+  if (!badge) return;
   if (totalItems > 0) {
     badge.textContent = totalItems;
     badge.classList.remove("hidden");
   } else badge.classList.add("hidden");
 
   // 更新前台商品卡片：In-line Stepper 顯示邏輯
-  document.querySelectorAll(".spec-container").forEach((container) => {
-    const pid = parseInt(container.dataset.pid);
-    const specKey = container.dataset.spec;
-    const cartItem = cart.find((c) =>
-      c.productId === pid && c.specKey === specKey
-    );
+  if (!isVueManagedProducts()) {
+    document.querySelectorAll(".spec-container").forEach((container) => {
+      const pid = parseInt(container.dataset.pid);
+      const specKey = container.dataset.spec;
+      const cartItem = cart.find((c) =>
+        c.productId === pid && c.specKey === specKey
+      );
 
-    const btnAdd = container.querySelector(".spec-btn-add");
-    const btnStepper = container.querySelector(".spec-btn-stepper");
-    const specBadge = container.querySelector(".spec-badge");
-    const qtyText = container.querySelector(".spec-qty-text");
+      const btnAdd = container.querySelector(".spec-btn-add");
+      const btnStepper = container.querySelector(".spec-btn-stepper");
+      const specBadge = container.querySelector(".spec-badge");
+      const qtyText = container.querySelector(".spec-qty-text");
 
-    if (cartItem && cartItem.qty > 0) {
-      if (btnAdd) btnAdd.classList.add("hidden");
-      if (btnStepper) btnStepper.classList.remove("hidden");
-      if (specBadge) {
-        specBadge.textContent = cartItem.qty;
-        specBadge.classList.remove("hidden");
+      if (cartItem && cartItem.qty > 0) {
+        if (btnAdd) btnAdd.classList.add("hidden");
+        if (btnStepper) btnStepper.classList.remove("hidden");
+        if (specBadge) {
+          specBadge.textContent = cartItem.qty;
+          specBadge.classList.remove("hidden");
+        }
+        if (qtyText) {
+          qtyText.textContent = cartItem.qty;
+        }
+      } else {
+        if (btnAdd) btnAdd.classList.remove("hidden");
+        if (btnStepper) btnStepper.classList.add("hidden");
+        if (specBadge) specBadge.classList.add("hidden");
       }
-      if (qtyText) {
-        qtyText.textContent = cartItem.qty;
-      }
-    } else {
-      if (btnAdd) btnAdd.classList.remove("hidden");
-      if (btnStepper) btnStepper.classList.add("hidden");
-      if (specBadge) specBadge.classList.add("hidden");
-    }
-  });
+    });
+  }
 
   // 渲染購物車清單
   const container = document.getElementById("cart-items");
+  const vueManagedCart = isVueManagedCart();
   if (!cart.length) {
     state.orderQuote = null;
     state.quoteError = "";
-    container.innerHTML =
-      '<p class="text-center text-gray-400 py-8">購物車是空的</p>';
+    if (!vueManagedCart && container) {
+      container.innerHTML =
+        '<p class="text-center text-gray-400 py-8">購物車是空的</p>';
+    }
     const discountSection = document.getElementById("cart-discount-details");
-    if (discountSection) {
+    if (discountSection && !vueManagedCart) {
       discountSection.classList.add("hidden");
       discountSection.innerHTML = "";
     }
 
     // 購物車為空時，重置底部欄位與金額
-    document.getElementById("total-price").innerHTML =
-      '<div class="text-xl font-bold">總金額: $0</div>';
-    document.getElementById("cart-total").textContent = "$0";
+    if (!vueManagedCart) {
+      const totalPriceEl = document.getElementById("total-price");
+      const cartTotalEl = document.getElementById("cart-total");
+      if (totalPriceEl) {
+        totalPriceEl.innerHTML = '<div class="text-xl font-bold">總金額: $0</div>';
+      }
+      if (cartTotalEl) {
+        cartTotalEl.textContent = "$0";
+      }
+    }
     const transferTotalEl = document.getElementById("transfer-total-amount");
     if (transferTotalEl) transferTotalEl.textContent = "$0";
 
     if (window.updateFormState) window.updateFormState();
+    emitCartUpdated(calcCartSummary());
     return;
   }
 
@@ -202,8 +271,12 @@ export function updateCartUI() {
             </div>
         `;
   }
-  document.getElementById("total-price").innerHTML = priceHtml;
-  document.getElementById("cart-total").textContent = `$${summary.finalTotal}`;
+  if (!vueManagedCart) {
+    const totalPriceEl = document.getElementById("total-price");
+    const cartTotalEl = document.getElementById("cart-total");
+    if (totalPriceEl) totalPriceEl.innerHTML = priceHtml;
+    if (cartTotalEl) cartTotalEl.textContent = `$${summary.finalTotal}`;
+  }
 
   // 更新匯款資訊的應付總金額
   const transferTotalEl = document.getElementById("transfer-total-amount");
@@ -214,21 +287,22 @@ export function updateCartUI() {
   // 呼叫全域 updateFormState，讓 main-app 統一處理按鈕狀態（文字與 disabled 特性）
   if (window.updateFormState) window.updateFormState();
 
-  container.innerHTML = cart.map((c, i) => {
-    const isDiscounted = summary.discountedItemKeys &&
-      summary.discountedItemKeys.has(`${c.productId}-${c.specKey}`);
-    const discountBadge = isDiscounted
-      ? `<span class="ml-2 inline-block bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded leading-tight">適用優惠</span>`
-      : "";
-    return `
+  if (!vueManagedCart && container) {
+    container.innerHTML = cart.map((c, i) => {
+      const isDiscounted = summary.discountedItemKeys &&
+        summary.discountedItemKeys.has(`${c.productId}-${c.specKey}`);
+      const discountBadge = isDiscounted
+        ? `<span class="ml-2 inline-block bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded leading-tight">適用優惠</span>`
+        : "";
+      return `
         <div class="flex items-center justify-between py-3 border-b" style="border-color:#f0e6db;">
             <div class="flex-1 mr-3">
                 <div class="font-medium text-sm flex items-center flex-wrap">${
-      escapeHtml(c.productName)
-    }${discountBadge}</div>
+        escapeHtml(c.productName)
+      }${discountBadge}</div>
                 <div class="text-xs text-gray-500">${
-      escapeHtml(c.specLabel)
-    } · $${c.unitPrice}</div>
+        escapeHtml(c.specLabel)
+      } · $${c.unitPrice}</div>
             </div>
             <div class="flex items-center gap-1">
                 <button class="quantity-btn" data-action="cart-item-qty" data-idx="${i}" data-delta="-1" style="width:28px;height:28px;font-size:14px;">−</button>
@@ -237,19 +311,20 @@ export function updateCartUI() {
             </div>
             <div class="text-right ml-3 min-w-[60px]">
                 <div class="font-semibold text-sm" style="color:var(--accent)">$${
-      c.qty * c.unitPrice
-    }</div>
+        c.qty * c.unitPrice
+      }</div>
                 <button data-action="remove-cart-item" data-idx="${i}" class="text-xs text-red-400 hover:text-red-600">移除</button>
             </div>
         </div>
         `;
-  }).join("");
+    }).join("");
+  }
 
   // 更新折扣明細區塊與獨立的運費提示
   const discountSection = document.getElementById("cart-discount-details");
   const shippingNotice = document.getElementById("cart-shipping-notice");
 
-  if (discountSection) {
+  if (discountSection && !vueManagedCart) {
     const shippingConfig = getShippingConfig();
     const isFreeShipping =
       !!(state.selectedDelivery && shippingConfig && summary.quoteAvailable &&
@@ -343,6 +418,8 @@ export function updateCartUI() {
       discountSection.innerHTML = "";
     }
   }
+
+  emitCartUpdated(summary);
 }
 
 /** 切換購物車 Drawer */

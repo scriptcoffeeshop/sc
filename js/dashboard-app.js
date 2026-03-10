@@ -187,13 +187,7 @@ export function initDashboardApp() {
   else checkLogin();
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    initDashboardApp();
-  });
-} else {
-  initDashboardApp();
-}
+// 由 Vue Page 元件在 onMounted 時顯式呼叫 initDashboardApp()
 
 // ============ LINE Login ============
 async function handleLineCallback(code, state) {
