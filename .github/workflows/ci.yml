@@ -55,5 +55,5 @@ jobs:
         working-directory: supabase/functions/coffee-api
 
       - name: Run Tests
-        run: deno test --allow-all tests/
+        run: JWT_SECRET=mock SUPABASE_URL=https://mock.supabase.co SUPABASE_SERVICE_ROLE_KEY=mock deno test --allow-all tests/
         working-directory: supabase/functions/coffee-api
