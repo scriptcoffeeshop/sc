@@ -32,7 +32,25 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v57)
+## 🚀 近期重大更新 (v40 - v58)
+
+### 📅 v58 — 第二階段延伸：Dashboard 分類/用戶/黑名單改由 Vue 元件渲染
+
+- **Dashboard 三個管理區塊改為 Vue 接管畫面**
+  - `DashboardPage.vue` 的分類清單、用戶表格、黑名單表格改為 `v-for` / `v-if` 模板渲染。
+  - 保留既有 `data-action` 介面，沿用 `js/dashboard/events.js` 事件代理，不新增 inline 事件。
+- **Legacy 模組加入 Vue 橋接事件**
+  - `dashboard-app.js` 新增：
+    - `coffee:dashboard-categories-updated`
+    - `coffee:dashboard-users-updated`
+    - `coffee:dashboard-blacklist-updated`
+  - 各自輸出 view model 供 Vue 渲染，並保留非 Vue 模式 fallback HTML 渲染路徑。
+- **分類拖曳排序相容**
+  - 分類區新增 `initializeCategorySortable`，在 Vue 接管模式下於資料更新後重新掛載 `Sortable`。
+  - 空資料時會先銷毀既有排序實例，避免殘留狀態。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v57 — 第二階段啟動：前台商品與購物車邏輯改由 Vue 元件渲染
 

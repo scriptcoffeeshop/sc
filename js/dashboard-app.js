@@ -316,6 +316,116 @@ const orderPayStatusLabel = {
   refunded: "↩️ 已退款",
 };
 
+const orderStatusOptions = [
+  "pending",
+  "processing",
+  "shipped",
+  "completed",
+  "cancelled",
+];
+
+function isVueManagedOrdersList(container = document.getElementById("orders-list")) {
+  return container?.dataset?.vueManaged === "true";
+}
+
+function getTrackingLinkInfo(order) {
+  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
+  if (customTrackingUrl) {
+    return {
+      url: customTrackingUrl,
+      label: "🔗 物流追蹤頁面",
+    };
+  }
+  if (!order.trackingNumber) return null;
+  if (order.deliveryMethod === "seven_eleven") {
+    return {
+      url: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+      label: "🔗 7-11貨態查詢",
+    };
+  }
+  if (order.deliveryMethod === "family_mart") {
+    return {
+      url: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+      label: "🔗 全家貨態查詢",
+    };
+  }
+  if (
+    order.deliveryMethod === "delivery" ||
+    order.deliveryMethod === "home_delivery"
+  ) {
+    return {
+      url: "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100",
+      label: "🔗 中華郵政查詢",
+    };
+  }
+  return null;
+}
+
+function buildOrderViewModel(order) {
+  const paymentMethod = order.paymentMethod || "cod";
+  const paymentStatus = order.paymentStatus || "";
+  const trackingLink = getTrackingLinkInfo(order);
+  const addressInfo =
+    (order.deliveryMethod === "delivery" || order.deliveryMethod === "home_delivery")
+      ? `${order.city || ""}${order.district || ""} ${order.address || ""}`
+      : `${order.storeName || ""}${order.storeId ? ` [${order.storeId}]` : ""}${
+        order.storeAddress ? ` (${order.storeAddress})` : ""
+      }`;
+
+  return {
+    orderId: String(order.orderId || ""),
+    timestampText: new Date(order.timestamp).toLocaleString("zh-TW"),
+    deliveryMethod: order.deliveryMethod || "",
+    deliveryLabel: orderMethodLabel[order.deliveryMethod] || order.deliveryMethod,
+    status: order.status || "",
+    statusLabel: orderStatusLabel[order.status] || order.status || "",
+    paymentMethod,
+    paymentStatus,
+    paymentMethodLabel: orderPayMethodLabel[paymentMethod] || paymentMethod,
+    paymentStatusLabel: orderPayStatusLabel[paymentStatus] || paymentStatus,
+    payBadgeClass: paymentStatus === "paid"
+      ? "bg-green-50 text-green-700"
+      : paymentStatus === "refunded"
+      ? "bg-purple-50 text-purple-700"
+      : paymentStatus === "pending"
+      ? "bg-yellow-50 text-yellow-700"
+      : "bg-gray-100 text-gray-600",
+    isSelected: selectedOrderIds.has(order.orderId),
+    lineName: order.lineName || "",
+    phone: order.phone || "",
+    email: order.email || "",
+    addressInfo,
+    transferAccountLast5: order.transferAccountLast5 || "",
+    paymentId: order.paymentId || "",
+    showTransferInfo: paymentMethod === "transfer",
+    shippingProvider: order.shippingProvider || "",
+    trackingNumber: order.trackingNumber || "",
+    trackingLinkUrl: trackingLink?.url || "",
+    trackingLinkLabel: trackingLink?.label || "",
+    hasShippingInfo: Boolean(
+      order.trackingNumber || order.shippingProvider || trackingLink,
+    ),
+    items: order.items || "",
+    note: order.note || "",
+    total: Number(order.total) || 0,
+    showRefundButton: paymentMethod === "linepay" && paymentStatus === "paid",
+    showConfirmTransferButton:
+      paymentMethod === "transfer" && paymentStatus === "pending",
+  };
+}
+
+function emitDashboardOrdersUpdated(filteredOrders) {
+  if (!isVueManagedOrdersList()) return;
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-orders-updated", {
+      detail: {
+        orders: filteredOrders.map(buildOrderViewModel),
+        statusOptions: orderStatusOptions,
+      },
+    }),
+  );
+}
+
 function getOrderFilterValue(id, fallback = "all") {
   const el = document.getElementById(id);
   if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement)) {
@@ -427,26 +537,13 @@ function normalizeTrackingUrl(url) {
 }
 
 function getTrackingLinkHtml(order) {
-  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
-  if (customTrackingUrl) {
-    return `<a href="${
-      esc(customTrackingUrl)
-    }" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 物流追蹤頁面</a>`;
-  }
-  if (!order.trackingNumber) return "";
-  if (order.deliveryMethod === "seven_eleven") {
-    return `<a href="https://eservice.7-11.com.tw/e-tracking/search.aspx" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 7-11貨態查詢</a>`;
-  }
-  if (order.deliveryMethod === "family_mart") {
-    return `<a href="https://fmec.famiport.com.tw/FP_Entrance/QueryBox" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 全家貨態查詢</a>`;
-  }
-  if (
-    order.deliveryMethod === "delivery" ||
-    order.deliveryMethod === "home_delivery"
-  ) {
-    return `<a href="https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">🔗 中華郵政查詢</a>`;
-  }
-  return "";
+  const trackingLink = getTrackingLinkInfo(order);
+  if (!trackingLink) return "";
+  return `<a href="${
+    esc(trackingLink.url)
+  }" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">${
+    esc(trackingLink.label)
+  }</a>`;
 }
 
 async function loadOrders() {
@@ -473,13 +570,22 @@ function renderOrders() {
   const filtered = getFilteredOrders();
   const container = document.getElementById("orders-list");
   renderOrdersSummary(filtered);
+  updateOrdersSelectionUi(filtered);
 
-  if (!filtered.length) {
-    container.innerHTML =
-      '<p class="text-center text-gray-500 py-8">沒有符合的訂單</p>';
-    updateOrdersSelectionUi(filtered);
+  if (isVueManagedOrdersList(container)) {
+    emitDashboardOrdersUpdated(filtered);
     return;
   }
+
+  if (!filtered.length) {
+    if (container) {
+      container.innerHTML =
+        '<p class="text-center text-gray-500 py-8">沒有符合的訂單</p>';
+    }
+    return;
+  }
+
+  if (!container) return;
 
   container.innerHTML = filtered.map((o) => {
     const time = new Date(o.timestamp).toLocaleString("zh-TW");
@@ -629,7 +735,6 @@ function renderOrders() {
             </div>
         </div>`;
   }).join("");
-  updateOrdersSelectionUi(filtered);
 }
 
 async function changeOrderStatus(orderId, status) {
@@ -748,7 +853,9 @@ async function deleteOrderById(orderId) {
 function toggleOrderSelection(orderId, checked) {
   if (checked) selectedOrderIds.add(orderId);
   else selectedOrderIds.delete(orderId);
-  updateOrdersSelectionUi(getFilteredOrders());
+  const filtered = getFilteredOrders();
+  updateOrdersSelectionUi(filtered);
+  emitDashboardOrdersUpdated(filtered);
 }
 
 function toggleSelectAllOrders(checked) {
@@ -1330,17 +1437,71 @@ async function loadCategories() {
 }
 
 let categoriesMap = {};
+function isVueManagedCategoriesList(
+  container = document.getElementById("categories-list"),
+) {
+  return container?.dataset?.vueManaged === "true";
+}
+
+function buildCategoryViewModel(category) {
+  return {
+    id: Number(category?.id) || 0,
+    name: category?.name || "",
+  };
+}
+
+function emitDashboardCategoriesUpdated(nextCategories = categories) {
+  const viewCategories = (Array.isArray(nextCategories) ? nextCategories : [])
+    .map((category) => buildCategoryViewModel(category))
+    .filter((category) => category.id > 0);
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-categories-updated", {
+      detail: { categories: viewCategories },
+    }),
+  );
+}
+
+function initializeCategorySortable(container) {
+  if (typeof Sortable === "undefined") return;
+  if (window.categorySortable) {
+    window.categorySortable.destroy();
+    window.categorySortable = null;
+  }
+  if (!container?.querySelector("[data-id]")) return;
+  window.categorySortable = Sortable.create(container, {
+    handle: ".drag-handle-cat",
+    animation: 150,
+    onEnd: async function () {
+      const ids = Array.from(container.querySelectorAll("[data-id]"))
+        .map((el) => Number.parseInt(el.dataset.id || "", 10))
+        .filter((id) => !Number.isNaN(id));
+      await updateCategoryOrders(ids);
+    },
+  });
+}
+
 function renderCategories() {
   const container = document.getElementById("categories-list");
-  if (!categories.length) {
-    container.innerHTML =
-      '<p class="text-center text-gray-500 py-4">尚無分類</p>';
-    return;
-  }
+  if (!container) return;
+
   categoriesMap = {};
   categories.forEach((c) => {
     categoriesMap[c.id] = c;
   });
+
+  if (isVueManagedCategoriesList(container)) {
+    emitDashboardCategoriesUpdated(categories);
+    requestAnimationFrame(() => initializeCategorySortable(container));
+    return;
+  }
+
+  if (!categories.length) {
+    container.innerHTML =
+      '<p class="text-center text-gray-500 py-4">尚無分類</p>';
+    initializeCategorySortable(container);
+    return;
+  }
+
   container.innerHTML = categories.map((c) => `
         <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;" data-id="${c.id}">
             <div class="flex items-center gap-2">
@@ -1354,20 +1515,7 @@ function renderCategories() {
         </div>
     `).join("");
 
-  // 掛載 Sortable 拖曳排序
-  if (typeof Sortable !== "undefined") {
-    if (window.categorySortable) window.categorySortable.destroy();
-    window.categorySortable = Sortable.create(container, {
-      handle: ".drag-handle-cat",
-      animation: 150,
-      onEnd: async function () {
-        const ids = Array.from(container.querySelectorAll("[data-id]")).map(
-          (el) => parseInt(el.dataset.id),
-        );
-        await updateCategoryOrders(ids);
-      },
-    });
-  }
+  initializeCategorySortable(container);
 }
 
 async function addCategory() {
@@ -2198,8 +2346,87 @@ async function loadUsers() {
   }
 }
 
+function isVueManagedUsersTable(tbody = document.getElementById("users-table")) {
+  return tbody?.dataset?.vueManaged === "true";
+}
+
+function getUserDefaultDeliveryText(user) {
+  if (user.defaultDeliveryMethod === "delivery") {
+    return `宅配 (${user.defaultCity || ""}${user.defaultDistrict || ""} ${
+      user.defaultAddress || ""
+    })`;
+  }
+  if (user.defaultDeliveryMethod === "in_store") return "來店自取";
+  if (user.defaultDeliveryMethod) {
+    return `${user.defaultDeliveryMethod === "seven_eleven" ? "7-11" : "全家"} (${
+      user.defaultStoreName || ""
+    } - ${user.defaultStoreId || ""})`;
+  }
+  return "尚未設定";
+}
+
+function buildUserViewModel(user, isSuperAdmin) {
+  const isUserSuperAdmin = user.role === "SUPER_ADMIN";
+  const isAdmin = user.role === "ADMIN" || isUserSuperAdmin;
+  const isBlocked = user.status === "BLACKLISTED";
+  const roleAction = isSuperAdmin && !isUserSuperAdmin
+    ? {
+      newRole: isAdmin ? "USER" : "ADMIN",
+      label: isAdmin ? "移除管理員" : "設為管理員",
+      className: isAdmin
+        ? "text-red-600 hover:text-red-800"
+        : "text-purple-600 hover:text-purple-800",
+    }
+    : null;
+
+  return {
+    userId: user.userId || "",
+    displayName: user.displayName || "",
+    pictureUrl: user.pictureUrl || "https://via.placeholder.com/40",
+    email: user.email || "",
+    phone: user.phone || "",
+    defaultDeliveryText: getUserDefaultDeliveryText(user),
+    isAdmin,
+    isBlocked,
+    roleBadgeText: isAdmin ? "管理員" : "用戶",
+    roleBadgeClass: isAdmin
+      ? "bg-purple-100 text-purple-800"
+      : "bg-gray-100 text-gray-600",
+    statusBadgeText: isBlocked ? "黑名單" : "正常",
+    statusBadgeClass: isBlocked
+      ? "bg-red-100 text-red-800"
+      : "bg-green-100 text-green-800",
+    lastLoginText: user.lastLogin
+      ? new Date(user.lastLogin).toLocaleString("zh-TW")
+      : "無紀錄",
+    blacklistActionBlockedValue: String(!isBlocked),
+    blacklistActionLabel: isBlocked ? "解除封鎖" : "封鎖",
+    blacklistActionClass: isBlocked
+      ? "text-green-600 hover:text-green-800"
+      : "text-red-500 hover:text-red-700",
+    roleAction,
+  };
+}
+
+function emitDashboardUsersUpdated(nextUsers = users) {
+  const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
+  const viewUsers = (Array.isArray(nextUsers) ? nextUsers : []).map((user) =>
+    buildUserViewModel(user, isSuperAdmin)
+  );
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-users-updated", {
+      detail: { users: viewUsers },
+    }),
+  );
+}
+
 function renderUsers() {
   const tbody = document.getElementById("users-table");
+  if (!tbody) return;
+  if (isVueManagedUsersTable(tbody)) {
+    emitDashboardUsersUpdated(users);
+    return;
+  }
   if (!users.length) {
     tbody.innerHTML =
       '<tr><td colspan="4" class="text-center py-8 text-gray-500">無符合條件的用戶</td></tr>';
@@ -2399,8 +2626,40 @@ async function loadBlacklist() {
   }
 }
 
+function isVueManagedBlacklistTable(
+  tbody = document.getElementById("blacklist-table"),
+) {
+  return tbody?.dataset?.vueManaged === "true";
+}
+
+function buildBlacklistViewModel(blacklistEntry) {
+  return {
+    displayName: blacklistEntry.displayName || "",
+    lineUserId: blacklistEntry.lineUserId || "",
+    blockedAtText: blacklistEntry.blockedAt
+      ? new Date(blacklistEntry.blockedAt).toLocaleString("zh-TW")
+      : "無紀錄",
+    reasonText: blacklistEntry.reason || "(無原因)",
+  };
+}
+
+function emitDashboardBlacklistUpdated(nextBlacklist = blacklist) {
+  const viewBlacklist = (Array.isArray(nextBlacklist) ? nextBlacklist : [])
+    .map((entry) => buildBlacklistViewModel(entry));
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-blacklist-updated", {
+      detail: { blacklist: viewBlacklist },
+    }),
+  );
+}
+
 function renderBlacklist() {
   const tbody = document.getElementById("blacklist-table");
+  if (!tbody) return;
+  if (isVueManagedBlacklistTable(tbody)) {
+    emitDashboardBlacklistUpdated(blacklist);
+    return;
+  }
   if (!blacklist.length) {
     tbody.innerHTML =
       '<tr><td colspan="3" class="text-center py-8 text-gray-500">目前沒有封鎖名單</td></tr>';
