@@ -188,6 +188,24 @@ export function initDashboardApp() {
 }
 
 // 由 Vue Page 元件在 onMounted 時顯式呼叫 initDashboardApp()
+// 同時保留 legacy HTML 直載入時的自動初始化 fallback。
+function autoInitDashboardAppFallback() {
+  try {
+    initDashboardApp();
+  } catch (error) {
+    console.error("initDashboardApp fallback failed:", error);
+  }
+}
+
+if (typeof window !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", autoInitDashboardAppFallback, {
+      once: true,
+    });
+  } else {
+    autoInitDashboardAppFallback();
+  }
+}
 
 // ============ LINE Login ============
 async function handleLineCallback(code, state) {

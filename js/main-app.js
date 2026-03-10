@@ -162,6 +162,22 @@ export async function initMainApp() {
 }
 
 // 由 Vue Page 元件在 onMounted 時顯式呼叫 initMainApp()
+// 同時保留 legacy HTML 直載入時的自動初始化 fallback。
+function autoInitMainAppFallback() {
+  initMainApp().catch((error) => {
+    console.error("initMainApp fallback failed:", error);
+  });
+}
+
+if (typeof window !== "undefined") {
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", autoInitMainAppFallback, {
+      once: true,
+    });
+  } else {
+    autoInitMainAppFallback();
+  }
+}
 
 // ============ LINE Login 回呼 ============
 async function handleLineCallback(code, stateParam) {
