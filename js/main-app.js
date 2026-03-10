@@ -161,13 +161,7 @@ export async function initMainApp() {
   }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    void initMainApp();
-  });
-} else {
-  void initMainApp();
-}
+// 由 Vue Page 元件在 onMounted 時顯式呼叫 initMainApp()
 
 // ============ LINE Login 回呼 ============
 async function handleLineCallback(code, stateParam) {
