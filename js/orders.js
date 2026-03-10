@@ -2,12 +2,12 @@
 // orders.js — 訂單送出 & 我的訂單
 // ============================================
 
-import { API_URL } from "./config.js?v=52";
-import { authFetch } from "./auth.js?v=52";
-import { escapeHtml } from "./utils.js?v=52";
-import { state } from "./state.js?v=52";
-import { cart, clearCart } from "./cart.js?v=52";
-import { collectDynamicFields } from "./form-renderer.js?v=52";
+import { API_URL } from "./config.js";
+import { authFetch } from "./auth.js";
+import { escapeHtml } from "./utils.js";
+import { state } from "./state.js";
+import { cart, clearCart } from "./cart.js";
+import { collectDynamicFields } from "./form-renderer.js";
 
 function normalizeTrackingUrl(url) {
   const raw = String(url || "").trim();

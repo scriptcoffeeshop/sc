@@ -2,8 +2,8 @@
 // products.js — 商品資料整理與渲染
 // ============================================
 
-import { escapeHtml } from "./utils.js?v=52";
-import { state } from "./state.js?v=52";
+import { escapeHtml } from "./utils.js";
+import { state } from "./state.js";
 
 function isVueManagedProductsContainer(container) {
   return container?.dataset?.vueManaged === "true";

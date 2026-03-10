@@ -23,6 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
       - name: Verify frontend cache version sync
         run: python3 scripts/sync_frontend_version.py --check
@@ -33,10 +34,12 @@ jobs:
       - name: Verify storefront event delegation guardrails
         run: python3 scripts/check_main_event_delegation.py
 
-      - name: Install Playwright and browser
+      - name: Install frontend dependencies
         run: |
-          npm init -y
-          npm install @playwright/test@1.53.2
+          npm ci
+
+      - name: Install Playwright browser
+        run: |
           npx playwright install --with-deps chromium
 
       - name: Run E2E smoke tests
