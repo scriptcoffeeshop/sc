@@ -158,7 +158,18 @@ const dashboardTabLoaders = {
 };
 
 // ============ 初始化 ============
-document.addEventListener("DOMContentLoaded", () => {
+let dashboardInitialized = false;
+
+function canInitDashboard() {
+  return Boolean(
+    document.getElementById("login-page") &&
+      document.getElementById("admin-page"),
+  );
+}
+
+export function initDashboardApp() {
+  if (dashboardInitialized || !canInitDashboard()) return;
+  dashboardInitialized = true;
   const { initializeDashboardEventDelegation } = createDashboardEvents(
     dashboardActionHandlers,
     dashboardTabLoaders,
@@ -174,7 +185,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const p = new URLSearchParams(window.location.search);
   if (p.get("code")) handleLineCallback(p.get("code"), p.get("state"));
   else checkLogin();
-});
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    initDashboardApp();
+  });
+} else {
+  initDashboardApp();
+}
 
 // ============ LINE Login ============
 async function handleLineCallback(code, state) {
