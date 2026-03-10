@@ -32,7 +32,19 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v60)
+## 🚀 近期重大更新 (v40 - v61)
+
+### 📅 v61 — 修復 GitHub CI `Setup Node.js` 失敗（lockfile 相依調整）
+
+- **根因**
+  - Workflow 在 `actions/setup-node` 啟用了 `cache: npm`，且安裝使用 `npm ci`。
+  - 但專案 `.gitignore` 目前忽略 `package-lock.json`，Runner 上不存在 lockfile，導致 Node setup/安裝流程在 CI 失敗。
+- **修正**
+  - `.github/workflows/ci.yml` 移除 `cache: "npm"` 設定。
+  - `Install frontend dependencies` 由 `npm ci` 改為 `npm install`，避免 lockfile 硬相依。
+- **驗證**
+  - 本機 `npm run e2e` 通過（6/6）。
+  - 本機 `npm run guardrails` 通過。
 
 ### 📅 v60 — 執行架構全面切換至 Vite + Vue3（CI / E2E / Guardrails）
 
