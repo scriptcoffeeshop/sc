@@ -270,8 +270,151 @@
           </div>
         </div>
         <div id="orders-summary" class="text-sm text-gray-600 mb-3"></div>
-        <div id="orders-list">
-          <p class="text-center text-gray-500 py-8">載入中...</p>
+        <div id="orders-list" data-vue-managed="true">
+          <p v-if="ordersView.length === 0" class="text-center text-gray-500 py-8">
+            沒有符合的訂單
+          </p>
+          <template v-else>
+            <div
+              v-for="order in ordersView"
+              :key="order.orderId"
+              class="border rounded-xl p-4 mb-3"
+              style="border-color:#e5ddd5;"
+            >
+              <div class="flex justify-between items-center mb-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <label class="inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      data-action="toggle-order-selection"
+                      :data-order-id="order.orderId"
+                      class="w-4 h-4"
+                      :checked="order.isSelected"
+                    >
+                  </label>
+                  <span class="font-bold text-sm" style="color:var(--primary)">#{{ order.orderId }}</span>
+                  <span class="delivery-tag" :class="`delivery-${order.deliveryMethod}`">
+                    {{ order.deliveryLabel }}
+                  </span>
+                  <span class="status-badge" :class="`status-${order.status}`">
+                    {{ order.statusLabel }}
+                  </span>
+                  <span
+                    v-if="order.paymentMethod !== 'cod'"
+                    class="text-xs px-2 py-0.5 rounded-full"
+                    :class="order.payBadgeClass"
+                  >
+                    {{ order.paymentMethodLabel }} {{ order.paymentStatusLabel }}
+                  </span>
+                </div>
+                <span class="text-xs text-gray-500">{{ order.timestampText }}</span>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2 text-sm mb-2">
+                <div><span class="text-gray-500">顧客：</span>{{ order.lineName }}</div>
+                <div><span class="text-gray-500">電話：</span>{{ order.phone }}</div>
+                <div class="col-span-2">
+                  <span class="text-gray-500">信箱：</span>
+                  <a v-if="order.email" :href="`mailto:${order.email}`" class="text-blue-500">
+                    {{ order.email }}
+                  </a>
+                  <span v-else>無</span>
+                </div>
+                <div class="col-span-2">
+                  <span class="text-gray-500">地址/門市：</span>{{ order.addressInfo }}
+                </div>
+                <div v-if="order.showTransferInfo" class="col-span-2 text-xs text-blue-800 mt-2 bg-blue-50 p-2 rounded">
+                  <div>🏦 <b>顧客匯出末5碼:</b> {{ order.transferAccountLast5 || "未提供" }}</div>
+                  <div class="mt-1 pb-1">⬇️ <b>匯入目標帳號:</b> {{ order.paymentId || "未提供 (舊版訂單)" }}</div>
+                </div>
+              </div>
+
+              <div
+                v-if="order.hasShippingInfo"
+                class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200"
+              >
+                <div v-if="order.shippingProvider">
+                  <span class="text-gray-500">物流商：</span>{{ order.shippingProvider }}
+                </div>
+                <div v-if="order.trackingNumber" class="mt-1">
+                  <span class="text-gray-500">物流單號：</span>
+                  <span class="font-mono font-bold">{{ order.trackingNumber }}</span>
+                  <button
+                    type="button"
+                    data-action="copy-tracking-number"
+                    :data-tracking-number="order.trackingNumber"
+                    class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+                    title="複製單號"
+                  >
+                    📋 複製
+                  </button>
+                </div>
+                <div v-if="order.trackingLinkUrl" class="mt-1">
+                  <a
+                    :href="order.trackingLinkUrl"
+                    target="_blank"
+                    class="text-xs text-blue-600 hover:underline"
+                  >
+                    {{ order.trackingLinkLabel }}
+                  </a>
+                </div>
+              </div>
+
+              <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2 mt-2">
+                {{ order.items }}
+              </div>
+              <div
+                v-if="order.note"
+                class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2"
+              >
+                📝 {{ order.note }}
+              </div>
+
+              <div class="flex justify-between items-center">
+                <span class="font-bold" style="color:var(--accent)">${{ order.total }}</span>
+                <div class="flex gap-2">
+                  <button
+                    v-if="order.showRefundButton"
+                    data-action="refund-linepay-order"
+                    :data-order-id="order.orderId"
+                    class="text-xs text-purple-600 hover:text-purple-800"
+                  >
+                    ↩️ 退款
+                  </button>
+                  <button
+                    v-if="order.showConfirmTransferButton"
+                    data-action="confirm-transfer-payment"
+                    :data-order-id="order.orderId"
+                    class="text-xs text-green-600 hover:text-green-800"
+                  >
+                    ✅ 確認已收款
+                  </button>
+                  <select
+                    data-action="change-order-status"
+                    :data-order-id="order.orderId"
+                    :data-current-status="order.status"
+                    class="text-xs border rounded px-2 py-1"
+                    :value="order.status"
+                  >
+                    <option
+                      v-for="status in ordersStatusOptions"
+                      :key="`${order.orderId}-${status}`"
+                      :value="status"
+                    >
+                      {{ orderStatusText(status) }}
+                    </option>
+                  </select>
+                  <button
+                    data-action="delete-order"
+                    :data-order-id="order.orderId"
+                    class="text-xs text-red-500 hover:text-red-700"
+                  >
+                    刪除
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
 
@@ -338,7 +481,46 @@
             新增
           </button>
         </div>
-        <div id="categories-list"></div>
+        <div id="categories-list" data-vue-managed="true">
+          <p v-if="categoriesView.length === 0" class="text-center text-gray-500 py-4">
+            尚無分類
+          </p>
+          <template v-else>
+            <div
+              v-for="category in categoriesView"
+              :key="`category-${category.id}`"
+              class="flex items-center justify-between p-3 mb-2 rounded-lg"
+              style="background:#faf6f2; border:1px solid #e5ddd5;"
+              :data-id="category.id"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1"
+                  title="拖曳排序"
+                  style="touch-action: none;"
+                >☰</span>
+                <span class="font-medium">{{ category.name }}</span>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  data-action="edit-category"
+                  :data-category-id="category.id"
+                  class="text-sm"
+                  style="color:var(--primary)"
+                >
+                  編輯
+                </button>
+                <button
+                  data-action="delete-category"
+                  :data-category-id="category.id"
+                  class="text-sm text-red-500"
+                >
+                  刪除
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
 
       <!-- ===== 促銷活動 ===== -->
@@ -428,12 +610,75 @@
                 </th>
               </tr>
             </thead>
-            <tbody id="users-table">
-              <tr>
+            <tbody id="users-table" data-vue-managed="true">
+              <tr v-if="usersView.length === 0">
                 <td colspan="4" class="text-center py-8 text-gray-500">
-                  載入中...
+                  無符合條件的用戶
                 </td>
               </tr>
+              <template v-else>
+                <tr
+                  v-for="user in usersView"
+                  :key="`user-${user.userId}`"
+                  class="border-b"
+                  style="border-color:#f0e6db;"
+                >
+                  <td class="p-3">
+                    <img
+                      :src="user.pictureUrl"
+                      class="w-10 h-10 rounded-full border"
+                    >
+                  </td>
+                  <td class="p-3">
+                    <div class="font-medium text-gray-800">{{ user.displayName }}</div>
+                    <div class="text-xs text-gray-500">
+                      {{ user.email }}<span v-if="user.phone">・{{ user.phone }}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">🏠 {{ user.defaultDeliveryText }}</div>
+                    <div class="text-xs text-gray-400 font-mono mt-1 opacity-50">{{ user.userId }}</div>
+                  </td>
+                  <td class="p-3">
+                    <div>
+                      <span
+                        class="px-2 py-0.5 rounded text-xs font-medium"
+                        :class="user.roleBadgeClass"
+                      >
+                        {{ user.roleBadgeText }}
+                      </span>
+                    </div>
+                    <div class="mt-1">
+                      <span
+                        class="px-2 py-0.5 rounded text-xs font-medium"
+                        :class="user.statusBadgeClass"
+                      >
+                        {{ user.statusBadgeText }}
+                      </span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">登入：{{ user.lastLoginText }}</div>
+                  </td>
+                  <td class="p-3 text-right">
+                    <button
+                      data-action="toggle-user-blacklist"
+                      :data-user-id="user.userId"
+                      :data-blocked="user.blacklistActionBlockedValue"
+                      class="text-sm font-medium mr-3"
+                      :class="user.blacklistActionClass"
+                    >
+                      {{ user.blacklistActionLabel }}
+                    </button>
+                    <button
+                      v-if="user.roleAction"
+                      data-action="toggle-user-role"
+                      :data-user-id="user.userId"
+                      :data-new-role="user.roleAction.newRole"
+                      class="text-sm font-medium"
+                      :class="user.roleAction.className"
+                    >
+                      {{ user.roleAction.label }}
+                    </button>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -459,12 +704,39 @@
                 </th>
               </tr>
             </thead>
-            <tbody id="blacklist-table">
-              <tr>
+            <tbody id="blacklist-table" data-vue-managed="true">
+              <tr v-if="blacklistView.length === 0">
                 <td colspan="3" class="text-center py-8 text-gray-500">
-                  載入中...
+                  目前沒有封鎖名單
                 </td>
               </tr>
+              <template v-else>
+                <tr
+                  v-for="blacklistEntry in blacklistView"
+                  :key="`blacklist-${blacklistEntry.lineUserId}`"
+                  class="border-b"
+                  style="border-color:#f0e6db;"
+                >
+                  <td class="p-3">
+                    <div class="font-medium">{{ blacklistEntry.displayName }}</div>
+                    <div class="text-xs text-gray-400 font-mono">{{ blacklistEntry.lineUserId }}</div>
+                  </td>
+                  <td class="p-3">
+                    <div class="text-sm">{{ blacklistEntry.blockedAtText }}</div>
+                    <div class="text-xs text-red-500 mt-1">{{ blacklistEntry.reasonText }}</div>
+                  </td>
+                  <td class="p-3 text-right">
+                    <button
+                      data-action="toggle-user-blacklist"
+                      :data-user-id="blacklistEntry.lineUserId"
+                      data-blocked="false"
+                      class="text-green-600 hover:text-green-800 text-sm font-medium"
+                    >
+                      解除封鎖
+                    </button>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -1211,17 +1483,103 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { initDashboardApp } from "../../../js/dashboard-app.js";
 
 const originalBodyClass = document.body.className;
+const ordersView = ref([]);
+const categoriesView = ref([]);
+const usersView = ref([]);
+const blacklistView = ref([]);
+const ordersStatusOptions = ref([
+  "pending",
+  "processing",
+  "shipped",
+  "completed",
+  "cancelled",
+]);
+
+const orderStatusLabel = {
+  pending: "待處理",
+  processing: "處理中",
+  shipped: "已出貨",
+  completed: "已完成",
+  cancelled: "已取消",
+};
+
+function orderStatusText(status) {
+  return orderStatusLabel[status] || status;
+}
+
+function handleDashboardOrdersUpdated(event) {
+  const detail = event?.detail || {};
+  ordersView.value = Array.isArray(detail.orders) ? detail.orders : [];
+  if (Array.isArray(detail.statusOptions) && detail.statusOptions.length > 0) {
+    ordersStatusOptions.value = detail.statusOptions;
+  }
+}
+
+function handleDashboardCategoriesUpdated(event) {
+  const detail = event?.detail || {};
+  categoriesView.value = Array.isArray(detail.categories) ? detail.categories : [];
+}
+
+function handleDashboardUsersUpdated(event) {
+  const detail = event?.detail || {};
+  usersView.value = Array.isArray(detail.users) ? detail.users : [];
+}
+
+function handleDashboardBlacklistUpdated(event) {
+  const detail = event?.detail || {};
+  blacklistView.value = Array.isArray(detail.blacklist) ? detail.blacklist : [];
+}
 
 onMounted(() => {
   document.body.className = "p-4 md:p-6";
+  const ordersList = document.getElementById("orders-list");
+  if (ordersList) ordersList.dataset.vueManaged = "true";
+  const categoriesList = document.getElementById("categories-list");
+  if (categoriesList) categoriesList.dataset.vueManaged = "true";
+  const usersTable = document.getElementById("users-table");
+  if (usersTable) usersTable.dataset.vueManaged = "true";
+  const blacklistTable = document.getElementById("blacklist-table");
+  if (blacklistTable) blacklistTable.dataset.vueManaged = "true";
+  window.addEventListener(
+    "coffee:dashboard-orders-updated",
+    handleDashboardOrdersUpdated,
+  );
+  window.addEventListener(
+    "coffee:dashboard-categories-updated",
+    handleDashboardCategoriesUpdated,
+  );
+  window.addEventListener(
+    "coffee:dashboard-users-updated",
+    handleDashboardUsersUpdated,
+  );
+  window.addEventListener(
+    "coffee:dashboard-blacklist-updated",
+    handleDashboardBlacklistUpdated,
+  );
   initDashboardApp();
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener(
+    "coffee:dashboard-orders-updated",
+    handleDashboardOrdersUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dashboard-categories-updated",
+    handleDashboardCategoriesUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dashboard-users-updated",
+    handleDashboardUsersUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dashboard-blacklist-updated",
+    handleDashboardBlacklistUpdated,
+  );
   document.body.className = originalBodyClass;
 });
 </script>
