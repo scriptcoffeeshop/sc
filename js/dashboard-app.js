@@ -34,6 +34,7 @@ let blacklist = [];
 let bankAccounts = [];
 window.promotions = [];
 let dashboardSettings = {};
+let settingsLoadToken = 0;
 
 function getAuthUserId() {
   if (!currentUser?.userId) throw new Error("請先登入");
@@ -1693,9 +1694,11 @@ function movePromotion() {}
 
 // ============ 設定 ============
 async function loadSettings() {
+  const currentLoadToken = ++settingsLoadToken;
   try {
     const r = await authFetch(`${API_URL}?action=getSettings&_=${Date.now()}`);
     const d = await r.json();
+    if (currentLoadToken !== settingsLoadToken) return;
     if (d.success) {
       const s = d.settings;
       dashboardSettings = s;
@@ -1863,6 +1866,7 @@ async function loadSettings() {
         paymentOptions.transfer?.description || "ATM / 網銀匯款";
 
       // 載入匯款帳號
+      if (currentLoadToken !== settingsLoadToken) return;
       await loadBankAccountsAdmin();
     }
   } catch (e) {
@@ -2116,7 +2120,10 @@ async function saveSettings() {
       body: JSON.stringify(payload),
     });
     const d = await r.json();
-    if (d.success) Toast.fire({ icon: "success", title: "設定已儲存" });
+    if (d.success) {
+      Toast.fire({ icon: "success", title: "設定已儲存" });
+      await loadSettings();
+    }
     else throw new Error(d.error);
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
