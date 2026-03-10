@@ -1,0 +1,1227 @@
+<template>
+    <!-- 登入頁 -->
+    <div
+      id="login-page"
+      class="max-w-md mx-auto mt-20 glass-card p-8 text-center"
+    >
+      <span class="text-5xl block mb-4">☕</span>
+      <h1 class="text-2xl font-bold mb-2" style="color: var(--primary)">
+        咖啡訂購後台
+      </h1>
+      <p class="text-gray-500 mb-6">僅限管理員登入</p>
+      <button
+        data-action="login-with-line"
+        class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"
+          />
+        </svg>
+        使用 LINE 登入
+      </button>
+    </div>
+
+    <!-- 管理頁 -->
+    <div id="admin-page" class="hidden max-w-6xl mx-auto">
+      <!-- Header -->
+      <div class="flex justify-between items-center mb-6">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">☕</span>
+          <div>
+            <h1 class="text-xl font-bold" style="color: var(--primary)">
+              咖啡訂購後台
+            </h1>
+            <p class="text-sm text-gray-500">
+              歡迎，<span id="admin-name"></span>
+            </p>
+          </div>
+        </div>
+        <button
+          data-action="logout"
+          class="text-sm text-gray-500 hover:text-red-500"
+        >
+          登出
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <button
+          id="tab-orders"
+          data-tab="orders"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          📋 訂單管理
+        </button>
+        <button
+          id="tab-products"
+          data-tab="products"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          🫘 商品管理
+        </button>
+        <button
+          id="tab-categories"
+          data-tab="categories"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          📂 分類管理
+        </button>
+        <button
+          id="tab-promotions"
+          data-tab="promotions"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          🎁 促銷活動
+        </button>
+        <button
+          id="tab-settings"
+          data-tab="settings"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          ⚙️ 系統設定
+        </button>
+        <button
+          id="tab-formfields"
+          data-tab="formfields"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          📝 表單管理
+        </button>
+        <button
+          id="tab-users"
+          data-tab="users"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          👥 用戶管理
+        </button>
+        <button
+          id="tab-blacklist"
+          data-tab="blacklist"
+          class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+        >
+          🚫 黑名單
+        </button>
+      </div>
+
+      <!-- ===== 訂單管理 ===== -->
+      <div id="orders-section" class="glass-card p-6 hidden">
+        <div class="flex flex-col gap-4 mb-4">
+          <div class="flex justify-between items-center gap-3 flex-wrap">
+            <h2 class="text-lg font-bold" style="color: var(--primary)">
+              訂單列表
+            </h2>
+            <button
+              data-action="reload-orders"
+              class="text-sm"
+              style="color: var(--primary)"
+            >
+              🔄 重整
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
+            <select
+              id="order-filter"
+              data-order-filter
+              class="input-field text-sm py-2"
+            >
+              <option value="all">訂單狀態：全部</option>
+              <option value="pending">訂單狀態：待處理</option>
+              <option value="processing">訂單狀態：處理中</option>
+              <option value="shipped">訂單狀態：已出貨</option>
+              <option value="completed">訂單狀態：已完成</option>
+              <option value="cancelled">訂單狀態：已取消</option>
+            </select>
+            <select
+              id="order-payment-filter"
+              data-order-filter
+              class="input-field text-sm py-2"
+            >
+              <option value="all">付款方式：全部</option>
+              <option value="cod">貨到/取貨付款</option>
+              <option value="linepay">LINE Pay</option>
+              <option value="transfer">轉帳</option>
+            </select>
+            <select
+              id="order-payment-status-filter"
+              data-order-filter
+              class="input-field text-sm py-2"
+            >
+              <option value="all">付款狀態：全部</option>
+              <option value="pending">待付款</option>
+              <option value="paid">已付款</option>
+              <option value="failed">付款失敗</option>
+              <option value="cancelled">付款取消</option>
+              <option value="refunded">已退款</option>
+              <option value="empty">未設定</option>
+            </select>
+            <select
+              id="order-delivery-filter"
+              data-order-filter
+              class="input-field text-sm py-2"
+            >
+              <option value="all">配送方式：全部</option>
+              <option value="delivery">配送到府</option>
+              <option value="home_delivery">全台宅配</option>
+              <option value="seven_eleven">7-11 取件</option>
+              <option value="family_mart">全家取件</option>
+              <option value="in_store">來店取貨</option>
+            </select>
+            <input
+              id="order-date-from"
+              data-order-filter
+              type="date"
+              class="input-field text-sm py-2"
+              placeholder="起始日期"
+            >
+            <input
+              id="order-date-to"
+              data-order-filter
+              type="date"
+              class="input-field text-sm py-2"
+              placeholder="結束日期"
+            >
+            <input
+              id="order-amount-min"
+              data-order-filter
+              type="number"
+              min="0"
+              class="input-field text-sm py-2"
+              placeholder="最低金額"
+            >
+            <input
+              id="order-amount-max"
+              data-order-filter
+              type="number"
+              min="0"
+              class="input-field text-sm py-2"
+              placeholder="最高金額"
+            >
+          </div>
+
+          <div
+            class="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-white border"
+            style="border-color: #e5ddd5"
+          >
+            <label
+              class="inline-flex items-center gap-2 text-sm cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                id="orders-select-all"
+                data-action="toggle-select-all-orders"
+                class="w-4 h-4"
+              >
+              全選目前篩選結果
+            </label>
+            <span id="orders-selected-count" class="text-sm text-gray-600"
+            >已選 0 筆</span>
+            <select
+              id="batch-order-status"
+              class="input-field text-sm py-1"
+              style="width: auto"
+            >
+              <option value="">批次狀態</option>
+              <option value="pending">待處理</option>
+              <option value="processing">處理中</option>
+              <option value="shipped">已出貨</option>
+              <option value="completed">已完成</option>
+              <option value="cancelled">已取消</option>
+            </select>
+            <select
+              id="batch-payment-status"
+              class="input-field text-sm py-1"
+              style="width: auto"
+            >
+              <option value="__keep__">付款狀態：維持不變</option>
+              <option value="pending">付款待處理</option>
+              <option value="paid">付款完成</option>
+              <option value="failed">付款失敗</option>
+              <option value="cancelled">付款取消</option>
+              <option value="refunded">已退款</option>
+              <option value="">清空付款狀態</option>
+            </select>
+            <button
+              data-action="batch-update-orders"
+              class="btn-primary text-sm py-2 px-4"
+            >
+              批次更新
+            </button>
+            <button
+              data-action="batch-delete-orders"
+              class="text-sm px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+            >
+              批次刪除
+            </button>
+            <button
+              data-action="export-orders-csv"
+              class="text-sm px-4 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              匯出篩選 CSV
+            </button>
+            <button
+              data-action="export-selected-orders-csv"
+              class="text-sm px-4 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              匯出勾選 CSV
+            </button>
+          </div>
+        </div>
+        <div id="orders-summary" class="text-sm text-gray-600 mb-3"></div>
+        <div id="orders-list">
+          <p class="text-center text-gray-500 py-8">載入中...</p>
+        </div>
+      </div>
+
+      <!-- ===== 商品管理 ===== -->
+      <div id="products-section" class="glass-card p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold" style="color: var(--primary)">
+            咖啡豆商品
+          </h2>
+          <button data-action="show-product-modal" class="btn-primary text-sm">
+            + 新增商品
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full" id="products-main-table">
+            <thead>
+              <tr class="border-b-2" style="border-color: var(--secondary)">
+                <th class="p-3 text-left w-10" style="color: var(--primary)">
+                  排序
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  分類
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  品名
+                </th>
+                <th class="p-3 text-right" style="color: var(--primary)">
+                  價格
+                </th>
+                <th class="p-3 text-center" style="color: var(--primary)">
+                  狀態
+                </th>
+                <th class="p-3 text-center" style="color: var(--primary)">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody id="products-table">
+              <tr>
+                <td colspan="5" class="text-center py-8 text-gray-500">
+                  載入中...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== 分類管理 ===== -->
+      <div id="categories-section" class="glass-card p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold" style="color: var(--primary)">
+            商品分類
+          </h2>
+        </div>
+        <div class="flex gap-2 mb-4">
+          <input
+            type="text"
+            id="new-cat-name"
+            class="input-field flex-grow"
+            placeholder="新分類名稱"
+          >
+          <button data-action="add-category" class="btn-primary text-sm">
+            新增
+          </button>
+        </div>
+        <div id="categories-list"></div>
+      </div>
+
+      <!-- ===== 促銷活動 ===== -->
+      <div id="promotions-section" class="glass-card p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold" style="color: var(--primary)">
+            促銷活動管理
+          </h2>
+          <button
+            data-action="show-promotion-modal"
+            class="btn-primary text-sm"
+          >
+            + 新增活動
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2" style="border-color: var(--secondary)">
+                <th
+                  class="p-3 text-left w-10 text-center"
+                  style="color: var(--primary)"
+                >
+                  排序
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  活動名稱
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  條件與折扣
+                </th>
+                <th class="p-3 text-center w-24" style="color: var(--primary)">
+                  狀態
+                </th>
+                <th class="p-3 text-right w-32" style="color: var(--primary)">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody id="promotions-table" class="sortable-tbody">
+              <tr>
+                <td colspan="5" class="text-center py-8 text-gray-500">
+                  載入中...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== 用戶管理 ===== -->
+      <div id="users-section" class="glass-card p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold" style="color: var(--primary)">
+            用戶管理
+          </h2>
+          <div class="flex gap-2 items-center">
+            <input
+              type="text"
+              id="user-search"
+              class="input-field text-sm py-1"
+              placeholder="搜尋名稱/手機/Email"
+            >
+            <button
+              data-action="search-users"
+              class="btn-primary text-sm py-1 px-4"
+            >
+              搜尋
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2" style="border-color: var(--secondary)">
+                <th class="p-3 text-left w-12" style="color: var(--primary)">
+                  頭像
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  用戶資訊
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  角色與狀態
+                </th>
+                <th class="p-3 text-right" style="color: var(--primary)">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody id="users-table">
+              <tr>
+                <td colspan="4" class="text-center py-8 text-gray-500">
+                  載入中...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== 黑名單 ===== -->
+      <div id="blacklist-section" class="glass-card p-6 hidden">
+        <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">
+          黑名單
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b-2" style="border-color: var(--secondary)">
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  用戶名稱
+                </th>
+                <th class="p-3 text-left" style="color: var(--primary)">
+                  封鎖時間與原因
+                </th>
+                <th class="p-3 text-right" style="color: var(--primary)">
+                  操作
+                </th>
+              </tr>
+            </thead>
+            <tbody id="blacklist-table">
+              <tr>
+                <td colspan="3" class="text-center py-8 text-gray-500">
+                  載入中...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===== 系統設定 ===== -->
+      <div id="settings-section" class="glass-card p-6 hidden">
+        <h2 class="text-lg font-bold mb-6" style="color: var(--primary)">
+          系統設定
+        </h2>
+
+        <!-- 品牌設定 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <h3 class="font-semibold mb-3" style="color: var(--primary)">
+            ☕ 品牌設定
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-sm text-gray-600 mb-1">網站標題</label>
+              <input
+                type="text"
+                id="s-site-title"
+                class="input-field"
+                placeholder="咖啡豆訂購"
+              >
+            </div>
+            <div>
+              <label class="block text-sm text-gray-600 mb-1">副標題</label>
+              <input
+                type="text"
+                id="s-site-subtitle"
+                class="input-field"
+                placeholder="新鮮烘焙・產地直送"
+              >
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-sm text-gray-600 mb-1"
+              >預設 Emoji 圖示</label>
+              <input
+                type="text"
+                id="s-site-emoji"
+                class="input-field"
+                placeholder="☕"
+              >
+            </div>
+            <div>
+              <label class="block text-sm text-gray-600 mb-1"
+              >上傳自訂 Icon（將取代 Emoji）</label>
+              <div class="flex gap-2 items-center">
+                <input
+                  type="file"
+                  id="s-icon-file"
+                  accept="image/*"
+                  class="text-sm"
+                >
+                <img
+                  id="s-icon-preview"
+                  src=""
+                  alt=""
+                  class="w-8 h-8 rounded hidden object-cover"
+                >
+                <button
+                  type="button"
+                  data-action="upload-site-icon"
+                  class="btn-primary text-xs py-1 px-3"
+                >
+                  上傳
+                </button>
+              </div>
+              <p
+                id="s-icon-url-display"
+                class="text-xs text-gray-400 mt-1 truncate"
+              >
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 區塊標題 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <h3 class="font-semibold mb-3" style="color: var(--primary)">
+            🏷️ 區塊標題樣式設定
+          </h3>
+
+          <!-- 商品區塊 -->
+          <div class="mb-4 border-b pb-4" style="border-color: #f0e6db">
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-sm font-medium text-gray-700"
+              >商品區塊</label>
+              <button
+                type="button"
+                data-action="reset-section-title"
+                data-section="products"
+                class="text-xs text-blue-500 hover:text-blue-700"
+              >
+                恢復預設
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+              <input
+                type="text"
+                id="s-products-title"
+                class="input-field flex-1 min-w-[150px]"
+                placeholder="🪶 咖啡豆選購"
+              >
+              <input
+                type="color"
+                id="s-products-color"
+                value="#6F4E37"
+                class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
+                title="文字顏色"
+              >
+              <select
+                id="s-products-size"
+                class="input-field w-24"
+                title="文字大小"
+              >
+                <option value="text-base">16px (標準)</option>
+                <option value="text-lg">18px (稍大)</option>
+                <option value="text-xl">20px (大)</option>
+                <option value="text-2xl">24px (特大)</option>
+              </select>
+              <label
+                class="flex items-center gap-1 cursor-pointer bg-gray-50 px-3 py-2 rounded border border-gray-200"
+              ><input
+                  type="checkbox"
+                  id="s-products-bold"
+                > 粗體</label>
+            </div>
+          </div>
+
+          <!-- 配送區塊 -->
+          <div class="mb-4 border-b pb-4" style="border-color: #f0e6db">
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-sm font-medium text-gray-700"
+              >配送區塊</label>
+              <button
+                type="button"
+                data-action="reset-section-title"
+                data-section="delivery"
+                class="text-xs text-blue-500 hover:text-blue-700"
+              >
+                恢復預設
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+              <input
+                type="text"
+                id="s-delivery-title"
+                class="input-field flex-1 min-w-[150px]"
+                placeholder="🚚 配送方式"
+              >
+              <input
+                type="color"
+                id="s-delivery-color"
+                value="#6F4E37"
+                class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
+                title="文字顏色"
+              >
+              <select
+                id="s-delivery-size"
+                class="input-field w-24"
+                title="文字大小"
+              >
+                <option value="text-base">16px (標準)</option>
+                <option value="text-lg">18px (稍大)</option>
+                <option value="text-xl">20px (大)</option>
+                <option value="text-2xl">24px (特大)</option>
+              </select>
+              <label
+                class="flex items-center gap-1 cursor-pointer bg-gray-50 px-3 py-2 rounded border border-gray-200"
+              ><input
+                  type="checkbox"
+                  id="s-delivery-bold"
+                > 粗體</label>
+            </div>
+          </div>
+
+          <!-- 備註區塊 -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="block text-sm font-medium text-gray-700"
+              >備註區塊</label>
+              <button
+                type="button"
+                data-action="reset-section-title"
+                data-section="notes"
+                class="text-xs text-blue-500 hover:text-blue-700"
+              >
+                恢復預設
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+              <input
+                type="text"
+                id="s-notes-title"
+                class="input-field flex-1 min-w-[150px]"
+                placeholder="📝 訂單備註"
+              >
+              <input
+                type="color"
+                id="s-notes-color"
+                value="#6F4E37"
+                class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
+                title="文字顏色"
+              >
+              <select
+                id="s-notes-size"
+                class="input-field w-24"
+                title="文字大小"
+              >
+                <option value="text-base">16px (標準)</option>
+                <option value="text-lg">18px (稍大)</option>
+                <option value="text-xl">20px (大)</option>
+                <option value="text-2xl">24px (特大)</option>
+              </select>
+              <label
+                class="flex items-center gap-1 cursor-pointer bg-gray-50 px-3 py-2 rounded border border-gray-200"
+              ><input
+                  type="checkbox"
+                  id="s-notes-bold"
+                > 粗體</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 公告 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <h3 class="font-semibold mb-3" style="color: var(--primary)">
+            📢 公告設定
+          </h3>
+          <label class="flex items-center gap-2 mb-3 cursor-pointer">
+            <input type="checkbox" id="s-ann-enabled" class="w-4 h-4"> <span
+            >啟用公告</span>
+          </label>
+          <textarea
+            id="s-announcement"
+            class="input-field resize-none"
+            rows="3"
+            placeholder="公告內容..."
+          ></textarea>
+        </div>
+
+        <!-- 營業狀態 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <h3 class="font-semibold mb-3" style="color: var(--primary)">
+            🏪 營業狀態
+          </h3>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer"><input
+                type="radio"
+                name="s-open"
+                value="true"
+                class="w-4 h-4"
+              > 營業中</label>
+            <label class="flex items-center gap-2 cursor-pointer"><input
+                type="radio"
+                name="s-open"
+                value="false"
+                class="w-4 h-4"
+              > 休息中</label>
+          </div>
+        </div>
+
+        <!-- 取貨與金流設定 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <div
+            class="flex flex-col md:flex-row md:justify-between md:items-center mb-3"
+          >
+            <h3 class="font-semibold text-lg" style="color: var(--primary)">
+              💳 取貨方式與付款對應設定
+            </h3>
+            <button
+              type="button"
+              data-action="add-delivery-option-admin"
+              class="mt-2 md:mt-0 px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition text-sm"
+            >
+              + 新增取貨方式
+            </button>
+          </div>
+          <p class="text-sm text-gray-500 mb-4">
+            您可以自由拖曳排序、修改名稱與說明，並個別設定支援哪些付款方式。設定完成後請記得「儲存設定」。
+          </p>
+          <div
+            class="overflow-x-auto mb-4 border rounded"
+            style="border-color: #e5ddd5"
+          >
+            <table class="w-full text-sm text-left whitespace-nowrap">
+              <thead class="bg-gray-50 border-b" style="border-color: #e5ddd5">
+                <tr>
+                  <th class="p-3 font-medium text-gray-700 w-10 text-center">
+                    排序
+                  </th>
+                  <th class="p-3 font-medium text-gray-700">
+                    圖示與名稱 / 說明
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 w-16 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    啟用
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 w-20 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    運費
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 w-24 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    免運門檻
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    貨到/取貨付款
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    LINE Pay
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    線上轉帳
+                  </th>
+                  <th
+                    class="p-3 font-medium text-gray-700 w-16 text-center border-l"
+                    style="border-color: #e5ddd5"
+                  >
+                    操作
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="delivery-routing-table" class="sortable-tbody">
+                <!-- JS 動態產生 -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="space-y-3 mt-4">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="checkbox" id="s-linepay-sandbox" class="w-4 h-4">
+              <span>開發者功能：LINE Pay Sandbox 模式（測試環境）</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 金流選項顯示設定 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <h3 class="font-semibold text-lg mb-3" style="color: var(--primary)">
+            💵 金流選項顯示設定
+          </h3>
+          <p class="text-sm text-gray-500 mb-4">
+            您可以自訂前台三種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
+          </p>
+          <div
+            class="overflow-x-auto border rounded"
+            style="border-color: #e5ddd5"
+          >
+            <table class="w-full text-sm text-left">
+              <thead class="bg-gray-50 border-b" style="border-color: #e5ddd5">
+                <tr>
+                  <th
+                    class="p-3 font-medium text-gray-700 w-24 whitespace-nowrap"
+                  >
+                    系統代碼
+                  </th>
+                  <th class="p-3 font-medium text-gray-700">
+                    圖示與名稱 / 說明
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="payment-options-table">
+                <!-- 貨到付款 -->
+                <tr class="border-b" style="border-color: #e5ddd5">
+                  <td class="p-3 font-mono text-gray-500 text-center">cod</td>
+                  <td class="p-3">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          id="po-cod-icon"
+                          class="border rounded p-1 w-12 text-center text-xl"
+                          value="💵"
+                          placeholder="圖示"
+                        >
+                        <input
+                          type="text"
+                          id="po-cod-name"
+                          class="border rounded p-1 flex-1 min-w-[120px]"
+                          value="取件 / 到付"
+                          placeholder="顯示名稱"
+                        >
+                      </div>
+                      <input
+                        type="text"
+                        id="po-cod-desc"
+                        class="border rounded p-1 w-full text-xs text-gray-600"
+                        value="取貨時付現或宅配到付"
+                        placeholder="簡短說明"
+                      >
+                    </div>
+                  </td>
+                </tr>
+                <!-- LINE Pay -->
+                <tr class="border-b" style="border-color: #e5ddd5">
+                  <td class="p-3 font-mono text-gray-500 text-center">
+                    linepay
+                  </td>
+                  <td class="p-3">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          id="po-linepay-icon"
+                          class="border rounded p-1 w-12 text-center text-xl"
+                          value="💚"
+                          placeholder="圖示"
+                        >
+                        <input
+                          type="text"
+                          id="po-linepay-name"
+                          class="border rounded p-1 flex-1 min-w-[120px]"
+                          value="LINE Pay"
+                          placeholder="顯示名稱"
+                        >
+                      </div>
+                      <input
+                        type="text"
+                        id="po-linepay-desc"
+                        class="border rounded p-1 w-full text-xs text-gray-600"
+                        value="線上安全付款"
+                        placeholder="簡短說明"
+                      >
+                    </div>
+                  </td>
+                </tr>
+                <!-- 線上轉帳 -->
+                <tr class="border-b" style="border-color: #e5ddd5">
+                  <td class="p-3 font-mono text-gray-500 text-center">
+                    transfer
+                  </td>
+                  <td class="p-3">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          id="po-transfer-icon"
+                          class="border rounded p-1 w-12 text-center text-xl"
+                          value="🏦"
+                          placeholder="圖示"
+                        >
+                        <input
+                          type="text"
+                          id="po-transfer-name"
+                          class="border rounded p-1 flex-1 min-w-[120px]"
+                          value="線上轉帳"
+                          placeholder="顯示名稱"
+                        >
+                      </div>
+                      <input
+                        type="text"
+                        id="po-transfer-desc"
+                        class="border rounded p-1 w-full text-xs text-gray-600"
+                        value="ATM / 網銀匯款"
+                        placeholder="簡短說明"
+                      >
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 匯款帳號管理 -->
+        <div
+          class="mb-6 p-4 bg-white rounded-xl border"
+          style="border-color: #e5ddd5"
+        >
+          <h3 class="font-semibold mb-3" style="color: var(--primary)">
+            🏦 匯款帳號管理
+          </h3>
+          <div id="bank-accounts-admin-list" class="mb-3"></div>
+          <button
+            data-action="show-add-bank-account-modal"
+            class="text-sm font-medium hover:underline"
+            style="color: var(--primary)"
+          >
+            + 新增匯款帳號
+          </button>
+        </div>
+
+        <div class="text-center">
+          <button data-action="save-settings" class="btn-primary">
+            儲存設定
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== 表單管理 ===== -->
+      <div id="formfields-section" class="glass-card p-6 hidden">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold" style="color: var(--primary)">
+            表單欄位管理
+          </h2>
+          <button
+            data-action="show-add-field-modal"
+            class="btn-primary text-sm"
+          >
+            + 新增欄位
+          </button>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          管理前台訂購表單的自訂欄位（如聯絡電話、電子郵件、開立收據等）。可拖拽排序、設定必填、啟用/停用。
+        </p>
+        <div id="formfields-list">
+          <p class="text-center text-gray-500 py-8">載入中...</p>
+        </div>
+      </div>
+
+      <div class="content-spacer"></div>
+    </div>
+
+    <!-- 商品 Modal -->
+    <div id="product-modal" class="modal-overlay hidden">
+      <div class="modal-content">
+        <h3
+          id="pm-title"
+          class="text-xl font-bold mb-6"
+          style="color: var(--primary)"
+        >
+          新增商品
+        </h3>
+        <form id="product-form">
+          <input type="hidden" id="pm-id">
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-1"
+            >分類 *</label><select
+              id="pm-category"
+              class="input-field"
+              required
+            >
+              <option value="">選擇分類</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-1">品名 *</label><input
+              type="text"
+              id="pm-name"
+              class="input-field"
+              required
+            >
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-1">說明</label><input
+              type="text"
+              id="pm-desc"
+              class="input-field"
+              placeholder="風味描述"
+            >
+          </div>
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-1">烘焙度</label><input
+              type="text"
+              id="pm-roast"
+              class="input-field"
+              placeholder="例：中淺焙"
+            >
+          </div>
+
+          <!-- 規格與價格 -->
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-2 font-semibold"
+            >📦 規格與價格</label>
+            <div id="specs-container" class="space-y-2"></div>
+            <button
+              type="button"
+              data-action="add-spec-row"
+              class="mt-2 text-sm font-medium hover:underline"
+              style="color: var(--primary)"
+            >
+              + 新增規格
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <label class="flex items-center gap-2"><input
+                type="checkbox"
+                id="pm-enabled"
+                checked
+                class="w-4 h-4"
+              >
+              啟用販售</label>
+          </div>
+          <div class="flex gap-3">
+            <button type="submit" class="btn-primary flex-1">儲存</button>
+            <button
+              type="button"
+              data-action="close-product-modal"
+              class="flex-1 px-6 py-3 bg-gray-200 rounded-xl"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 促銷活動 Modal -->
+    <div id="promotion-modal" class="modal-overlay hidden overflow-y-auto">
+      <div
+        class="modal-content my-8 mx-auto"
+        style="max-height: 90vh; overflow-y: auto"
+      >
+        <h3
+          id="prm-title"
+          class="text-xl font-bold mb-6"
+          style="color: var(--primary)"
+        >
+          新增活動
+        </h3>
+        <form id="promotion-form">
+          <input type="hidden" id="prm-id">
+
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-1">活動名稱 *</label>
+            <input
+              type="text"
+              id="prm-name"
+              class="input-field"
+              placeholder="例如：任選2件9折"
+              required
+            >
+          </div>
+
+          <div class="mb-3">
+            <label class="block text-sm text-gray-600 mb-1">活動類型 *</label>
+            <select id="prm-type" class="input-field" required>
+              <option value="bundle">組合優惠 (多件折扣)</option>
+            </select>
+          </div>
+
+          <div class="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+            <label
+              class="block text-sm text-gray-600 space-x-2 font-medium mb-2"
+            >🎁 觸發條件</label>
+            <div class="mb-3">
+              <label class="block text-xs text-gray-500 mb-1"
+              >適用商品 (打勾即納入計算)</label>
+              <div
+                id="prm-products-list"
+                class="max-h-40 overflow-y-auto border p-2 bg-white rounded space-y-1 text-sm"
+              >
+                <!-- JS 生成 checkbox -->
+              </div>
+            </div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-sm">任選滿</span>
+              <input
+                type="number"
+                id="prm-min-qty"
+                class="input-field w-20 px-2 py-1 text-center"
+                value="2"
+                min="1"
+                required
+              >
+              <span class="text-sm">件，可享優惠</span>
+            </div>
+          </div>
+
+          <div class="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+            <label class="block text-sm text-gray-600 font-medium mb-2"
+            >🏷️ 優惠設定</label>
+            <div class="flex items-center gap-2 mb-2">
+              <select id="prm-discount-type" class="input-field w-32 px-2 py-1">
+                <option value="percent">打折 (%)</option>
+                <option value="amount">折抵現金 ($)</option>
+              </select>
+              <input
+                type="number"
+                id="prm-discount-value"
+                class="input-field flex-1 px-2 py-1"
+                placeholder="數值"
+                required
+                min="0"
+                step="0.1"
+              >
+            </div>
+            <p class="text-xs text-gray-500">
+              例如：選擇「打折(%)」並輸入 90 表示 9折；選擇「折抵現金($)」並輸入
+              100 表示折抵 100元。
+            </p>
+          </div>
+
+          <div class="mb-4">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="prm-enabled" checked class="w-4 h-4">
+              <span class="text-sm">啟用此活動</span>
+            </label>
+          </div>
+
+          <div class="flex gap-3">
+            <button type="submit" class="btn-primary flex-1">儲存</button>
+            <button
+              type="button"
+              data-action="close-promotion-modal"
+              class="flex-1 px-6 py-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+            >
+              取消
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+</template>
+
+<script setup>
+import { onBeforeUnmount, onMounted } from "vue";
+import { initDashboardApp } from "../../../js/dashboard-app.js";
+
+const originalBodyClass = document.body.className;
+
+onMounted(() => {
+  document.body.className = "p-4 md:p-6";
+  initDashboardApp();
+});
+
+onBeforeUnmount(() => {
+  document.body.className = originalBodyClass;
+});
+</script>
