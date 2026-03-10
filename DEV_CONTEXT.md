@@ -32,7 +32,26 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v58)
+## 🚀 近期重大更新 (v40 - v59)
+
+### 📅 v59 — 第二階段延伸：Dashboard 商品/促銷/表單改由 Vue 元件渲染
+
+- **Dashboard 三個區塊改為 Vue 接管**
+  - `DashboardPage.vue` 的商品管理清單、促銷活動清單、表單欄位清單改為 `v-for` / `v-if` 模板渲染。
+  - 所有互動操作維持 `data-action`，沿用既有事件代理，不加 inline handler。
+- **Legacy 模組新增 Vue 橋接事件與 view model**
+  - `dashboard-app.js` 新增：
+    - `coffee:dashboard-products-updated`
+    - `coffee:dashboard-promotions-updated`
+    - `coffee:dashboard-formfields-updated`
+  - 保留非 Vue 模式 fallback `innerHTML` 渲染，確保相容性。
+- **拖曳排序在 Vue 模式下維持可用**
+  - 商品：依分類 `tbody.sortable-tbody` 重新掛載 `Sortable`。
+  - 促銷：`#promotions-table` 重新掛載 `Sortable`。
+  - 表單欄位：`#formfields-sortable` 重新掛載 `Sortable`，並統一 destroy/re-init，避免重複實例。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v58 — 第二階段延伸：Dashboard 分類/用戶/黑名單改由 Vue 元件渲染
 

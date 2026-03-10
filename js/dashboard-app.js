@@ -1128,93 +1128,160 @@ async function loadProducts() {
 }
 
 let productsMap = {};
-function renderProducts() {
-  const table = document.getElementById("products-main-table");
-  table.querySelectorAll("tbody").forEach((el) => el.remove());
+function isVueManagedProductsTable(
+  table = document.getElementById("products-main-table"),
+) {
+  return table?.dataset?.vueManaged === "true";
+}
 
-  if (!products.length) {
-    const tbody = document.createElement("tbody");
-    tbody.innerHTML =
-      '<tr><td colspan="6" class="text-center py-8 text-gray-500">尚無商品</td></tr>';
-    table.appendChild(tbody);
-    return;
-  }
+function getProductPriceLines(product) {
+  try {
+    const specs = product.specs ? JSON.parse(product.specs) : [];
+    const enabled = specs.filter((spec) => spec.enabled);
+    if (enabled.length > 0) {
+      return enabled.map((spec) => ({
+        label: spec.label || "",
+        price: Number(spec.price) || 0,
+        isSpec: true,
+      }));
+    }
+  } catch {}
+  return [{ label: "", price: Number(product.price) || 0, isSpec: false }];
+}
 
-  productsMap = {};
-  products.forEach((p) => {
-    productsMap[p.id] = p;
-  });
+function buildProductViewModel(product) {
+  return {
+    id: Number(product?.id) || 0,
+    category: product?.category || "",
+    name: product?.name || "",
+    description: product?.description || "",
+    roastLevel: product?.roastLevel || "",
+    enabled: Boolean(product?.enabled),
+    statusLabel: product?.enabled ? "啟用" : "停用",
+    statusClass: product?.enabled ? "text-green-600" : "text-gray-400",
+    priceLines: getProductPriceLines(product),
+  };
+}
 
+function buildGroupedProductsViewModel(nextProducts = products) {
   const grouped = {};
-  products.forEach((p) => {
-    if (!grouped[p.category]) grouped[p.category] = [];
-    grouped[p.category].push(p);
+  (Array.isArray(nextProducts) ? nextProducts : []).forEach((product) => {
+    const category = product?.category || "";
+    if (!grouped[category]) grouped[category] = [];
+    grouped[category].push(buildProductViewModel(product));
   });
-  const catOrder = categories.map((c) => c.name);
-  const sortedCats = Object.keys(grouped).sort((a, b) => {
-    const ia = catOrder.indexOf(a), ib = catOrder.indexOf(b);
+  const categoryOrder = categories.map((category) => category.name);
+  const sortedCategories = Object.keys(grouped).sort((a, b) => {
+    const ia = categoryOrder.indexOf(a);
+    const ib = categoryOrder.indexOf(b);
     if (ia === -1) return 1;
     if (ib === -1) return -1;
     return ia - ib;
   });
+  return sortedCategories.map((category) => ({
+    category,
+    items: grouped[category],
+  }));
+}
 
-  sortedCats.forEach((cat) => {
-    const catProds = grouped[cat];
+function emitDashboardProductsUpdated(nextProducts = products) {
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-products-updated", {
+      detail: { groups: buildGroupedProductsViewModel(nextProducts) },
+    }),
+  );
+}
+
+function initializeProductSortables(table) {
+  if (typeof Sortable === "undefined") return;
+  if (Array.isArray(window.productSortables)) {
+    window.productSortables.forEach((sortable) => sortable?.destroy?.());
+  }
+  window.productSortables = [];
+  if (!table) return;
+
+  const sortables = table.querySelectorAll("tbody.sortable-tbody");
+  sortables.forEach((tbody) => {
+    if (!(tbody instanceof HTMLElement)) return;
+    if (!tbody.querySelector("tr[data-id]")) return;
+    const sortable = Sortable.create(tbody, {
+      handle: ".drag-handle",
+      animation: 150,
+      onEnd: async function (evt) {
+        if (evt.oldIndex === evt.newIndex) return;
+        const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
+          .map((tr) => Number.parseInt(tr.dataset.id || "", 10))
+          .filter((id) => !Number.isNaN(id));
+        await updateProductOrders(ids);
+      },
+    });
+    window.productSortables.push(sortable);
+  });
+}
+
+function renderProducts() {
+  const table = document.getElementById("products-main-table");
+  if (!table) return;
+
+  productsMap = {};
+  products.forEach((product) => {
+    productsMap[product.id] = product;
+  });
+
+  if (isVueManagedProductsTable(table)) {
+    emitDashboardProductsUpdated(products);
+    requestAnimationFrame(() => initializeProductSortables(table));
+    return;
+  }
+
+  table.querySelectorAll("tbody").forEach((el) => el.remove());
+
+  const grouped = buildGroupedProductsViewModel(products);
+  if (!grouped.length) {
+    const tbody = document.createElement("tbody");
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="text-center py-8 text-gray-500">尚無商品</td></tr>';
+    table.appendChild(tbody);
+    initializeProductSortables(table);
+    return;
+  }
+
+  grouped.forEach((group) => {
     const tbody = document.createElement("tbody");
     tbody.className = "sortable-tbody";
-    tbody.dataset.cat = cat;
+    tbody.dataset.cat = group.category;
 
     let html = "";
-    catProds.forEach((p, i) => {
-      let priceDisplay = `$${p.price}`;
-      try {
-        const specs = p.specs ? JSON.parse(p.specs) : [];
-        const enabled = specs.filter((s) => s.enabled);
-        if (enabled.length) {
-          priceDisplay = enabled.map((s) =>
-            `<div class="text-xs">${esc(s.label)}: $${s.price}</div>`
-          ).join("");
-        }
-      } catch {}
+    group.items.forEach((product) => {
+      const priceDisplay = product.priceLines.map((line) =>
+        line.isSpec
+          ? `<div class="text-xs">${esc(line.label)}: $${line.price}</div>`
+          : `$${line.price}`
+      ).join("");
       html += `
-            <tr class="border-b" style="border-color:#f0e6db;" data-id="${p.id}">
+            <tr class="border-b" style="border-color:#f0e6db;" data-id="${product.id}">
                 <td class="p-3 text-center">
                     <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">☰</span>
                 </td>
-                <td class="p-3 text-sm">${esc(p.category)}</td>
+                <td class="p-3 text-sm">${esc(product.category)}</td>
                 <td class="p-3">
-                    <div class="font-medium mb-1">${esc(p.name)}</div>
+                    <div class="font-medium mb-1">${esc(product.name)}</div>
                     <div class="text-xs text-gray-500">${
-        esc(p.description || "")
-      } ${p.roastLevel ? "・" + p.roastLevel : ""}</div>
+        esc(product.description || "")
+      } ${product.roastLevel ? "・" + product.roastLevel : ""}</div>
                 </td>
                 <td class="p-3 text-right font-medium">${priceDisplay}</td>
-                <td class="p-3 text-center"><span class="${
-        p.enabled ? "text-green-600" : "text-gray-400"
-      }">${p.enabled ? "啟用" : "停用"}</span></td>
+                <td class="p-3 text-center"><span class="${product.statusClass}">${product.statusLabel}</span></td>
                 <td class="p-3 text-center">
-                    <button data-action="edit-product" data-product-id="${p.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                    <button data-action="delete-product" data-product-id="${p.id}" class="text-sm text-red-500">刪除</button>
+                    <button data-action="edit-product" data-product-id="${product.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
+                    <button data-action="delete-product" data-product-id="${product.id}" class="text-sm text-red-500">刪除</button>
                 </td>
             </tr>`;
     });
     tbody.innerHTML = html;
     table.appendChild(tbody);
-
-    if (typeof Sortable !== "undefined") {
-      Sortable.create(tbody, {
-        handle: ".drag-handle",
-        animation: 150,
-        onEnd: async function (evt) {
-          if (evt.oldIndex === evt.newIndex) return;
-          const ids = Array.from(tbody.querySelectorAll("tr[data-id]")).map(
-            (tr) => parseInt(tr.dataset.id),
-          );
-          await updateProductOrders(ids);
-        },
-      });
-    }
   });
+  initializeProductSortables(table);
 }
 
 async function moveProduct(id, dir) {
@@ -1627,67 +1694,114 @@ async function loadPromotions() {
   }
 }
 
+function isVueManagedPromotionsTable(
+  table = document.getElementById("promotions-table"),
+) {
+  return table?.dataset?.vueManaged === "true";
+}
+
+function buildPromotionViewModel(promotion) {
+  const isPercent = promotion?.discountType === "percent";
+  return {
+    id: Number(promotion?.id) || 0,
+    name: promotion?.name || "",
+    conditionText: `任選 ${Number(promotion?.minQuantity) || 0} 件`,
+    discountText: isPercent
+      ? `${promotion?.discountValue} 折`
+      : `折 $${promotion?.discountValue}`,
+    enabled: Boolean(promotion?.enabled),
+    statusLabel: promotion?.enabled ? "啟用" : "停用",
+    statusClass: promotion?.enabled ? "text-green-600" : "text-gray-400",
+  };
+}
+
+function emitDashboardPromotionsUpdated(nextPromotions = window.promotions) {
+  const viewPromotions = (Array.isArray(nextPromotions) ? nextPromotions : [])
+    .map((promotion) => buildPromotionViewModel(promotion));
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-promotions-updated", {
+      detail: { promotions: viewPromotions },
+    }),
+  );
+}
+
+async function savePromotionSort(ids) {
+  const r = await authFetch(`${API_URL}?action=reorderPromotionsBulk`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: getAuthUserId(), ids }),
+  });
+  const d = await r.json();
+  if (!d.success) throw new Error(d.error);
+}
+
+function initializePromotionSortable(table) {
+  if (typeof Sortable === "undefined") return;
+  if (window.promoSortable) {
+    window.promoSortable.destroy();
+    window.promoSortable = null;
+  }
+  if (!table?.querySelector("tr[data-id]")) return;
+  window.promoSortable = Sortable.create(table, {
+    handle: ".drag-handle-promo",
+    animation: 150,
+    onEnd: async function (evt) {
+      if (evt.oldIndex === evt.newIndex) return;
+      const ids = Array.from(table.querySelectorAll("tr[data-id]"))
+        .map((tr) => Number.parseInt(tr.dataset.id || "", 10))
+        .filter((id) => !Number.isNaN(id));
+      try {
+        await savePromotionSort(ids);
+      } catch (e) {
+        Swal.fire("錯誤", e.message, "error");
+        loadPromotions();
+      }
+    },
+  });
+}
+
 function renderPromotions() {
   const table = document.getElementById("promotions-table");
-  table.innerHTML = "";
+  if (!table) return;
   const proms = window.promotions || [];
+  promotionsMap = {};
+  proms.forEach((promotion) => {
+    promotionsMap[promotion.id] = promotion;
+  });
+
+  if (isVueManagedPromotionsTable(table)) {
+    emitDashboardPromotionsUpdated(proms);
+    requestAnimationFrame(() => initializePromotionSortable(table));
+    return;
+  }
+
+  table.innerHTML = "";
   if (!proms.length) {
     table.innerHTML =
       '<tr><td colspan="5" class="text-center py-8 text-gray-500">尚無活動</td></tr>';
+    initializePromotionSortable(table);
     return;
   }
-  promotionsMap = {};
 
   let html = "";
-  proms.forEach((p, i) => {
-    promotionsMap[p.id] = p;
-    const discountStr = p.discountType === "percent"
-      ? `${p.discountValue} 折`
-      : `折 $${p.discountValue}`;
-    const conditionStr = `任選 ${p.minQuantity} 件`;
+  proms.forEach((promotion) => {
+    const viewPromotion = buildPromotionViewModel(promotion);
     html += `
-        <tr class="border-b" style="border-color:#f0e6db;" data-id="${p.id}">
+        <tr class="border-b" style="border-color:#f0e6db;" data-id="${viewPromotion.id}">
             <td class="p-3 text-center">
                 <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">☰</span>
             </td>
-            <td class="p-3 font-medium">${esc(p.name)}</td>
-            <td class="p-3 text-sm text-gray-600">${conditionStr} <span class="font-bold text-red-500">${discountStr}</span></td>
-            <td class="p-3 text-center"><span class="${
-      p.enabled ? "text-green-600" : "text-gray-400"
-    }">${p.enabled ? "啟用" : "停用"}</span></td>
+            <td class="p-3 font-medium">${esc(viewPromotion.name)}</td>
+            <td class="p-3 text-sm text-gray-600">${esc(viewPromotion.conditionText)} <span class="font-bold text-red-500">${esc(viewPromotion.discountText)}</span></td>
+            <td class="p-3 text-center"><span class="${viewPromotion.statusClass}">${viewPromotion.statusLabel}</span></td>
             <td class="p-3 text-right">
-                <button data-action="edit-promotion" data-promotion-id="${p.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                <button data-action="delete-promotion" data-promotion-id="${p.id}" class="text-sm text-red-500">刪除</button>
+                <button data-action="edit-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
+                <button data-action="delete-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm text-red-500">刪除</button>
             </td>
         </tr>`;
   });
   table.innerHTML = html;
-
-  if (typeof Sortable !== "undefined" && table.children.length > 0) {
-    if (window.promoSortable) window.promoSortable.destroy();
-    window.promoSortable = Sortable.create(table, {
-      handle: ".drag-handle-promo",
-      animation: 150,
-      onEnd: async function (evt) {
-        if (evt.oldIndex === evt.newIndex) return;
-        const ids = Array.from(table.querySelectorAll("tr[data-id]")).map(
-          (tr) => parseInt(tr.dataset.id),
-        );
-        try {
-          const r = await authFetch(`${API_URL}?action=reorderPromotionsBulk`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: getAuthUserId(), ids }),
-          });
-          const d = await r.json();
-          if (!d.success) throw new Error(d.error);
-        } catch (e) {
-          Swal.fire("錯誤", e.message, "error");
-          loadPromotions();
-        }
-      },
-    });
-  }
+  initializePromotionSortable(table);
 }
 
 function renderPromoProducts(selectedItems = []) {
@@ -2721,33 +2835,122 @@ const FIELD_TYPE_LABELS = {
   section_title: "區塊標題",
 };
 
+function isVueManagedFormFieldsList(
+  container = document.getElementById("formfields-list"),
+) {
+  return container?.dataset?.vueManaged === "true";
+}
+
+function getHiddenDeliveryMethodsText(deliveryVisibility) {
+  if (!deliveryVisibility) return "";
+  try {
+    const visibilityConfig = JSON.parse(deliveryVisibility);
+    const hiddenDeliveryMethods = Object.entries(visibilityConfig)
+      .filter(([, visible]) => visible === false)
+      .map(([deliveryMethod]) => deliveryMethod);
+    if (!hiddenDeliveryMethods.length) return "";
+    return `🚫 在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
+  } catch {
+    return "";
+  }
+}
+
+function buildFormFieldViewModel(field) {
+  return {
+    id: Number(field?.id) || 0,
+    label: field?.label || "",
+    fieldTypeLabel: FIELD_TYPE_LABELS[field?.field_type] || field?.field_type ||
+      "",
+    required: Boolean(field?.required),
+    enabled: Boolean(field?.enabled),
+    fieldKey: field?.field_key || "",
+    placeholder: field?.placeholder || "",
+    hiddenDeliveryMethodsText: getHiddenDeliveryMethodsText(
+      field?.delivery_visibility,
+    ),
+    toggleEnabledValue: String(!field?.enabled),
+    toggleEnabledTitle: field?.enabled ? "停用" : "啟用",
+    toggleEnabledIcon: field?.enabled ? "🟢" : "⚪",
+  };
+}
+
+function emitDashboardFormFieldsUpdated(nextFields = formFields) {
+  const viewFields = (Array.isArray(nextFields) ? nextFields : [])
+    .map((field) => buildFormFieldViewModel(field));
+  window.dispatchEvent(
+    new CustomEvent("coffee:dashboard-formfields-updated", {
+      detail: { fields: viewFields },
+    }),
+  );
+}
+
+function initializeFormFieldsSortable(container) {
+  if (typeof Sortable === "undefined") return;
+  if (window.formFieldsSortable) {
+    window.formFieldsSortable.destroy();
+    window.formFieldsSortable = null;
+  }
+  if (!container?.querySelector("[data-field-id]")) return;
+  window.formFieldsSortable = new Sortable(container, {
+    handle: ".drag-handle",
+    animation: 150,
+    onEnd: async () => {
+      const ids = Array.from(container.querySelectorAll("[data-field-id]"))
+        .map((el) => Number.parseInt(el.dataset.fieldId || "", 10))
+        .filter((id) => !Number.isNaN(id));
+      try {
+        await authFetch(`${API_URL}?action=reorderFormFields`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: getAuthUserId(), ids }),
+        });
+        Toast.fire({ icon: "success", title: "排序已更新" });
+      } catch (e) {
+        console.error(e);
+      }
+    },
+  });
+}
+
 function renderFormFields() {
   const container = document.getElementById("formfields-list");
+  if (!container) return;
+
+  if (isVueManagedFormFieldsList(container)) {
+    emitDashboardFormFieldsUpdated(formFields);
+    requestAnimationFrame(() => {
+      initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
+    });
+    return;
+  }
+
   if (!formFields.length) {
     container.innerHTML =
       '<p class="text-center text-gray-500 py-8">尚無自訂欄位</p>';
+    initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
     return;
   }
+
   container.innerHTML = `
         <div class="space-y-2" id="formfields-sortable">
             ${
     formFields.map((f) => {
-      const typeBadge = FIELD_TYPE_LABELS[f.field_type] || f.field_type;
-      const requiredBadge = f.required
+      const viewField = buildFormFieldViewModel(f);
+      const requiredBadge = viewField.required
         ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">必填</span>'
         : "";
-      const enabledClass = f.enabled ? "" : "opacity-50";
+      const enabledClass = viewField.enabled ? "" : "opacity-50";
       const isProtected = false;
       return `
-                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${f.id}">
+                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${viewField.id}">
                     <span class="cursor-grab text-gray-400 drag-handle">⠿</span>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-medium">${esc(f.label)}</span>
-                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${typeBadge}</span>
+                            <span class="font-medium">${esc(viewField.label)}</span>
+                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${esc(viewField.fieldTypeLabel)}</span>
                             ${requiredBadge}
                             ${
-        !f.enabled
+        !viewField.enabled
           ? '<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">已停用</span>'
           : ""
       }
@@ -2757,35 +2960,21 @@ function renderFormFields() {
           : ""
       }
                         </div>
-                        <div class="text-xs text-gray-400 mt-1">key: ${
-        esc(f.field_key)
-      } ${f.placeholder ? "・" + esc(f.placeholder) : ""}</div>
+                        <div class="text-xs text-gray-400 mt-1">key: ${esc(viewField.fieldKey)} ${viewField.placeholder ? "・" + esc(viewField.placeholder) : ""}</div>
                         ${
-        (() => {
-          if (!f.delivery_visibility) return "";
-          try {
-            const vis = JSON.parse(f.delivery_visibility);
-            const hidden = Object.entries(vis).filter(([, v]) => v === false)
-              .map(([k]) => k);
-            if (!hidden.length) return "";
-            return `<div class="text-xs text-orange-500 mt-1">🚫 在 ${
-              hidden.join(", ")
-            } 時隱藏</div>`;
-          } catch {
-            return "";
-          }
-        })()
+        viewField.hiddenDeliveryMethodsText
+          ? `<div class="text-xs text-orange-500 mt-1">${
+            esc(viewField.hiddenDeliveryMethodsText)
+          }</div>`
+          : ""
       }
                     </div>
                     <div class="flex gap-1 items-center">
-                        <button data-action="toggle-field-enabled" data-field-id="${f.id}" data-enabled="${!f
-        .enabled}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${
-        f.enabled ? "停用" : "啟用"
-      }">${f.enabled ? "🟢" : "⚪"}</button>
-                        <button data-action="edit-form-field" data-field-id="${f.id}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">✏️</button>
+                        <button data-action="toggle-field-enabled" data-field-id="${viewField.id}" data-enabled="${viewField.toggleEnabledValue}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${viewField.toggleEnabledTitle}">${viewField.toggleEnabledIcon}</button>
+                        <button data-action="edit-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">✏️</button>
                         ${
         !isProtected
-          ? `<button data-action="delete-form-field" data-field-id="${f.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">🗑</button>`
+          ? `<button data-action="delete-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">🗑</button>`
           : ""
       }
                     </div>
@@ -2794,28 +2983,7 @@ function renderFormFields() {
   }
         </div>`;
 
-  // 拖拽排序
-  if (typeof Sortable !== "undefined") {
-    new Sortable(document.getElementById("formfields-sortable"), {
-      handle: ".drag-handle",
-      animation: 150,
-      onEnd: async () => {
-        const ids = [
-          ...document.querySelectorAll("#formfields-sortable [data-field-id]"),
-        ].map((el) => parseInt(el.dataset.fieldId));
-        try {
-          await authFetch(`${API_URL}?action=reorderFormFields`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: getAuthUserId(), ids }),
-          });
-          Toast.fire({ icon: "success", title: "排序已更新" });
-        } catch (e) {
-          console.error(e);
-        }
-      },
-    });
-  }
+  initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
 }
 
 /** 渲染配送方式可見性 Checkbox 到 #swal-dv 容器 */
