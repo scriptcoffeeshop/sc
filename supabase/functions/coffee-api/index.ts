@@ -227,8 +227,14 @@ const actionMap: Record<string, ActionHandler> = {
   // ====== 公開 API ======
   getProducts: async () => await getProducts(),
   getCategories: async () => await getCategories(),
-  getSettings: async () => await getSettings(),
-  getInitData: async () => await getInitData(),
+  getSettings: async (_data, req) => {
+    const a = await extractAuth(req);
+    return await getSettings(a?.isAdmin || false);
+  },
+  getInitData: async (_data, req) => {
+    const a = await extractAuth(req);
+    return await getInitData(a?.isAdmin || false);
+  },
   getPromotions: async () => await getPromotions(),
   getFormFields: async () => await getFormFields(false),
   getBankAccounts: async () => await getBankAccounts(),
