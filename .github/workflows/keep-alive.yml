@@ -20,7 +20,7 @@ jobs:
             exit 1
           fi
           
-          echo "Pinging Supabase REST API at ${{ secrets.SUPABASE_URL }}..."
+          echo "Pinging Supabase REST API..."
           RESPONSE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/" \
           -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
           -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
