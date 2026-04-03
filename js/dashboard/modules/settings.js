@@ -9,6 +9,7 @@ export function createSettingsActionHandlers(deps) {
     "upload-section-icon": (el) => deps.uploadSectionIcon(el),
     "upload-payment-icon": (el) => deps.uploadPaymentIcon(el),
     "upload-delivery-row-icon": (el) => deps.uploadDeliveryRowIcon(el),
+    "icon-library-apply": (el) => deps.applyIconFromLibrary(el),
     "reset-section-title": (el) => deps.resetSectionTitle(el.dataset.section),
     "add-delivery-option-admin": () => deps.addDeliveryOptionAdmin(),
     "show-add-bank-account-modal": () => deps.showAddBankAccountModal(),
@@ -45,6 +46,7 @@ export function createSettingsActionHandlers(deps) {
 export function createSettingsTabLoaders(deps) {
   return {
     settings: () => deps.loadSettings(),
+    "icon-library": () => deps.loadSettings(),
     formfields: () => deps.loadFormFields(),
   };
 }

@@ -186,6 +186,58 @@ function readInputValue(id, fallback = "") {
   return fallback;
 }
 
+const ICON_LIBRARY_TARGET_MAP = {
+  site: {
+    label: "品牌 Icon",
+    inputId: "s-site-icon-url",
+    displayId: "s-icon-url-display",
+    previewId: "s-icon-preview",
+    fallbackKey: "brand",
+  },
+  products: {
+    label: "商品區塊 Icon",
+    inputId: "s-products-icon-url",
+    displayId: "s-products-icon-url-display",
+    previewId: "s-products-icon-preview",
+    fallbackKey: "products",
+  },
+  delivery: {
+    label: "配送區塊 Icon",
+    inputId: "s-delivery-icon-url",
+    displayId: "s-delivery-icon-url-display",
+    previewId: "s-delivery-icon-preview",
+    fallbackKey: "delivery",
+  },
+  notes: {
+    label: "備註區塊 Icon",
+    inputId: "s-notes-icon-url",
+    displayId: "s-notes-icon-url-display",
+    previewId: "s-notes-icon-preview",
+    fallbackKey: "notes",
+  },
+  cod: {
+    label: "貨到/取貨付款 Icon",
+    inputId: "po-cod-icon-url",
+    displayId: "po-cod-icon-url-display",
+    previewId: "po-cod-icon-preview",
+    fallbackKey: "cod",
+  },
+  linepay: {
+    label: "LINE Pay Icon",
+    inputId: "po-linepay-icon-url",
+    displayId: "po-linepay-icon-url-display",
+    previewId: "po-linepay-icon-preview",
+    fallbackKey: "linepay",
+  },
+  transfer: {
+    label: "線上轉帳 Icon",
+    inputId: "po-transfer-icon-url",
+    displayId: "po-transfer-icon-url-display",
+    previewId: "po-transfer-icon-preview",
+    fallbackKey: "transfer",
+  },
+};
+
 // ============ 全域函式掛載（保留舊快取相容性） ============
 window.loginWithLine = () =>
   loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
@@ -221,6 +273,7 @@ window.uploadSiteIcon = uploadSiteIcon;
 window.uploadSectionIcon = uploadSectionIcon;
 window.uploadPaymentIcon = uploadPaymentIcon;
 window.uploadDeliveryRowIcon = uploadDeliveryRowIcon;
+window.applyIconFromLibrary = applyIconFromLibrary;
 window.resetSectionTitle = resetSectionTitle;
 window.linePayRefundOrder = linePayRefundOrder;
 window.showAddBankAccountModal = showAddBankAccountModal;
@@ -270,6 +323,7 @@ const dashboardActionHandlers = {
     uploadSectionIcon,
     uploadPaymentIcon,
     uploadDeliveryRowIcon,
+    applyIconFromLibrary,
     resetSectionTitle,
     addDeliveryOptionAdmin,
     showAddBankAccountModal,
@@ -422,6 +476,7 @@ function showTab(tab) {
     "categories",
     "promotions",
     "settings",
+    "icon-library",
     "users",
     "blacklist",
     "formfields",
@@ -3600,6 +3655,36 @@ function setIconUrlToField({
       fallbackUrl: getDefaultIconUrl(fallbackKey),
     });
   }
+}
+
+function applyIconFromLibrary(button) {
+  const targetSelect = document.getElementById("icon-library-target");
+  const targetKey = String(targetSelect?.value || "site").trim();
+  const target = ICON_LIBRARY_TARGET_MAP[targetKey];
+  if (!target) {
+    Swal.fire("錯誤", "請先選擇有效的套用目標", "error");
+    return;
+  }
+
+  const iconKey = String(button?.dataset?.iconKey || "").trim();
+  const rawUrl = String(button?.dataset?.iconUrl || "").trim();
+  const iconUrl = rawUrl || getDefaultIconUrl(iconKey);
+  if (!iconUrl) {
+    Swal.fire("錯誤", "找不到要套用的 icon 路徑", "error");
+    return;
+  }
+
+  setIconUrlToField({
+    inputId: target.inputId,
+    displayId: target.displayId,
+    previewId: target.previewId,
+    url: iconUrl,
+    fallbackKey: target.fallbackKey,
+  });
+  Toast.fire({
+    icon: "success",
+    title: `已套用到${target.label}`,
+  });
 }
 
 async function uploadSiteIcon() {

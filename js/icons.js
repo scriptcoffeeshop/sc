@@ -4,7 +4,7 @@
 
 import { escapeAttr, escapeHtml } from "./utils.js";
 
-const ICON_FILE_MAP = {
+export const ICON_FILE_MAP = {
   brand: "icons/brand-coffee.png",
   orders: "icons/orders-list.png",
   profile: "icons/profile-user.png",
@@ -40,6 +40,50 @@ const ICON_FILE_MAP = {
   refund: "icons/refund-arrow.png",
   selected: "icons/selected-check.png",
 };
+
+const ICON_META_MAP = {
+  brand: { label: "品牌", category: "品牌" },
+  orders: { label: "訂單", category: "導航" },
+  profile: { label: "會員", category: "導航" },
+  products: { label: "商品", category: "導航" },
+  categories: { label: "分類", category: "導航" },
+  promotions: { label: "促銷", category: "導航" },
+  settings: { label: "設定", category: "導航" },
+  form: { label: "表單", category: "導航" },
+  users: { label: "用戶", category: "導航" },
+  blacklist: { label: "黑名單", category: "導航" },
+  refresh: { label: "重整", category: "操作" },
+  copy: { label: "複製", category: "操作" },
+  drag: { label: "拖曳", category: "操作" },
+  refund: { label: "退款", category: "操作" },
+  selected: { label: "已選", category: "狀態" },
+  announcement: { label: "公告", category: "狀態" },
+  storeStatus: { label: "營業狀態", category: "狀態" },
+  delivery: { label: "配送", category: "物流" },
+  shipping: { label: "宅配", category: "物流" },
+  location: { label: "定位", category: "物流" },
+  map: { label: "地圖", category: "物流" },
+  store: { label: "門市", category: "物流" },
+  delivery_method: { label: "配送車", category: "物流" },
+  home_delivery: { label: "宅配", category: "物流" },
+  in_store: { label: "來店取貨", category: "物流" },
+  seven_eleven: { label: "7-11", category: "物流" },
+  family_mart: { label: "全家", category: "物流" },
+  payment: { label: "付款", category: "金流" },
+  cod: { label: "取貨付款", category: "金流" },
+  linepay: { label: "LINE Pay", category: "金流" },
+  transfer: { label: "轉帳", category: "金流" },
+  cart: { label: "購物車", category: "商店" },
+  notes: { label: "備註", category: "商店" },
+  section: { label: "區塊", category: "商店" },
+};
+
+export const ICON_CATALOG = Object.entries(ICON_FILE_MAP).map(([key, path]) => ({
+  key,
+  path,
+  label: ICON_META_MAP[key]?.label || key,
+  category: ICON_META_MAP[key]?.category || "其他",
+}));
 
 const ABSOLUTE_URL_RE = /^(?:https?:|data:|blob:|\/\/)/i;
 
