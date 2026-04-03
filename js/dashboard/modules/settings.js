@@ -6,6 +6,9 @@ function parseId(value) {
 export function createSettingsActionHandlers(deps) {
   return {
     "upload-site-icon": () => deps.uploadSiteIcon(),
+    "upload-section-icon": (el) => deps.uploadSectionIcon(el),
+    "upload-payment-icon": (el) => deps.uploadPaymentIcon(el),
+    "upload-delivery-row-icon": (el) => deps.uploadDeliveryRowIcon(el),
     "reset-section-title": (el) => deps.resetSectionTitle(el.dataset.section),
     "add-delivery-option-admin": () => deps.addDeliveryOptionAdmin(),
     "show-add-bank-account-modal": () => deps.showAddBankAccountModal(),

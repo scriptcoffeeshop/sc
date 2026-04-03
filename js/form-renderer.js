@@ -3,6 +3,7 @@
 // ============================================
 
 import { escapeHtml } from "./utils.js";
+import { setIconElement } from "./icons.js";
 
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
@@ -143,7 +144,7 @@ export function collectDynamicFields(fields) {
       return {
         valid: false,
         data: {},
-        error: `請填寫「${f.label.replace(/[📱✉️📝🫘🚚]/g, "").trim()}」`,
+        error: `請填寫「${String(f.label || "").trim()}」`,
       };
     }
 
@@ -155,7 +156,7 @@ export function collectDynamicFields(fields) {
       return {
         valid: false,
         data: {},
-        error: `「${f.label.replace(/[📱✉️📝🫘🚚]/g, "").trim()}」格式不正確`,
+        error: `「${String(f.label || "").trim()}」格式不正確`,
       };
     }
 
@@ -183,16 +184,15 @@ export function applyBranding(settings) {
   // Header icon
   const iconEl = document.getElementById("site-icon");
   if (iconEl) {
-    if (settings.site_icon_url) {
-      iconEl.innerHTML = "";
-      const img = document.createElement("img");
-      img.src = settings.site_icon_url;
-      img.alt = "icon";
-      img.className = "w-10 h-10 rounded-lg object-cover";
-      iconEl.appendChild(img);
-    } else if (settings.site_icon_emoji) {
-      iconEl.textContent = settings.site_icon_emoji;
-    }
+    setIconElement(
+      iconEl,
+      {
+        icon_url: settings.site_icon_url,
+        icon: settings.site_icon_emoji,
+      },
+      "brand",
+      "品牌圖示",
+    );
   }
 
   // Favicon
@@ -214,9 +214,24 @@ export function applyBranding(settings) {
 
   // 商品區塊標題
   const productsTitleEl = document.getElementById("products-section-title");
+  const productsTitleTextEl =
+    document.getElementById("products-section-title-text");
+  const productsTitleIconEl = document.getElementById("products-section-icon");
   if (productsTitleEl) {
     if (settings.products_section_title) {
-      productsTitleEl.textContent = settings.products_section_title;
+      if (productsTitleTextEl) {
+        productsTitleTextEl.textContent = settings.products_section_title;
+      } else {
+        productsTitleEl.textContent = settings.products_section_title;
+      }
+    }
+    if (productsTitleIconEl) {
+      setIconElement(
+        productsTitleIconEl,
+        { icon_url: settings.products_section_icon_url },
+        "products",
+        "商品區塊圖示",
+      );
     }
     if (settings.products_section_color) {
       productsTitleEl.style.color = settings.products_section_color;
@@ -240,9 +255,24 @@ export function applyBranding(settings) {
 
   // 配送區塊標題
   const deliveryTitleEl = document.getElementById("delivery-section-title");
+  const deliveryTitleTextEl =
+    document.getElementById("delivery-section-title-text");
+  const deliveryTitleIconEl = document.getElementById("delivery-section-icon");
   if (deliveryTitleEl) {
     if (settings.delivery_section_title) {
-      deliveryTitleEl.textContent = settings.delivery_section_title;
+      if (deliveryTitleTextEl) {
+        deliveryTitleTextEl.textContent = settings.delivery_section_title;
+      } else {
+        deliveryTitleEl.textContent = settings.delivery_section_title;
+      }
+    }
+    if (deliveryTitleIconEl) {
+      setIconElement(
+        deliveryTitleIconEl,
+        { icon_url: settings.delivery_section_icon_url },
+        "delivery",
+        "配送區塊圖示",
+      );
     }
     if (settings.delivery_section_color) {
       deliveryTitleEl.style.color = settings.delivery_section_color;
@@ -266,9 +296,23 @@ export function applyBranding(settings) {
 
   // 備註區塊標題
   const notesTitleEl = document.getElementById("notes-section-title");
+  const notesTitleTextEl = document.getElementById("notes-section-title-text");
+  const notesTitleIconEl = document.getElementById("notes-section-icon");
   if (notesTitleEl) {
     if (settings.notes_section_title) {
-      notesTitleEl.textContent = settings.notes_section_title;
+      if (notesTitleTextEl) {
+        notesTitleTextEl.textContent = settings.notes_section_title;
+      } else {
+        notesTitleEl.textContent = settings.notes_section_title;
+      }
+    }
+    if (notesTitleIconEl) {
+      setIconElement(
+        notesTitleIconEl,
+        { icon_url: settings.notes_section_icon_url },
+        "notes",
+        "備註區塊圖示",
+      );
     }
     if (settings.notes_section_color) {
       notesTitleEl.style.color = settings.notes_section_color;

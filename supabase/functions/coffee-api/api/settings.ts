@@ -17,14 +17,73 @@ const PUBLIC_SETTINGS_KEYS = [
   "site_icon_url",
   "site_icon_emoji",
   "products_section_title",
+  "products_section_icon_url",
   "delivery_section_title",
+  "delivery_section_icon_url",
   "notes_section_title",
+  "notes_section_icon_url",
   "payment_enabled",
   "linepay_enabled",
   "linepay_sandbox",
   "transfer_enabled",
   "delivery_options_config",
+  "payment_options_config",
 ];
+
+function sanitizeFileName(fileName = "icon.png") {
+  return String(fileName || "icon.png")
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/^_+/, "")
+    .slice(0, 80) || "icon.png";
+}
+
+async function uploadAssetInternal(
+  data: Record<string, unknown>,
+  req: Request,
+  forcedSettingKey = "",
+) {
+  await requireAdmin(req);
+
+  const base64Data = String(data.fileData || "");
+  const contentType = String(data.contentType || "image/png");
+  const rawName = String(data.fileName || "icon.png");
+  const settingKey = String(forcedSettingKey || data.settingKey || "").trim();
+
+  if (!base64Data) return { success: false, error: "沒有檔案資料" };
+  if (!contentType.startsWith("image/")) {
+    return { success: false, error: "僅支援圖片檔案" };
+  }
+
+  const fileName = sanitizeFileName(rawName);
+  const binaryStr = atob(base64Data);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+
+  const storagePath = `icons/${Date.now()}-${fileName}`;
+  const { error: uploadError } = await supabase.storage.from("site-assets")
+    .upload(storagePath, bytes, { contentType, upsert: true });
+
+  if (uploadError) {
+    return { success: false, error: "上傳失敗: " + uploadError.message };
+  }
+
+  const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(
+    storagePath,
+  );
+  const publicUrl = urlData?.publicUrl || "";
+
+  if (settingKey) {
+    const { error: upsertError } = await supabase.from("coffee_settings").upsert({
+      key: settingKey,
+      value: publicUrl,
+    });
+    if (upsertError) {
+      return { success: false, error: "設定更新失敗: " + upsertError.message };
+    }
+  }
+
+  return { success: true, url: publicUrl, message: "圖示已上傳" };
+}
 
 // ============ 設定 ============
 export async function getSettings(isAdmin = false) {
@@ -61,29 +120,14 @@ export async function uploadSiteIcon(
   data: Record<string, unknown>,
   req: Request,
 ) {
-  await requireAdmin(req);
-  const base64Data = String(data.fileData || "");
-  const fileName = String(data.fileName || "icon.png");
-  const contentType = String(data.contentType || "image/png");
-  if (!base64Data) return { success: false, error: "沒有檔案資料" };
-  const binaryStr = atob(base64Data);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-  const storagePath = `icons/${Date.now()}-${fileName}`;
-  const { error: uploadError } = await supabase.storage.from("site-assets")
-    .upload(storagePath, bytes, { contentType, upsert: true });
-  if (uploadError) {
-    return { success: false, error: "上傳失敗: " + uploadError.message };
-  }
-  const { data: urlData } = supabase.storage.from("site-assets").getPublicUrl(
-    storagePath,
-  );
-  const publicUrl = urlData?.publicUrl || "";
-  await supabase.from("coffee_settings").upsert({
-    key: "site_icon_url",
-    value: publicUrl,
-  });
-  return { success: true, url: publicUrl, message: "圖示已上傳" };
+  return await uploadAssetInternal(data, req, "site_icon_url");
+}
+
+export async function uploadAsset(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  return await uploadAssetInternal(data, req);
 }
 
 // ============ 初始化資料 ============
