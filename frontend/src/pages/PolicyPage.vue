@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-3xl mx-auto glass-card p-6 md:p-8">
+    <UiCard class="max-w-3xl mx-auto p-6 md:p-8">
       <!-- 標題 -->
       <div class="flex items-center gap-3 mb-6">
         <a
@@ -9,15 +9,15 @@
         >←</a>
         <div>
           <h1 class="text-2xl font-bold" style="color: var(--primary)">
-            📜 服務條款與政策
+            服務條款與政策
           </h1>
           <p class="text-sm text-gray-500">隱私權政策 ・ 退換貨政策</p>
         </div>
       </div>
 
       <!-- 隱私權政策 -->
-      <div class="policy-section" id="privacy">
-        <h2>🔒 隱私權政策</h2>
+      <div class="policy-section ui-card-section" id="privacy">
+        <h2>隱私權政策</h2>
 
         <h3>一、個人資料之蒐集</h3>
         <p>我們透過 LINE 第三方登入及訂單表單蒐集您的以下資訊：</p>
@@ -60,13 +60,13 @@
       </div>
 
       <!-- 退換貨政策 -->
-      <div class="policy-section" id="return">
-        <h2>🔄 退換貨政策</h2>
+      <div class="policy-section ui-card-section" id="return">
+        <h2>退換貨政策</h2>
 
         <h3>一、退換貨條件</h3>
         <p>由於咖啡豆為食品類商品，退換貨適用以下條件：</p>
         <div class="highlight-box">
-          <strong>✅ 可申請退換貨之情形：</strong>
+          <strong>可申請退換貨之情形：</strong>
           <ul>
             <li>收到商品與訂單內容不符（品項錯誤、規格錯誤）</li>
             <li>商品於運送過程中損壞（包裝破裂、受潮等）</li>
@@ -74,7 +74,7 @@
           </ul>
         </div>
         <div class="highlight-box" style="border-left-color: #e57373">
-          <strong>❌ 不適用退換貨之情形：</strong>
+          <strong>不適用退換貨之情形：</strong>
           <ul>
             <li>已拆封使用之商品（基於食品衛生安全）</li>
             <li>因個人口味偏好不符而申請退貨</li>
@@ -110,8 +110,8 @@
       </div>
 
       <!-- 聯絡資訊 -->
-      <div class="policy-section">
-        <h2>📞 聯絡我們</h2>
+      <div class="policy-section ui-card-section">
+        <h2>聯絡我們</h2>
         <p>如有任何疑問，歡迎透過以下方式聯繫：</p>
         <ul>
           <li>
@@ -135,8 +135,7 @@
       <div class="text-center mt-6">
         <a
           href="main.html"
-          class="inline-block px-6 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
-          style="background: linear-gradient(135deg, var(--primary), #5c3d2e)"
+          class="inline-block btn-primary px-6 py-3 rounded-xl font-semibold text-white transition-all hover:opacity-90"
         >
           ← 返回訂購頁
         </a>
@@ -145,11 +144,12 @@
       <div class="text-center text-xs text-gray-400 mt-4">
         最後更新日期：2026 年 3 月 2 日
       </div>
-    </div>
+    </UiCard>
 </template>
 
 <script setup>
 import { onBeforeUnmount, onMounted } from "vue";
+import UiCard from "../components/ui/card/Card.vue";
 
 const originalBodyClass = document.body.className;
 

@@ -427,30 +427,30 @@ export async function showMyOrders() {
     }
 
     const statusMap = {
-      pending: "⏳ 待處理",
-      processing: "📦 處理中",
-      shipped: "🚚 已出貨",
-      completed: "✅ 已完成",
-      cancelled: "❌ 已取消",
+      pending: "待處理",
+      processing: "處理中",
+      shipped: "已出貨",
+      completed: "已完成",
+      cancelled: "已取消",
     };
     const methodMap = {
-      delivery: "🏠 宅配",
-      home_delivery: "📦 全台宅配",
-      seven_eleven: "🏪 7-11",
-      family_mart: "🏬 全家",
-      in_store: "🚶 來店取貨",
+      delivery: "宅配",
+      home_delivery: "全台宅配",
+      seven_eleven: "7-11 取件",
+      family_mart: "全家取件",
+      in_store: "來店取貨",
     };
     const payMethodMap = {
-      cod: "💵 貨到付款",
-      linepay: "💚 LINE Pay",
-      transfer: "🏦 線上轉帳",
+      cod: "貨到付款",
+      linepay: "LINE Pay",
+      transfer: "線上轉帳",
     };
     const payStatusMap = {
-      pending: "⚓ 待付款",
-      paid: "✅ 已付款",
-      failed: "❌ 付款失敗",
-      cancelled: "❌ 已取消",
-      refunded: "↩️ 已退款",
+      pending: "待付款",
+      paid: "已付款",
+      failed: "付款失敗",
+      cancelled: "已取消",
+      refunded: "已退款",
     };
 
     list.innerHTML = result.orders.map((o) => {
@@ -472,7 +472,7 @@ export async function showMyOrders() {
             }</span>
                     <button type="button" data-action="copy-tracking-number" data-tracking-number="${
               escapeHtml(o.trackingNumber)
-            }" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">📋 複製</button>
+            }" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">複製</button>
                   </div>`
             : ""
         }
@@ -480,7 +480,7 @@ export async function showMyOrders() {
           trackingUrl
             ? `<a href="${
               escapeHtml(trackingUrl)
-            }" target="_blank" class="text-blue-600 hover:underline">🔗 物流追蹤頁面</a>`
+            }" target="_blank" class="text-blue-600 hover:underline">物流追蹤頁面</a>`
             : ""
         }
             </div>`

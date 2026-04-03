@@ -39,6 +39,7 @@ import {
   getInitData,
   getSettings,
   updateSettingsAction,
+  uploadAsset,
   uploadSiteIcon,
 } from "./api/settings.ts";
 
@@ -399,6 +400,7 @@ const actionMap: Record<string, ActionHandler> = {
     return await reorderFormFields(v, req);
   },
   uploadSiteIcon: async (data, req) => await uploadSiteIcon(data, req),
+  uploadAsset: async (data, req) => await uploadAsset(data, req),
   linePayRefund: async (data, req) => await linePayRefund(data, req),
   addBankAccount: async (data, req) => {
     const v = await validate(addBankAccountSchema, data);

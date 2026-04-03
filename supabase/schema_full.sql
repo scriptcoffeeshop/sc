@@ -74,10 +74,13 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('site_title', '咖啡豆訂購'),
   ('site_subtitle', '新鮮烘焙・產地直送'),
   ('site_icon_url', ''),
-  ('site_icon_emoji', '☕'),
-  ('products_section_title', '🫘 咖啡豆選購'),
-  ('delivery_section_title', '🚚 配送方式'),
-  ('notes_section_title', '📝 訂單備註'),
+  ('site_icon_emoji', ''),
+  ('products_section_title', '咖啡豆選購'),
+  ('products_section_icon_url', ''),
+  ('delivery_section_title', '配送方式'),
+  ('delivery_section_icon_url', ''),
+  ('notes_section_title', '訂單備註'),
+  ('notes_section_icon_url', ''),
   ('payment_enabled', 'false'),
   ('payment_provider', ''),
   ('payment_merchant_id', ''),
@@ -85,7 +88,9 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('payment_hash_iv', ''),
   ('linepay_enabled', 'false'),
   ('linepay_sandbox', 'true'),
-  ('transfer_enabled', 'false')
+  ('transfer_enabled', 'false'),
+  ('delivery_options_config', '[]'),
+  ('payment_options_config', '{}')
 ON CONFLICT (key) DO NOTHING;
 
 -- 5. 用戶表
@@ -215,8 +220,11 @@ CREATE POLICY "Allow anon read coffee_settings" ON coffee_settings FOR SELECT US
   key IN (
     'is_open', 'announcement', 'announcement_enabled', 'store_name', 
     'delivery_pricing_rules', 'site_title', 'site_subtitle', 'site_icon_url', 
-    'site_icon_emoji', 'products_section_title', 'delivery_section_title', 
-    'notes_section_title', 'payment_enabled', 'linepay_enabled', 'linepay_sandbox', 'transfer_enabled'
+    'site_icon_emoji', 'products_section_title', 'products_section_icon_url',
+    'delivery_section_title', 'delivery_section_icon_url',
+    'notes_section_title', 'notes_section_icon_url',
+    'payment_enabled', 'linepay_enabled', 'linepay_sandbox', 'transfer_enabled',
+    'delivery_options_config', 'payment_options_config'
   )
 );
 

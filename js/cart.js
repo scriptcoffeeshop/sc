@@ -362,7 +362,7 @@ export function updateCartUI() {
         let noticeHTML = `
                     <div class="px-3 py-2 rounded-lg mb-1" style="background:#fef2f2; border:1px solid #fca5a5;">
                         <div class="flex justify-between items-center text-sm font-semibold" style="color:#991b1b;">
-                            <span>未達🚚 ${
+                            <span>未達 ${
           escapeHtml(deliveryName)
         }免運門檻</span>
                             <span>+$${summary.shippingFee}</span>
@@ -385,7 +385,7 @@ export function updateCartUI() {
       if (hasPromos) {
         promoListHTML += summary.appliedPromos.map((p) => `
                     <div class="flex justify-between items-center text-red-600 mb-1">
-                        <span>🏷️ ${escapeHtml(p.name)}</span>
+                        <span>${escapeHtml(p.name)}</span>
                         <span>-$${p.amount}</span>
                     </div>
                 `).join("");
@@ -399,7 +399,7 @@ export function updateCartUI() {
 
         promoListHTML += `
                     <div class="flex justify-between items-center text-blue-600 mb-1">
-                        <span>🚚 ${
+                        <span>${
           escapeHtml(deliveryName)
         }免運${thresholdText}</span>
                         <span>免運費</span>

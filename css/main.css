@@ -1,185 +1,138 @@
 /* ============================================
-   main.css — 訂購頁專屬樣式
+   main.css — Storefront style (shadcn-like)
    ============================================ */
 
 .category-header {
-  background: linear-gradient(135deg, #3c2415, #5c3d2e);
-  color: white;
-}
-
-.category-header th {
-  border: none !important;
+  background: linear-gradient(135deg, #334155, #0f172a);
+  color: #f8fafc;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
 }
 
 .product-row {
-  transition: background 0.2s;
+  transition: background 0.2s ease;
 }
 
 .product-row:hover {
-  background: rgba(212, 165, 116, 0.12);
+  background: #f8fafc;
 }
 
-.delivery-option {
-  border: 2px solid #e5ddd5;
+#site-icon {
+  width: 2.7rem;
+  height: 2.7rem;
+  padding: 0.35rem;
   border-radius: 14px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.25s;
-  position: relative;
-}
-
-.delivery-option:hover {
-  border-color: var(--secondary);
-}
-
-.delivery-option.active {
-  border-color: var(--primary);
-  background: rgba(60, 36, 21, 0.04);
-  box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.08);
-}
-
-.delivery-option .check-mark {
-  display: none;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 24px;
-  height: 24px;
-  background: var(--primary);
-  border-radius: 50%;
-  color: white;
-  font-size: 14px;
+  border: 1px solid var(--ui-border);
+  background: #fff;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.delivery-option.active .check-mark {
-  display: flex;
+.section-heading-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
 }
 
+.section-heading-inline .ui-icon-title {
+  margin-right: 0;
+}
+
+.delivery-option,
 .payment-option {
-  border: 2px solid #e5ddd5;
+  border: 1px solid var(--ui-border-strong);
   border-radius: 14px;
-  padding: 16px;
+  padding: 14px 12px;
   cursor: pointer;
-  transition: all 0.25s;
   position: relative;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.delivery-option:hover,
 .payment-option:hover {
-  border-color: var(--secondary);
+  border-color: #94a3b8;
+  transform: translateY(-1px);
 }
 
+.delivery-option.active,
 .payment-option.active {
-  border-color: var(--primary);
-  background: rgba(60, 36, 21, 0.04);
-  box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.08);
+  border-color: #334155;
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.14);
+  background: #f8fafc;
 }
 
+.delivery-option .check-mark,
 .payment-option .check-mark {
-  display: none;
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 24px;
-  height: 24px;
-  background: var(--primary);
-  border-radius: 50%;
-  color: white;
-  font-size: 14px;
+  top: 8px;
+  right: 8px;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 0.72rem;
+  display: none;
   align-items: center;
   justify-content: center;
 }
 
+.delivery-option.active .check-mark,
 .payment-option.active .check-mark {
-  display: flex;
+  display: inline-flex;
+}
+
+.option-icon {
+  width: 2.2rem;
+  height: 2.2rem;
+  margin: 0 auto 0.45rem;
+  border-radius: 10px;
+  border: 1px solid var(--ui-border);
+  padding: 0.22rem;
+  background: #fff;
+  overflow: hidden;
 }
 
 .store-select-btn {
-  background: linear-gradient(135deg, #2e7d32, #388e3c);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
+  background: linear-gradient(135deg, #334155, #1e293b);
+  color: #fff;
+  padding: 0.58rem 1.1rem;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
 }
 
 .store-select-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+  filter: brightness(1.05);
 }
 
 .store-info-card {
-  background: #f0faf0;
-  border: 1px solid #c8e6c9;
-  border-radius: 10px;
-  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #d8e0eb;
+  border-radius: 12px;
+  padding: 0.78rem 0.95rem;
 }
 
-/* ========== 訂購頁 RWD ========== */
+.spec-btn-add,
+.spec-btn-stepper {
+  border-color: #c6d2df !important;
+}
+
 @media (max-width: 639px) {
-  .bottom-bar .w-full {
-    gap: 6px;
+  .delivery-option,
+  .payment-option {
+    padding: 11px 7px;
+    text-align: center;
   }
 
   #total-price {
     font-size: 0.95rem !important;
   }
 
-  .btn-primary {
-    text-align: center;
-  }
-
-  .delivery-option {
-    padding: 12px 8px;
-    text-align: center;
-  }
-
-  .delivery-option .text-2xl {
-    font-size: 1.5rem;
-    margin-bottom: 4px;
-  }
-
-  .delivery-option .font-semibold {
-    font-size: 0.82rem;
-  }
-
-  .delivery-option .text-xs {
-    font-size: 0.65rem;
-  }
-
-  .payment-option {
-    padding: 12px 8px;
-    text-align: center;
-  }
-
-  .payment-option .text-2xl {
-    font-size: 1.5rem;
-    margin-bottom: 4px;
-  }
-
-  .payment-option .font-semibold {
-    font-size: 0.82rem;
-  }
-
-  .payment-option .text-xs {
-    font-size: 0.65rem;
-  }
-
-  #products-table th,
-  #products-table td {
-    padding: 8px 4px;
-    font-size: 0.85rem;
-  }
-
   .quantity {
     width: 32px !important;
     font-size: 1rem !important;
   }
-}
-
-.store-result-item:hover {
-  background: #f0faf0;
 }

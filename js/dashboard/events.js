@@ -65,6 +65,17 @@ export function createDashboardEvents(
     document.addEventListener("change", (event) => {
       const target = event.target;
       if (
+        target instanceof HTMLInputElement &&
+        target.type === "file" &&
+        (
+          target.classList.contains("icon-upload-input") ||
+          target.classList.contains("do-icon-file")
+        )
+      ) {
+        previewIcon(target);
+        return;
+      }
+      if (
         target instanceof HTMLSelectElement &&
         target.dataset.action === "change-order-status"
       ) {
@@ -102,14 +113,6 @@ export function createDashboardEvents(
     if (userSearchInput) {
       userSearchInput.addEventListener("keyup", (event) => {
         if (event.key === "Enter") loadUsers();
-      });
-    }
-
-    const iconFileInput = document.getElementById("s-icon-file");
-    if (iconFileInput) {
-      iconFileInput.addEventListener("change", (event) => {
-        const input = event.target;
-        if (input instanceof HTMLInputElement) previewIcon(input);
       });
     }
 

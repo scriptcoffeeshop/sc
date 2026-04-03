@@ -31,6 +31,11 @@ import { showMyOrders, submitOrder } from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
 import { authFetch } from "./auth.js";
 import { escapeHtml } from "./utils.js";
+import {
+  getDeliveryIconFallbackKey,
+  getPaymentIconFallbackKey,
+  setIconElement,
+} from "./icons.js";
 // ============ 事件代理 (Event Delegation) ============
 // 透過 data-action 屬性在 document.body 統一監聯 click 事件，
 // 取代原本散落在 HTML 各處的內嵌事件掛載方式。
@@ -338,14 +343,14 @@ async function showProfileModal() {
   }
 
   const { value: confirmed } = await Swal.fire({
-    title: "👤 會員資料",
+    title: "會員資料",
     html:
       `<div style="text-align:left;max-height:60vh;overflow-y:auto;padding:4px">
             <p style="color:#888;font-size:13px;margin-bottom:16px">編輯常用資料，下次登入時將自動帶入表單。</p>
             ${fieldsHtml}
         </div>`,
     showCancelButton: true,
-    confirmButtonText: "💾 儲存",
+    confirmButtonText: "儲存",
     cancelButtonText: "取消",
     confirmButtonColor: "#3C2415",
     preConfirm: () => true,
@@ -533,7 +538,7 @@ function applySettings(s) {
     state.isStoreOpen = false;
     updateFormState();
     document.getElementById("total-price").textContent =
-      "🔒 目前休息中，暫停接單";
+      "目前休息中，暫停接單";
   }
 
   // 將設定保存給其他模組使用
@@ -548,30 +553,26 @@ function applySettings(s) {
     } catch (e) {}
   }
 
-  if (paymentOptions.cod) {
-    const iconEl = document.getElementById("po-cod-icon-display");
-    const nameEl = document.getElementById("po-cod-name-display");
-    const descEl = document.getElementById("po-cod-desc-display");
-    if (iconEl) iconEl.textContent = paymentOptions.cod.icon;
-    if (nameEl) nameEl.textContent = paymentOptions.cod.name;
-    if (descEl) descEl.textContent = paymentOptions.cod.description;
-  }
-  if (paymentOptions.linepay) {
-    const iconEl = document.getElementById("po-linepay-icon-display");
-    const nameEl = document.getElementById("po-linepay-name-display");
-    const descEl = document.getElementById("po-linepay-desc-display");
-    if (iconEl) iconEl.textContent = paymentOptions.linepay.icon;
-    if (nameEl) nameEl.textContent = paymentOptions.linepay.name;
-    if (descEl) descEl.textContent = paymentOptions.linepay.description;
-  }
-  if (paymentOptions.transfer) {
-    const iconEl = document.getElementById("po-transfer-icon-display");
-    const nameEl = document.getElementById("po-transfer-name-display");
-    const descEl = document.getElementById("po-transfer-desc-display");
-    if (iconEl) iconEl.textContent = paymentOptions.transfer.icon;
-    if (nameEl) nameEl.textContent = paymentOptions.transfer.name;
-    if (descEl) descEl.textContent = paymentOptions.transfer.description;
-  }
+  ["cod", "linepay", "transfer"].forEach((method) => {
+    const option = paymentOptions[method];
+    if (!option) return;
+    const iconEl = document.getElementById(`po-${method}-icon-display`);
+    const nameEl = document.getElementById(`po-${method}-name-display`);
+    const descEl = document.getElementById(`po-${method}-desc-display`);
+    if (iconEl) {
+      setIconElement(
+        iconEl,
+        {
+          icon_url: option.icon_url || option.iconUrl,
+          icon: option.icon,
+        },
+        getPaymentIconFallbackKey(method),
+        `${method} 圖示`,
+      );
+    }
+    if (nameEl && option.name) nameEl.textContent = option.name;
+    if (descEl && option.description) descEl.textContent = option.description;
+  });
 
   // 取出最新的物流選項
   const deliveryConfigStr = window.appSettings.delivery_options_config || "";
@@ -604,7 +605,8 @@ function applySettings(s) {
     deliveryConfig = [
       {
         id: "in_store",
-        icon: "🚶",
+        icon: "",
+        icon_url: "",
         name: "來店自取",
         description: "到店自取",
         enabled: true,
@@ -613,7 +615,8 @@ function applySettings(s) {
       },
       {
         id: "delivery",
-        icon: "🛵",
+        icon: "",
+        icon_url: "",
         name: "配送到府 (限新竹)",
         description: "專人外送",
         enabled: true,
@@ -622,7 +625,8 @@ function applySettings(s) {
       },
       {
         id: "home_delivery",
-        icon: "📦",
+        icon: "",
+        icon_url: "",
         name: "全台宅配",
         description: "宅配到府",
         enabled: true,
@@ -631,7 +635,8 @@ function applySettings(s) {
       },
       {
         id: "seven_eleven",
-        icon: "🏪",
+        icon: "",
+        icon_url: "",
         name: "7-11 取件",
         description: "超商門市",
         enabled: true,
@@ -640,7 +645,8 @@ function applySettings(s) {
       },
       {
         id: "family_mart",
-        icon: "🏬",
+        icon: "",
+        icon_url: "",
         name: "全家取件",
         description: "超商門市",
         enabled: true,
@@ -650,14 +656,19 @@ function applySettings(s) {
     ];
   }
   window.currentDeliveryConfig = deliveryConfig;
+  window.currentDeliveryConfig = window.currentDeliveryConfig.map((item) => ({
+    ...item,
+    icon_url: item.icon_url || item.iconUrl || "",
+    iconFallbackKey: getDeliveryIconFallbackKey(item.id),
+  }));
 
   // 渲染物流選項 (在 delivery.js 中定義)
   if (typeof window.renderDeliveryOptions === "function") {
-    window.renderDeliveryOptions(deliveryConfig);
+    window.renderDeliveryOptions(window.currentDeliveryConfig);
   }
 
   if (typeof window.updatePaymentOptionsState === "function") {
-    window.updatePaymentOptionsState(deliveryConfig);
+    window.updatePaymentOptionsState(window.currentDeliveryConfig);
   }
 }
 
@@ -754,7 +765,7 @@ function updateFormState() {
     if (!loggedIn) {
       cartSubmitBtn.textContent = "請先登入後再送出訂單";
     } else if (!open) {
-      cartSubmitBtn.textContent = "🔒 目前休息中，暫停接單";
+      cartSubmitBtn.textContent = "目前休息中，暫停接單";
     } else if (!hasItems) {
       cartSubmitBtn.textContent = "購物車是空的";
     } else {
@@ -846,7 +857,7 @@ function renderBankAccounts() {
                 <button type="button" data-action="copy-transfer-account" data-account="${
       escapeHtml(b.accountNumber)
     }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
-                    📋 複製
+                    複製
                 </button>
             </div>
             ${
@@ -896,7 +907,7 @@ function fallbackCopyTextToClipboard(text, btn) {
 
 function showCopySuccess(btn) {
   const originalText = btn.innerHTML;
-  btn.innerHTML = "✅ 已複製";
+  btn.innerHTML = "已複製";
   btn.classList.add("bg-green-100", "text-green-700");
   setTimeout(() => {
     btn.innerHTML = originalText;

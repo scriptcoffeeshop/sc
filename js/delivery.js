@@ -5,6 +5,11 @@
 import { API_URL, districtData } from "./config.js";
 import { escapeHtml, Toast } from "./utils.js";
 import { state } from "./state.js";
+import {
+  getDefaultIconUrl,
+  getDeliveryIconFallbackKey,
+  renderIconMarkup,
+} from "./icons.js";
 
 let allStores = [];
 let storeListLoaded = false;
@@ -45,8 +50,16 @@ window.renderDeliveryOptions = function (config) {
     div.dataset.id = opt.id;
 
     div.innerHTML = `
-            <div class="check-mark">✓</div>
-            <div class="text-2xl mb-2">${escapeHtml(opt.icon || "")}</div>
+            <div class="check-mark"><img src="${
+      getDefaultIconUrl("selected")
+    }" alt="" class="ui-icon-img"></div>
+            <div class="option-icon">${
+      renderIconMarkup(
+        opt,
+        getDeliveryIconFallbackKey(opt.id),
+        `${opt.name || "配送"} 圖示`,
+      )
+    }</div>
             <div class="font-semibold" style="font-size: 0.95rem;">${
       escapeHtml(opt.name || "")
     }</div>
@@ -353,7 +366,7 @@ export async function openStoreSearchModal() {
   }
 
   await Swal.fire({
-    title: "🔍 搜尋門市",
+    title: "搜尋門市",
     html: `
             <input id="store-search-input" class="swal2-input" placeholder="輸入門市名稱、地址或關鍵字" style="width:90%">
             <div id="store-search-results" style="max-height:300px; overflow-y:auto; margin-top:12px; text-align:left;"></div>

@@ -6,6 +6,12 @@ import { API_URL, LINE_REDIRECT } from "./config.js";
 import { esc, Toast } from "./utils.js";
 import { authFetch, loginWithLine } from "./auth.js";
 import {
+  getDefaultIconUrl,
+  getDeliveryIconFallbackKey,
+  getPaymentIconFallbackKey,
+  resolveAssetUrl,
+} from "./icons.js";
+import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
 } from "./dashboard/modules/orders.js";
@@ -37,6 +43,127 @@ window.promotions = [];
 let dashboardSettings = {};
 let settingsLoadToken = 0;
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
+const MAX_ICON_UPLOAD_BYTES = 500 * 1024;
+
+const DEFAULT_DELIVERY_OPTIONS = {
+  in_store: {
+    id: "in_store",
+    icon: "",
+    icon_url: getDefaultIconUrl("in_store"),
+    name: "來店自取",
+    description: "到店自取",
+    enabled: true,
+  },
+  delivery: {
+    id: "delivery",
+    icon: "",
+    icon_url: getDefaultIconUrl("delivery_method"),
+    name: "配送到府 (限新竹)",
+    description: "專人外送",
+    enabled: true,
+  },
+  home_delivery: {
+    id: "home_delivery",
+    icon: "",
+    icon_url: getDefaultIconUrl("home_delivery"),
+    name: "全台宅配",
+    description: "宅配到府",
+    enabled: true,
+  },
+  seven_eleven: {
+    id: "seven_eleven",
+    icon: "",
+    icon_url: getDefaultIconUrl("seven_eleven"),
+    name: "7-11 取件",
+    description: "超商門市",
+    enabled: true,
+  },
+  family_mart: {
+    id: "family_mart",
+    icon: "",
+    icon_url: getDefaultIconUrl("family_mart"),
+    name: "全家取件",
+    description: "超商門市",
+    enabled: true,
+  },
+};
+
+const DEFAULT_PAYMENT_OPTIONS = {
+  cod: {
+    icon: "",
+    icon_url: getDefaultIconUrl("cod"),
+    name: "取件 / 到付",
+    description: "取貨時付現或宅配到付",
+  },
+  linepay: {
+    icon: "",
+    icon_url: getDefaultIconUrl("linepay"),
+    name: "LINE Pay",
+    description: "線上安全付款",
+  },
+  transfer: {
+    icon: "",
+    icon_url: getDefaultIconUrl("transfer"),
+    name: "線上轉帳",
+    description: "ATM / 網銀匯款",
+  },
+};
+
+function normalizeDeliveryOption(item = {}) {
+  const id = String(item.id || "").trim();
+  const defaults = DEFAULT_DELIVERY_OPTIONS[id] || {
+    id: id || `custom_${Date.now()}`,
+    icon: "",
+    icon_url: getDefaultIconUrl("delivery"),
+    name: "新物流方式",
+    description: "設定敘述",
+    enabled: true,
+  };
+
+  return {
+    ...defaults,
+    ...item,
+    id: id || defaults.id,
+    icon: String(item.icon ?? defaults.icon ?? ""),
+    icon_url: String(
+      item.icon_url ?? item.iconUrl ?? defaults.icon_url ?? "",
+    ),
+    name: String(item.name ?? defaults.name ?? ""),
+    description: String(item.description ?? defaults.description ?? ""),
+    enabled: item.enabled !== false,
+    fee: Number.isFinite(Number(item.fee)) ? Number(item.fee) : 0,
+    free_threshold: Number.isFinite(Number(item.free_threshold))
+      ? Number(item.free_threshold)
+      : 0,
+    payment: {
+      cod: item.payment?.cod !== false,
+      linepay: !!item.payment?.linepay,
+      transfer: !!item.payment?.transfer,
+    },
+  };
+}
+
+function normalizePaymentOption(method, option = {}) {
+  const defaults = DEFAULT_PAYMENT_OPTIONS[method] || DEFAULT_PAYMENT_OPTIONS.cod;
+  return {
+    ...defaults,
+    ...option,
+    icon: String(option.icon ?? defaults.icon ?? ""),
+    icon_url: String(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
+    name: String(option.name ?? defaults.name ?? ""),
+    description: String(option.description ?? defaults.description ?? ""),
+  };
+}
+
+function sectionIconSettingKey(section) {
+  const normalized = String(section || "").trim();
+  if (!normalized) return "";
+  return `${normalized}_section_icon_url`;
+}
+
+function paymentIconFallbackKey(method) {
+  return getPaymentIconFallbackKey(method);
+}
 
 function getAuthUserId() {
   if (!currentUser?.userId) throw new Error("請先登入");
@@ -49,6 +176,14 @@ function parseBooleanSetting(value, defaultValue = true) {
   }
   const normalized = String(value).trim().toLowerCase();
   return !["false", "0", "off", "no"].includes(normalized);
+}
+
+function readInputValue(id, fallback = "") {
+  const el = document.getElementById(id);
+  if (el && typeof el.value !== "undefined") {
+    return String(el.value || "").trim();
+  }
+  return fallback;
 }
 
 // ============ 全域函式掛載（保留舊快取相容性） ============
@@ -83,6 +218,9 @@ window.deleteFormField = deleteFormField;
 window.toggleFieldEnabled = toggleFieldEnabled;
 window.previewIcon = previewIcon;
 window.uploadSiteIcon = uploadSiteIcon;
+window.uploadSectionIcon = uploadSectionIcon;
+window.uploadPaymentIcon = uploadPaymentIcon;
+window.uploadDeliveryRowIcon = uploadDeliveryRowIcon;
 window.resetSectionTitle = resetSectionTitle;
 window.linePayRefundOrder = linePayRefundOrder;
 window.showAddBankAccountModal = showAddBankAccountModal;
@@ -129,6 +267,9 @@ const dashboardActionHandlers = {
   }),
   ...createSettingsActionHandlers({
     uploadSiteIcon,
+    uploadSectionIcon,
+    uploadPaymentIcon,
+    uploadDeliveryRowIcon,
     resetSectionTitle,
     addDeliveryOptionAdmin,
     showAddBankAccountModal,
@@ -313,25 +454,25 @@ const orderStatusLabel = {
 };
 
 const orderMethodLabel = {
-  delivery: "🏠 配送到府",
-  home_delivery: "📦 全台宅配",
-  seven_eleven: "🏪 7-11",
-  family_mart: "🏬 全家",
-  in_store: "🚶 來店取貨",
+  delivery: "配送到府",
+  home_delivery: "全台宅配",
+  seven_eleven: "7-11",
+  family_mart: "全家",
+  in_store: "來店取貨",
 };
 
 const orderPayMethodLabel = {
-  cod: "💵 貨到付款",
-  linepay: "💚 LINE Pay",
-  transfer: "🏦 轉帳",
+  cod: "貨到付款",
+  linepay: "LINE Pay",
+  transfer: "轉帳",
 };
 
 const orderPayStatusLabel = {
-  pending: "⚓ 待付款",
-  paid: "✅ 已付款",
-  failed: "❌ 失敗",
-  cancelled: "❌ 取消",
-  refunded: "↩️ 已退款",
+  pending: "待付款",
+  paid: "已付款",
+  failed: "失敗",
+  cancelled: "取消",
+  refunded: "已退款",
 };
 
 const orderStatusOptions = [
@@ -351,20 +492,20 @@ function getTrackingLinkInfo(order) {
   if (customTrackingUrl) {
     return {
       url: customTrackingUrl,
-      label: "🔗 物流追蹤頁面",
+      label: "物流追蹤頁面",
     };
   }
   if (!order.trackingNumber) return null;
   if (order.deliveryMethod === "seven_eleven") {
     return {
       url: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
-      label: "🔗 7-11貨態查詢",
+      label: "7-11貨態查詢",
     };
   }
   if (order.deliveryMethod === "family_mart") {
     return {
       url: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
-      label: "🔗 全家貨態查詢",
+      label: "全家貨態查詢",
     };
   }
   if (
@@ -373,7 +514,7 @@ function getTrackingLinkInfo(order) {
   ) {
     return {
       url: "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100",
-      label: "🔗 中華郵政查詢",
+      label: "中華郵政查詢",
     };
   }
   return null;
@@ -632,10 +773,10 @@ function renderOrders() {
       : "";
     const transferInfo = pm === "transfer"
       ? `<div class="text-xs text-blue-800 mt-2 bg-blue-50 p-2 rounded">
-                 <div>🏦 <b>顧客匯出末5碼:</b> ${
+                 <div><b>顧客匯出末5碼:</b> ${
         esc(o.transferAccountLast5 || "未提供")
       }</div>
-                 <div class="mt-1 pb-1">⬇️ <b>匯入目標帳號:</b> ${
+                 <div class="mt-1 pb-1"><b>匯入目標帳號:</b> ${
         esc(o.paymentId || "未提供 (舊版訂單)")
       }</div>
                </div>`
@@ -643,12 +784,14 @@ function renderOrders() {
     const refundBtn = pm === "linepay" && ps === "paid"
       ? `<button data-action="refund-linepay-order" data-order-id="${
         esc(o.orderId)
-      }" class="text-xs text-purple-600 hover:text-purple-800">↩️ 退款</button>`
+      }" class="text-xs text-purple-600 hover:text-purple-800 inline-flex items-center gap-1"><img src="${
+        esc(getDefaultIconUrl("refund"))
+      }" alt="" class="ui-icon-inline">退款</button>`
       : "";
     const confirmPayBtn = pm === "transfer" && ps === "pending"
       ? `<button data-action="confirm-transfer-payment" data-order-id="${
         esc(o.orderId)
-      }" class="text-xs text-green-600 hover:text-green-800">✅ 確認已收款</button>`
+      }" class="text-xs text-green-600 hover:text-green-800">確認已收款</button>`
       : "";
 
     const trackingLinkHtml = getTrackingLinkHtml(o);
@@ -666,7 +809,7 @@ function renderOrders() {
       }</span>
                     <button type="button" data-action="copy-tracking-number" data-tracking-number="${
         esc(o.trackingNumber)
-      }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">📋 複製</button></div>`
+      }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">複製</button></div>`
       : "";
     const trackingHtml = hasShippingInfo
       ? `<div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
@@ -723,7 +866,7 @@ function renderOrders() {
     }</div>
             ${
       o.note
-        ? `<div class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2">📝 ${
+        ? `<div class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2"> ${
           esc(o.note)
         }</div>`
         : ""
@@ -1279,7 +1422,9 @@ function renderProducts() {
       html += `
             <tr class="border-b" style="border-color:#f0e6db;" data-id="${product.id}">
                 <td class="p-3 text-center">
-                    <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">☰</span>
+                    <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;"><img src="${
+        esc(getDefaultIconUrl("drag"))
+      }" alt="" class="drag-handle-icon"></span>
                 </td>
                 <td class="p-3 text-sm">${esc(product.category)}</td>
                 <td class="p-3">
@@ -1590,7 +1735,9 @@ function renderCategories() {
   container.innerHTML = categories.map((c) => `
         <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;" data-id="${c.id}">
             <div class="flex items-center gap-2">
-                <span class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">☰</span>
+                <span class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;"><img src="${
+    esc(getDefaultIconUrl("drag"))
+  }" alt="" class="drag-handle-icon"></span>
                 <span class="font-medium">${esc(c.name)}</span>
             </div>
             <div class="flex gap-2">
@@ -1807,7 +1954,9 @@ function renderPromotions() {
     html += `
         <tr class="border-b" style="border-color:#f0e6db;" data-id="${viewPromotion.id}">
             <td class="p-3 text-center">
-                <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">☰</span>
+                <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;"><img src="${
+      esc(getDefaultIconUrl("drag"))
+    }" alt="" class="drag-handle-icon"></span>
             </td>
             <td class="p-3 font-medium">${esc(viewPromotion.name)}</td>
             <td class="p-3 text-sm text-gray-600">${esc(viewPromotion.conditionText)} <span class="font-bold text-red-500">${esc(viewPromotion.discountText)}</span></td>
@@ -2009,13 +2158,16 @@ async function loadSettings() {
       document.getElementById("s-site-title").value = s.site_title || "";
       document.getElementById("s-site-subtitle").value = s.site_subtitle || "";
       document.getElementById("s-site-emoji").value = s.site_icon_emoji || "";
-      // Icon 預覽
-      if (s.site_icon_url) {
-        document.getElementById("s-icon-preview").src = s.site_icon_url;
-        document.getElementById("s-icon-preview").classList.remove("hidden");
-        document.getElementById("s-icon-url-display").textContent =
-          s.site_icon_url;
-      }
+      const siteIconUrl = String(s.site_icon_url || getDefaultIconUrl("brand"));
+      const siteIconUrlInput = document.getElementById("s-site-icon-url");
+      if (siteIconUrlInput) siteIconUrlInput.value = siteIconUrl;
+      updateIconPreview({
+        previewId: "s-icon-preview",
+        rawUrl: siteIconUrl,
+        fallbackUrl: getDefaultIconUrl("brand"),
+      });
+      document.getElementById("s-icon-url-display").textContent = siteIconUrl;
+
       // 區塊標題
       document.getElementById("s-products-title").value =
         s.products_section_title || "";
@@ -2043,6 +2195,25 @@ async function loadSettings() {
         "text-base";
       document.getElementById("s-notes-bold").checked =
         String(s.notes_section_bold) !== "false";
+
+      ["products", "delivery", "notes"].forEach((section) => {
+        const settingKey = sectionIconSettingKey(section);
+        const fallbackKey = section === "products"
+          ? "products"
+          : section === "delivery"
+          ? "delivery"
+          : "notes";
+        const sectionIconUrl = String(s[settingKey] || getDefaultIconUrl(fallbackKey));
+        const urlInput = document.getElementById(`s-${section}-icon-url`);
+        if (urlInput) urlInput.value = sectionIconUrl;
+        updateIconPreview({
+          previewId: `s-${section}-icon-preview`,
+          rawUrl: sectionIconUrl,
+          fallbackUrl: getDefaultIconUrl(fallbackKey),
+        });
+        const urlDisplay = document.getElementById(`s-${section}-icon-url-display`);
+        if (urlDisplay) urlDisplay.textContent = sectionIconUrl;
+      });
 
       // 物流與金流對應設定載入
       const deliveryConfigStr = s.delivery_options_config || "";
@@ -2078,56 +2249,21 @@ async function loadSettings() {
         }
 
         // 將舊資料結構轉換為新版陣列
-        deliveryConfig = [
-          {
-            id: "in_store",
-            icon: "🚶",
-            name: "來店自取",
-            description: "到店自取",
-            enabled: true,
-            payment: routingConfig["in_store"] ||
-              { cod: true, linepay: false, transfer: false },
+        deliveryConfig = Object.values(DEFAULT_DELIVERY_OPTIONS).map((item) => ({
+          ...item,
+          payment: routingConfig[item.id] || {
+            cod: true,
+            linepay: false,
+            transfer: false,
           },
-          {
-            id: "delivery",
-            icon: "🛵",
-            name: "配送到府 (限新竹)",
-            description: "專人外送",
-            enabled: true,
-            payment: routingConfig["delivery"] ||
-              { cod: true, linepay: false, transfer: false },
-          },
-          {
-            id: "home_delivery",
-            icon: "📦",
-            name: "全台宅配",
-            description: "宅配到府",
-            enabled: true,
-            payment: routingConfig["home_delivery"] ||
-              { cod: true, linepay: false, transfer: false },
-          },
-          {
-            id: "seven_eleven",
-            icon: "🏪",
-            name: "7-11 取件",
-            description: "超商門市",
-            enabled: true,
-            payment: routingConfig["seven_eleven"] ||
-              { cod: true, linepay: false, transfer: false },
-          },
-          {
-            id: "family_mart",
-            icon: "🏬",
-            name: "全家取件",
-            description: "超商門市",
-            enabled: true,
-            payment: routingConfig["family_mart"] ||
-              { cod: true, linepay: false, transfer: false },
-          },
-        ];
+          fee: 0,
+          free_threshold: 0,
+        }));
       }
-
-      renderDeliveryOptionsAdmin(deliveryConfig);
+      const normalizedDeliveryConfig = deliveryConfig.map((item) =>
+        normalizeDeliveryOption(item)
+      );
+      renderDeliveryOptionsAdmin(normalizedDeliveryConfig);
 
       const linePaySandboxCheckbox = document.getElementById(
         "s-linepay-sandbox",
@@ -2162,27 +2298,24 @@ async function loadSettings() {
           paymentOptions = JSON.parse(paymentOptionsStr);
         } catch (e) {}
       }
-
-      document.getElementById("po-cod-icon").value = paymentOptions.cod?.icon ||
-        "💵";
-      document.getElementById("po-cod-name").value = paymentOptions.cod?.name ||
-        "取件 / 到付";
-      document.getElementById("po-cod-desc").value =
-        paymentOptions.cod?.description || "取貨時付現或宅配到付";
-
-      document.getElementById("po-linepay-icon").value =
-        paymentOptions.linepay?.icon || "💚";
-      document.getElementById("po-linepay-name").value =
-        paymentOptions.linepay?.name || "LINE Pay";
-      document.getElementById("po-linepay-desc").value =
-        paymentOptions.linepay?.description || "線上安全付款";
-
-      document.getElementById("po-transfer-icon").value =
-        paymentOptions.transfer?.icon || "🏦";
-      document.getElementById("po-transfer-name").value =
-        paymentOptions.transfer?.name || "線上轉帳";
-      document.getElementById("po-transfer-desc").value =
-        paymentOptions.transfer?.description || "ATM / 網銀匯款";
+      ["cod", "linepay", "transfer"].forEach((method) => {
+        const normalized = normalizePaymentOption(method, paymentOptions[method]);
+        const iconInput = document.getElementById(`po-${method}-icon`);
+        const nameInput = document.getElementById(`po-${method}-name`);
+        const descInput = document.getElementById(`po-${method}-desc`);
+        const iconUrlInput = document.getElementById(`po-${method}-icon-url`);
+        if (iconInput) iconInput.value = normalized.icon;
+        if (nameInput) nameInput.value = normalized.name;
+        if (descInput) descInput.value = normalized.description;
+        if (iconUrlInput) iconUrlInput.value = normalized.icon_url;
+        updateIconPreview({
+          previewId: `po-${method}-icon-preview`,
+          rawUrl: normalized.icon_url,
+          fallbackUrl: getDefaultIconUrl(paymentIconFallbackKey(method)),
+        });
+        const urlDisplay = document.getElementById(`po-${method}-icon-url-display`);
+        if (urlDisplay) urlDisplay.textContent = normalized.icon_url;
+      });
 
       // 載入匯款帳號
       if (currentLoadToken !== settingsLoadToken) return;
@@ -2200,7 +2333,7 @@ function renderDeliveryOptionsAdmin(config) {
   tbody.innerHTML = "";
 
   config.forEach((item) => {
-    configToHtml(item, tbody);
+    configToHtml(normalizeDeliveryOption(item), tbody);
   });
 
   // 重新綁定 Sortable (如果已經存在則銷毀重建)
@@ -2216,16 +2349,17 @@ function renderDeliveryOptionsAdmin(config) {
 
 function addDeliveryOptionAdmin() {
   const tempId = "custom_" + Date.now();
-  const newConfig = {
+  const newConfig = normalizeDeliveryOption({
     id: tempId,
-    icon: "📦",
+    icon: "",
+    icon_url: getDefaultIconUrl("delivery"),
     name: "新物流方式",
     description: "設定敘述",
     enabled: true,
     fee: 0,
     free_threshold: 0,
     payment: { cod: true, linepay: false, transfer: false },
-  };
+  });
 
   const tbody = document.getElementById("delivery-routing-table");
   if (!tbody) return;
@@ -2234,68 +2368,89 @@ function addDeliveryOptionAdmin() {
 }
 
 function configToHtml(item, tbody, isNew = false) {
+  const normalized = normalizeDeliveryOption(item);
+  const fallbackKey = getDeliveryIconFallbackKey(normalized.id);
+  const previewUrl = resolveAssetUrl(normalized.icon_url) ||
+    getDefaultIconUrl(fallbackKey);
+
   const tr = document.createElement("tr");
   tr.className = "border-b delivery-option-row group" +
     (isNew ? " bg-yellow-50" : "");
   tr.style.borderColor = "#e5ddd5";
-  tr.dataset.id = item.id;
+  tr.dataset.id = normalized.id;
+  tr.dataset.defaultIconKey = fallbackKey;
 
   tr.innerHTML = `
         <td class="p-3 text-center cursor-move text-gray-400 hover:text-gray-600 transition">
-            ☰
+            <img src="${esc(getDefaultIconUrl("drag"))}" alt="" class="drag-handle-icon">
         </td>
         <td class="p-3">
-            <div class="flex flex-col gap-2">
+            <div class="flex flex-col gap-2 min-w-[280px]">
+                <div class="flex flex-wrap items-center gap-2">
+                    <img class="icon-upload-preview do-icon-preview" src="${esc(
+    previewUrl
+  )}" alt="配送圖示預覽">
+                    <input type="hidden" class="do-icon-url" value="${esc(
+    normalized.icon_url
+  )}">
+                    <input type="file" class="do-icon-file text-xs" accept="image/png,image/webp,image/jpeg,image/jpg">
+                    <button type="button" data-action="upload-delivery-row-icon" class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">上傳圖示</button>
+                </div>
+                <p class="text-[11px] text-gray-400 truncate do-icon-url-display">${
+    esc(normalized.icon_url)
+  }</p>
                 <div class="flex items-center gap-2">
-                    <input type="text" class="border rounded p-1 w-12 text-center text-xl do-icon" value="${
-    esc(item.icon)
-  }" placeholder="圖示">
+                    <input type="text" class="border rounded p-1 icon-text-fallback text-sm do-icon" value="${
+    esc(normalized.icon)
+  }" placeholder="備援字元">
                     <input type="text" class="border rounded p-1 flex-1 min-w-[120px] do-name" value="${
-    esc(item.name)
+    esc(normalized.name)
   }" placeholder="物流名稱">
-                    <input type="hidden" class="do-id" value="${esc(item.id)}">
+                    <input type="hidden" class="do-id" value="${
+    esc(normalized.id)
+  }">
                 </div>
                 <input type="text" class="border rounded p-1 w-full text-xs text-gray-600 do-desc" value="${
-    esc(item.description)
+    esc(normalized.description)
   }" placeholder="簡短說明 (例如: 到店自取)">
             </div>
         </td>
         <td class="p-3 text-center border-l bg-gray-50/50" style="border-color:#e5ddd5">
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer do-enabled" ${
-    item.enabled ? "checked" : ""
+    normalized.enabled ? "checked" : ""
   }>
                 <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
             </label>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <input type="number" class="border rounded p-1 w-16 text-center text-sm do-fee" value="${
-    item.fee !== undefined ? item.fee : 0
+    normalized.fee !== undefined ? normalized.fee : 0
   }" min="0">
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <input type="number" class="border rounded p-1 w-20 text-center text-sm do-free-threshold" value="${
-    item.free_threshold !== undefined ? item.free_threshold : 0
+    normalized.free_threshold !== undefined ? normalized.free_threshold : 0
   }" min="0">
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <input type="checkbox" class="w-4 h-4 do-cod" ${
-    item.payment?.cod ? "checked" : ""
+    normalized.payment?.cod ? "checked" : ""
   }>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <input type="checkbox" class="w-4 h-4 do-linepay" ${
-    item.payment?.linepay ? "checked" : ""
+    normalized.payment?.linepay ? "checked" : ""
   }>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <input type="checkbox" class="w-4 h-4 do-transfer" ${
-    item.payment?.transfer ? "checked" : ""
+    normalized.payment?.transfer ? "checked" : ""
   }>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
             <button type="button" data-action="remove-delivery-option-row" class="text-red-500 hover:text-red-700 p-1" title="刪除此選項">
-                🗑️
+                刪除
             </button>
         </td>
     `;
@@ -2309,22 +2464,25 @@ function configToHtml(item, tbody, isNew = false) {
 function resetSectionTitle(section) {
   const defaults = {
     products: {
-      title: "🪶 咖啡豆選購",
+      title: "咖啡豆選購",
       color: "#6F4E37",
       size: "text-lg",
       bold: true,
+      iconUrl: getDefaultIconUrl("products"),
     },
     delivery: {
-      title: "🚚 配送方式",
+      title: "配送方式",
       color: "#6F4E37",
       size: "text-lg",
       bold: true,
+      iconUrl: getDefaultIconUrl("delivery"),
     },
     notes: {
-      title: "📝 訂單備註",
+      title: "訂單備註",
       color: "#6F4E37",
       size: "text-base",
       bold: true,
+      iconUrl: getDefaultIconUrl("notes"),
     },
   };
   const d = defaults[section];
@@ -2333,6 +2491,17 @@ function resetSectionTitle(section) {
   document.getElementById(`s-${section}-color`).value = d.color;
   document.getElementById(`s-${section}-size`).value = d.size;
   document.getElementById(`s-${section}-bold`).checked = d.bold;
+  const iconUrlInput = document.getElementById(`s-${section}-icon-url`);
+  if (iconUrlInput) iconUrlInput.value = d.iconUrl;
+  updateIconPreview({
+    previewId: `s-${section}-icon-preview`,
+    rawUrl: d.iconUrl,
+    fallbackUrl: d.iconUrl,
+  });
+  const iconUrlDisplay = document.getElementById(
+    `s-${section}-icon-url-display`,
+  );
+  if (iconUrlDisplay) iconUrlDisplay.textContent = d.iconUrl;
 }
 
 async function saveSettings() {
@@ -2351,6 +2520,7 @@ async function saveSettings() {
           "true",
         site_title: document.getElementById("s-site-title").value.trim(),
         site_subtitle: document.getElementById("s-site-subtitle").value.trim(),
+        site_icon_url: readInputValue("s-site-icon-url"),
         site_icon_emoji: document.getElementById("s-site-emoji").value.trim(),
 
         products_section_title: document.getElementById("s-products-title")
@@ -2361,6 +2531,7 @@ async function saveSettings() {
         products_section_bold: String(
           document.getElementById("s-products-bold").checked,
         ),
+        products_section_icon_url: readInputValue("s-products-icon-url"),
 
         delivery_section_title: document.getElementById("s-delivery-title")
           .value.trim(),
@@ -2370,6 +2541,7 @@ async function saveSettings() {
         delivery_section_bold: String(
           document.getElementById("s-delivery-bold").checked,
         ),
+        delivery_section_icon_url: readInputValue("s-delivery-icon-url"),
 
         notes_section_title: document.getElementById("s-notes-title").value
           .trim(),
@@ -2378,6 +2550,7 @@ async function saveSettings() {
         notes_section_bold: String(
           document.getElementById("s-notes-bold").checked,
         ),
+        notes_section_icon_url: readInputValue("s-notes-icon-url"),
 
         linepay_sandbox: String(linePaySandboxChecked),
       },
@@ -2387,6 +2560,7 @@ async function saveSettings() {
     document.querySelectorAll(".delivery-option-row").forEach((row) => {
       const id = row.querySelector(".do-id").value;
       const icon = row.querySelector(".do-icon").value.trim();
+      const icon_url = row.querySelector(".do-icon-url")?.value.trim() || "";
       const name = row.querySelector(".do-name").value.trim();
       const desc = row.querySelector(".do-desc").value.trim();
       const enabled = row.querySelector(".do-enabled").checked;
@@ -2403,6 +2577,7 @@ async function saveSettings() {
         deliveryConfig.push({
           id,
           icon,
+          icon_url,
           name,
           description: desc,
           enabled,
@@ -2418,16 +2593,19 @@ async function saveSettings() {
     payload.settings.payment_options_config = JSON.stringify({
       cod: {
         icon: document.getElementById("po-cod-icon").value.trim(),
+        icon_url: readInputValue("po-cod-icon-url"),
         name: document.getElementById("po-cod-name").value.trim(),
         description: document.getElementById("po-cod-desc").value.trim(),
       },
       linepay: {
         icon: document.getElementById("po-linepay-icon").value.trim(),
+        icon_url: readInputValue("po-linepay-icon-url"),
         name: document.getElementById("po-linepay-name").value.trim(),
         description: document.getElementById("po-linepay-desc").value.trim(),
       },
       transfer: {
         icon: document.getElementById("po-transfer-icon").value.trim(),
+        icon_url: readInputValue("po-transfer-icon-url"),
         name: document.getElementById("po-transfer-name").value.trim(),
         description: document.getElementById("po-transfer-desc").value.trim(),
       },
@@ -2609,7 +2787,7 @@ function renderUsers() {
                 <div class="text-xs text-gray-500">${esc(u.email || "")} ${
       u.phone ? "・" + esc(u.phone) : ""
     }</div>
-                <div class="text-xs text-gray-500 mt-1">🏠 ${
+                <div class="text-xs text-gray-500 mt-1">${
       u.defaultDeliveryMethod === "delivery"
         ? `宅配 (${esc(u.defaultCity)}${esc(u.defaultDistrict)} ${
           esc(u.defaultAddress)
@@ -2867,7 +3045,7 @@ function getHiddenDeliveryMethodsText(deliveryVisibility) {
       .filter(([, visible]) => visible === false)
       .map(([deliveryMethod]) => deliveryMethod);
     if (!hiddenDeliveryMethods.length) return "";
-    return `🚫 在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
+    return `在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
   } catch {
     return "";
   }
@@ -2888,7 +3066,7 @@ function buildFormFieldViewModel(field) {
     ),
     toggleEnabledValue: String(!field?.enabled),
     toggleEnabledTitle: field?.enabled ? "停用" : "啟用",
-    toggleEnabledIcon: field?.enabled ? "🟢" : "⚪",
+    toggleEnabledIcon: field?.enabled ? "開" : "關",
   };
 }
 
@@ -2961,7 +3139,9 @@ function renderFormFields() {
       const isProtected = false;
       return `
                 <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${viewField.id}">
-                    <span class="cursor-grab text-gray-400 drag-handle">⠿</span>
+                    <span class="cursor-grab text-gray-400 drag-handle"><img src="${
+        esc(getDefaultIconUrl("drag"))
+      }" alt="" class="drag-handle-icon-sm"></span>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-medium">${esc(viewField.label)}</span>
@@ -2974,7 +3154,7 @@ function renderFormFields() {
       }
                             ${
         isProtected
-          ? '<span class="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">🔒 系統</span>'
+          ? '<span class="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">系統</span>'
           : ""
       }
                         </div>
@@ -2989,10 +3169,10 @@ function renderFormFields() {
                     </div>
                     <div class="flex gap-1 items-center">
                         <button data-action="toggle-field-enabled" data-field-id="${viewField.id}" data-enabled="${viewField.toggleEnabledValue}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${viewField.toggleEnabledTitle}">${viewField.toggleEnabledIcon}</button>
-                        <button data-action="edit-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">✏️</button>
+                        <button data-action="edit-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">編輯</button>
                         ${
         !isProtected
-          ? `<button data-action="delete-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">🗑</button>`
+          ? `<button data-action="delete-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">刪除</button>`
           : ""
       }
                     </div>
@@ -3056,7 +3236,7 @@ async function showAddFieldModal() {
                 <label class="block text-sm mb-1 font-medium">欄位識別碼 (英文，唯一)</label>
                 <input id="swal-fk" class="swal2-input" placeholder="例：receipt_type" style="margin:0 0 12px 0;width:100%">
                 <label class="block text-sm mb-1 font-medium">顯示名稱</label>
-                <input id="swal-fl" class="swal2-input" placeholder="例：📄 開立收據" style="margin:0 0 12px 0;width:100%">
+                <input id="swal-fl" class="swal2-input" placeholder="例：開立收據" style="margin:0 0 12px 0;width:100%">
                 <label class="block text-sm mb-1 font-medium">類型</label>
                 <select id="swal-ft" class="swal2-select" style="margin:0 0 12px 0;width:100%">
                     <option value="text">文字</option>
@@ -3075,7 +3255,7 @@ async function showAddFieldModal() {
                     <input type="checkbox" id="swal-fr"> <span class="text-sm">必填</span>
                 </label>
                 <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
-                    <label class="block text-sm mb-1 font-medium">🚚 配送方式可見性</label>
+                    <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
                     <p class="text-xs text-gray-400 mb-2">取消勾選 = 該配送方式下不顯示此欄位，全勾 = 全部顯示</p>
                     <div id="swal-dv" class="flex flex-wrap gap-2"></div>
                 </div>
@@ -3198,7 +3378,7 @@ async function editFormField(id) {
     }> <span class="text-sm">必填</span>
                 </label>
                 <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
-                    <label class="block text-sm mb-1 font-medium">🚚 配送方式可見性</label>
+                    <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
                     <p class="text-xs text-gray-400 mb-2">取消勾選 = 該配送方式下不顯示此欄位</p>
                     <div id="swal-dv" class="flex flex-wrap gap-2"></div>
                 </div>
@@ -3312,27 +3492,120 @@ async function toggleFieldEnabled(id, enabled) {
 
 // ============ Icon 上傳 ============
 function previewIcon(input) {
-  const file = input.files[0];
+  if (!(input instanceof HTMLInputElement)) return;
+  const file = input.files?.[0];
   if (!file) return;
+
   const reader = new FileReader();
   reader.onload = (e) => {
-    document.getElementById("s-icon-preview").src = e.target.result;
-    document.getElementById("s-icon-preview").classList.remove("hidden");
+    const dataUrl = String(e?.target?.result || "");
+    if (!dataUrl) return;
+
+    if (input.classList.contains("do-icon-file")) {
+      const row = input.closest(".delivery-option-row");
+      const preview = row?.querySelector(".do-icon-preview");
+      if (preview instanceof HTMLImageElement) {
+        preview.src = dataUrl;
+        preview.classList.remove("hidden");
+      }
+      return;
+    }
+
+    const previewId = input.dataset.previewTarget;
+    if (previewId) {
+      updateIconPreview({
+        previewId,
+        rawUrl: dataUrl,
+        fallbackUrl: getDefaultIconUrl(input.dataset.fallbackKey || ""),
+      });
+    }
   };
   reader.readAsDataURL(file);
 }
 
-async function uploadSiteIcon() {
-  const input = document.getElementById("s-icon-file");
-  const file = input.files[0];
+function updateIconPreview({ previewId, rawUrl, fallbackUrl = "" }) {
+  const preview = document.getElementById(previewId);
+  if (!(preview instanceof HTMLImageElement)) return "";
+
+  const resolved = resolveAssetUrl(rawUrl || fallbackUrl || "");
+  if (resolved) {
+    preview.src = resolved;
+    preview.classList.remove("hidden");
+  } else {
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+  }
+  return resolved;
+}
+
+function validateIconFile(file) {
   if (!file) {
     Swal.fire("提示", "請先選擇圖片檔案", "info");
-    return;
+    return false;
   }
-  if (file.size > 500 * 1024) {
+  if (!String(file.type || "").startsWith("image/")) {
+    Swal.fire("錯誤", "請選擇圖片檔案 (PNG/JPG/WebP)", "error");
+    return false;
+  }
+  if (file.size > MAX_ICON_UPLOAD_BYTES) {
     Swal.fire("錯誤", "圖片大小不能超過 500KB", "error");
-    return;
+    return false;
   }
+  return true;
+}
+
+async function fileToBase64(file) {
+  return await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const value = String(reader.result || "");
+      resolve(value.split(",")[1] || "");
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadAssetFile(file, settingKey = "") {
+  const base64 = await fileToBase64(file);
+  const r = await authFetch(`${API_URL}?action=uploadAsset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: getAuthUserId(),
+      fileData: base64,
+      fileName: file.name,
+      contentType: file.type,
+      settingKey,
+    }),
+  });
+  return await r.json();
+}
+
+function setIconUrlToField({
+  inputId,
+  displayId,
+  previewId,
+  url,
+  fallbackKey = "",
+}) {
+  const input = document.getElementById(inputId);
+  if (input) input.value = url;
+  const display = document.getElementById(displayId);
+  if (display) display.textContent = url;
+  if (previewId) {
+    updateIconPreview({
+      previewId,
+      rawUrl: url,
+      fallbackUrl: getDefaultIconUrl(fallbackKey),
+    });
+  }
+}
+
+async function uploadSiteIcon() {
+  const input = document.getElementById("s-icon-file");
+  const file = input?.files?.[0];
+  if (!validateIconFile(file)) return;
 
   Swal.fire({
     title: "上傳中...",
@@ -3341,27 +3614,116 @@ async function uploadSiteIcon() {
   });
 
   try {
-    const base64 = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(",")[1]); // 去掉 data:image/...;base64, 前綴
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-    const r = await authFetch(`${API_URL}?action=uploadSiteIcon`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: getAuthUserId(),
-        fileData: base64,
-        fileName: file.name,
-        contentType: file.type,
-      }),
-    });
-    const d = await r.json();
+    const d = await uploadAssetFile(file, "site_icon_url");
     if (d.success) {
-      document.getElementById("s-icon-url-display").textContent = d.url;
+      setIconUrlToField({
+        inputId: "s-site-icon-url",
+        displayId: "s-icon-url-display",
+        previewId: "s-icon-preview",
+        url: d.url,
+        fallbackKey: "brand",
+      });
       Toast.fire({ icon: "success", title: "圖示已上傳並套用" });
+    } else Swal.fire("錯誤", d.error, "error");
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+async function uploadSectionIcon(button) {
+  const section = button?.dataset?.section;
+  if (!section) return;
+
+  const fileInput = document.getElementById(`s-${section}-icon-file`);
+  const file = fileInput?.files?.[0];
+  if (!validateIconFile(file)) return;
+
+  Swal.fire({
+    title: "上傳中...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  try {
+    const settingKey = sectionIconSettingKey(section);
+    const d = await uploadAssetFile(file, settingKey);
+    if (d.success) {
+      const fallbackKey = section === "products"
+        ? "products"
+        : section === "delivery"
+        ? "delivery"
+        : "notes";
+      setIconUrlToField({
+        inputId: `s-${section}-icon-url`,
+        displayId: `s-${section}-icon-url-display`,
+        previewId: `s-${section}-icon-preview`,
+        url: d.url,
+        fallbackKey,
+      });
+      Toast.fire({ icon: "success", title: "區塊圖示已更新" });
+    } else Swal.fire("錯誤", d.error, "error");
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+async function uploadPaymentIcon(button) {
+  const method = button?.dataset?.method;
+  if (!method) return;
+
+  const fileInput = document.getElementById(`po-${method}-icon-file`);
+  const file = fileInput?.files?.[0];
+  if (!validateIconFile(file)) return;
+
+  Swal.fire({
+    title: "上傳中...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  try {
+    const d = await uploadAssetFile(file, "");
+    if (d.success) {
+      setIconUrlToField({
+        inputId: `po-${method}-icon-url`,
+        displayId: `po-${method}-icon-url-display`,
+        previewId: `po-${method}-icon-preview`,
+        url: d.url,
+        fallbackKey: paymentIconFallbackKey(method),
+      });
+      Toast.fire({ icon: "success", title: "付款圖示已更新" });
+    } else Swal.fire("錯誤", d.error, "error");
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+async function uploadDeliveryRowIcon(button) {
+  const row = button?.closest?.(".delivery-option-row");
+  if (!row) return;
+  const fileInput = row.querySelector(".do-icon-file");
+  const file = fileInput?.files?.[0];
+  if (!validateIconFile(file)) return;
+
+  Swal.fire({
+    title: "上傳中...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  try {
+    const d = await uploadAssetFile(file, "");
+    if (d.success) {
+      const urlInput = row.querySelector(".do-icon-url");
+      const urlDisplay = row.querySelector(".do-icon-url-display");
+      const preview = row.querySelector(".do-icon-preview");
+      if (urlInput) urlInput.value = d.url;
+      if (urlDisplay) urlDisplay.textContent = d.url;
+      if (preview instanceof HTMLImageElement) {
+        preview.src = resolveAssetUrl(d.url);
+        preview.classList.remove("hidden");
+      }
+      Toast.fire({ icon: "success", title: "物流圖示已更新" });
     } else Swal.fire("錯誤", d.error, "error");
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
@@ -3462,13 +3824,15 @@ function renderBankAccountsAdmin() {
     return;
   }
   container.innerHTML = `
-    <p class="text-xs text-gray-500 mb-2">可拖曳左側 ☰ 自由排序匯款帳號</p>
+    <p class="text-xs text-gray-500 mb-2">可拖曳左側排序圖示自由排序匯款帳號</p>
     <div id="bank-accounts-sortable" class="space-y-2">
       ${
     bankAccounts.map((b) => `
           <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#faf6f2; border:1px solid #e5ddd5;">
               <div class="flex items-start gap-3 min-w-0">
-                  <span class="drag-handle-bank cursor-move text-gray-400 hover:text-gray-600 select-none pt-1" title="拖曳排序">☰</span>
+                  <span class="drag-handle-bank cursor-move text-gray-400 hover:text-gray-600 select-none pt-1" title="拖曳排序"><img src="${
+      esc(getDefaultIconUrl("drag"))
+    }" alt="" class="drag-handle-icon-sm"></span>
                   <div>
                       <div class="font-medium">${esc(b.bankName)} (${
       esc(b.bankCode)
