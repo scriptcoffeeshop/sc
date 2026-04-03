@@ -94,6 +94,15 @@
               <span class="tab-with-icon"><img src="/icons/settings-gear.png" alt="" class="ui-icon-inline">系統設定</span>
             </button>
           </TabsTrigger>
+          <TabsTrigger value="icon-library" as-child>
+            <button
+              id="tab-icon-library"
+              data-tab="icon-library"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+            >
+              <span class="tab-with-icon"><img src="/icons/section-tag.png" alt="" class="ui-icon-inline">Icon 素材庫</span>
+            </button>
+          </TabsTrigger>
           <TabsTrigger value="formfields" as-child>
             <button
               id="tab-formfields"
@@ -1197,12 +1206,12 @@
             <input type="checkbox" id="s-ann-enabled" class="w-4 h-4"> <span
             >啟用公告</span>
           </label>
-          <textarea
+          <UiTextarea
             id="s-announcement"
             class="input-field resize-none"
             rows="3"
             placeholder="公告內容..."
-          ></textarea>
+          />
         </div>
 
         <!-- 營業狀態 -->
@@ -1569,6 +1578,94 @@
         </div>
       </div>
 
+      <!-- ===== Icon 素材庫 ===== -->
+      <div id="icon-library-section" class="glass-card p-6 hidden">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
+          <div>
+            <h2 class="text-lg font-bold" style="color: var(--primary)">
+              Icon 素材庫管理
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">
+              依分類瀏覽 icon，選擇套用目標後可一鍵快速套用到設定欄位。
+            </p>
+          </div>
+          <div class="w-full md:w-[340px]">
+            <label class="block text-xs text-gray-500 mb-1">快速搜尋</label>
+            <input
+              v-model="iconLibraryKeyword"
+              class="input-field"
+              placeholder="輸入關鍵字（例如：付款、配送、brand）"
+            >
+          </div>
+        </div>
+
+        <div class="ui-card-section mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">快速套用目標</label>
+              <UiSelect id="icon-library-target">
+                <option value="site">品牌 Icon</option>
+                <option value="products">商品區塊 Icon</option>
+                <option value="delivery">配送區塊 Icon</option>
+                <option value="notes">備註區塊 Icon</option>
+                <option value="cod">付款：貨到/取貨付款</option>
+                <option value="linepay">付款：LINE Pay</option>
+                <option value="transfer">付款：線上轉帳</option>
+              </UiSelect>
+            </div>
+            <p class="text-xs text-gray-500 leading-relaxed">
+              點任一素材卡片的「快速套用」後，會直接寫入對應欄位與預覽圖，最後記得回系統設定按「儲存設定」。
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mb-4">
+          <UiButton
+            v-for="category in iconLibraryCategories"
+            :key="`icon-category-${category}`"
+            size="sm"
+            :variant="iconLibraryCategory === category ? 'default' : 'outline'"
+            @click.prevent="selectIconLibraryCategory(category)"
+          >
+            {{ category === "all" ? "全部分類" : category }}
+          </UiButton>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="icon-library-grid">
+          <div
+            v-for="icon in filteredIconCatalog"
+            :key="`icon-card-${icon.key}`"
+            class="ui-card-section flex flex-col gap-3"
+          >
+            <div class="flex items-start gap-3">
+              <span class="w-12 h-12 rounded-xl border border-slate-200 bg-white p-2 inline-flex items-center justify-center">
+                <img :src="resolveIconCatalogUrl(icon.key)" :alt="icon.label" class="ui-icon-img">
+              </span>
+              <div class="min-w-0">
+                <p class="font-semibold text-sm text-slate-800 leading-tight">{{ icon.label }}</p>
+                <p class="text-xs text-slate-500 font-mono truncate mt-0.5">{{ icon.key }}</p>
+                <p class="text-xs text-slate-500 truncate">{{ icon.path }}</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] px-2 py-1 rounded-full bg-slate-100 text-slate-600">{{ icon.category }}</span>
+              <UiButton
+                size="sm"
+                variant="secondary"
+                data-action="icon-library-apply"
+                :data-icon-key="icon.key"
+                :data-icon-url="icon.path"
+              >
+                快速套用
+              </UiButton>
+            </div>
+          </div>
+        </div>
+        <p v-if="filteredIconCatalog.length === 0" class="text-center text-sm text-gray-500 py-8">
+          找不到符合條件的 icon，請調整分類或搜尋關鍵字。
+        </p>
+      </div>
+
       <!-- ===== 表單管理 ===== -->
       <div id="formfields-section" class="glass-card p-6 hidden">
         <div class="flex justify-between items-center mb-4">
@@ -1663,83 +1760,78 @@
     <!-- 商品 Modal -->
     <div id="product-modal" class="modal-overlay hidden">
       <div class="modal-content">
-        <h3
-          id="pm-title"
-          class="text-xl font-bold mb-6"
-          style="color: var(--primary)"
-        >
+        <h3 id="pm-title" class="text-xl font-bold mb-5" style="color: var(--primary)">
           新增商品
         </h3>
-        <form id="product-form">
+        <form id="product-form" class="space-y-4">
           <input type="hidden" id="pm-id">
-          <div class="mb-3">
-            <label class="block text-sm text-gray-600 mb-1"
-            >分類 *</label><select
-              id="pm-category"
-              class="input-field"
-              required
-            >
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">分類 *</label>
+            <UiSelect id="pm-category" required>
               <option value="">選擇分類</option>
-            </select>
+            </UiSelect>
           </div>
-          <div class="mb-3">
-            <label class="block text-sm text-gray-600 mb-1">品名 *</label><input
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">品名 *</label>
+            <UiInput
               type="text"
               id="pm-name"
-              class="input-field"
               required
-            >
+            />
           </div>
-          <div class="mb-3">
-            <label class="block text-sm text-gray-600 mb-1">說明</label><input
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">說明</label>
+            <UiInput
               type="text"
               id="pm-desc"
-              class="input-field"
               placeholder="風味描述"
-            >
+            />
           </div>
-          <div class="mb-3">
-            <label class="block text-sm text-gray-600 mb-1">烘焙度</label><input
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">烘焙度</label>
+            <UiInput
               type="text"
               id="pm-roast"
-              class="input-field"
               placeholder="例：中淺焙"
-            >
+            />
           </div>
 
           <!-- 規格與價格 -->
-          <div class="mb-3">
-            <label class="block text-sm text-gray-600 mb-2 font-semibold"
-            >規格與價格</label>
-            <div id="specs-container" class="space-y-2"></div>
-            <button
+          <div class="ui-card-section">
+            <label class="block text-sm text-gray-600 mb-2 font-semibold">規格與價格</label>
+            <div id="specs-container" class="space-y-2 mb-2"></div>
+            <UiButton
               type="button"
+              size="sm"
+              variant="outline"
               data-action="add-spec-row"
-              class="mt-2 text-sm font-medium hover:underline"
-              style="color: var(--primary)"
+              class="text-slate-700"
             >
               + 新增規格
-            </button>
+            </UiButton>
           </div>
 
-          <div class="mb-4">
-            <label class="flex items-center gap-2"><input
+          <div>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input
                 type="checkbox"
                 id="pm-enabled"
                 checked
                 class="w-4 h-4"
               >
-              啟用販售</label>
+              啟用販售
+            </label>
           </div>
-          <div class="flex gap-3">
-            <button type="submit" class="btn-primary flex-1">儲存</button>
-            <button
+          <div class="flex gap-3 pt-2">
+            <UiButton type="submit" class="flex-1">儲存</UiButton>
+            <UiButton
               type="button"
+              variant="secondary"
               data-action="close-product-modal"
-              class="flex-1 px-6 py-3 bg-gray-200 rounded-xl"
+              class="flex-1"
             >
               取消
-            </button>
+            </UiButton>
           </div>
         </form>
       </div>
@@ -1758,28 +1850,27 @@
         >
           新增活動
         </h3>
-        <form id="promotion-form">
+        <form id="promotion-form" class="space-y-4">
           <input type="hidden" id="prm-id">
 
-          <div class="mb-3">
+          <div>
             <label class="block text-sm text-gray-600 mb-1">活動名稱 *</label>
-            <input
+            <UiInput
               type="text"
               id="prm-name"
-              class="input-field"
               placeholder="例如：任選2件9折"
               required
-            >
+            />
           </div>
 
-          <div class="mb-3">
+          <div>
             <label class="block text-sm text-gray-600 mb-1">活動類型 *</label>
-            <select id="prm-type" class="input-field" required>
+            <UiSelect id="prm-type" required>
               <option value="bundle">組合優惠 (多件折扣)</option>
-            </select>
+            </UiSelect>
           </div>
 
-          <div class="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+          <div class="ui-card-section bg-gray-50">
             <label
               class="block text-sm text-gray-600 space-x-2 font-medium mb-2"
             >觸發條件</label>
@@ -1795,35 +1886,35 @@
             </div>
             <div class="flex items-center gap-2 mb-2">
               <span class="text-sm">任選滿</span>
-              <input
+              <UiInput
                 type="number"
                 id="prm-min-qty"
-                class="input-field w-20 px-2 py-1 text-center"
+                class="w-20 text-center"
                 value="2"
                 min="1"
                 required
-              >
+              />
               <span class="text-sm">件，可享優惠</span>
             </div>
           </div>
 
-          <div class="mb-3 p-3 bg-gray-50 rounded border border-gray-200">
+          <div class="ui-card-section bg-gray-50">
             <label class="block text-sm text-gray-600 font-medium mb-2"
             >優惠設定</label>
             <div class="flex items-center gap-2 mb-2">
-              <select id="prm-discount-type" class="input-field w-32 px-2 py-1">
+              <UiSelect id="prm-discount-type" class="w-32">
                 <option value="percent">打折 (%)</option>
                 <option value="amount">折抵現金 ($)</option>
-              </select>
-              <input
+              </UiSelect>
+              <UiInput
                 type="number"
                 id="prm-discount-value"
-                class="input-field flex-1 px-2 py-1"
+                class="flex-1"
                 placeholder="數值"
                 required
                 min="0"
                 step="0.1"
-              >
+              />
             </div>
             <p class="text-xs text-gray-500">
               例如：選擇「打折(%)」並輸入 90 表示 9折；選擇「折抵現金($)」並輸入
@@ -1831,22 +1922,23 @@
             </p>
           </div>
 
-          <div class="mb-4">
+          <div>
             <label class="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" id="prm-enabled" checked class="w-4 h-4">
               <span class="text-sm">啟用此活動</span>
             </label>
           </div>
 
-          <div class="flex gap-3">
-            <button type="submit" class="btn-primary flex-1">儲存</button>
-            <button
+          <div class="flex gap-3 pt-2">
+            <UiButton type="submit" class="flex-1">儲存</UiButton>
+            <UiButton
               type="button"
+              variant="secondary"
               data-action="close-promotion-modal"
-              class="flex-1 px-6 py-3 bg-gray-200 rounded-xl hover:bg-gray-300 transition"
+              class="flex-1"
             >
               取消
-            </button>
+            </UiButton>
           </div>
         </form>
       </div>
@@ -1855,10 +1947,14 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import UiButton from "../components/ui/button/Button.vue";
 import UiCard from "../components/ui/card/Card.vue";
+import UiInput from "../components/ui/input/Input.vue";
+import UiSelect from "../components/ui/select/Select.vue";
+import UiTextarea from "../components/ui/textarea/Textarea.vue";
+import { getDefaultIconUrl, ICON_CATALOG } from "../../../js/icons.js";
 import { initDashboardApp } from "../../../js/dashboard-app.js";
 
 const originalBodyClass = document.body.className;
@@ -1869,6 +1965,8 @@ const formFieldsView = ref([]);
 const categoriesView = ref([]);
 const usersView = ref([]);
 const blacklistView = ref([]);
+const iconLibraryCategory = ref("all");
+const iconLibraryKeyword = ref("");
 const ordersStatusOptions = ref([
   "pending",
   "processing",
@@ -1887,6 +1985,35 @@ const orderStatusLabel = {
 
 function orderStatusText(status) {
   return orderStatusLabel[status] || status;
+}
+
+const iconLibraryCategories = computed(() => {
+  const values = new Set(ICON_CATALOG.map((item) => item.category));
+  return ["all", ...Array.from(values)];
+});
+
+const filteredIconCatalog = computed(() => {
+  const keyword = iconLibraryKeyword.value.trim().toLowerCase();
+  return ICON_CATALOG.filter((item) => {
+    if (
+      iconLibraryCategory.value !== "all" &&
+      item.category !== iconLibraryCategory.value
+    ) {
+      return false;
+    }
+    if (!keyword) return true;
+    const targetText = `${item.key} ${item.label} ${item.category} ${item.path}`
+      .toLowerCase();
+    return targetText.includes(keyword);
+  });
+});
+
+function selectIconLibraryCategory(category) {
+  iconLibraryCategory.value = category;
+}
+
+function resolveIconCatalogUrl(iconKey) {
+  return getDefaultIconUrl(iconKey);
 }
 
 function handleDashboardOrdersUpdated(event) {

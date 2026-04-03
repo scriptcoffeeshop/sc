@@ -159,6 +159,16 @@
   border-bottom: 1px solid #edf2f7;
 }
 
+#icon-library-grid .ui-card-section {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+#icon-library-grid .ui-card-section:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 18px -14px rgba(30, 41, 59, 0.4);
+}
+
 @media (max-width: 639px) {
   h2 {
     font-size: 1rem !important;
