@@ -73,10 +73,11 @@ async function uploadAssetInternal(
   const publicUrl = urlData?.publicUrl || "";
 
   if (settingKey) {
-    const { error: upsertError } = await supabase.from("coffee_settings").upsert({
-      key: settingKey,
-      value: publicUrl,
-    });
+    const { error: upsertError } = await supabase.from("coffee_settings")
+      .upsert({
+        key: settingKey,
+        value: publicUrl,
+      });
     if (upsertError) {
       return { success: false, error: "設定更新失敗: " + upsertError.message };
     }
