@@ -27,7 +27,7 @@ import {
   selectStoreFromList,
   updateDistricts,
 } from "./delivery.js";
-import { showMyOrders, submitOrder } from "./orders.js";
+import { initReceiptRequestUi, showMyOrders, submitOrder } from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
 import { authFetch } from "./auth.js";
 import {
@@ -136,6 +136,7 @@ export async function initMainApp() {
   if (mainAppInitialized || !canInitMainApp()) return;
   mainAppInitialized = true;
   initEventDelegation(); // 啟動事件代理
+  initReceiptRequestUi();
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
   const stateParam = urlParams.get("state");

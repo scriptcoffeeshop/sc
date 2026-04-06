@@ -32,6 +32,7 @@ export interface OrderConfirmationParams {
   ordersText: string;
   total: number;
   customFieldsHtml: string;
+  receiptHtml?: string;
 }
 
 export function normalizeEmailSiteTitle(siteTitle: string): string {
@@ -82,6 +83,7 @@ export function buildOrderConfirmationHtml(
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
       ${params.customFieldsHtml}
+      ${params.receiptHtml || ""}
       ${phoneHtml}
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
     METHOD_MAP[params.deliveryMethod] || params.deliveryMethod

@@ -1,0 +1,2 @@
+ALTER TABLE coffee_orders
+ADD COLUMN IF NOT EXISTS receipt_info TEXT DEFAULT '';

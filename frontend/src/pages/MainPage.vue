@@ -495,6 +495,61 @@
         </p>
       </div>
 
+      <!-- 收據資訊 -->
+      <div class="mb-6">
+        <label class="flex items-start gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            id="receipt-request"
+            class="mt-1 w-4 h-4 rounded accent-[#3C2415] shrink-0"
+          >
+          <span class="text-sm text-gray-700">我要索取免用統一發票收據</span>
+        </label>
+        <div
+          id="receipt-fields"
+          class="hidden mt-3 ml-6 p-3 rounded-xl border border-amber-200 bg-amber-50 space-y-3"
+        >
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">買受人（選填）</label>
+            <input
+              id="receipt-buyer"
+              type="text"
+              class="input-field"
+              placeholder="請輸入買受人名稱"
+            >
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">統一編號</label>
+            <input
+              id="receipt-tax-id"
+              type="text"
+              class="input-field"
+              placeholder="請輸入 8 碼統一編號"
+              maxlength="8"
+              pattern="\d{8}"
+              inputmode="numeric"
+            >
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">地址（選填）</label>
+            <input
+              id="receipt-address"
+              type="text"
+              class="input-field"
+              placeholder="請輸入收據地址"
+            >
+          </div>
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              id="receipt-date-stamp"
+              type="checkbox"
+              class="w-4 h-4 rounded accent-[#3C2415] shrink-0"
+            >
+            <span class="text-sm text-gray-700">是否需要壓印日期</span>
+          </label>
+        </div>
+      </div>
+
       <!-- 備註 -->
       <div class="mb-6">
         <label

@@ -17,6 +17,50 @@ import {
 
 import { registerOrUpdateUser } from "../utils/users.ts";
 
+interface ReceiptInfo {
+  buyer: string;
+  taxId: string;
+  address: string;
+  needDateStamp: boolean;
+}
+
+function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const data = raw as Record<string, unknown>;
+  const buyer = String(data.buyer || "").trim();
+  const taxId = String(data.taxId || "").trim();
+  const address = String(data.address || "").trim();
+  const needDateStamp = Boolean(data.needDateStamp);
+
+  if (!/^\d{8}$/.test(taxId)) return null;
+
+  return { buyer, taxId, address, needDateStamp };
+}
+
+function parseReceiptInfo(raw: unknown): ReceiptInfo | null {
+  if (raw === null || raw === undefined) return null;
+  if (typeof raw === "string") {
+    const str = raw.trim();
+    if (!str) return null;
+    try {
+      return normalizeReceiptInfo(JSON.parse(str));
+    } catch {
+      return null;
+    }
+  }
+  return normalizeReceiptInfo(raw);
+}
+
+function buildReceiptHtml(receiptInfo: ReceiptInfo | null): string {
+  if (!receiptInfo) return "";
+  return `<p style="margin: 0 0 10px 0;"><strong>收據資訊：</strong><br>
+    買受人：${sanitize(receiptInfo.buyer) || "未填寫"}<br>
+    統一編號：${sanitize(receiptInfo.taxId)}<br>
+    地址：${sanitize(receiptInfo.address) || "未填寫"}<br>
+    壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}
+  </p>`;
+}
+
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
@@ -68,6 +112,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   if (phone && !/^(09\d{8}|0[2-8]\d{7,8})$/.test(phone)) {
     return { success: false, error: "電話格式不正確" };
   }
+  const receiptInfo = normalizeReceiptInfo(data.receiptInfo);
 
   const now = new Date();
 
@@ -106,6 +151,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     status: "pending",
     note: data.note || "",
     custom_fields: data.customFields || "",
+    receipt_info: receiptInfo ? JSON.stringify(receiptInfo) : "",
     payment_method: paymentMethod,
     payment_status: paymentMethod === "cod" ? "" : "pending",
     transfer_account_last5: paymentMethod === "transfer"
@@ -210,6 +256,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       ordersText,
       total,
       customFieldsHtml,
+      receiptHtml: buildReceiptHtml(receiptInfo),
     });
     await sendEmail(
       String(data.email),
@@ -342,6 +389,7 @@ export async function getOrders(req: Request) {
     paymentStatus: r.payment_status || "",
     paymentId: r.payment_id || "",
     transferAccountLast5: r.transfer_account_last5 || "",
+    receiptInfo: parseReceiptInfo(r.receipt_info),
     trackingNumber: r.tracking_number || "",
     shippingProvider: r.shipping_provider || "",
     trackingUrl: r.tracking_url || "",
@@ -389,6 +437,7 @@ export async function getMyOrders(req: Request) {
     address: r.address,
     paymentMethod: r.payment_method || "cod",
     paymentStatus: r.payment_status || "",
+    receiptInfo: parseReceiptInfo(r.receipt_info),
     trackingNumber: r.tracking_number || "",
     shippingProvider: r.shipping_provider || "",
     trackingUrl: r.tracking_url || "",

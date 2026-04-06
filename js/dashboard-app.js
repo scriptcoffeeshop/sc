@@ -573,10 +573,37 @@ function getTrackingLinkInfo(order) {
   return null;
 }
 
+function normalizeReceiptInfo(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const buyer = String(raw.buyer || "").trim();
+  const taxId = String(raw.taxId || "").trim();
+  const address = String(raw.address || "").trim();
+  const needDateStamp = Boolean(raw.needDateStamp);
+  if (!/^\d{8}$/.test(taxId)) return null;
+  return { buyer, taxId, address, needDateStamp };
+}
+
+function buildReceiptSummaryHtml(receiptInfo) {
+  if (!receiptInfo) return "";
+  return `<div class="text-xs text-amber-800 bg-amber-50 p-2 rounded mt-2 border border-amber-100">
+            <div><span class="text-gray-500">收據買受人：</span>${
+    esc(receiptInfo.buyer) || "未填寫"
+  }</div>
+            <div><span class="text-gray-500">統一編號：</span>${esc(receiptInfo.taxId)}</div>
+            <div><span class="text-gray-500">收據地址：</span>${
+    esc(receiptInfo.address) || "未填寫"
+  }</div>
+            <div><span class="text-gray-500">壓印日期：</span>${
+    receiptInfo.needDateStamp ? "需要" : "不需要"
+  }</div>
+          </div>`;
+}
+
 function buildOrderViewModel(order) {
   const paymentMethod = order.paymentMethod || "cod";
   const paymentStatus = order.paymentStatus || "";
   const trackingLink = getTrackingLinkInfo(order);
+  const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
   const addressInfo =
     (order.deliveryMethod === "delivery" || order.deliveryMethod === "home_delivery")
       ? `${order.city || ""}${order.district || ""} ${order.address || ""}`
@@ -619,6 +646,8 @@ function buildOrderViewModel(order) {
     ),
     items: order.items || "",
     note: order.note || "",
+    receiptInfo,
+    showReceiptInfo: Boolean(receiptInfo),
     total: Number(order.total) || 0,
     showRefundButton: paymentMethod === "linepay" && paymentStatus === "paid",
     showConfirmTransferButton:
@@ -802,6 +831,7 @@ function renderOrders() {
   container.innerHTML = filtered.map((o) => {
     const time = new Date(o.timestamp).toLocaleString("zh-TW");
     const isSelected = selectedOrderIds.has(o.orderId);
+    const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
     const addrInfo =
       (o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery")
         ? `${o.city || ""}${o.district || ""} ${o.address || ""}`
@@ -873,6 +903,7 @@ function renderOrders() {
       }
                 </div>`
       : "";
+    const receiptHtml = buildReceiptSummaryHtml(receiptInfo);
 
     return `
         <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
@@ -914,6 +945,7 @@ function renderOrders() {
                 ${transferInfo}
             </div>
             ${trackingHtml}
+            ${receiptHtml}
             <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2 mt-2">${
       esc(o.items)
     }</div>
@@ -1246,8 +1278,14 @@ function buildOrdersCsv(orderList) {
     "地址或門市",
     "訂單內容",
     "備註",
+    "是否索取收據",
+    "收據買受人",
+    "收據統一編號",
+    "收據地址",
+    "收據壓印日期",
   ];
   const rows = orderList.map((o) => {
+    const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
     const addrInfo =
       (o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery")
         ? `${o.city || ""}${o.district || ""} ${o.address || ""}`.trim()
@@ -1271,6 +1309,11 @@ function buildOrdersCsv(orderList) {
       addrInfo,
       o.items || "",
       o.note || "",
+      receiptInfo ? "是" : "否",
+      receiptInfo?.buyer || "",
+      receiptInfo?.taxId || "",
+      receiptInfo?.address || "",
+      receiptInfo ? (receiptInfo.needDateStamp ? "需要" : "不需要") : "",
     ];
   });
   return [header, ...rows].map((cols) => cols.map(csvEscape).join(",")).join(

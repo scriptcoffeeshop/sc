@@ -6,6 +6,13 @@ export const orderItemSchema = z.object({
   qty: z.number().int().positive(),
 });
 
+const receiptInfoSchema = z.object({
+  buyer: z.string().trim().optional().default(""),
+  taxId: z.string().trim().regex(/^\d{8}$/, "統一編號需為 8 碼數字"),
+  address: z.string().trim().optional().default(""),
+  needDateStamp: z.boolean().optional().default(false),
+});
+
 export const submitOrderSchema = z.object({
   lineName: z.string().min(1, "姓名不能為空"),
   phone: z.string().min(8, "電話號碼格式不正確"),
@@ -27,6 +34,7 @@ export const submitOrderSchema = z.object({
   storeAddress: z.string().optional(),
   note: z.string().optional(),
   customFields: z.string().optional(),
+  receiptInfo: receiptInfoSchema.optional(),
   transferTargetAccount: z.string().optional(),
   transferAccountLast5: z.string().optional().refine(
     (v: string | undefined) => !v || /^\d{5}$/.test(v),

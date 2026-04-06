@@ -393,6 +393,19 @@
                 {{ order.items }}
               </div>
               <div
+                v-if="order.showReceiptInfo && order.receiptInfo"
+                class="text-xs text-amber-800 bg-amber-50 p-2 rounded mb-2 border border-amber-100"
+              >
+                <div><span class="text-gray-500">收據買受人：</span>{{ order.receiptInfo.buyer || "未填寫" }}</div>
+                <div><span class="text-gray-500">統一編號：</span>{{ order.receiptInfo.taxId }}</div>
+                <div><span class="text-gray-500">收據地址：</span>{{ order.receiptInfo.address || "未填寫" }}</div>
+                <div>
+                  <span class="text-gray-500">壓印日期：</span>{{
+                    order.receiptInfo.needDateStamp ? "需要" : "不需要"
+                  }}
+                </div>
+              </div>
+              <div
                 v-if="order.note"
                 class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2"
               >

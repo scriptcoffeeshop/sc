@@ -34,6 +34,97 @@ function getDefaultTrackingUrl(deliveryMethod) {
   return "";
 }
 
+function normalizeReceiptInfo(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const buyer = String(raw.buyer || "").trim();
+  const taxId = String(raw.taxId || "").trim();
+  const address = String(raw.address || "").trim();
+  const needDateStamp = Boolean(raw.needDateStamp);
+  if (!/^\d{8}$/.test(taxId)) return null;
+  return { buyer, taxId, address, needDateStamp };
+}
+
+function buildReceiptInfoHtml(receiptInfo) {
+  if (!receiptInfo) return "";
+  return `<div class="text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2">
+            <div><span class="text-gray-500">收據買受人：</span>${
+    escapeHtml(receiptInfo.buyer) || "未填寫"
+  }</div>
+            <div><span class="text-gray-500">統一編號：</span>${escapeHtml(receiptInfo.taxId)}</div>
+            <div><span class="text-gray-500">收據地址：</span>${
+    escapeHtml(receiptInfo.address) || "未填寫"
+  }</div>
+            <div><span class="text-gray-500">壓印日期：</span>${
+    receiptInfo.needDateStamp ? "需要" : "不需要"
+  }</div>
+          </div>`;
+}
+
+function getReceiptFormValues() {
+  const requestEl = document.getElementById("receipt-request");
+  const requested = Boolean(requestEl?.checked);
+  if (!requested) return { receiptInfo: null, error: "" };
+
+  const buyer = String(document.getElementById("receipt-buyer")?.value || "")
+    .trim();
+  const taxId = String(document.getElementById("receipt-tax-id")?.value || "")
+    .trim();
+  const address = String(
+    document.getElementById("receipt-address")?.value || "",
+  ).trim();
+  const needDateStamp = Boolean(
+    document.getElementById("receipt-date-stamp")?.checked,
+  );
+
+  if (!/^\d{8}$/.test(taxId)) {
+    return { receiptInfo: null, error: "統一編號需為 8 碼數字" };
+  }
+
+  return {
+    receiptInfo: {
+      buyer,
+      taxId,
+      address,
+      needDateStamp,
+    },
+    error: "",
+  };
+}
+
+function toggleReceiptFieldsByCheckbox() {
+  const requestEl = document.getElementById("receipt-request");
+  const fieldsEl = document.getElementById("receipt-fields");
+  if (!fieldsEl) return;
+  fieldsEl.classList.toggle("hidden", !requestEl?.checked);
+}
+
+function resetReceiptForm() {
+  const requestEl = document.getElementById("receipt-request");
+  const buyerEl = document.getElementById("receipt-buyer");
+  const taxIdEl = document.getElementById("receipt-tax-id");
+  const addressEl = document.getElementById("receipt-address");
+  const dateStampEl = document.getElementById("receipt-date-stamp");
+  if (requestEl) requestEl.checked = false;
+  if (buyerEl) buyerEl.value = "";
+  if (taxIdEl) taxIdEl.value = "";
+  if (addressEl) addressEl.value = "";
+  if (dateStampEl) dateStampEl.checked = false;
+  toggleReceiptFieldsByCheckbox();
+}
+
+export function initReceiptRequestUi() {
+  const requestEl = document.getElementById("receipt-request");
+  if (!requestEl) return;
+
+  if (requestEl.dataset.boundReceiptUi !== "true") {
+    requestEl.addEventListener("change", () => {
+      toggleReceiptFieldsByCheckbox();
+    });
+    requestEl.dataset.boundReceiptUi = "true";
+  }
+  toggleReceiptFieldsByCheckbox();
+}
+
 /** 送出訂單 */
 export async function submitOrder() {
   const u = state.currentUser;
@@ -174,6 +265,12 @@ export async function submitOrder() {
   }
 
   const note = document.getElementById("order-note").value.trim();
+  const receiptResult = getReceiptFormValues();
+  if (receiptResult.error) {
+    Swal.fire("錯誤", receiptResult.error, "error");
+    return;
+  }
+  const receiptInfo = receiptResult.receiptInfo;
 
   // 付款方式驗證
   const paymentMethod = state.selectedPayment || "cod";
@@ -246,6 +343,15 @@ export async function submitOrder() {
         <b>訂單內容：</b><br>${orderLinesHtml}<br><br>
         <b>總金額：</b>$${total}
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ""}
+        ${
+    receiptInfo
+          ? `<br><br><b>收據資訊：</b><br>
+          買受人：${escapeHtml(receiptInfo.buyer) || "未填寫"}<br>
+          統一編號：${escapeHtml(receiptInfo.taxId)}<br>
+          收據地址：${escapeHtml(receiptInfo.address) || "未填寫"}<br>
+          壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}`
+      : ""
+  }
         <br><br><b>付款方式：</b>${
     {
       cod: "貨到付款",
@@ -296,6 +402,7 @@ export async function submitOrder() {
         deliveryMethod,
         note,
         customFields: customFieldsJson,
+        receiptInfo: receiptInfo || undefined,
         paymentMethod,
         transferTargetAccount: transferTargetAccountInfo,
         transferAccountLast5: paymentMethod === "transfer"
@@ -383,6 +490,7 @@ export async function submitOrder() {
         }).then(() => {
           clearCart();
           document.getElementById("order-note").value = "";
+          resetReceiptForm();
         });
         return;
       }
@@ -395,6 +503,7 @@ export async function submitOrder() {
       }).then(() => {
         clearCart();
         document.getElementById("order-note").value = "";
+        resetReceiptForm();
       });
     } else throw new Error(result.error || "訂單送出發生未知錯誤");
   } catch (e) {
@@ -454,6 +563,7 @@ export async function showMyOrders() {
     };
 
     list.innerHTML = result.orders.map((o) => {
+      const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
       const customTrackingUrl = normalizeTrackingUrl(o.trackingUrl || "");
       const defaultTrackingUrl = getDefaultTrackingUrl(o.deliveryMethod);
       const trackingUrl = customTrackingUrl || defaultTrackingUrl;
@@ -496,6 +606,7 @@ export async function showMyOrders() {
           payStatusMap[o.paymentStatus] || ""
         }</span>`
         : "";
+      const receiptHtml = buildReceiptInfoHtml(receiptInfo);
       return `
             <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
                 <div class="flex justify-between items-center mb-2">
@@ -518,6 +629,7 @@ export async function showMyOrders() {
                 <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${
         escapeHtml(o.items)
       }</div>
+                ${receiptHtml}
                 <div class="text-right font-bold" style="color:var(--primary)">$${o.total}</div>
             </div>
         `;

@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   note TEXT DEFAULT '',
   email TEXT DEFAULT '',
   custom_fields TEXT DEFAULT '',
+  receipt_info TEXT DEFAULT '',
   payment_status TEXT DEFAULT '',
   payment_id TEXT DEFAULT '',
   payment_method TEXT DEFAULT 'cod',
