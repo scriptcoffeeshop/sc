@@ -563,15 +563,26 @@
             <div>
               <label class="block text-sm text-gray-600 mb-1"
               >品牌自訂 Logo</label>
-              <div class="flex gap-2 items-center">
+              <div class="flex gap-3 items-center">
                 <img
                   id="s-icon-preview"
                   src="icons/logo.png"
                   alt="品牌圖示"
-                  class="w-8 h-8 rounded object-cover cursor-pointer hover:opacity-80 border shadow-sm"
-                  title="點擊上傳新 Logo"
-                  onclick="document.getElementById('s-site-icon-upload').click()"
+                  class="w-10 h-10 rounded object-cover border shadow-sm"
                 >
+                <div class="flex flex-col gap-1">
+                  <div class="flex items-center gap-2">
+                    <button 
+                      type="button" 
+                      class="text-xs font-medium text-white bg-blue-500 hover:bg-blue-600 px-3 py-1.5 rounded transition shadow-sm"
+                      onclick="document.getElementById('s-site-icon-upload').click()"
+                    >
+                      點擊上傳新 Logo
+                    </button>
+                    <button type="button" id="s-site-icon-reset" class="text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded transition" data-action="reset-site-icon">移除自訂</button>
+                  </div>
+                  <div id="s-icon-url-display" class="text-xs text-gray-500 truncate max-w-[200px]">未設定 (預設)</div>
+                </div>
                 <input
                   type="file"
                   id="s-site-icon-upload"
@@ -580,10 +591,6 @@
                   data-action="upload-site-icon"
                 >
                 <input type="hidden" id="s-site-icon-url">
-                <div class="text-xs text-gray-500">
-                  <div id="s-icon-url-display" class="truncate max-w-[150px] mb-1">未設定 (預設)</div>
-                  <button type="button" id="s-site-icon-reset" class="text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition" data-action="reset-site-icon">移除自訂</button>
-                </div>
               </div>
             </div>
           </div>
