@@ -142,7 +142,10 @@ export async function uploadSiteIcon(
     return { success: false, error: "僅支援圖片檔案" };
   }
 
-  const updated = await upsertSettingValue("site_icon_url", LOCAL_BRAND_ICON_PATH);
+  const updated = await upsertSettingValue(
+    "site_icon_url",
+    LOCAL_BRAND_ICON_PATH,
+  );
   if (!updated.success) {
     return updated;
   }
