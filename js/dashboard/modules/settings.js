@@ -5,7 +5,6 @@ function parseId(value) {
 
 export function createSettingsActionHandlers(deps) {
   return {
-    "upload-site-icon": () => deps.uploadSiteIcon(),
     "upload-section-icon": (el) => deps.uploadSectionIcon(el),
     "upload-payment-icon": (el) => deps.uploadPaymentIcon(el),
     "upload-delivery-row-icon": (el) => deps.uploadDeliveryRowIcon(el),

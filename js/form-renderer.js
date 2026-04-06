@@ -3,7 +3,7 @@
 // ============================================
 
 import { escapeHtml } from "./utils.js";
-import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
+import { getDefaultIconUrl, setIconElement } from "./icons.js";
 
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
@@ -187,7 +187,6 @@ export function applyBranding(settings) {
     setIconElement(
       iconEl,
       {
-        icon_url: settings.site_icon_url,
         icon: settings.site_icon_emoji,
       },
       "brand",
@@ -195,11 +194,9 @@ export function applyBranding(settings) {
     );
   }
 
-  // Favicon
+  // Favicon — 固定使用本地 icons/logo.png
   let favicon = document.getElementById("dynamic-favicon");
-  const faviconUrl = resolveAssetUrl(
-    settings.site_icon_url || getDefaultIconUrl("brand"),
-  );
+  const faviconUrl = getDefaultIconUrl("brand");
   if (faviconUrl) {
     if (!favicon) {
       favicon = document.createElement("link");

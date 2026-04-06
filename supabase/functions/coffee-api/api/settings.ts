@@ -14,7 +14,7 @@ const PUBLIC_SETTINGS_KEYS = [
   "delivery_pricing_rules",
   "site_title",
   "site_subtitle",
-  "site_icon_url",
+
   "site_icon_emoji",
   "products_section_title",
   "products_section_icon_url",
@@ -30,7 +30,36 @@ const PUBLIC_SETTINGS_KEYS = [
   "payment_options_config",
 ];
 
-const LOCAL_BRAND_ICON_PATH = "icons/logo.png";
+// ============ 設定 ============
+export async function getSettings(isAdmin = false) {
+  const { data, error } = await supabase.from("coffee_settings").select("*");
+  if (error) return { success: false, error: error.message };
+  const settings: Record<string, string> = {};
+  for (const row of (data || [])) {
+    if (isAdmin || PUBLIC_SETTINGS_KEYS.includes(row.key)) {
+      settings[row.key] = row.value;
+    }
+  }
+  return { success: true, settings };
+}
+
+export async function updateSettingsAction(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  await requireAdmin(req);
+  const settings = data.settings as Record<string, string>;
+  const itemsToUpsert = Object.entries(settings).map(([key, value]) => ({
+    key,
+    value: String(value),
+  }));
+
+  const { error } = await supabase.from("coffee_settings").upsert(
+    itemsToUpsert,
+  );
+  if (error) return { success: false, error: error.message };
+  return { success: true, message: "設定已更新" };
+}
 
 function sanitizeFileName(fileName = "icon.png") {
   return String(fileName || "icon.png")
@@ -39,28 +68,16 @@ function sanitizeFileName(fileName = "icon.png") {
     .slice(0, 80) || "icon.png";
 }
 
-async function upsertSettingValue(key: string, value: string) {
-  const { error } = await supabase.from("coffee_settings").upsert({
-    key,
-    value,
-  });
-  if (error) {
-    return { success: false, error: "設定更新失敗: " + error.message };
-  }
-  return { success: true };
-}
-
-async function uploadAssetInternal(
+export async function uploadAsset(
   data: Record<string, unknown>,
   req: Request,
-  forcedSettingKey = "",
 ) {
   await requireAdmin(req);
 
   const base64Data = String(data.fileData || "");
   const contentType = String(data.contentType || "image/png");
   const rawName = String(data.fileName || "icon.png");
-  const settingKey = String(forcedSettingKey || data.settingKey || "").trim();
+  const settingKey = String(data.settingKey || "").trim();
 
   if (!base64Data) return { success: false, error: "沒有檔案資料" };
   if (!contentType.startsWith("image/")) {
@@ -97,71 +114,6 @@ async function uploadAssetInternal(
   }
 
   return { success: true, url: publicUrl, message: "圖示已上傳" };
-}
-
-// ============ 設定 ============
-export async function getSettings(isAdmin = false) {
-  const { data, error } = await supabase.from("coffee_settings").select("*");
-  if (error) return { success: false, error: error.message };
-  const settings: Record<string, string> = {};
-  for (const row of (data || [])) {
-    if (isAdmin || PUBLIC_SETTINGS_KEYS.includes(row.key)) {
-      settings[row.key] = row.value;
-    }
-  }
-  return { success: true, settings };
-}
-
-export async function updateSettingsAction(
-  data: Record<string, unknown>,
-  req: Request,
-) {
-  await requireAdmin(req);
-  const settings = data.settings as Record<string, string>;
-  const itemsToUpsert = Object.entries(settings).map(([key, value]) => ({
-    key,
-    value: String(value),
-  }));
-
-  const { error } = await supabase.from("coffee_settings").upsert(
-    itemsToUpsert,
-  );
-  if (error) return { success: false, error: error.message };
-  return { success: true, message: "設定已更新" };
-}
-
-export async function uploadSiteIcon(
-  data: Record<string, unknown>,
-  req: Request,
-) {
-  await requireAdmin(req);
-
-  const base64Data = String(data.fileData || "");
-  const contentType = String(data.contentType || "image/png");
-  if (base64Data && !contentType.startsWith("image/")) {
-    return { success: false, error: "僅支援圖片檔案" };
-  }
-
-  const updated = await upsertSettingValue(
-    "site_icon_url",
-    LOCAL_BRAND_ICON_PATH,
-  );
-  if (!updated.success) {
-    return updated;
-  }
-
-  return {
-    success: true,
-    url: LOCAL_BRAND_ICON_PATH,
-    message: "品牌 Icon 已套用 /sc/icons/logo.png",
-  };
-}
-
-export async function uploadAsset(
-  data: Record<string, unknown>,
-  req: Request,
-) {
-  return await uploadAssetInternal(data, req);
 }
 
 // ============ 初始化資料 ============

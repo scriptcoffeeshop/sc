@@ -921,36 +921,15 @@
             </div>
             <div>
               <label class="block text-sm text-gray-600 mb-1"
-              >上傳品牌 Icon</label>
-              <input type="hidden" id="s-site-icon-url">
+              >品牌 Icon（使用本地 icons/logo.png）</label>
               <div class="flex gap-2 items-center">
-                <input
-                  type="file"
-                  id="s-icon-file"
-                  accept="image/*"
-                  class="text-sm icon-upload-input"
-                  data-preview-target="s-icon-preview"
-                  data-fallback-key="brand"
-                >
                 <img
-                  id="s-icon-preview"
-                  src=""
-                  alt=""
-                  class="icon-upload-preview hidden"
+                  src="/icons/logo.png"
+                  alt="品牌圖示"
+                  class="icon-upload-preview"
                 >
-                <button
-                  type="button"
-                  data-action="upload-site-icon"
-                  class="btn-primary text-xs py-1 px-3"
-                >
-                  上傳
-                </button>
+                <span class="text-xs text-gray-400">icons/logo.png</span>
               </div>
-              <p
-                id="s-icon-url-display"
-                class="text-xs text-gray-400 mt-1 truncate"
-              >
-              </p>
             </div>
           </div>
         </div>

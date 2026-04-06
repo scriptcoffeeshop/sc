@@ -186,13 +186,7 @@ function readInputValue(id, fallback = "") {
 }
 
 const ICON_LIBRARY_TARGET_MAP = {
-  site: {
-    label: "品牌 Icon",
-    inputId: "s-site-icon-url",
-    displayId: "s-icon-url-display",
-    previewId: "s-icon-preview",
-    fallbackKey: "brand",
-  },
+
   products: {
     label: "商品區塊 Icon",
     inputId: "s-products-icon-url",
@@ -237,26 +231,7 @@ const ICON_LIBRARY_TARGET_MAP = {
   },
 };
 
-function resolveBrandIconUrl(rawUrl = "") {
-  return resolveAssetUrl(rawUrl || getDefaultIconUrl("brand")) ||
-    getDefaultIconUrl("brand");
-}
 
-function syncDashboardBrandIcons(rawUrl = "") {
-  const resolved = resolveBrandIconUrl(rawUrl);
-  if (!resolved) return;
-  [
-    "dashboard-login-logo",
-    "dashboard-header-logo",
-    "settings-brand-logo",
-  ].forEach((id) => {
-    const icon = document.getElementById(id);
-    if (icon instanceof HTMLImageElement) {
-      icon.src = resolved;
-      icon.classList.remove("hidden");
-    }
-  });
-}
 
 // ============ 全域函式掛載（保留舊快取相容性） ============
 window.loginWithLine = () =>
@@ -289,7 +264,7 @@ window.editFormField = editFormField;
 window.deleteFormField = deleteFormField;
 window.toggleFieldEnabled = toggleFieldEnabled;
 window.previewIcon = previewIcon;
-window.uploadSiteIcon = uploadSiteIcon;
+
 window.uploadSectionIcon = uploadSectionIcon;
 window.uploadPaymentIcon = uploadPaymentIcon;
 window.uploadDeliveryRowIcon = uploadDeliveryRowIcon;
@@ -339,7 +314,6 @@ const dashboardActionHandlers = {
     loadPromotions,
   }),
   ...createSettingsActionHandlers({
-    uploadSiteIcon,
     uploadSectionIcon,
     uploadPaymentIcon,
     uploadDeliveryRowIcon,
@@ -2233,17 +2207,6 @@ async function loadSettings() {
       document.getElementById("s-site-title").value = s.site_title || "";
       document.getElementById("s-site-subtitle").value = s.site_subtitle || "";
       document.getElementById("s-site-emoji").value = s.site_icon_emoji || "";
-      const siteIconUrl = String(s.site_icon_url || getDefaultIconUrl("brand"));
-      const siteIconUrlInput = document.getElementById("s-site-icon-url");
-      if (siteIconUrlInput) siteIconUrlInput.value = siteIconUrl;
-      updateIconPreview({
-        previewId: "s-icon-preview",
-        rawUrl: siteIconUrl,
-        fallbackUrl: getDefaultIconUrl("brand"),
-      });
-      const siteIconResolvedUrl = resolveAssetUrl(siteIconUrl) || siteIconUrl;
-      document.getElementById("s-icon-url-display").textContent = siteIconResolvedUrl;
-      syncDashboardBrandIcons(siteIconUrl);
 
       // 區塊標題
       document.getElementById("s-products-title").value =
@@ -2597,7 +2560,6 @@ async function saveSettings() {
           "true",
         site_title: document.getElementById("s-site-title").value.trim(),
         site_subtitle: document.getElementById("s-site-subtitle").value.trim(),
-        site_icon_url: readInputValue("s-site-icon-url"),
         site_icon_emoji: document.getElementById("s-site-emoji").value.trim(),
 
         products_section_title: document.getElementById("s-products-title")
@@ -3639,41 +3601,7 @@ async function fileToBase64(file) {
   });
 }
 
-async function uploadAssetFile(file, settingKey = "") {
-  const base64 = await fileToBase64(file);
-  const r = await authFetch(`${API_URL}?action=uploadAsset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      userId: getAuthUserId(),
-      fileData: base64,
-      fileName: file.name,
-      contentType: file.type,
-      settingKey,
-    }),
-  });
-  return await r.json();
-}
 
-async function applySiteLogo(file = null) {
-  const payload = {
-    userId: getAuthUserId(),
-  };
-
-  if (file) {
-    const base64 = await fileToBase64(file);
-    payload.fileData = base64;
-    payload.fileName = file.name;
-    payload.contentType = file.type;
-  }
-
-  const r = await authFetch(`${API_URL}?action=uploadSiteIcon`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return await r.json();
-}
 
 function setIconUrlToField({
   inputId,
@@ -3696,9 +3624,7 @@ function setIconUrlToField({
       fallbackUrl: getDefaultIconUrl(fallbackKey),
     });
   }
-  if (inputId === "s-site-icon-url") {
-    syncDashboardBrandIcons(url);
-  }
+
 }
 
 function applyIconFromLibrary(button) {
@@ -3731,33 +3657,21 @@ function applyIconFromLibrary(button) {
   });
 }
 
-async function uploadSiteIcon() {
-  const input = document.getElementById("s-icon-file");
-  const file = input?.files?.[0];
-  if (file && !validateIconFile(file)) return;
 
-  Swal.fire({
-    title: "上傳中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
+async function uploadAssetFile(file, settingKey = "") {
+  const base64 = await fileToBase64(file);
+  const r = await authFetch(`${API_URL}?action=uploadAsset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: getAuthUserId(),
+      fileData: base64,
+      fileName: file.name,
+      contentType: file.type,
+      settingKey,
+    }),
   });
-
-  try {
-    const d = await applySiteLogo(file);
-    if (d.success) {
-      setIconUrlToField({
-        inputId: "s-site-icon-url",
-        displayId: "s-icon-url-display",
-        previewId: "s-icon-preview",
-        url: d.url || getDefaultIconUrl("brand"),
-        fallbackKey: "brand",
-      });
-      Toast.fire({ icon: "success", title: "已套用 /sc/icons/logo.png" });
-      if (input) input.value = "";
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
+  return await r.json();
 }
 
 async function uploadSectionIcon(button) {

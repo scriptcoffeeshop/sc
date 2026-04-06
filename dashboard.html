@@ -562,33 +562,15 @@
             </div>
             <div>
               <label class="block text-sm text-gray-600 mb-1"
-              >上傳自訂 Icon（將取代 Emoji）</label>
+              >品牌 Icon（使用本地 icons/logo.png）</label>
               <div class="flex gap-2 items-center">
-                <input
-                  type="file"
-                  id="s-icon-file"
-                  accept="image/*"
-                  class="text-sm"
-                >
                 <img
-                  id="s-icon-preview"
-                  src=""
-                  alt=""
-                  class="w-8 h-8 rounded hidden object-cover"
+                  src="icons/logo.png"
+                  alt="品牌圖示"
+                  class="w-8 h-8 rounded object-cover"
                 >
-                <button
-                  type="button"
-                  data-action="upload-site-icon"
-                  class="btn-primary text-xs py-1 px-3"
-                >
-                  上傳
-                </button>
+                <span class="text-xs text-gray-400">icons/logo.png</span>
               </div>
-              <p
-                id="s-icon-url-display"
-                class="text-xs text-gray-400 mt-1 truncate"
-              >
-              </p>
             </div>
           </div>
         </div>
@@ -1253,6 +1235,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/dashboard-app.js?v=56"></script>
+    <script type="module" src="js/dashboard-app.js?v=57"></script>
   </body>
 </html>
