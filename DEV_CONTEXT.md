@@ -283,7 +283,9 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `5a761cc` | fix: prevent path duplication in resolveAssetUrl causing /sc/sc/icons/ 404s
 - `2026-04-07` | `8a11f03` | update: change fallback site title and subtitle to Script Coffee
 - `2026-04-07` | `50e6b77` | fix: increase drag icon size and resolve absolute paths in Vue files
-- `2026-04-07` | `23d3356` | docs: generate v76 release notes in DEV_CONTEXT.md covering UI optimizations and absolute path fixes
+- `2026-04-07` | `5e9c9f3` | docs: 新增 Git Commit 註釋需使用繁體中文之強制規定
+- `2026-04-07` | `54716b3` | ci: auto-fix CI errors
+- `2026-04-07` | `cd053ce` | chore: 修復 drag 圖示為 inline SVG 及還原隨時上傳 Logo 功能
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
