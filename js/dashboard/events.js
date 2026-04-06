@@ -51,9 +51,9 @@ export function createDashboardEvents(
       // 訂單狀態下拉選單只應在 change 事件觸發更新，
       // 避免點開選單時就誤觸發更新。
       if (action === "change-order-status") return;
-      const isCheckboxInput = actionButton instanceof HTMLInputElement &&
-        actionButton.type === "checkbox";
-      if (isCheckboxInput) return;
+      const isInputToIgnore = actionButton instanceof HTMLInputElement &&
+        (actionButton.type === "checkbox" || actionButton.type === "file");
+      if (isInputToIgnore) return;
       event.preventDefault();
 
       const handler = actionHandlers[action];
