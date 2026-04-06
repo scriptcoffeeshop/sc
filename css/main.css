@@ -43,6 +43,7 @@
   border: 1px solid var(--ui-border-strong);
   border-radius: 14px;
   padding: 14px 12px;
+  text-align: center;
   cursor: pointer;
   position: relative;
   background: #fff;
