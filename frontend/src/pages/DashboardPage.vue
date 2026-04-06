@@ -507,7 +507,7 @@
                       class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
                       title="拖曳排序"
                       style="touch-action: none;"
-                    ><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
                   </td>
                   <td class="p-3 text-sm">{{ product.category }}</td>
                   <td class="p-3">
@@ -584,7 +584,7 @@
                   class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1"
                   title="拖曳排序"
                   style="touch-action: none;"
-                ><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
+                ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
                 <span class="font-medium">{{ category.name }}</span>
               </div>
               <div class="flex gap-2">
@@ -669,7 +669,7 @@
                       class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
                       title="拖曳排序"
                       style="touch-action: none;"
-                    ><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
                   </td>
                   <td class="p-3 font-medium">{{ promotion.name }}</td>
                   <td class="p-3 text-sm text-gray-600">
@@ -1675,7 +1675,7 @@
               :class="field.enabled ? '' : 'opacity-50'"
               :data-field-id="field.id"
             >
-              <span class="cursor-grab text-gray-400 drag-handle"><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon-sm"></span>
+              <span class="cursor-grab text-gray-400 drag-handle"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
               <div class="flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-medium">{{ field.label }}</span>

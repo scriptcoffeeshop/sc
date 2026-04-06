@@ -265,6 +265,8 @@ window.deleteFormField = deleteFormField;
 window.toggleFieldEnabled = toggleFieldEnabled;
 window.previewIcon = previewIcon;
 
+window.uploadSiteIcon = uploadSiteIcon;
+window.resetSiteIcon = resetSiteIcon;
 window.uploadSectionIcon = uploadSectionIcon;
 window.uploadPaymentIcon = uploadPaymentIcon;
 window.uploadDeliveryRowIcon = uploadDeliveryRowIcon;
@@ -314,6 +316,8 @@ const dashboardActionHandlers = {
     loadPromotions,
   }),
   ...createSettingsActionHandlers({
+    uploadSiteIcon,
+    resetSiteIcon,
     uploadSectionIcon,
     uploadPaymentIcon,
     uploadDeliveryRowIcon,
@@ -1468,12 +1472,12 @@ function renderProducts() {
           ? `<div class="text-xs">${esc(line.label)}: $${line.price}</div>`
           : `$${line.price}`
       ).join("");
-      html += `
+          html += `
             <tr class="border-b" style="border-color:#f0e6db;" data-id="${product.id}">
                 <td class="p-3 text-center">
-                    <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;"><img src="${
-        esc(getDefaultIconUrl("drag"))
-      }" alt="" class="drag-handle-icon"></span>
+                    <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
+                    </span>
                 </td>
                 <td class="p-3 text-sm">${esc(product.category)}</td>
                 <td class="p-3">
@@ -1784,9 +1788,9 @@ function renderCategories() {
   container.innerHTML = categories.map((c) => `
         <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;" data-id="${c.id}">
             <div class="flex items-center gap-2">
-                <span class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;"><img src="${
-    esc(getDefaultIconUrl("drag"))
-  }" alt="" class="drag-handle-icon"></span>
+                <span class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
+                </span>
                 <span class="font-medium">${esc(c.name)}</span>
             </div>
             <div class="flex gap-2">
@@ -2003,9 +2007,9 @@ function renderPromotions() {
     html += `
         <tr class="border-b" style="border-color:#f0e6db;" data-id="${viewPromotion.id}">
             <td class="p-3 text-center">
-                <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;"><img src="${
-      esc(getDefaultIconUrl("drag"))
-    }" alt="" class="drag-handle-icon"></span>
+                <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
+                </span>
             </td>
             <td class="p-3 font-medium">${esc(viewPromotion.name)}</td>
             <td class="p-3 text-sm text-gray-600">${esc(viewPromotion.conditionText)} <span class="font-bold text-red-500">${esc(viewPromotion.discountText)}</span></td>
@@ -2207,6 +2211,15 @@ async function loadSettings() {
       document.getElementById("s-site-title").value = s.site_title || "";
       document.getElementById("s-site-subtitle").value = s.site_subtitle || "";
       document.getElementById("s-site-emoji").value = s.site_icon_emoji || "";
+
+      document.getElementById("s-site-icon-url").value = s.site_icon_url || "";
+      if (s.site_icon_url) {
+        document.getElementById("s-icon-preview").src = resolveAssetUrl(s.site_icon_url);
+        document.getElementById("s-icon-url-display").textContent = "自訂 Logo";
+      } else {
+        document.getElementById("s-icon-preview").src = getDefaultIconUrl("brand");
+        document.getElementById("s-icon-url-display").textContent = "未設定 (預設)";
+      }
 
       // 區塊標題
       document.getElementById("s-products-title").value =
@@ -2422,7 +2435,7 @@ function configToHtml(item, tbody, isNew = false) {
 
   tr.innerHTML = `
         <td class="p-3 text-center cursor-move text-gray-400 hover:text-gray-600 transition">
-            <img src="${esc(getDefaultIconUrl("drag"))}" alt="" class="drag-handle-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
         </td>
         <td class="p-3">
             <div class="flex flex-col gap-2 min-w-[280px]">
@@ -2561,6 +2574,7 @@ async function saveSettings() {
         site_title: document.getElementById("s-site-title").value.trim(),
         site_subtitle: document.getElementById("s-site-subtitle").value.trim(),
         site_icon_emoji: document.getElementById("s-site-emoji").value.trim(),
+        site_icon_url: document.getElementById("s-site-icon-url").value.trim(),
 
         products_section_title: document.getElementById("s-products-title")
           .value.trim(),
@@ -3178,9 +3192,9 @@ function renderFormFields() {
       const isProtected = false;
       return `
                 <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${viewField.id}">
-                    <span class="cursor-grab text-gray-400 drag-handle"><img src="${
-        esc(getDefaultIconUrl("drag"))
-      }" alt="" class="drag-handle-icon-sm"></span>
+                    <span class="cursor-grab text-gray-400 drag-handle">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
+                    </span>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-medium">${esc(viewField.label)}</span>
@@ -3674,6 +3688,41 @@ async function uploadAssetFile(file, settingKey = "") {
   return await r.json();
 }
 
+async function uploadSiteIcon() {
+  const fileInput = document.getElementById("s-site-icon-upload");
+  const file = fileInput?.files?.[0];
+  if (!validateIconFile(file)) return;
+
+  Swal.fire({
+    title: "上傳中...",
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading(),
+  });
+
+  try {
+    const d = await uploadAssetFile(file, "site_icon_url");
+    if (d.success) {
+      document.getElementById("s-site-icon-url").value = d.url;
+      document.getElementById("s-icon-preview").src = d.url;
+      document.getElementById("s-icon-url-display").textContent = "自訂 Logo (儲存後生效)";
+      Toast.fire({ icon: "success", title: "品牌 Logo 已上傳！請記得點擊儲存設定。" });
+    } else {
+      Swal.fire("錯誤", d.error, "error");
+    }
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  } finally {
+    if (fileInput) fileInput.value = "";
+  }
+}
+
+async function resetSiteIcon() {
+  document.getElementById("s-site-icon-url").value = "";
+  document.getElementById("s-icon-preview").src = getDefaultIconUrl("brand");
+  document.getElementById("s-icon-url-display").textContent = "未設定 (預設)";
+  Toast.fire({ icon: "success", title: "已恢復預設 Logo！請記得點擊儲存設定。" });
+}
+
 async function uploadSectionIcon(button) {
   const section = button?.dataset?.section;
   if (!section) return;
@@ -3874,9 +3923,9 @@ function renderBankAccountsAdmin() {
     bankAccounts.map((b) => `
           <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#faf6f2; border:1px solid #e5ddd5;">
               <div class="flex items-start gap-3 min-w-0">
-                  <span class="drag-handle-bank cursor-move text-gray-400 hover:text-gray-600 select-none pt-1" title="拖曳排序"><img src="${
-      esc(getDefaultIconUrl("drag"))
-    }" alt="" class="drag-handle-icon-sm"></span>
+                  <span class="drag-handle-bank cursor-move text-gray-400 hover:text-gray-600 select-none pt-1" title="拖曳排序">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
+                  </span>
                   <div>
                       <div class="font-medium">${esc(b.bankName)} (${
       esc(b.bankCode)

@@ -562,14 +562,27 @@
             </div>
             <div>
               <label class="block text-sm text-gray-600 mb-1"
-              >品牌 Icon（使用本地 icons/logo.png）</label>
+              >品牌自訂 Logo</label>
               <div class="flex gap-2 items-center">
                 <img
+                  id="s-icon-preview"
                   src="icons/logo.png"
                   alt="品牌圖示"
-                  class="w-8 h-8 rounded object-cover"
+                  class="w-8 h-8 rounded object-cover cursor-pointer hover:opacity-80 border shadow-sm"
+                  title="點擊上傳新 Logo"
+                  data-action="upload-site-icon"
                 >
-                <span class="text-xs text-gray-400">icons/logo.png</span>
+                <input
+                  type="file"
+                  id="s-site-icon-upload"
+                  class="hidden"
+                  accept="image/png, image/jpeg, image/webp"
+                >
+                <input type="hidden" id="s-site-icon-url">
+                <div class="text-xs text-gray-500">
+                  <div id="s-icon-url-display" class="truncate max-w-[150px] mb-1">未設定 (預設)</div>
+                  <button type="button" id="s-site-icon-reset" class="text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition">移除自訂</button>
+                </div>
               </div>
             </div>
           </div>

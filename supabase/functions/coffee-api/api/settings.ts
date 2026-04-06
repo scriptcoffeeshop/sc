@@ -15,6 +15,7 @@ const PUBLIC_SETTINGS_KEYS = [
   "site_title",
   "site_subtitle",
 
+  "site_icon_url",
   "site_icon_emoji",
   "products_section_title",
   "products_section_icon_url",

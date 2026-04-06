@@ -187,6 +187,7 @@ export function applyBranding(settings) {
     setIconElement(
       iconEl,
       {
+        icon_url: settings.site_icon_url,
         icon: settings.site_icon_emoji,
       },
       "brand",
@@ -194,9 +195,11 @@ export function applyBranding(settings) {
     );
   }
 
-  // Favicon — 固定使用本地 icons/logo.png
+  // Favicon (優先使用設定的主圖像)
   let favicon = document.getElementById("dynamic-favicon");
-  const faviconUrl = getDefaultIconUrl("brand");
+  const faviconUrl = settings.site_icon_url
+    ? resolveAssetUrl(settings.site_icon_url)
+    : getDefaultIconUrl("brand");
   if (faviconUrl) {
     if (!favicon) {
       favicon = document.createElement("link");
