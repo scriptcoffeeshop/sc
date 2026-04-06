@@ -16,7 +16,7 @@
     <UiCard class="max-w-3xl mx-auto p-6 md:p-8">
       <!-- Header -->
       <div class="flex items-center gap-3 mb-6">
-        <span id="site-icon"><img src="/icons/brand-coffee.png" alt="品牌圖示" class="ui-icon-img"></span>
+        <span id="site-icon"><img src="/icons/logo.png" alt="品牌圖示" class="ui-icon-img"></span>
         <div>
           <h1
             class="text-2xl font-bold"
