@@ -29,6 +29,37 @@ function isVueManagedProducts() {
     "true";
 }
 
+function toSafeNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function getShippingDisplayState(summary, shippingConfig) {
+  const configuredFee = Math.max(0, toSafeNumber(shippingConfig?.fee));
+  const freeThreshold = Math.max(0, toSafeNumber(shippingConfig?.freeThreshold));
+  const shippingFee = Math.max(0, toSafeNumber(summary?.shippingFee));
+  const hasFreeThreshold = freeThreshold > 0;
+  const hasShippingRule = hasFreeThreshold || configuredFee > 0 || shippingFee > 0;
+  const showBadge = !!(
+    state.selectedDelivery &&
+    summary?.quoteAvailable &&
+    hasShippingRule
+  );
+  const isFreeShipping = showBadge && hasFreeThreshold && shippingFee === 0;
+  const showNotice = showBadge && shippingFee > 0;
+
+  return {
+    configuredFee,
+    freeThreshold,
+    shippingFee,
+    hasFreeThreshold,
+    hasShippingRule,
+    showBadge,
+    isFreeShipping,
+    showNotice,
+  };
+}
+
 function getDeliveryMeta() {
   const fallback = {
     selectedDelivery: state.selectedDelivery || "",
@@ -242,25 +273,27 @@ export function updateCartUI() {
 
   // 計算總金額並套用方案 B 排版 (動態小標籤 + 大總額)
   const summary = calcCartSummary();
+  const shippingConfig = getShippingConfig();
+  const shippingState = getShippingDisplayState(summary, shippingConfig);
   let priceHtml =
     `<div class="text-xl font-bold">總金額: $${summary.finalTotal}</div>`;
 
   if (
     summary.totalDiscount > 0 ||
-    (state.selectedDelivery && summary.quoteAvailable)
+    shippingState.showBadge
   ) {
     let badgesHtml = "";
     if (summary.totalDiscount > 0) {
       badgesHtml +=
         `<span style="background-color: #fee2e2; color: #dc2626; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-right: 4px;">折 -$${summary.totalDiscount}</span>`;
     }
-    if (state.selectedDelivery && summary.quoteAvailable) {
-      if (summary.shippingFee === 0) {
+    if (shippingState.showBadge) {
+      if (shippingState.isFreeShipping) {
         badgesHtml +=
           `<span style="background-color: #dbeafe; color: #2563eb; font-size: 11px; padding: 2px 6px; border-radius: 4px;">免運費</span>`;
       } else {
         badgesHtml +=
-          `<span style="background-color: #f3f4f6; color: #4b5563; font-size: 11px; padding: 2px 6px; border-radius: 4px;">運費 $${summary.shippingFee}</span>`;
+          `<span style="background-color: #f3f4f6; color: #4b5563; font-size: 11px; padding: 2px 6px; border-radius: 4px;">運費 $${shippingState.shippingFee}</span>`;
       }
     }
 
@@ -325,10 +358,6 @@ export function updateCartUI() {
   const shippingNotice = document.getElementById("cart-shipping-notice");
 
   if (discountSection && !vueManagedCart) {
-    const shippingConfig = getShippingConfig();
-    const isFreeShipping =
-      !!(state.selectedDelivery && shippingConfig && summary.quoteAvailable &&
-        summary.shippingFee === 0);
     const hasPromos = summary.totalDiscount > 0 && summary.appliedPromos &&
       summary.appliedPromos.length > 0;
 
@@ -344,13 +373,10 @@ export function updateCartUI() {
 
     // 獨立處理運費與未達免運提示 (不放在優惠與折抵區塊中)
     if (shippingNotice) {
-      if (
-        state.selectedDelivery && shippingConfig && summary.quoteAvailable &&
-        !isFreeShipping
-      ) {
+      if (shippingState.showNotice) {
         let thresholdHint = "";
-        if (shippingConfig.freeThreshold > 0) {
-          const diff = shippingConfig.freeThreshold -
+        if (shippingState.hasFreeThreshold) {
+          const diff = shippingState.freeThreshold -
             summary.totalAfterDiscount;
           if (diff > 0) {
             thresholdHint = `
@@ -359,13 +385,15 @@ export function updateCartUI() {
           }
         }
 
+        const shippingNoticeTitle = shippingState.hasFreeThreshold
+          ? `未達 ${deliveryName}免運門檻`
+          : `${deliveryName}運費`;
+
         let noticeHTML = `
                     <div class="px-3 py-2 rounded-lg mb-1" style="background:#fef2f2; border:1px solid #fca5a5;">
                         <div class="flex justify-between items-center text-sm font-semibold" style="color:#991b1b;">
-                            <span>未達 ${
-          escapeHtml(deliveryName)
-        }免運門檻</span>
-                            <span>+$${summary.shippingFee}</span>
+                            <span>${escapeHtml(shippingNoticeTitle)}</span>
+                            <span>+$${shippingState.shippingFee}</span>
                         </div>
                         ${thresholdHint}
                     </div>
@@ -378,7 +406,7 @@ export function updateCartUI() {
     }
 
     // 優惠與折抵區塊只顯示折扣或達標的免運
-    if (hasPromos || isFreeShipping) {
+    if (hasPromos || shippingState.isFreeShipping) {
       discountSection.classList.remove("hidden");
       let promoListHTML = "";
 
@@ -391,10 +419,10 @@ export function updateCartUI() {
                 `).join("");
       }
 
-      if (isFreeShipping) {
+      if (shippingState.isFreeShipping) {
         let thresholdText = "";
-        if (shippingConfig.freeThreshold > 0) {
-          thresholdText = ` (滿$${shippingConfig.freeThreshold})`;
+        if (shippingState.hasFreeThreshold) {
+          thresholdText = ` (滿$${shippingState.freeThreshold})`;
         }
 
         promoListHTML += `

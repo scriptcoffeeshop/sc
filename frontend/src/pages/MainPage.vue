@@ -525,7 +525,7 @@
           id="total-price"
         >
           <div
-            v-if="cartSummary.totalDiscount > 0 || (selectedDelivery && cartSummary.quoteAvailable)"
+            v-if="cartSummary.totalDiscount > 0 || showShippingBadge"
             class="flex flex-col items-start justify-center"
           >
             <div class="flex items-center mb-0.5">
@@ -536,10 +536,10 @@
                 折 -${{ cartSummary.totalDiscount }}
               </span>
               <span
-                v-if="selectedDelivery && cartSummary.quoteAvailable"
+                v-if="showShippingBadge"
                 style="background-color: #dbeafe; color: #2563eb; font-size: 11px; padding: 2px 6px; border-radius: 4px;"
               >
-                {{ cartSummary.shippingFee === 0 ? "免運費" : `運費 $${cartSummary.shippingFee}` }}
+                {{ isFreeShipping ? "免運費" : `運費 $${cartSummary.shippingFee}` }}
               </span>
             </div>
             <div class="text-xl font-bold leading-tight">
@@ -659,7 +659,7 @@
             style="background:#fef2f2; border:1px solid #fca5a5;"
           >
             <div class="flex justify-between items-center text-sm font-semibold" style="color:#991b1b;">
-              <span>未達 {{ deliveryName }}免運門檻</span>
+              <span>{{ shippingNoticeTitle }}</span>
               <span>+${{ cartSummary.shippingFee }}</span>
             </div>
             <div
@@ -792,21 +792,41 @@ const hasPromos = computed(() =>
   cartSummary.value.appliedPromos.length > 0,
 );
 
-const isFreeShipping = computed(() =>
+const hasShippingRule = computed(() => {
+  const fee = Number(shippingConfig.value?.fee || 0);
+  const threshold = Number(shippingConfig.value?.freeThreshold || 0);
+  const quoteFee = Number(cartSummary.value.shippingFee || 0);
+  return threshold > 0 || fee > 0 || quoteFee > 0;
+});
+
+const showShippingBadge = computed(() =>
   !!(
     selectedDelivery.value &&
     cartSummary.value.quoteAvailable &&
+    hasShippingRule.value
+  ),
+);
+
+const isFreeShipping = computed(() =>
+  !!(
+    showShippingBadge.value &&
+    Number(shippingConfig.value?.freeThreshold || 0) > 0 &&
     Number(cartSummary.value.shippingFee || 0) === 0
   ),
 );
 
 const showShippingNotice = computed(() =>
   !!(
-    selectedDelivery.value &&
-    cartSummary.value.quoteAvailable &&
+    showShippingBadge.value &&
     !isFreeShipping.value &&
     Number(cartSummary.value.shippingFee || 0) > 0
   ),
+);
+
+const shippingNoticeTitle = computed(() =>
+  Number(shippingConfig.value?.freeThreshold || 0) > 0
+    ? `未達 ${deliveryName.value}免運門檻`
+    : `${deliveryName.value}運費`,
 );
 
 const showDiscountSection = computed(() =>
