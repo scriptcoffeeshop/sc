@@ -3,7 +3,7 @@
     <UiCard id="login-page" class="max-w-md mx-auto mt-20 p-8 text-center">
       <img
         id="dashboard-login-logo"
-        src="icons/logo.png"
+        src="../../../icons/logo.png"
         alt="品牌圖示"
         class="w-14 h-14 mx-auto mb-4"
       >
@@ -29,7 +29,7 @@
       <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-3">
-          <img id="dashboard-header-logo" src="icons/logo.png" alt="品牌圖示" class="w-9 h-9">
+          <img id="dashboard-header-logo" src="../../../icons/logo.png" alt="品牌圖示" class="w-9 h-9">
           <div>
             <h1 class="text-xl font-bold" style="color: var(--primary)">
               咖啡訂購後台
@@ -56,7 +56,7 @@
               data-tab="orders"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/orders-list.png" alt="" class="ui-icon-inline">訂單管理</span>
+              <span class="tab-with-icon"><img src="../../../icons/orders-list.png" alt="" class="ui-icon-inline">訂單管理</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="products" as-child>
@@ -65,7 +65,7 @@
               data-tab="products"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/products-beans.png" alt="" class="ui-icon-inline">商品管理</span>
+              <span class="tab-with-icon"><img src="../../../icons/products-beans.png" alt="" class="ui-icon-inline">商品管理</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="categories" as-child>
@@ -74,7 +74,7 @@
               data-tab="categories"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/categories-folder.png" alt="" class="ui-icon-inline">分類管理</span>
+              <span class="tab-with-icon"><img src="../../../icons/categories-folder.png" alt="" class="ui-icon-inline">分類管理</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="promotions" as-child>
@@ -83,7 +83,7 @@
               data-tab="promotions"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/promotions-gift.png" alt="" class="ui-icon-inline">促銷活動</span>
+              <span class="tab-with-icon"><img src="../../../icons/promotions-gift.png" alt="" class="ui-icon-inline">促銷活動</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="settings" as-child>
@@ -92,7 +92,7 @@
               data-tab="settings"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/settings-gear.png" alt="" class="ui-icon-inline">系統設定</span>
+              <span class="tab-with-icon"><img src="../../../icons/settings-gear.png" alt="" class="ui-icon-inline">系統設定</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="icon-library" as-child>
@@ -101,7 +101,7 @@
               data-tab="icon-library"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/section-tag.png" alt="" class="ui-icon-inline">Icon 素材庫</span>
+              <span class="tab-with-icon"><img src="../../../icons/section-tag.png" alt="" class="ui-icon-inline">Icon 素材庫</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="formfields" as-child>
@@ -110,7 +110,7 @@
               data-tab="formfields"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/form-fields.png" alt="" class="ui-icon-inline">表單管理</span>
+              <span class="tab-with-icon"><img src="../../../icons/form-fields.png" alt="" class="ui-icon-inline">表單管理</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="users" as-child>
@@ -119,7 +119,7 @@
               data-tab="users"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/users-group.png" alt="" class="ui-icon-inline">用戶管理</span>
+              <span class="tab-with-icon"><img src="../../../icons/users-group.png" alt="" class="ui-icon-inline">用戶管理</span>
             </button>
           </TabsTrigger>
           <TabsTrigger value="blacklist" as-child>
@@ -128,7 +128,7 @@
               data-tab="blacklist"
               class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
             >
-              <span class="tab-with-icon"><img src="icons/blacklist-shield.png" alt="" class="ui-icon-inline">黑名單</span>
+              <span class="tab-with-icon"><img src="../../../icons/blacklist-shield.png" alt="" class="ui-icon-inline">黑名單</span>
             </button>
           </TabsTrigger>
         </TabsList>
@@ -146,7 +146,7 @@
               class="text-sm"
               style="color: var(--primary)"
             >
-              <span class="tab-with-icon"><img src="icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
+              <span class="tab-with-icon"><img src="../../../icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
             </button>
           </div>
 
@@ -408,7 +408,7 @@
                     :data-order-id="order.orderId"
                     class="text-xs text-purple-600 hover:text-purple-800 tab-with-icon"
                   >
-                    <img src="icons/refund-arrow.png" alt="" class="ui-icon-inline">退款
+                    <img src="../../../icons/refund-arrow.png" alt="" class="ui-icon-inline">退款
                   </button>
                   <button
                     v-if="order.showConfirmTransferButton"
@@ -507,7 +507,7 @@
                       class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
                       title="拖曳排序"
                       style="touch-action: none;"
-                    ><img src="icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
+                    ><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
                   </td>
                   <td class="p-3 text-sm">{{ product.category }}</td>
                   <td class="p-3">
@@ -584,7 +584,7 @@
                   class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1"
                   title="拖曳排序"
                   style="touch-action: none;"
-                ><img src="icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
+                ><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
                 <span class="font-medium">{{ category.name }}</span>
               </div>
               <div class="flex gap-2">
@@ -669,7 +669,7 @@
                       class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
                       title="拖曳排序"
                       style="touch-action: none;"
-                    ><img src="icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
+                    ><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon"></span>
                   </td>
                   <td class="p-3 font-medium">{{ promotion.name }}</td>
                   <td class="p-3 text-sm text-gray-600">
@@ -885,7 +885,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
-            <img id="settings-brand-logo" src="icons/logo.png" alt="" class="ui-icon-inline-lg">
+            <img id="settings-brand-logo" src="../../../icons/logo.png" alt="" class="ui-icon-inline-lg">
             品牌設定
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -924,7 +924,7 @@
               >品牌 Icon（使用本地 icons/logo.png）</label>
               <div class="flex gap-2 items-center">
                 <img
-                  src="icons/logo.png"
+                  src="../../../icons/logo.png"
                   alt="品牌圖示"
                   class="icon-upload-preview"
                 >
@@ -940,7 +940,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
-            <img src="icons/section-tag.png" alt="" class="ui-icon-inline-lg">
+            <img src="../../../icons/section-tag.png" alt="" class="ui-icon-inline-lg">
             區塊標題樣式設定
           </h3>
 
@@ -1179,7 +1179,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
-            <img src="icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
+            <img src="../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
             公告設定
           </h3>
           <label class="flex items-center gap-2 mb-3 cursor-pointer">
@@ -1200,7 +1200,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
-            <img src="icons/status-store.png" alt="" class="ui-icon-inline-lg">
+            <img src="../../../icons/status-store.png" alt="" class="ui-icon-inline-lg">
             營業狀態
           </h3>
           <div class="flex gap-4">
@@ -1228,7 +1228,7 @@
             class="flex flex-col md:flex-row md:justify-between md:items-center mb-3"
           >
             <h3 class="font-semibold text-lg flex items-center" style="color: var(--primary)">
-              <img src="icons/payment-card.png" alt="" class="ui-icon-inline-lg">
+              <img src="../../../icons/payment-card.png" alt="" class="ui-icon-inline-lg">
               取貨方式與付款對應設定
             </h3>
             <button
@@ -1319,7 +1319,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold text-lg mb-3 flex items-center" style="color: var(--primary)">
-            <img src="icons/payment-cash.png" alt="" class="ui-icon-inline-lg">
+            <img src="../../../icons/payment-cash.png" alt="" class="ui-icon-inline-lg">
             金流選項顯示設定
           </h3>
           <p class="text-sm text-gray-500 mb-4">
@@ -1538,7 +1538,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
-            <img src="icons/payment-bank.png" alt="" class="ui-icon-inline-lg">
+            <img src="../../../icons/payment-bank.png" alt="" class="ui-icon-inline-lg">
             匯款帳號管理
           </h3>
           <div id="bank-accounts-admin-list" class="mb-3"></div>
@@ -1675,7 +1675,7 @@
               :class="field.enabled ? '' : 'opacity-50'"
               :data-field-id="field.id"
             >
-              <span class="cursor-grab text-gray-400 drag-handle"><img src="icons/drag-grip.png" alt="" class="drag-handle-icon-sm"></span>
+              <span class="cursor-grab text-gray-400 drag-handle"><img src="../../../icons/drag-grip.png" alt="" class="drag-handle-icon-sm"></span>
               <div class="flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-medium">{{ field.label }}</span>
