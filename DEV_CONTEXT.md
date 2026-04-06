@@ -17,7 +17,7 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
    `initializeDashboardEventDelegation` 的 switch（後台）中註冊新
    action。部分函式仍掛載在 `window`
    上，是為了保留舊快取版本的相容性，非必要請勿新增。
-3. **繁體中文規則**：所有對話與代碼內的開發邏輯註解（comments），依照過去的強制要求，請一律使用
+3. **繁體中文規則**：所有對話、代碼內的開發邏輯註解（comments）以及 **Git Commit 的註釋訊息（Commit Messages）**，依照過去的強制要求，請一律使用
    **「繁體中文（Traditional Chinese）」**。
 4. **SRI 與 E2E 測試衝突**：在 HTML 啟用 SRI (`integrity`) 後，Playwright 的
    `route.fulfill` 攔截 CDN 腳本會導致 hash

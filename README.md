@@ -4,7 +4,7 @@
 
 ## 1. 核心開發與部署規範
 
-- **使用語言**：所有的回應、代碼註解以及內部推理過程（思考過程）都必須使用 **「繁體中文（Traditional Chinese）」**。
+- **使用語言**：所有的回應、代碼註解、內部推理過程（思考過程）以及 **Git Commit 的註釋訊息**，都必須使用 **「繁體中文（Traditional Chinese）」**。
 - **文字說明修改規定**：程式呈現的文字說明（UI Text），若沒有明確提及需要修改，則**嚴格禁止擅自修改**。若認為有必要，必須先徵得同意。
 - **自動化推送與部署**：
   - 修改 Edge Functions 後，必須部署至 Supabase：`supabase functions deploy coffee-api --no-verify-jwt`。
