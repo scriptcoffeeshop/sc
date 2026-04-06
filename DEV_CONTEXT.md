@@ -290,6 +290,8 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `06f8871` | fix: import resolveAssetUrl in form-renderer.js
 - `2026-04-07` | `79afde0` | docs: 記錄 js/form-renderer.js 的熱修復
 - `2026-04-07` | `3f54fb5` | fix(ui): correct logo upload button click delegation and bind reset logo event
+- `2026-04-07` | `6ca5675` | docs: 記錄 ui 修復紀錄於 DEV_CONTEXT.md
+- `2026-04-07` | `e1ede02` | feat(ui): add explicit upload button for site logo
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
