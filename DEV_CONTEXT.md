@@ -32,7 +32,18 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v68)
+## 🚀 近期重大更新 (v40 - v69)
+
+### 📅 v69 — 統一付款/配送 Icon 尺寸規則（移除付款專屬縮放）
+
+- **問題描述**
+  - 付款方式 icon 經過多次局部縮放後，和配送方式 icon 產生明顯比例落差，視覺看起來不協調。
+- **修正**
+  - `css/main.css` 移除 `.payment-option .option-icon` 與其內部 `.ui-icon-img` 的專屬尺寸覆寫。
+  - 付款與配送改為共用同一套 `.option-icon` 尺寸規則，確保卡片圖示比例一致。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v68 — 修正 Legacy 主頁付款 Icon 結構（避免圖示被放大）
 
