@@ -61,6 +61,17 @@ function buildReceiptHtml(receiptInfo: ReceiptInfo | null): string {
   </p>`;
 }
 
+function buildReceiptTextLines(receiptInfo: ReceiptInfo | null): string[] {
+  if (!receiptInfo) return [];
+  return [
+    "[收據資訊]",
+    `統一編號：${receiptInfo.taxId}`,
+    `買受人：${receiptInfo.buyer || "未填寫"}`,
+    `收據地址：${receiptInfo.address || "未填寫"}`,
+    `壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}`,
+  ];
+}
+
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
@@ -113,6 +124,10 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     return { success: false, error: "電話格式不正確" };
   }
   const receiptInfo = normalizeReceiptInfo(data.receiptInfo);
+  const receiptTextLines = buildReceiptTextLines(receiptInfo);
+  const finalOrdersText = receiptTextLines.length > 0
+    ? `${ordersText}\n\n${receiptTextLines.join("\n")}`
+    : ordersText;
 
   const now = new Date();
 
@@ -134,7 +149,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     line_name: String(data.lineName).trim(),
     phone,
     email: String(data.email || "").trim(),
-    items: ordersText,
+    items: finalOrdersText,
     total,
     delivery_method: deliveryMethod,
     city: data.city || "",
@@ -253,7 +268,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       transferTargetAccount: String(data.transferTargetAccount || ""),
       transferAccountLast5: String(data.transferAccountLast5 || ""),
       note: String(data.note || ""),
-      ordersText,
+      ordersText: finalOrdersText,
       total,
       customFieldsHtml,
       receiptHtml: buildReceiptHtml(receiptInfo),
