@@ -2,7 +2,7 @@
 // form-renderer.js — 動態表單欄位渲染與收集
 // ============================================
 
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, isValidEmail } from "./utils.js";
 import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
 
 /**
@@ -151,7 +151,7 @@ export function collectDynamicFields(fields) {
     // email 格式驗證
     if (
       f.field_type === "email" && value &&
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+      !isValidEmail(value)
     ) {
       return {
         valid: false,

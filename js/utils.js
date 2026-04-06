@@ -11,6 +11,13 @@ export function escapeHtml(s) {
   ).replace(/"/g, "&quot;");
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Email 格式驗證 */
+export function isValidEmail(email) {
+  return EMAIL_REGEX.test(String(email || "").trim());
+}
+
 /** 簡寫別名 (dashboard 使用) */
 export const esc = escapeHtml;
 

@@ -4,7 +4,7 @@
 
 import { API_URL } from "./config.js";
 import { authFetch } from "./auth.js";
-import { escapeHtml } from "./utils.js";
+import { escapeHtml, isValidEmail } from "./utils.js";
 import { state } from "./state.js";
 import { cart, clearCart } from "./cart.js";
 import { collectDynamicFields } from "./form-renderer.js";
@@ -69,7 +69,7 @@ export async function submitOrder() {
     return;
   }
 
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email && !isValidEmail(email)) {
     Swal.fire("錯誤", "請填寫正確的電子郵件", "error");
     return;
   }

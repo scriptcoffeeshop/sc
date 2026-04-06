@@ -3,7 +3,7 @@
 // ============================================
 
 import { API_URL, LINE_REDIRECT } from "./config.js";
-import { Toast } from "./utils.js";
+import { escapeHtml, isValidEmail, Toast } from "./utils.js";
 import { loginWithLine } from "./auth.js";
 import { state } from "./state.js";
 import {
@@ -30,7 +30,6 @@ import {
 import { showMyOrders, submitOrder } from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
 import { authFetch } from "./auth.js";
-import { escapeHtml } from "./utils.js";
 import {
   getDeliveryIconFallbackKey,
   getPaymentIconFallbackKey,
@@ -353,7 +352,15 @@ async function showProfileModal() {
     confirmButtonText: "儲存",
     cancelButtonText: "取消",
     confirmButtonColor: "#3C2415",
-    preConfirm: () => true,
+    preConfirm: () => {
+      const emailEl = document.getElementById("profile-email");
+      const email = emailEl ? emailEl.value.trim() : "";
+      if (email && !isValidEmail(email)) {
+        Swal.showValidationMessage("請填寫正確的電子郵件格式");
+        return false;
+      }
+      return true;
+    },
   });
 
   if (!confirmed) return;
