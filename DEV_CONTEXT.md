@@ -278,6 +278,28 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `77f9753` | feat: apply local /sc/icons/logo.png for brand icon and remove upload size cap
 <!-- MAIN_COMMIT_LOG_END -->
 
+### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
+
+- **問題描述**
+  - 首頁在資料載入前會閃現預設的「咖啡豆訂購」與舊版 emoji 標題，且商品載入文字較為生硬。
+  - GitHub Pages 部署環境下會發生 `/sc/sc/icons/` 的路徑拼接錯誤，導致圖示 404 破圖。
+  - 後台 Vue 頁面中商品管理的拖曳排序圖示因為絕對路徑 `/icons/` 導致載入失敗 (404)。
+  - 拖曳排序的圖示尺寸過小不易點擊。
+- **修正**
+  - **首屏與載入優化**：
+    - 將預設網站標題與副標題由「咖啡豆訂購 / 新鮮烘焙・產地直送」變更為「Script Coffee / 咖啡豆 | 耳掛」。並同步修改所有環境的 `<title>`。
+    - 移除首頁 `main.html` 及 `MainPage.vue` 的 emoji 區塊前綴，改用本地 PNG 圖示預設顯示。
+    - 將生硬的「載入商品中...」替換成 Skeleton (骨架屏) 脈動動畫。
+  - **路徑防錯處理**：
+    - 在 `js/icons.js` 的 `resolveAssetUrl` 加入去重複邏輯，若路徑已包含 base 子目錄名稱則不疊加，避免 `/sc/sc/` 雙重路徑。
+    - 一次性修復所有 Vue 檔案（`DashboardPage.vue`, `MainPage.vue` 等）及 HTML 內寫死的絕對路徑 `/icons/`，變更為相對路徑 `icons/` 以適應不同部屬環境。
+  - **拖曳圖示優化**：
+    - 在 `css/common.css` 中將 `.drag-handle-icon` 與 `.drag-handle-icon-sm` 的長寬加大至 `1.5rem` 與 `1.25rem`，並提高 opacity 讓使用者更易辨識點擊。
+  - 前端快取版號升級為 `v=60`（同步 `.frontend-version`, `.html`, 腳本等）。
+- **驗證**
+  - 使用 Browser Subagent 模擬 GitHub Pages 環境載入並擷取圖片，確認標題修正、圖示不破圖、骨架屏正常運作。
+  - 本地 CI / Linter / Tests 全數通過。
+
 ### 📅 v75 — 後台品牌 Icon 改為套用本地 `/sc/icons/logo.png` + 取消 500KB 限制
 
 - **需求**
