@@ -294,7 +294,35 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `e1ede02` | feat(ui): add explicit upload button for site logo
 - `2026-04-07` | `e18ded5` | docs: track UI button commit
 - `2026-04-07` | `07694d0` | fix(ui): ignore file type inputs in global click delegator to allow native file picker dialogs
+- `2026-04-07` | `516bbed` | docs: track file dialog hotfix
+- `2026-04-07` | `f06d1da` | 修正：新增電子郵件格式檢查機制並補上會員資料儲存前驗證
+- `2026-04-07` | `d48a2b0` | 功能：新增索取收據流程並同步訂單後台與 Email 顯示
+- `2026-04-07` | `f45b06c` | 調整：收據欄位順序改為統一編號優先並同步前後台與 Email
+- `2026-04-07` | `c7cb1ca` | 修正：將收據資訊併入訂單內容並同步 Email 明細
+- `2026-04-07` | `25f18c3` | fix: remove duplicated receipt section in order content
+- `2026-04-07` | `bd1ba43` | chore: bind project deploy commands to fixed supabase settings
+- `2026-04-07` | `9d8905d` | chore: make supabase scripts load project-local credentials
 <!-- MAIN_COMMIT_LOG_END -->
+
+### 📅 v77 — 補強專案級 GitHub / Supabase 綁定與交接文件
+
+- **需求背景**
+  - 使用者在切換不同專案後，會遇到 `origin` SSH 身分混用、Supabase CLI 登入狀態互相覆蓋，導致部署時權限或連線不穩定。
+- **已落地修正**
+  - GitHub：
+    - 專案 `origin` 固定為 `git@github-scriptcoffeeshop:scriptcoffeeshop/sc.git`。
+    - 專案 local git config 固定 `core.sshCommand=ssh -i ~/.ssh/id_ed25519 -o IdentitiesOnly=yes`。
+    - `~/.ssh/config` 補齊 `Host github-scriptcoffeeshop` 專用設定（`IdentityFile` / `IdentitiesOnly` / `UseKeychain`）。
+  - Supabase：
+    - 新增 `scripts/supabase_deploy.sh`、`scripts/supabase_db_push.sh`，固定 `project-ref=avnvsjyyeofivgmrchte` 並統一從專案根目錄讀取 `.env.supabase.local`。
+    - `package.json` 新增/調整：
+      - `npm run supabase:deploy`
+      - `npm run supabase:db:push`
+      - `npm run deploy` 也改走上述封裝腳本。
+    - `.env.supabase.local` 作為本機專案憑證來源（`SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` / `SUPABASE_PROFILE`），且由 `.env.*` 自動忽略，不入版控。
+- **驗證結果**
+  - 在執行 `supabase logout --yes` 後，仍可透過 `bash scripts/supabase_db_push.sh --dry-run` 成功連線並取得 `Remote database is up to date.`，確認已達成「專案級獨立憑證」目標。
+  - `npm run guardrails` 通過。
 
 ### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
 

@@ -32,3 +32,18 @@
 - **脈絡繼承**：開啟對話後，**優先讀取 `DEV_CONTEXT.md`** 以掌握除錯經驗與排版變更脈絡。
 - **紀錄更新**：每次完成階段性變更後，應自動將重點摘要紀錄於 `DEV_CONTEXT.md` 中。
 
+## 5. 專案綁定規範（GitHub / Supabase）
+
+- **GitHub（固定本專案 SSH）**：
+  - 本專案 `origin` 預設為：`git@github-scriptcoffeeshop:scriptcoffeeshop/sc.git`。
+  - 本專案 local git config 已固定 `core.sshCommand` 使用 `~/.ssh/id_ed25519`，避免切到其他專案時使用錯誤 SSH 身分。
+- **Supabase（固定本專案憑證來源）**：
+  - 請優先使用：
+    - `npm run supabase:deploy`
+    - `npm run supabase:db:push`
+  - 以上指令會透過 `scripts/supabase_deploy.sh` 與 `scripts/supabase_db_push.sh` 自動載入專案根目錄的 `.env.supabase.local`。
+  - `.env.supabase.local` 建議至少包含：
+    - `SUPABASE_ACCESS_TOKEN`
+    - `SUPABASE_DB_PASSWORD`
+    - `SUPABASE_PROFILE`（預設可用 `supabase`）
+  - `.env.supabase.local` 屬於本機敏感檔案，不應提交到 git（目前由 `.env.*` 規則自動忽略）。
