@@ -276,6 +276,14 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `ce5ca7f` | docs: update DEV_CONTEXT latest main commit hash
 - `2026-04-07` | `92f22dc` | docs: enforce per-commit main log and backfill origin/main history
 - `2026-04-07` | `77f9753` | feat: apply local /sc/icons/logo.png for brand icon and remove upload size cap
+- `2026-04-07` | `08e4595` | docs: append latest main commit to per-commit log
+- `2026-04-07` | `e3c2488` | ci: auto-fix CI errors
+- `2026-04-07` | `c4b0822` | fix: remove Supabase logo upload and site_icon_url, favicon now always uses local icons/logo.png
+- `2026-04-07` | `609a9b3` | fix: replace emoji section titles with PNG icons and skeleton loading for professional initial page load
+- `2026-04-07` | `5a761cc` | fix: prevent path duplication in resolveAssetUrl causing /sc/sc/icons/ 404s
+- `2026-04-07` | `8a11f03` | update: change fallback site title and subtitle to Script Coffee
+- `2026-04-07` | `50e6b77` | fix: increase drag icon size and resolve absolute paths in Vue files
+- `2026-04-07` | `23d3356` | docs: generate v76 release notes in DEV_CONTEXT.md covering UI optimizations and absolute path fixes
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
