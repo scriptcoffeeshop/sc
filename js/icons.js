@@ -90,11 +90,6 @@ const ABSOLUTE_URL_RE = /^(?:https?:|data:|blob:|\/\/)/i;
 export function resolveAssetUrl(rawUrl = "") {
   const value = String(rawUrl || "").trim();
   if (!value) return "";
-  
-  // 將原本位於 supabase 上的圖示，強制導向至本地的 logo.png
-  if (value.includes("supabase.co/storage")) {
-    return "icons/logo.png";
-  }
 
   if (ABSOLUTE_URL_RE.test(value)) return value;
 

@@ -2,6 +2,7 @@
     <!-- 登入頁 -->
     <UiCard id="login-page" class="max-w-md mx-auto mt-20 p-8 text-center">
       <img
+        id="dashboard-login-logo"
         src="/icons/logo.png"
         alt="品牌圖示"
         class="w-14 h-14 mx-auto mb-4"
@@ -28,7 +29,7 @@
       <!-- Header -->
       <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-3">
-          <img src="/icons/logo.png" alt="品牌圖示" class="w-9 h-9">
+          <img id="dashboard-header-logo" src="/icons/logo.png" alt="品牌圖示" class="w-9 h-9">
           <div>
             <h1 class="text-xl font-bold" style="color: var(--primary)">
               咖啡訂購後台
@@ -884,7 +885,7 @@
           style="border-color: #e5ddd5"
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
-            <img src="/icons/logo.png" alt="" class="ui-icon-inline-lg">
+            <img id="settings-brand-logo" src="/icons/logo.png" alt="" class="ui-icon-inline-lg">
             品牌設定
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">

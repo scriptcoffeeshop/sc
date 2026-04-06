@@ -3,7 +3,7 @@
 // ============================================
 
 import { escapeHtml } from "./utils.js";
-import { setIconElement } from "./icons.js";
+import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
 
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
@@ -197,14 +197,17 @@ export function applyBranding(settings) {
 
   // Favicon
   let favicon = document.getElementById("dynamic-favicon");
-  if (settings.site_icon_url) {
+  const faviconUrl = resolveAssetUrl(
+    settings.site_icon_url || getDefaultIconUrl("brand"),
+  );
+  if (faviconUrl) {
     if (!favicon) {
       favicon = document.createElement("link");
       favicon.id = "dynamic-favicon";
       favicon.rel = "icon";
       document.head.appendChild(favicon);
     }
-    favicon.href = settings.site_icon_url;
+    favicon.href = faviconUrl;
   }
 
   // Page title

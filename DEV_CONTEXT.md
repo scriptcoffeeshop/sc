@@ -37,6 +37,22 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 **目前 `main` 分支最新代碼 (Commit Hash):** `0981a5f`
 
+### 📅 v74 — 修正 logo 套用與後台 icon 可替換性（移除過度強制映射）
+
+- **問題描述**
+  - `resolveAssetUrl` 將所有 `supabase.co/storage` 圖示網址都強制改成 `icons/logo.png`，導致後台上傳付款/配送/品牌圖示後看起來無法替換（永遠顯示 logo）。
+  - 後台頁首與登入區品牌圖示未與設定同步，造成「已更新品牌 icon 但後台不變」的感受。
+- **修正**
+  - `js/icons.js`：移除 `resolveAssetUrl` 針對 Supabase URL 的全域強制替換邏輯，恢復正常使用實際圖示網址。
+  - `js/dashboard-app.js`：新增 `syncDashboardBrandIcons`，在載入設定與更新 `s-site-icon-url` 時同步更新後台登入/頁首/品牌設定標題圖示。
+  - `frontend/src/pages/DashboardPage.vue` 與 `dashboard.html`：補上後台品牌圖示節點 ID（`dashboard-login-logo`、`dashboard-header-logo`、`settings-brand-logo`）供同步更新。
+  - `js/form-renderer.js`：favicon 改用 `resolveAssetUrl(site_icon_url || brand fallback)`，確保本地 `icons/logo.png` 與自訂 icon 都能正確套用。
+  - `main.html`：預設 `#site-icon` 改為 `logo.png`，避免 legacy 首屏仍顯示舊 emoji。
+  - 前端快取版號升級為 `v=55`（`.frontend-version`、`main.html`、`dashboard.html` 同步）。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
+
 ### 📅 v73 — 替換 Supabase 遠端圖示為本地 GitHub 同步圖示
 
 - **需求描述**

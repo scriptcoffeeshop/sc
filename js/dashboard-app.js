@@ -238,6 +238,27 @@ const ICON_LIBRARY_TARGET_MAP = {
   },
 };
 
+function resolveBrandIconUrl(rawUrl = "") {
+  return resolveAssetUrl(rawUrl || getDefaultIconUrl("brand")) ||
+    getDefaultIconUrl("brand");
+}
+
+function syncDashboardBrandIcons(rawUrl = "") {
+  const resolved = resolveBrandIconUrl(rawUrl);
+  if (!resolved) return;
+  [
+    "dashboard-login-logo",
+    "dashboard-header-logo",
+    "settings-brand-logo",
+  ].forEach((id) => {
+    const icon = document.getElementById(id);
+    if (icon instanceof HTMLImageElement) {
+      icon.src = resolved;
+      icon.classList.remove("hidden");
+    }
+  });
+}
+
 // ============ 全域函式掛載（保留舊快取相容性） ============
 window.loginWithLine = () =>
   loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
@@ -2222,6 +2243,7 @@ async function loadSettings() {
         fallbackUrl: getDefaultIconUrl("brand"),
       });
       document.getElementById("s-icon-url-display").textContent = siteIconUrl;
+      syncDashboardBrandIcons(siteIconUrl);
 
       // 區塊標題
       document.getElementById("s-products-title").value =
@@ -3654,6 +3676,9 @@ function setIconUrlToField({
       rawUrl: url,
       fallbackUrl: getDefaultIconUrl(fallbackKey),
     });
+  }
+  if (inputId === "s-site-icon-url") {
+    syncDashboardBrandIcons(url);
   }
 }
 
