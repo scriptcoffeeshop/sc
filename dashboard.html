@@ -570,18 +570,19 @@
                   alt="品牌圖示"
                   class="w-8 h-8 rounded object-cover cursor-pointer hover:opacity-80 border shadow-sm"
                   title="點擊上傳新 Logo"
-                  data-action="upload-site-icon"
+                  onclick="document.getElementById('s-site-icon-upload').click()"
                 >
                 <input
                   type="file"
                   id="s-site-icon-upload"
                   class="hidden"
                   accept="image/png, image/jpeg, image/webp"
+                  data-action="upload-site-icon"
                 >
                 <input type="hidden" id="s-site-icon-url">
                 <div class="text-xs text-gray-500">
                   <div id="s-icon-url-display" class="truncate max-w-[150px] mb-1">未設定 (預設)</div>
-                  <button type="button" id="s-site-icon-reset" class="text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition">移除自訂</button>
+                  <button type="button" id="s-site-icon-reset" class="text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition" data-action="reset-site-icon">移除自訂</button>
                 </div>
               </div>
             </div>
