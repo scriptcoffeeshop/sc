@@ -100,6 +100,14 @@ export function resolveAssetUrl(rawUrl = "") {
 
   const pathname = window.location.pathname || "/";
   const base = pathname.slice(0, pathname.lastIndexOf("/") + 1) || "/";
+
+  // 防止路徑重複：若 normalized 已包含 base 子目錄名則去除
+  // 例如 base="/sc/", normalized="sc/icons/x.png" → 僅使用 "icons/x.png"
+  const baseDir = base.replace(/^\/|\/$/g, ""); // "sc"
+  if (baseDir && normalized.startsWith(baseDir + "/")) {
+    return `${base}${normalized.slice(baseDir.length + 1)}`;
+  }
+
   return `${base}${normalized}`;
 }
 
