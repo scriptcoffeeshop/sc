@@ -32,7 +32,20 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v70)
+## 🚀 近期重大更新 (v40 - v71)
+
+### 📅 v71 — Safari/跨瀏覽器檢查與快取版號修正（運費/折扣顯示）
+
+- **問題判斷**
+  - 使用者回報 Safari 顯示「運費/折扣不更新」，Chrome 正常。
+  - 程式邏輯在跨瀏覽器 smoke 測試（Chromium/WebKit/Firefox）可正常通過，問題主因判定為快取版本未刷新。
+- **修正**
+  - 前端版號由 `v=52` 升至 `v=53`（`.frontend-version`、`main.html`、`dashboard.html` 同步）。
+  - 強制瀏覽器（特別是 Safari）重新抓取最新入口模組，避免沿用舊快取導致顯示落後。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
+  - `npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ts --browser=all` 通過（18/18）。
 
 ### 📅 v70 — 對齊付款/配送卡片尺寸並修正付款勾選圖示 404
 
