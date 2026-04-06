@@ -895,7 +895,7 @@
                 type="text"
                 id="s-site-title"
                 class="input-field"
-                placeholder="咖啡豆訂購"
+                placeholder="Script Coffee"
               >
             </div>
             <div>
@@ -904,7 +904,7 @@
                 type="text"
                 id="s-site-subtitle"
                 class="input-field"
-                placeholder="新鮮烘焙・產地直送"
+                placeholder="咖啡豆 | 耳掛"
               >
             </div>
           </div>

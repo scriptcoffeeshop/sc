@@ -23,10 +23,10 @@
             style="color: var(--primary)"
             id="site-title"
           >
-            咖啡豆訂購
+            Script Coffee
           </h1>
           <p class="text-sm text-gray-500" id="site-subtitle">
-            新鮮烘焙・產地直送
+            咖啡豆 | 耳掛
           </p>
         </div>
       </div>
