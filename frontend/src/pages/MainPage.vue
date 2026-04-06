@@ -16,7 +16,7 @@
     <UiCard class="max-w-3xl mx-auto p-6 md:p-8">
       <!-- Header -->
       <div class="flex items-center gap-3 mb-6">
-        <span id="site-icon"><img src="/icons/logo.png" alt="品牌圖示" class="ui-icon-img"></span>
+        <span id="site-icon"><img src="icons/logo.png" alt="品牌圖示" class="ui-icon-img"></span>
         <div>
           <h1
             class="text-2xl font-bold"
@@ -63,14 +63,14 @@
             class="text-sm font-medium"
             style="color: var(--primary)"
           >
-            <span class="tab-with-icon"><img src="/icons/orders-list.png" alt="" class="ui-icon-inline">我的訂單</span>
+            <span class="tab-with-icon"><img src="icons/orders-list.png" alt="" class="ui-icon-inline">我的訂單</span>
           </button>
           <button
             data-action="show-profile"
             class="text-sm font-medium"
             style="color: var(--primary)"
           >
-            <span class="tab-with-icon"><img src="/icons/profile-user.png" alt="" class="ui-icon-inline">會員資料</span>
+            <span class="tab-with-icon"><img src="icons/profile-user.png" alt="" class="ui-icon-inline">會員資料</span>
           </button>
           <button
             data-action="logout"
@@ -90,7 +90,7 @@
           id="products-section-title"
         >
           <span class="section-heading-inline">
-            <span class="ui-icon-title"><img id="products-section-icon" src="/icons/products-beans.png" alt="商品區塊圖示" class="ui-icon-img"></span>
+            <span class="ui-icon-title"><img id="products-section-icon" src="icons/products-beans.png" alt="商品區塊圖示" class="ui-icon-img"></span>
             <span id="products-section-title-text">咖啡豆選購</span>
           </span>
         </h2>
@@ -204,7 +204,7 @@
           id="delivery-section-title"
         >
           <span class="section-heading-inline">
-            <span class="ui-icon-title"><img id="delivery-section-icon" src="/icons/delivery-truck.png" alt="配送區塊圖示" class="ui-icon-img"></span>
+            <span class="ui-icon-title"><img id="delivery-section-icon" src="icons/delivery-truck.png" alt="配送區塊圖示" class="ui-icon-img"></span>
             <span id="delivery-section-title-text">配送方式</span>
           </span>
         </h2>
@@ -218,7 +218,7 @@
         <!-- 配送到府地址 (限竹北/新竹) -->
         <div id="delivery-address-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
           <h3 class="font-semibold mb-3" style="color: var(--primary)">
-            <span class="tab-with-icon"><img src="/icons/location-pin.png" alt="" class="ui-icon-inline">配送地址 (限新竹市/竹北市)</span>
+            <span class="tab-with-icon"><img src="icons/location-pin.png" alt="" class="ui-icon-inline">配送地址 (限新竹市/竹北市)</span>
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
@@ -250,7 +250,7 @@
         <!-- 全台宅配地址 -->
         <div id="home-delivery-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
           <h3 class="font-semibold mb-3" style="color: var(--primary)">
-            <span class="tab-with-icon"><img src="/icons/shipping-box.png" alt="" class="ui-icon-inline">全台宅配地址</span>
+            <span class="tab-with-icon"><img src="icons/shipping-box.png" alt="" class="ui-icon-inline">全台宅配地址</span>
           </h3>
 
           <!-- tw-city-selector 容器 -->
@@ -296,11 +296,11 @@
         <!-- 超商取貨 -->
         <div id="store-pickup-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
           <h3 class="font-semibold mb-3" style="color: var(--primary)">
-            <span class="tab-with-icon"><img src="/icons/store-front.png" alt="" class="ui-icon-inline">取貨門市資訊</span>
+            <span class="tab-with-icon"><img src="icons/store-front.png" alt="" class="ui-icon-inline">取貨門市資訊</span>
           </h3>
           <div class="mb-3 text-center">
             <UiButton data-action="open-store-map" class="store-select-btn">
-              <span class="tab-with-icon"><img src="/icons/map-route.png" alt="" class="ui-icon-inline">選擇門市</span>
+              <span class="tab-with-icon"><img src="icons/map-route.png" alt="" class="ui-icon-inline">選擇門市</span>
             </UiButton>
             <p class="text-xs text-gray-500 mt-1">
               點擊後將開啟超商地圖選擇門市
@@ -332,7 +332,7 @@
         <!-- 來店取貨資訊 -->
         <div id="in-store-section" class="hidden fade-in p-4 rounded-xl ui-card-section mt-4">
           <h3 class="font-semibold mb-3 text-gray-800">
-            <span class="tab-with-icon"><img src="/icons/store-front.png" alt="" class="ui-icon-inline">門市資訊</span>
+            <span class="tab-with-icon"><img src="icons/store-front.png" alt="" class="ui-icon-inline">門市資訊</span>
           </h3>
           <p class="text-sm text-gray-700 leading-relaxed mb-3">
             <strong>地址：</strong>新竹市東區建中路101號1樓<br>
@@ -356,7 +356,7 @@
               class="inline-block text-sm font-medium hover:opacity-80 transition-opacity"
               style="color: var(--primary); text-decoration: underline"
             >
-              <span class="tab-with-icon"><img src="/icons/map-route.png" alt="" class="ui-icon-inline">去 Google Maps 查看路線和營業時間</span>
+              <span class="tab-with-icon"><img src="icons/map-route.png" alt="" class="ui-icon-inline">去 Google Maps 查看路線和營業時間</span>
             </a>
           </div>
         </div>
@@ -373,7 +373,7 @@
           id="payment-section-title"
         >
           <span class="section-heading-inline">
-            <span class="ui-icon-title"><img src="/icons/payment-card.png" alt="付款圖示" class="ui-icon-img"></span>
+            <span class="ui-icon-title"><img src="icons/payment-card.png" alt="付款圖示" class="ui-icon-img"></span>
             <span>付款方式</span>
           </span>
         </h2>
@@ -388,7 +388,7 @@
             data-method="cod"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-            <div class="option-icon" id="po-cod-icon-display"><img src="/icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img"></div>
+            <div class="option-icon" id="po-cod-icon-display"><img src="icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img"></div>
             <div class="font-semibold" id="po-cod-name-display">
               取件 / 到付
             </div>
@@ -403,7 +403,7 @@
             data-method="linepay"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-            <div class="option-icon" id="po-linepay-icon-display"><img src="/icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img"></div>
+            <div class="option-icon" id="po-linepay-icon-display"><img src="icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img"></div>
             <div
               class="font-semibold text-[#06C755]"
               id="po-linepay-name-display"
@@ -424,7 +424,7 @@
             data-method="transfer"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-            <div class="option-icon" id="po-transfer-icon-display"><img src="/icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img"></div>
+            <div class="option-icon" id="po-transfer-icon-display"><img src="icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img"></div>
             <div
               class="font-semibold text-blue-600"
               id="po-transfer-name-display"
@@ -443,7 +443,7 @@
         <!-- 線上轉帳資訊 -->
         <div id="transfer-info-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
           <h3 class="font-semibold mb-3" style="color: var(--primary)">
-            <span class="tab-with-icon"><img src="/icons/payment-bank.png" alt="" class="ui-icon-inline">匯款資訊</span>
+            <span class="tab-with-icon"><img src="icons/payment-bank.png" alt="" class="ui-icon-inline">匯款資訊</span>
           </h3>
 
           <!-- 新增應付金額顯示 -->
@@ -503,7 +503,7 @@
           id="notes-section-title"
         >
           <span class="section-heading-inline">
-            <span class="ui-icon-title"><img id="notes-section-icon" src="/icons/notes-pencil.png" alt="備註區塊圖示" class="ui-icon-img"></span>
+            <span class="ui-icon-title"><img id="notes-section-icon" src="icons/notes-pencil.png" alt="備註區塊圖示" class="ui-icon-img"></span>
             <span id="notes-section-title-text">訂單備註</span>
           </span>
         </label>
@@ -556,7 +556,7 @@
             class="relative h-11 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             @click.prevent="toggleCartDrawer"
           >
-            <span class="tab-with-icon"><img src="/icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span> <span
+            <span class="tab-with-icon"><img src="icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span> <span
               id="cart-badge"
               class="hidden ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center"
             >0</span>
@@ -583,7 +583,7 @@
         style="border-color: #f0e6db"
       >
         <h3 class="text-lg font-bold" style="color: var(--primary)">
-          <span class="tab-with-icon"><img src="/icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span>
+          <span class="tab-with-icon"><img src="icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span>
         </h3>
         <button
           class="text-gray-500 hover:text-gray-700 text-2xl"
@@ -728,7 +728,7 @@
       >
         <div class="p-4 border-b flex justify-between items-center">
           <h3 class="text-lg font-bold" style="color: var(--primary)">
-            <span class="tab-with-icon"><img src="/icons/orders-list.png" alt="" class="ui-icon-inline">我的訂單</span>
+            <span class="tab-with-icon"><img src="icons/orders-list.png" alt="" class="ui-icon-inline">我的訂單</span>
           </h3>
           <button
             data-action="close-orders-modal"

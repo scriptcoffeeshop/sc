@@ -215,15 +215,15 @@ select.input-field {
 }
 
 .drag-handle-icon {
-  width: 1rem;
-  height: 1rem;
-  opacity: 0.55;
+  width: 1.5rem;
+  height: 1.5rem;
+  opacity: 0.65;
 }
 
 .drag-handle-icon-sm {
-  width: 0.92rem;
-  height: 0.92rem;
-  opacity: 0.55;
+  width: 1.25rem;
+  height: 1.25rem;
+  opacity: 0.65;
 }
 
 .ui-icon-fallback {
