@@ -32,7 +32,19 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v66)
+## 🚀 近期重大更新 (v40 - v67)
+
+### 📅 v67 — 再次微調付款方式 Icon 尺寸（縮小本體占比）
+
+- **問題描述**
+  - 付款方式卡片 icon 在前版調整後，視覺權重仍偏大，與卡片文字層級不平衡。
+- **修正**
+  - `css/main.css` 進一步縮小 `.payment-option .option-icon` 容器尺寸。
+  - 新增 `.payment-option .option-icon .ui-icon-img` 規則，獨立下修圖示本體占比（桌機/手機分開設定）。
+  - 調整 mobile `margin-bottom`，讓 icon 與文案間距更自然。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v66 — 修正折扣/運費顯示判斷（避免無運費規則時誤顯示免運）
 

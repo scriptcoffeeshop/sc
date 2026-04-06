@@ -97,8 +97,15 @@
 }
 
 .payment-option .option-icon {
-  width: 2.05rem;
-  height: 2.05rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  margin-bottom: 0.34rem;
+}
+
+.payment-option .option-icon .ui-icon-img {
+  width: 82%;
+  height: 82%;
+  margin: auto;
 }
 
 .store-select-btn {
@@ -135,9 +142,14 @@
   }
 
   .payment-option .option-icon {
-    width: 1.82rem;
-    height: 1.82rem;
-    margin-bottom: 0.35rem;
+    width: 1.68rem;
+    height: 1.68rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .payment-option .option-icon .ui-icon-img {
+    width: 80%;
+    height: 80%;
   }
 
   #total-price {
