@@ -32,7 +32,18 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v62)
+## 🚀 近期重大更新 (v40 - v63)
+
+### 📅 v63 — 修復扁平化 Icon 在 Legacy 路徑無法顯示（補齊 `/icons` 相容輸出）
+
+- **問題根因**
+  - `js/icons.js` 的預設圖示路徑使用 `icons/*.png`，在 legacy 靜態路徑下會請求 `/icons/...`。
+  - 先前僅產出 `frontend/public/icons/`，專案根目錄缺少 `icons/`，導致部分環境發生 404 而顯示不到圖示。
+- **修正**
+  - `scripts/generate_icons.py` 改為雙路徑輸出：`frontend/public/icons/` 與 `icons/`。
+  - 重新生成 icon，兩個目錄皆有完整 33 張 PNG，確保 Vite/Legacy 兩種載入模式都可顯示。
+- **驗證**
+  - `npm run build` 通過。
 
 ### 📅 v62 — Icon 視覺扁平化重製（全站 PNG 全量替換 + 自動生成腳本）
 

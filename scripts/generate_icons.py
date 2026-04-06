@@ -2,8 +2,9 @@
 """
 Generate a cohesive PNG icon pack for the coffee ordering project.
 
-Output directory:
+Output directories:
   frontend/public/icons/*.png
+  icons/*.png
 """
 
 from __future__ import annotations
@@ -420,21 +421,27 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    icon_dir = Path("frontend/public/icons")
-    icon_dir.mkdir(parents=True, exist_ok=True)
+    icon_dirs = [Path("frontend/public/icons"), Path("icons")]
+    for icon_dir in icon_dirs:
+        icon_dir.mkdir(parents=True, exist_ok=True)
 
     rendered_paths: list[Path] = []
     for filename, (palette_key, shape) in ICON_SPECS.items():
         palette = PALETTE_MAP[palette_key]
         img = render_icon(palette, shape)
-        output = icon_dir / filename
-        img.save(output)
-        rendered_paths.append(output)
+        for index, icon_dir in enumerate(icon_dirs):
+            output = icon_dir / filename
+            img.save(output)
+            if index == 0:
+                rendered_paths.append(output)
 
     if args.preview:
         create_preview_sheet(sorted(rendered_paths), Path("/tmp/generated-icon-sheet.png"))
 
-    print(f"Generated {len(rendered_paths)} icons in {icon_dir}")
+    print(
+        "Generated "
+        f"{len(rendered_paths)} icons in {icon_dirs[0]} and {icon_dirs[1]}"
+    )
 
 
 if __name__ == "__main__":
