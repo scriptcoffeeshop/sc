@@ -286,6 +286,8 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `5e9c9f3` | docs: 新增 Git Commit 註釋需使用繁體中文之強制規定
 - `2026-04-07` | `54716b3` | ci: auto-fix CI errors
 - `2026-04-07` | `cd053ce` | chore: 修復 drag 圖示為 inline SVG 及還原隨時上傳 Logo 功能
+- `2026-04-07` | `bf32caf` | docs: 記錄 drag 圖示與 Logo 上傳之修復紀錄於 DEV_CONTEXT.md
+- `2026-04-07` | `06f8871` | fix: import resolveAssetUrl in form-renderer.js
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
