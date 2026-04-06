@@ -32,7 +32,21 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v69)
+## 🚀 近期重大更新 (v40 - v70)
+
+### 📅 v70 — 對齊付款/配送卡片尺寸並修正付款勾選圖示 404
+
+- **問題描述**
+  - 付款方式卡片在桌機下比配送方式卡片寬，整體方框比例不一致。
+  - 付款卡片右上角勾選圖示在特定路徑環境下顯示為破圖（`selected-check.png` 載入失敗）。
+- **修正**
+  - `frontend/src/pages/MainPage.vue` 與 `main.html`：將付款區塊 grid 由 `lg:grid-cols-3` 改為 `lg:grid-cols-5`，與配送區塊一致。
+  - `frontend/src/pages/MainPage.vue`：勾選圖示改用 `getDefaultIconUrl("selected")` 動態路徑，避免 Vite 與部署子路徑的資源解析差異。
+  - `main.html`：勾選圖示路徑改為相對路徑 `icons/selected-check.png`，避免絕對路徑造成 404。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
+  - `npm run e2e` 通過（6/6）。
 
 ### 📅 v69 — 統一付款/配送 Icon 尺寸規則（移除付款專屬縮放）
 

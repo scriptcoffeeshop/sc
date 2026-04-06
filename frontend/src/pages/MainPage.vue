@@ -376,7 +376,7 @@
           </span>
         </h2>
         <div
-          class="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4"
+          class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"
           id="payment-options"
         >
           <div
@@ -385,7 +385,7 @@
             data-action="select-payment"
             data-method="cod"
           >
-            <div class="check-mark"><img src="/icons/selected-check.png" alt="" class="ui-icon-img"></div>
+            <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-cod-icon-display"><img src="/icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img"></div>
             <div class="font-semibold" id="po-cod-name-display">
               取件 / 到付
@@ -400,7 +400,7 @@
             data-action="select-payment"
             data-method="linepay"
           >
-            <div class="check-mark"><img src="/icons/selected-check.png" alt="" class="ui-icon-img"></div>
+            <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-linepay-icon-display"><img src="/icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img"></div>
             <div
               class="font-semibold text-[#06C755]"
@@ -421,7 +421,7 @@
             data-action="select-payment"
             data-method="transfer"
           >
-            <div class="check-mark"><img src="/icons/selected-check.png" alt="" class="ui-icon-img"></div>
+            <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-transfer-icon-display"><img src="/icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img"></div>
             <div
               class="font-semibold text-blue-600"
@@ -754,6 +754,7 @@ import {
   updateCartItemQty,
   updateCartItemQtyByKeys,
 } from "../../../js/cart.js";
+import { getDefaultIconUrl } from "../../../js/icons.js";
 import { initMainApp } from "../../../js/main-app.js";
 import { submitOrder } from "../../../js/orders.js";
 import { getProductsViewModel } from "../../../js/products.js";
@@ -764,6 +765,7 @@ const cartItems = ref([]);
 const selectedDelivery = ref("");
 const deliveryName = ref("該配送方式");
 const shippingConfig = ref(null);
+const selectedCheckIconUrl = getDefaultIconUrl("selected");
 const cartSummary = ref({
   subtotal: 0,
   appliedPromos: [],
