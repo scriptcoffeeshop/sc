@@ -32,7 +32,22 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v61)
+## 🚀 近期重大更新 (v40 - v62)
+
+### 📅 v62 — Icon 視覺扁平化重製（全站 PNG 全量替換 + 自動生成腳本）
+
+- **Icon 全量替換（扁平 / 簡約）**
+  - 以同一套視覺語言重製 `frontend/public/icons/` 下 33 張 PNG，統一為扁平化底色 + 線性圖形，移除舊版高光與浮雕感。
+  - 主要涵蓋品牌、導覽、物流、金流、狀態與操作圖示，並維持既有檔名與對應鍵值，避免前端映射斷裂。
+- **新增可重複產生工具**
+  - 新增 `scripts/generate_icons.py`，可一鍵重生整套 icon，降低後續改風格的人工作業成本。
+  - 支援 `--preview` 產生預覽圖（`/tmp/generated-icon-sheet.png`）供快速目視檢查。
+- **版本控制**
+  - 已 commit 並 push 至 `main`：`2e64a99`（`feat: regenerate icon pack with flatter minimalist style`）。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
+  - `npm run e2e` 通過（6/6）。
 
 ### 📅 v61 — 修復 GitHub CI `Setup Node.js` 失敗（lockfile 相依調整）
 
