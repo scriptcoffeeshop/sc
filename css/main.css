@@ -96,6 +96,11 @@
   justify-content: center;
 }
 
+.payment-option .option-icon {
+  width: 2.05rem;
+  height: 2.05rem;
+}
+
 .store-select-btn {
   background: linear-gradient(135deg, #334155, #1e293b);
   color: #fff;
@@ -127,6 +132,12 @@
   .payment-option {
     padding: 11px 7px;
     text-align: center;
+  }
+
+  .payment-option .option-icon {
+    width: 1.82rem;
+    height: 1.82rem;
+    margin-bottom: 0.35rem;
   }
 
   #total-price {
