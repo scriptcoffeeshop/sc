@@ -61,15 +61,25 @@ function buildReceiptHtml(receiptInfo: ReceiptInfo | null): string {
   </p>`;
 }
 
-function buildReceiptTextLines(receiptInfo: ReceiptInfo | null): string[] {
-  if (!receiptInfo) return [];
-  return [
-    "[收據資訊]",
-    `統一編號：${receiptInfo.taxId}`,
-    `買受人：${receiptInfo.buyer || "未填寫"}`,
-    `收據地址：${receiptInfo.address || "未填寫"}`,
-    `壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}`,
-  ];
+function stripLegacyReceiptBlock(
+  rawItems: unknown,
+  receiptInfo: ReceiptInfo | null,
+): string {
+  const text = String(rawItems || "");
+  if (!receiptInfo || !text.includes("[收據資訊]")) return text;
+
+  const lines = text.split(/\r?\n/);
+  const markerIndex = lines.findIndex((line) => line.trim() === "[收據資訊]");
+  if (markerIndex < 0) return text;
+
+  const receiptTail = lines.slice(markerIndex).join("\n");
+  const looksLikeReceiptTail = receiptTail.includes("統一編號：") &&
+    receiptTail.includes("壓印日期：");
+  if (!looksLikeReceiptTail) return text;
+
+  const kept = lines.slice(0, markerIndex);
+  while (kept.length > 0 && kept[kept.length - 1].trim() === "") kept.pop();
+  return kept.join("\n");
 }
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
@@ -124,10 +134,6 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     return { success: false, error: "電話格式不正確" };
   }
   const receiptInfo = normalizeReceiptInfo(data.receiptInfo);
-  const receiptTextLines = buildReceiptTextLines(receiptInfo);
-  const finalOrdersText = receiptTextLines.length > 0
-    ? `${ordersText}\n\n${receiptTextLines.join("\n")}`
-    : ordersText;
 
   const now = new Date();
 
@@ -149,7 +155,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     line_name: String(data.lineName).trim(),
     phone,
     email: String(data.email || "").trim(),
-    items: finalOrdersText,
+    items: ordersText,
     total,
     delivery_method: deliveryMethod,
     city: data.city || "",
@@ -268,7 +274,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       transferTargetAccount: String(data.transferTargetAccount || ""),
       transferAccountLast5: String(data.transferAccountLast5 || ""),
       note: String(data.note || ""),
-      ordersText: finalOrdersText,
+      ordersText,
       total,
       customFieldsHtml,
       receiptHtml: buildReceiptHtml(receiptInfo),
@@ -381,34 +387,37 @@ export async function getOrders(req: Request) {
   const { data, count, error } = await query;
   if (error) return { success: false, error: error.message };
 
-  const orders = (data || []).map((r: Record<string, unknown>) => ({
-    orderId: r.id,
-    timestamp: r.created_at,
-    lineName: r.line_name,
-    phone: r.phone,
-    email: r.email,
-    items: r.items,
-    total: r.total,
-    deliveryMethod: r.delivery_method,
-    city: r.city,
-    district: r.district,
-    address: r.address,
-    storeType: r.store_type,
-    storeId: r.store_id,
-    storeName: r.store_name,
-    storeAddress: r.store_address,
-    status: r.status,
-    note: r.note,
-    lineUserId: r.line_user_id,
-    paymentMethod: r.payment_method || "cod",
-    paymentStatus: r.payment_status || "",
-    paymentId: r.payment_id || "",
-    transferAccountLast5: r.transfer_account_last5 || "",
-    receiptInfo: parseReceiptInfo(r.receipt_info),
-    trackingNumber: r.tracking_number || "",
-    shippingProvider: r.shipping_provider || "",
-    trackingUrl: r.tracking_url || "",
-  }));
+  const orders = (data || []).map((r: Record<string, unknown>) => {
+    const receiptInfo = parseReceiptInfo(r.receipt_info);
+    return {
+      orderId: r.id,
+      timestamp: r.created_at,
+      lineName: r.line_name,
+      phone: r.phone,
+      email: r.email,
+      items: stripLegacyReceiptBlock(r.items, receiptInfo),
+      total: r.total,
+      deliveryMethod: r.delivery_method,
+      city: r.city,
+      district: r.district,
+      address: r.address,
+      storeType: r.store_type,
+      storeId: r.store_id,
+      storeName: r.store_name,
+      storeAddress: r.store_address,
+      status: r.status,
+      note: r.note,
+      lineUserId: r.line_user_id,
+      paymentMethod: r.payment_method || "cod",
+      paymentStatus: r.payment_status || "",
+      paymentId: r.payment_id || "",
+      transferAccountLast5: r.transfer_account_last5 || "",
+      receiptInfo,
+      trackingNumber: r.tracking_number || "",
+      shippingProvider: r.shipping_provider || "",
+      trackingUrl: r.tracking_url || "",
+    };
+  });
   return {
     success: true,
     orders,
@@ -439,24 +448,27 @@ export async function getMyOrders(req: Request) {
 
   if (error) return { success: false, error: error.message };
 
-  const orders = (data || []).map((r: Record<string, unknown>) => ({
-    orderId: r.id,
-    timestamp: r.created_at,
-    items: r.items,
-    total: r.total,
-    deliveryMethod: r.delivery_method,
-    status: r.status,
-    storeName: r.store_name,
-    storeAddress: r.store_address,
-    city: r.city,
-    address: r.address,
-    paymentMethod: r.payment_method || "cod",
-    paymentStatus: r.payment_status || "",
-    receiptInfo: parseReceiptInfo(r.receipt_info),
-    trackingNumber: r.tracking_number || "",
-    shippingProvider: r.shipping_provider || "",
-    trackingUrl: r.tracking_url || "",
-  }));
+  const orders = (data || []).map((r: Record<string, unknown>) => {
+    const receiptInfo = parseReceiptInfo(r.receipt_info);
+    return {
+      orderId: r.id,
+      timestamp: r.created_at,
+      items: stripLegacyReceiptBlock(r.items, receiptInfo),
+      total: r.total,
+      deliveryMethod: r.delivery_method,
+      status: r.status,
+      storeName: r.store_name,
+      storeAddress: r.store_address,
+      city: r.city,
+      address: r.address,
+      paymentMethod: r.payment_method || "cod",
+      paymentStatus: r.payment_status || "",
+      receiptInfo,
+      trackingNumber: r.tracking_number || "",
+      shippingProvider: r.shipping_provider || "",
+      trackingUrl: r.tracking_url || "",
+    };
+  });
   return {
     success: true,
     orders,
