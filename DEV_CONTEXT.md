@@ -29,10 +29,13 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
    specifier。**規範**：依賴一律宣告在 `deno.json` 的 `imports`
    中，程式碼內直接引用別名（如 `import { z } from "zod"`），否則 `deno lint` 與
    `deno check` 會失敗。
+6. **分支代碼紀錄追蹤**：從現在起，每次重要更新的同時，必須將 `main` 分支當前最新的版本代碼（Commit Hash）一併紀錄在該次更新區塊或最頂部，以便明確標示部署與進度狀態。
 
 ---
 
 ## 🚀 近期重大更新 (v40 - v73)
+
+**目前 `main` 分支最新代碼 (Commit Hash):** `0981a5f`
 
 ### 📅 v73 — 替換 Supabase 遠端圖示為本地 GitHub 同步圖示
 
