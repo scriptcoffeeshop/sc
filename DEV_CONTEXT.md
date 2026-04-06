@@ -32,7 +32,21 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v67)
+## 🚀 近期重大更新 (v40 - v68)
+
+### 📅 v68 — 修正 Legacy 主頁付款 Icon 結構（避免圖示被放大）
+
+- **問題根因**
+  - 使用 `main.html`（legacy）時，付款 icon 容器仍是舊結構 `text-2xl mb-2`，不是 `.option-icon`。
+  - `main-app.js` 以 `setIconElement` 注入 PNG 後，圖示缺少固定容器尺寸，視覺上被放大到不符合整體比例。
+- **修正**
+  - 將 `main.html` 付款區塊三個選項（`cod/linepay/transfer`）改為與新版一致：
+    - `check-mark` 改為 `<img class="ui-icon-img">`
+    - icon 容器改為 `<div class="option-icon" ...>`
+    - 補上對應預設 PNG 圖示
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v67 — 再次微調付款方式 Icon 尺寸（縮小本體占比）
 
