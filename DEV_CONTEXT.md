@@ -288,6 +288,8 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `cd053ce` | chore: 修復 drag 圖示為 inline SVG 及還原隨時上傳 Logo 功能
 - `2026-04-07` | `bf32caf` | docs: 記錄 drag 圖示與 Logo 上傳之修復紀錄於 DEV_CONTEXT.md
 - `2026-04-07` | `06f8871` | fix: import resolveAssetUrl in form-renderer.js
+- `2026-04-07` | `79afde0` | docs: 記錄 js/form-renderer.js 的熱修復
+- `2026-04-07` | `3f54fb5` | fix(ui): correct logo upload button click delegation and bind reset logo event
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v76 — 優化首屏載入體驗與修復拖曳圖示 / 標題顯示問題
