@@ -32,7 +32,20 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v72)
+## 🚀 近期重大更新 (v40 - v73)
+
+### 📅 v73 — 替換 Supabase 遠端圖示為本地 GitHub 同步圖示
+
+- **需求描述**
+  - 將原本位於 Supabase Storage 上的品牌或網站圖示替換成本地路徑，並直接將新設計的 `logo.png` 同步儲存至 GitHub 存儲庫內（`sc/icons/logo.png`）。
+- **修正與異動**
+  - 使用 `git` 提交了未追蹤的本地檔案 `icons/logo.png` 並推送到遠端儲存庫。
+  - `js/icons.js` 修改：
+    - `ICON_FILE_MAP` 中的 `brand` 預設鍵值導向 `icons/logo.png`。
+    - `resolveAssetUrl(rawUrl)` 新增替換邏輯：若檢測到傳統的 `supabase.co/storage` 網址字串，將自動截斷並強制導向 `icons/logo.png`，避免遠端圖示錯誤影響前台服務。
+  - `前端快取版號`：配合 `js/icons.js` 異動，已將 `.frontend-version` 進版至 `v=54`，並透過腳本同步更新 `.html`。
+- **驗證**
+  - `npm run build` 與 `npm run guardrails` 通過。
 
 ### 📅 v72 — 配送/付款卡片文字置中對齊（桌機與手機一致）
 
