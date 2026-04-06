@@ -32,7 +32,20 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 
 ---
 
-## 🚀 近期重大更新 (v40 - v63)
+## 🚀 近期重大更新 (v40 - v64)
+
+### 📅 v64 — 調整扁平化 Icon 比例（圖形放大與前後台顯示尺寸對齊）
+
+- **問題描述**
+  - 扁平化 icon 套用後，部分場景（導覽列、區塊標題、付款/配送卡片、後台預覽）出現圖形視覺偏小與比例不協調。
+- **修正**
+  - `scripts/generate_icons.py` 新增圖形層放大（`GLYPH_SCALE`），讓圖示主體在底板中佔比更合理，並重新生成全部 icon（`frontend/public/icons` 與 `icons`）。
+  - `css/common.css` 調整共用 icon 尺寸：`ui-icon-inline / ui-icon-inline-lg / ui-icon-title`，統一前後台縮放比例。
+  - `css/main.css` 調整前台 icon 容器（`#site-icon`、`.option-icon`、`.check-mark`），移除雙重外框造成的視覺壓縮。
+  - `css/dashboard.css` 將後台 `.icon-upload-preview` 由 `object-fit: cover` 改為 `contain`，避免預覽裁切導致比例失真。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
 
 ### 📅 v63 — 修復扁平化 Icon 在 Legacy 路徑無法顯示（補齊 `/icons` 相容輸出）
 

@@ -20,6 +20,7 @@ SIZE = 128
 FG = (246, 250, 255, 255)
 STROKE = 5
 ROUND_RADIUS = 28
+GLYPH_SCALE = 1.28
 
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
@@ -387,8 +388,22 @@ def draw_by_name(name: str, d: ImageDraw.ImageDraw) -> None:
 
 def render_icon(palette: tuple[str, str], shape: str) -> Image.Image:
     image = make_background(palette[0], palette[1])
-    draw = ImageDraw.Draw(image)
+
+    glyph_layer = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(glyph_layer)
     draw_by_name(shape, draw)
+
+    if GLYPH_SCALE != 1:
+        scaled_size = int(round(SIZE * GLYPH_SCALE))
+        scaled_glyph = glyph_layer.resize(
+            (scaled_size, scaled_size),
+            Image.Resampling.LANCZOS,
+        )
+        offset = ((SIZE - scaled_size) // 2, (SIZE - scaled_size) // 2)
+        image.alpha_composite(scaled_glyph, dest=offset)
+    else:
+        image.alpha_composite(glyph_layer)
+
     return image
 
 
