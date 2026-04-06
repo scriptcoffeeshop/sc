@@ -4,6 +4,13 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 PROFILE="${SUPABASE_PROFILE:-supabase}"
 
+if [[ -f "$ROOT_DIR/.env.supabase.local" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT_DIR/.env.supabase.local"
+  set +a
+fi
+
 if [[ -n "${SUPABASE_DB_PASSWORD:-}" ]]; then
   exec supabase \
     --workdir "$ROOT_DIR" \
