@@ -3,7 +3,7 @@
 // ============================================
 
 import { escapeHtml } from "./utils.js";
-import { getDefaultIconUrl, setIconElement } from "./icons.js";
+import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
 
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
