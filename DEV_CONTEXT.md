@@ -274,6 +274,8 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `71f95eb` | docs: track main branch commit hash in DEV_CONTEXT.md
 - `2026-04-07` | `4747540` | fix: restore icon replacement flow and sync brand logo updates
 - `2026-04-07` | `ce5ca7f` | docs: update DEV_CONTEXT latest main commit hash
+- `2026-04-07` | `92f22dc` | docs: enforce per-commit main log and backfill origin/main history
+- `2026-04-07` | `77f9753` | feat: apply local /sc/icons/logo.png for brand icon and remove upload size cap
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v75 — 後台品牌 Icon 改為套用本地 `/sc/icons/logo.png` + 取消 500KB 限制
