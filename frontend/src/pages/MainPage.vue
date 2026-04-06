@@ -95,12 +95,14 @@
           </span>
         </h2>
         <div id="products-container" data-vue-managed="true">
-          <p
+          <div
             v-if="productsCategories.length === 0"
-            class="text-center text-gray-500 py-8"
+            class="space-y-3 animate-pulse"
           >
-            載入商品中...
-          </p>
+            <div class="h-16 bg-gray-100 rounded-xl"></div>
+            <div class="h-16 bg-gray-100 rounded-xl"></div>
+            <div class="h-16 bg-gray-100 rounded-xl"></div>
+          </div>
           <template v-else>
             <div
               v-for="category in productsCategories"

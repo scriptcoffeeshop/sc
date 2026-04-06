@@ -118,25 +118,31 @@
       <!-- 商品列表 -->
       <div class="mb-6">
         <h2
-          class="text-lg font-bold mb-4"
+          class="text-lg font-bold mb-4 flex items-center gap-2"
           style="color: var(--primary)"
           id="products-section-title"
         >
-          🪶 咖啡豆選購
+          <img id="products-section-icon" src="icons/products-beans.png" alt="" class="ui-icon-inline">
+          <span id="products-section-title-text">咖啡豆選購</span>
         </h2>
         <div id="products-container">
-          <p class="text-center text-gray-500 py-8">載入商品中...</p>
+          <div class="space-y-3 animate-pulse">
+            <div class="h-16 bg-gray-100 rounded-xl"></div>
+            <div class="h-16 bg-gray-100 rounded-xl"></div>
+            <div class="h-16 bg-gray-100 rounded-xl"></div>
+          </div>
         </div>
       </div>
 
       <!-- 配送方式 -->
       <div class="mb-6">
         <h2
-          class="text-lg font-bold mb-4"
+          class="text-lg font-bold mb-4 flex items-center gap-2"
           style="color: var(--primary)"
           id="delivery-section-title"
         >
-          🚚 配送方式
+          <img id="delivery-section-icon" src="icons/delivery-truck.png" alt="" class="ui-icon-inline">
+          <span id="delivery-section-title-text">配送方式</span>
         </h2>
         <div
           class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"
@@ -310,11 +316,12 @@
       <!-- 付款方式 -->
       <div id="payment-method-section" class="mb-6 fade-in">
         <h2
-          class="text-lg font-bold mb-4"
+          class="text-lg font-bold mb-4 flex items-center gap-2"
           style="color: var(--primary)"
           id="payment-section-title"
         >
-          💳 付款方式
+          <img src="icons/payment-card.png" alt="" class="ui-icon-inline">
+          付款方式
         </h2>
         <div
           class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"
@@ -330,7 +337,7 @@
               <img src="icons/selected-check.png" alt="" class="ui-icon-img">
             </div>
             <div class="option-icon" id="po-cod-icon-display">
-              <img src="/icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img">
+              <img src="icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img">
             </div>
             <div class="font-semibold" id="po-cod-name-display">
               取件 / 到付
@@ -349,7 +356,7 @@
               <img src="icons/selected-check.png" alt="" class="ui-icon-img">
             </div>
             <div class="option-icon" id="po-linepay-icon-display">
-              <img src="/icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img">
+              <img src="icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img">
             </div>
             <div
               class="font-semibold text-[#06C755]"
@@ -374,7 +381,7 @@
               <img src="icons/selected-check.png" alt="" class="ui-icon-img">
             </div>
             <div class="option-icon" id="po-transfer-icon-display">
-              <img src="/icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img">
+              <img src="icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img">
             </div>
             <div
               class="font-semibold text-blue-600"
@@ -455,10 +462,13 @@
       <!-- 備註 -->
       <div class="mb-6">
         <label
-          class="block font-medium mb-2"
+          class="block font-medium mb-2 flex items-center gap-2"
           style="color: var(--primary)"
           id="notes-section-title"
-        >📝 訂單備註</label>
+        >
+          <img id="notes-section-icon" src="icons/notes-pencil.png" alt="" class="ui-icon-inline">
+          <span id="notes-section-title-text">訂單備註</span>
+        </label>
         <textarea
           id="order-note"
           class="input-field resize-none"
@@ -575,6 +585,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/main-app.js?v=57"></script>
+    <script type="module" src="js/main-app.js?v=58"></script>
   </body>
 </html>
