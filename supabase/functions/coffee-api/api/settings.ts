@@ -30,11 +30,24 @@ const PUBLIC_SETTINGS_KEYS = [
   "payment_options_config",
 ];
 
+const LOCAL_BRAND_ICON_PATH = "icons/logo.png";
+
 function sanitizeFileName(fileName = "icon.png") {
   return String(fileName || "icon.png")
     .replace(/[^a-zA-Z0-9._-]/g, "_")
     .replace(/^_+/, "")
     .slice(0, 80) || "icon.png";
+}
+
+async function upsertSettingValue(key: string, value: string) {
+  const { error } = await supabase.from("coffee_settings").upsert({
+    key,
+    value,
+  });
+  if (error) {
+    return { success: false, error: "設定更新失敗: " + error.message };
+  }
+  return { success: true };
 }
 
 async function uploadAssetInternal(
@@ -121,7 +134,24 @@ export async function uploadSiteIcon(
   data: Record<string, unknown>,
   req: Request,
 ) {
-  return await uploadAssetInternal(data, req, "site_icon_url");
+  await requireAdmin(req);
+
+  const base64Data = String(data.fileData || "");
+  const contentType = String(data.contentType || "image/png");
+  if (base64Data && !contentType.startsWith("image/")) {
+    return { success: false, error: "僅支援圖片檔案" };
+  }
+
+  const updated = await upsertSettingValue("site_icon_url", LOCAL_BRAND_ICON_PATH);
+  if (!updated.success) {
+    return updated;
+  }
+
+  return {
+    success: true,
+    url: LOCAL_BRAND_ICON_PATH,
+    message: "品牌 Icon 已套用 /sc/icons/logo.png",
+  };
 }
 
 export async function uploadAsset(

@@ -276,6 +276,29 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `ce5ca7f` | docs: update DEV_CONTEXT latest main commit hash
 <!-- MAIN_COMMIT_LOG_END -->
 
+### 📅 v75 — 後台品牌 Icon 改為套用本地 `/sc/icons/logo.png` + 取消 500KB 限制
+
+- **需求**
+  - 後台品牌 icon 上傳流程需改成走本地 `/sc/icons/` 路徑，避免再顯示 Supabase Storage 長網址。
+  - 直接套用 `logo.png`，並移除前端 500KB 上傳限制。
+  - 確認 Chrome 頁籤 icon 使用 `logo.png`。
+- **修正**
+  - `supabase/functions/coffee-api/api/settings.ts`
+    - `uploadSiteIcon` 改為直接寫入 `coffee_settings.site_icon_url = "icons/logo.png"` 並回傳該路徑。
+    - 回傳訊息明確標示已套用 `/sc/icons/logo.png`。
+  - `js/dashboard-app.js`
+    - 品牌 icon 上傳改呼叫 `?action=uploadSiteIcon`。
+    - 移除 500KB 檔案大小限制，只保留圖片格式檢查。
+    - 品牌 icon URL 顯示改為解析後路徑（可看到 `/sc/icons/logo.png`）。
+  - `main.html`、`dashboard.html`、`frontend/*.html`
+    - 補上 `link#dynamic-favicon` 預設指向 `logo.png`，確保頁籤 icon 預設為品牌圖示。
+  - 快取版號升級至 `v=56`（`.frontend-version`、`main.html`、`dashboard.html`）。
+- **驗證**
+  - `npm run build` 通過。
+  - `npm run guardrails` 通過。
+  - `npm run e2e` 通過（6/6）。
+  - Chromium 環境檢查受 sandbox 限制無法穩定直接啟動 headless shell；已改以 `link#dynamic-favicon` 與實際輸出檔案路徑雙重確認為 `icons/logo.png`。
+
 ### 📅 v74 — 修正 logo 套用與後台 icon 可替換性（移除過度強制映射）
 
 - **問題描述**

@@ -43,7 +43,6 @@ window.promotions = [];
 let dashboardSettings = {};
 let settingsLoadToken = 0;
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
-const MAX_ICON_UPLOAD_BYTES = 500 * 1024;
 
 const DEFAULT_DELIVERY_OPTIONS = {
   in_store: {
@@ -2242,7 +2241,8 @@ async function loadSettings() {
         rawUrl: siteIconUrl,
         fallbackUrl: getDefaultIconUrl("brand"),
       });
-      document.getElementById("s-icon-url-display").textContent = siteIconUrl;
+      const siteIconResolvedUrl = resolveAssetUrl(siteIconUrl) || siteIconUrl;
+      document.getElementById("s-icon-url-display").textContent = siteIconResolvedUrl;
       syncDashboardBrandIcons(siteIconUrl);
 
       // 區塊標題
@@ -3624,10 +3624,6 @@ function validateIconFile(file) {
     Swal.fire("錯誤", "請選擇圖片檔案 (PNG/JPG/WebP)", "error");
     return false;
   }
-  if (file.size > MAX_ICON_UPLOAD_BYTES) {
-    Swal.fire("錯誤", "圖片大小不能超過 500KB", "error");
-    return false;
-  }
   return true;
 }
 
@@ -3659,6 +3655,26 @@ async function uploadAssetFile(file, settingKey = "") {
   return await r.json();
 }
 
+async function applySiteLogo(file = null) {
+  const payload = {
+    userId: getAuthUserId(),
+  };
+
+  if (file) {
+    const base64 = await fileToBase64(file);
+    payload.fileData = base64;
+    payload.fileName = file.name;
+    payload.contentType = file.type;
+  }
+
+  const r = await authFetch(`${API_URL}?action=uploadSiteIcon`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return await r.json();
+}
+
 function setIconUrlToField({
   inputId,
   displayId,
@@ -3669,7 +3685,10 @@ function setIconUrlToField({
   const input = document.getElementById(inputId);
   if (input) input.value = url;
   const display = document.getElementById(displayId);
-  if (display) display.textContent = url;
+  if (display) {
+    const resolvedDisplayUrl = resolveAssetUrl(url) || url;
+    display.textContent = resolvedDisplayUrl;
+  }
   if (previewId) {
     updateIconPreview({
       previewId,
@@ -3715,7 +3734,7 @@ function applyIconFromLibrary(button) {
 async function uploadSiteIcon() {
   const input = document.getElementById("s-icon-file");
   const file = input?.files?.[0];
-  if (!validateIconFile(file)) return;
+  if (file && !validateIconFile(file)) return;
 
   Swal.fire({
     title: "上傳中...",
@@ -3724,16 +3743,17 @@ async function uploadSiteIcon() {
   });
 
   try {
-    const d = await uploadAssetFile(file, "site_icon_url");
+    const d = await applySiteLogo(file);
     if (d.success) {
       setIconUrlToField({
         inputId: "s-site-icon-url",
         displayId: "s-icon-url-display",
         previewId: "s-icon-preview",
-        url: d.url,
+        url: d.url || getDefaultIconUrl("brand"),
         fallbackKey: "brand",
       });
-      Toast.fire({ icon: "success", title: "圖示已上傳並套用" });
+      Toast.fire({ icon: "success", title: "已套用 /sc/icons/logo.png" });
+      if (input) input.value = "";
     } else Swal.fire("錯誤", d.error, "error");
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
