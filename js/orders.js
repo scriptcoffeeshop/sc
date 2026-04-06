@@ -47,10 +47,10 @@ function normalizeReceiptInfo(raw) {
 function buildReceiptInfoHtml(receiptInfo) {
   if (!receiptInfo) return "";
   return `<div class="text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2">
+            <div><span class="text-gray-500">統一編號：</span>${escapeHtml(receiptInfo.taxId)}</div>
             <div><span class="text-gray-500">收據買受人：</span>${
     escapeHtml(receiptInfo.buyer) || "未填寫"
   }</div>
-            <div><span class="text-gray-500">統一編號：</span>${escapeHtml(receiptInfo.taxId)}</div>
             <div><span class="text-gray-500">收據地址：</span>${
     escapeHtml(receiptInfo.address) || "未填寫"
   }</div>
@@ -345,9 +345,9 @@ export async function submitOrder() {
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ""}
         ${
     receiptInfo
-          ? `<br><br><b>收據資訊：</b><br>
-          買受人：${escapeHtml(receiptInfo.buyer) || "未填寫"}<br>
+      ? `<br><br><b>收據資訊：</b><br>
           統一編號：${escapeHtml(receiptInfo.taxId)}<br>
+          買受人：${escapeHtml(receiptInfo.buyer) || "未填寫"}<br>
           收據地址：${escapeHtml(receiptInfo.address) || "未填寫"}<br>
           壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}`
       : ""

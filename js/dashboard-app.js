@@ -586,10 +586,10 @@ function normalizeReceiptInfo(raw) {
 function buildReceiptSummaryHtml(receiptInfo) {
   if (!receiptInfo) return "";
   return `<div class="text-xs text-amber-800 bg-amber-50 p-2 rounded mt-2 border border-amber-100">
+            <div><span class="text-gray-500">統一編號：</span>${esc(receiptInfo.taxId)}</div>
             <div><span class="text-gray-500">收據買受人：</span>${
     esc(receiptInfo.buyer) || "未填寫"
   }</div>
-            <div><span class="text-gray-500">統一編號：</span>${esc(receiptInfo.taxId)}</div>
             <div><span class="text-gray-500">收據地址：</span>${
     esc(receiptInfo.address) || "未填寫"
   }</div>
@@ -1279,8 +1279,8 @@ function buildOrdersCsv(orderList) {
     "訂單內容",
     "備註",
     "是否索取收據",
-    "收據買受人",
     "收據統一編號",
+    "收據買受人",
     "收據地址",
     "收據壓印日期",
   ];
@@ -1310,8 +1310,8 @@ function buildOrdersCsv(orderList) {
       o.items || "",
       o.note || "",
       receiptInfo ? "是" : "否",
-      receiptInfo?.buyer || "",
       receiptInfo?.taxId || "",
+      receiptInfo?.buyer || "",
       receiptInfo?.address || "",
       receiptInfo ? (receiptInfo.needDateStamp ? "需要" : "不需要") : "",
     ];

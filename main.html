@@ -474,15 +474,6 @@
           class="hidden mt-3 ml-6 p-3 rounded-xl border border-amber-200 bg-amber-50 space-y-3"
         >
           <div>
-            <label class="block text-sm text-gray-600 mb-1">買受人（選填）</label>
-            <input
-              id="receipt-buyer"
-              type="text"
-              class="input-field"
-              placeholder="請輸入買受人名稱"
-            >
-          </div>
-          <div>
             <label class="block text-sm text-gray-600 mb-1">統一編號</label>
             <input
               id="receipt-tax-id"
@@ -492,6 +483,15 @@
               maxlength="8"
               pattern="\d{8}"
               inputmode="numeric"
+            >
+          </div>
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">買受人（選填）</label>
+            <input
+              id="receipt-buyer"
+              type="text"
+              class="input-field"
+              placeholder="請輸入買受人名稱"
             >
           </div>
           <div>
@@ -640,6 +640,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/main-app.js?v=62"></script>
+    <script type="module" src="js/main-app.js?v=63"></script>
   </body>
 </html>
