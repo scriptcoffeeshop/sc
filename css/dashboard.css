@@ -226,3 +226,24 @@
     padding: 0.95rem;
   }
 }
+
+/* 訂單狀態確認按鈕 */
+.confirm-status-btn {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+
+.confirm-status-btn:hover {
+  opacity: 0.85;
+  transform: scale(1.04);
+}
+
+.confirm-status-btn.hidden {
+  display: none;
+}
+
+/* Flex Message 彈窗樣式覆寫 */
+.flex-message-popup pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  line-height: 1.45;
+}

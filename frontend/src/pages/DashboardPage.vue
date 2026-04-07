@@ -141,13 +141,23 @@
             <h2 class="text-lg font-bold" style="color: var(--primary)">
               訂單列表
             </h2>
-            <button
-              data-action="reload-orders"
-              class="text-sm"
-              style="color: var(--primary)"
-            >
-              <span class="tab-with-icon"><img src="../../../icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
-            </button>
+            <div class="flex gap-2 items-center">
+              <button
+                data-action="show-flex-history"
+                class="text-sm px-3 py-1 rounded-lg border"
+                style="border-color: #6F4E37; color: #6F4E37;"
+                title="LINE Flex Message 歷史紀錄"
+              >
+                📋 Flex 歷史
+              </button>
+              <button
+                data-action="reload-orders"
+                class="text-sm"
+                style="color: var(--primary)"
+              >
+                <span class="tab-with-icon"><img src="../../../icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
+              </button>
+            </div>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
@@ -446,6 +456,14 @@
                       {{ orderStatusText(status) }}
                     </option>
                   </select>
+                  <button
+                    data-action="confirm-order-status"
+                    :data-order-id="order.orderId"
+                    class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium"
+                    style="background:#6F4E37; color:#fff;"
+                  >
+                    確認
+                  </button>
                   <button
                     data-action="delete-order"
                     :data-order-id="order.orderId"

@@ -11,10 +11,21 @@ export function createOrdersActionHandlers(deps) {
     "confirm-transfer-payment": (el) => {
       if (el.dataset.orderId) deps.confirmTransferPayment(el.dataset.orderId);
     },
-    "change-order-status": (el) => {
-      if (el.dataset.orderId) {
-        deps.changeOrderStatus(el.dataset.orderId, el.value);
-      }
+    "change-order-status": () => {
+      // 下拉選單 change 事件由 events.js 處理（僅顯示/隱藏確認按鈕）
+      // 不在此直接觸發狀態更新
+    },
+    "confirm-order-status": (el) => {
+      const orderId = el.dataset.orderId;
+      if (!orderId) return;
+      const select = el.parentElement?.querySelector(
+        '[data-action="change-order-status"]',
+      );
+      if (!select) return;
+      deps.changeOrderStatus(orderId, select.value);
+    },
+    "show-flex-history": () => {
+      if (deps.showFlexHistory) deps.showFlexHistory();
     },
     "copy-tracking-number": (el) => {
       const trackingNumber = el.dataset.trackingNumber;

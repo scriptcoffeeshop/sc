@@ -27,7 +27,7 @@ export function createDashboardEvents(
   previewIcon,
   saveProduct,
   savePromotion,
-  changeOrderStatus,
+  _changeOrderStatus,
   renderOrders,
 ) {
   function initializeDashboardEventDelegation() {
@@ -85,9 +85,17 @@ export function createDashboardEvents(
           target.dataset.currentStatus,
         );
         const nextStatus = normalizeOrderStatus(target.value);
-        if (!nextStatus || currentStatus === nextStatus) return;
-        target.dataset.currentStatus = nextStatus;
-        changeOrderStatus(orderId, nextStatus);
+        // 找到對應的確認按鈕並顯示/隱藏
+        const confirmBtn = target.parentElement?.querySelector(
+          '[data-action="confirm-order-status"]',
+        );
+        if (confirmBtn) {
+          if (!nextStatus || currentStatus === nextStatus) {
+            confirmBtn.classList.add("hidden");
+          } else {
+            confirmBtn.classList.remove("hidden");
+          }
+        }
         return;
       }
       if (target instanceof HTMLInputElement && target.dataset.action) {

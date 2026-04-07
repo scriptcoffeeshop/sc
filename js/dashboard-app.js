@@ -297,6 +297,7 @@ const dashboardActionHandlers = {
     batchDeleteOrders,
     exportFilteredOrdersCsv,
     exportSelectedOrdersCsv,
+    showFlexHistory,
     Toast,
   }),
   ...createProductsActionHandlers({
@@ -535,6 +536,389 @@ const orderStatusOptions = [
   "completed",
   "cancelled",
 ];
+
+// ============ LINE Flex Message 產生器 ============
+
+const FLEX_HISTORY_KEY = "coffee_flex_message_history";
+const FLEX_HISTORY_MAX = 50;
+
+const statusColorMap = {
+  pending: "#f59e0b",
+  processing: "#3b82f6",
+  shipped: "#2e7d32",
+  completed: "#16a34a",
+  cancelled: "#dc2626",
+};
+
+function buildLineFlexMessage(order, newStatus) {
+  const statusLabel = orderStatusLabel[newStatus] || newStatus;
+  const statusColor = statusColorMap[newStatus] || "#333333";
+  const deliveryLabel = orderMethodLabel[order.deliveryMethod] ||
+    order.deliveryMethod || "";
+  const paymentLabel =
+    orderPayMethodLabel[order.paymentMethod || "cod"] || "貨到付款";
+  const paymentStatusStr = order.paymentStatus
+    ? ` (${orderPayStatusLabel[order.paymentStatus] || order.paymentStatus})`
+    : "";
+
+  const bodyContents = [
+    {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        {
+          type: "text",
+          text: "訂單編號",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: `#${order.orderId || ""}`,
+          size: "sm",
+          weight: "bold",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    },
+    { type: "separator", margin: "md" },
+    {
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "訂單狀態",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: statusLabel,
+          size: "sm",
+          weight: "bold",
+          color: statusColor,
+          flex: 5,
+        },
+      ],
+    },
+    { type: "separator", margin: "md" },
+    {
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "配送方式",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: deliveryLabel,
+          size: "sm",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    },
+    { type: "separator", margin: "md" },
+    {
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "付款方式",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: `${paymentLabel}${paymentStatusStr}`,
+          size: "sm",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    },
+    { type: "separator", margin: "md" },
+    {
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "訂單金額",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: `$${Number(order.total) || 0}`,
+          size: "sm",
+          weight: "bold",
+          color: "#e63946",
+          flex: 5,
+        },
+      ],
+    },
+  ];
+
+  // 物流資訊
+  if (order.trackingNumber || order.shippingProvider) {
+    bodyContents.push({ type: "separator", margin: "md" });
+    if (order.shippingProvider) {
+      bodyContents.push({
+        type: "box",
+        layout: "horizontal",
+        margin: "md",
+        contents: [
+          {
+            type: "text",
+            text: "物流商",
+            size: "sm",
+            color: "#888888",
+            flex: 3,
+          },
+          {
+            type: "text",
+            text: order.shippingProvider,
+            size: "sm",
+            flex: 5,
+            wrap: true,
+          },
+        ],
+      });
+    }
+    if (order.trackingNumber) {
+      bodyContents.push({
+        type: "box",
+        layout: "horizontal",
+        margin: "sm",
+        contents: [
+          {
+            type: "text",
+            text: "物流單號",
+            size: "sm",
+            color: "#888888",
+            flex: 3,
+          },
+          {
+            type: "text",
+            text: order.trackingNumber,
+            size: "sm",
+            weight: "bold",
+            color: "#1e40af",
+            flex: 5,
+            wrap: true,
+          },
+        ],
+      });
+    }
+  }
+
+  // 訂單明細
+  if (order.items) {
+    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push({
+      type: "text",
+      text: "📦 訂單明細",
+      size: "sm",
+      weight: "bold",
+      color: "#6F4E37",
+      margin: "md",
+    });
+    bodyContents.push({
+      type: "text",
+      text: String(order.items || ""),
+      size: "xs",
+      color: "#555555",
+      wrap: true,
+      margin: "sm",
+    });
+  }
+
+  // 查詢 site_title（從 DOM 取得當前設定值）
+  const siteTitleEl = document.getElementById("s-site-title");
+  const siteTitle = siteTitleEl?.value || "Script Coffee";
+
+  return {
+    type: "flex",
+    altText: `[${siteTitle}] 訂單 #${order.orderId || ""} ${statusLabel}`,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      header: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "16px",
+        backgroundColor: "#f9f6f0",
+        contents: [
+          {
+            type: "text",
+            text: `📋 ${siteTitle} - 訂單通知`,
+            weight: "bold",
+            size: "md",
+            color: "#6F4E37",
+          },
+        ],
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        paddingAll: "16px",
+        contents: bodyContents,
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        paddingAll: "12px",
+        contents: [
+          {
+            type: "text",
+            text: `更新時間：${new Date().toLocaleString("zh-TW")}`,
+            size: "xxs",
+            color: "#aaaaaa",
+            align: "center",
+          },
+        ],
+      },
+    },
+  };
+}
+
+function saveFlexToHistory(flexMsg, orderId, statusLabel) {
+  try {
+    const history = JSON.parse(
+      localStorage.getItem(FLEX_HISTORY_KEY) || "[]",
+    );
+    history.unshift({
+      orderId,
+      statusLabel,
+      timestamp: new Date().toISOString(),
+      flex: flexMsg,
+    });
+    if (history.length > FLEX_HISTORY_MAX) history.length = FLEX_HISTORY_MAX;
+    localStorage.setItem(FLEX_HISTORY_KEY, JSON.stringify(history));
+  } catch {
+    // localStorage 寫入失敗不阻塞流程
+  }
+}
+
+async function showFlexMessagePopup(flexMsg, orderId, statusLabel) {
+  const jsonStr = JSON.stringify(flexMsg, null, 2);
+  const { isConfirmed } = await Swal.fire({
+    title: "LINE Flex Message",
+    html: `
+      <div class="text-left text-sm mb-2">
+        <span class="text-gray-500">訂單</span> <b>#${esc(orderId)}</b>
+        → <span class="font-bold" style="color:#6F4E37">${esc(statusLabel)}</span>
+      </div>
+      <div style="position:relative;">
+        <pre id="swal-flex-json" style="text-align:left; font-size:11px; max-height:300px; overflow:auto; background:#f8f6f2; border:1px solid #e5ddd5; border-radius:6px; padding:12px; white-space:pre-wrap; word-break:break-all;">${esc(jsonStr)}</pre>
+      </div>
+      <p class="text-xs text-gray-400 mt-2">已自動暫存至歷史紀錄，可從訂單列表上方 📋 按鈕查看</p>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "📋 複製 JSON",
+    cancelButtonText: "關閉",
+    confirmButtonColor: "#6F4E37",
+    width: 600,
+    customClass: {
+      popup: "flex-message-popup",
+    },
+  });
+  if (isConfirmed) {
+    try {
+      await navigator.clipboard.writeText(jsonStr);
+      Toast.fire({ icon: "success", title: "Flex Message 已複製" });
+    } catch {
+      // fallback: select text
+      const pre = document.getElementById("swal-flex-json");
+      if (pre) {
+        const range = document.createRange();
+        range.selectNodeContents(pre);
+        window.getSelection()?.removeAllRanges();
+        window.getSelection()?.addRange(range);
+      }
+      Swal.fire("提醒", "自動複製失敗，請手動選取後 Ctrl+C 複製", "info");
+    }
+  }
+}
+
+function showFlexHistory() {
+  const history = JSON.parse(
+    localStorage.getItem(FLEX_HISTORY_KEY) || "[]",
+  );
+  if (!history.length) {
+    Swal.fire("LINE Flex 歷史", "目前沒有暫存的 Flex Message", "info");
+    return;
+  }
+
+  const listHtml = history.map((item, idx) => {
+    const time = new Date(item.timestamp).toLocaleString("zh-TW");
+    return `<div class="flex items-center justify-between p-2 rounded mb-1" style="background:#faf6f2; border:1px solid #e5ddd5;">
+      <div class="text-sm">
+        <span class="font-bold" style="color:var(--primary)">#${esc(item.orderId)}</span>
+        <span class="ml-2 text-xs px-1.5 py-0.5 rounded" style="background:#6F4E37;color:#fff;">${esc(item.statusLabel)}</span>
+        <span class="text-xs text-gray-400 ml-2">${esc(time)}</span>
+      </div>
+      <button data-flex-idx="${idx}" class="flex-history-copy-btn text-xs px-3 py-1 rounded" style="background:#6F4E37; color:#fff; cursor:pointer;">複製</button>
+    </div>`;
+  }).join("");
+
+  Swal.fire({
+    title: "📋 LINE Flex 歷史紀錄",
+    html: `
+      <div style="max-height:400px; overflow-y:auto; text-align:left;">
+        ${listHtml}
+      </div>
+      <button id="flex-history-clear" class="text-xs text-red-500 mt-3 hover:underline">清除所有歷史</button>
+    `,
+    showConfirmButton: false,
+    showCancelButton: true,
+    cancelButtonText: "關閉",
+    width: 600,
+    didOpen: () => {
+      const popup = Swal.getPopup();
+      if (!popup) return;
+      popup.querySelectorAll(".flex-history-copy-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const idx = Number(btn.dataset.flexIdx);
+          const item = history[idx];
+          if (!item) return;
+          try {
+            await navigator.clipboard.writeText(
+              JSON.stringify(item.flex, null, 2),
+            );
+            Toast.fire({ icon: "success", title: "已複製" });
+          } catch {
+            Swal.fire("提醒", "複製失敗，請手動操作", "info");
+          }
+        });
+      });
+      const clearBtn = popup.querySelector("#flex-history-clear");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          localStorage.removeItem(FLEX_HISTORY_KEY);
+          Swal.fire("已清除", "所有 Flex Message 歷史已刪除", "success");
+        });
+      }
+    },
+  });
+}
 
 function isVueManagedOrdersList(container = document.getElementById("orders-list")) {
   return container?.dataset?.vueManaged === "true";
@@ -974,6 +1358,9 @@ function renderOrders() {
       ).join("")
     }
                     </select>
+                    <button data-action="confirm-order-status" data-order-id="${
+      esc(o.orderId)
+    }" class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium" style="background:#6F4E37; color:#fff;">確認</button>
                     <button data-action="delete-order" data-order-id="${
       esc(o.orderId)
     }" class="text-xs text-red-500 hover:text-red-700">刪除</button>
@@ -985,12 +1372,15 @@ function renderOrders() {
 
 async function changeOrderStatus(orderId, status) {
   try {
+    const targetOrder = orders.find((order) => order.orderId === orderId) ||
+      {};
+    const currentStatus = targetOrder.status || "";
+    const newStatusLabel = orderStatusLabel[status] || status;
+
     let trackingNumber;
     let shippingProvider;
     let trackingUrl;
     if (status === "shipped") {
-      const targetOrder = orders.find((order) => order.orderId === orderId) ||
-        {};
       const { value: shippingInfo, isConfirmed } = await Swal.fire({
         title: "設定已出貨",
         html: `
@@ -1010,7 +1400,7 @@ async function changeOrderStatus(orderId, status) {
           </div>
         `,
         showCancelButton: true,
-        confirmButtonText: "確定",
+        confirmButtonText: "確定出貨",
         cancelButtonText: "取消",
         confirmButtonColor: "#3C2415",
         focusConfirm: false,
@@ -1045,6 +1435,23 @@ async function changeOrderStatus(orderId, status) {
       trackingNumber = shippingInfo?.trackingNumber || "";
       shippingProvider = shippingInfo?.shippingProvider || "";
       trackingUrl = shippingInfo?.trackingUrl || "";
+    } else {
+      // 非出貨狀態：跳出確認彈窗
+      const confirm = await Swal.fire({
+        title: "確認變更訂單狀態",
+        html: `訂單 <b>#${esc(orderId)}</b><br>
+          <span style="color:#888">${esc(orderStatusLabel[currentStatus] || currentStatus)}</span>
+          → <span style="color:#6F4E37; font-weight:bold;">${esc(newStatusLabel)}</span>`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "確認變更",
+        cancelButtonText: "取消",
+        confirmButtonColor: "#3C2415",
+      });
+      if (!confirm.isConfirmed) {
+        loadOrders();
+        return;
+      }
     }
 
     const payload = { userId: getAuthUserId(), orderId, status };
@@ -1062,7 +1469,22 @@ async function changeOrderStatus(orderId, status) {
     const d = await r.json();
     if (d.success) {
       Toast.fire({ icon: "success", title: "狀態已更新" });
-      loadOrders();
+
+      // 建構 LINE Flex Message（使用更新後的物流資訊）
+      const flexOrder = {
+        ...targetOrder,
+        status,
+      };
+      if (status === "shipped") {
+        flexOrder.trackingNumber = trackingNumber || "";
+        flexOrder.shippingProvider = shippingProvider || "";
+        flexOrder.trackingUrl = trackingUrl || "";
+      }
+      const flexMsg = buildLineFlexMessage(flexOrder, status);
+      saveFlexToHistory(flexMsg, orderId, newStatusLabel);
+      // 先刷新訂單列表，再顯示 Flex Message
+      await loadOrders();
+      await showFlexMessagePopup(flexMsg, orderId, newStatusLabel);
     } else throw new Error(d.error);
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
