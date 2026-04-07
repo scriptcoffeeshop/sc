@@ -302,6 +302,9 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `25f18c3` | fix: remove duplicated receipt section in order content
 - `2026-04-07` | `bd1ba43` | chore: bind project deploy commands to fixed supabase settings
 - `2026-04-07` | `9d8905d` | chore: make supabase scripts load project-local credentials
+- `2026-04-07` | `029a8f3` | 文件：同步專案綁定流程到 README 與 DEV_CONTEXT
+- `2026-04-07` | `ad4664e` | 設定：初始化 RTK（Codex）專案檔案
+- `2026-04-07` | `bfd6c4c` | feat: 新增訂單狀態變更確認流程與 LINE Flex Message 產生器
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v77 — 補強專案級 GitHub / Supabase 綁定與交接文件
