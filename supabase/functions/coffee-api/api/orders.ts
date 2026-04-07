@@ -32,7 +32,7 @@ function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   const address = String(data.address || "").trim();
   const needDateStamp = Boolean(data.needDateStamp);
 
-  if (!/^\d{8}$/.test(taxId)) return null;
+  if (taxId && !/^\d{8}$/.test(taxId)) return null;
 
   return { buyer, taxId, address, needDateStamp };
 }
@@ -54,7 +54,7 @@ function parseReceiptInfo(raw: unknown): ReceiptInfo | null {
 function buildReceiptHtml(receiptInfo: ReceiptInfo | null): string {
   if (!receiptInfo) return "";
   return `<p style="margin: 0 0 10px 0;"><strong>收據資訊：</strong><br>
-    統一編號：${sanitize(receiptInfo.taxId)}<br>
+    統一編號：${sanitize(receiptInfo.taxId) || "未填寫"}<br>
     買受人：${sanitize(receiptInfo.buyer) || "未填寫"}<br>
     地址：${sanitize(receiptInfo.address) || "未填寫"}<br>
     壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}

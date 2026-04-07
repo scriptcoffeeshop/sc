@@ -510,12 +510,12 @@
           class="hidden mt-3 ml-6 p-3 rounded-xl border border-amber-200 bg-amber-50 space-y-3"
         >
           <div>
-            <label class="block text-sm text-gray-600 mb-1">統一編號</label>
+            <label class="block text-sm text-gray-600 mb-1">統一編號（選填）</label>
             <input
               id="receipt-tax-id"
               type="text"
               class="input-field"
-              placeholder="請輸入 8 碼統一編號"
+              placeholder="若需公司報帳請填 8 碼統編"
               maxlength="8"
               pattern="\d{8}"
               inputmode="numeric"

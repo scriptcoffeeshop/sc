@@ -40,14 +40,16 @@ function normalizeReceiptInfo(raw) {
   const taxId = String(raw.taxId || "").trim();
   const address = String(raw.address || "").trim();
   const needDateStamp = Boolean(raw.needDateStamp);
-  if (!/^\d{8}$/.test(taxId)) return null;
+  if (taxId && !/^\d{8}$/.test(taxId)) return null;
   return { buyer, taxId, address, needDateStamp };
 }
 
 function buildReceiptInfoHtml(receiptInfo) {
   if (!receiptInfo) return "";
   return `<div class="text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2">
-            <div><span class="text-gray-500">統一編號：</span>${escapeHtml(receiptInfo.taxId)}</div>
+            <div><span class="text-gray-500">統一編號：</span>${
+    escapeHtml(receiptInfo.taxId) || "未填寫"
+  }</div>
             <div><span class="text-gray-500">收據買受人：</span>${
     escapeHtml(receiptInfo.buyer) || "未填寫"
   }</div>
@@ -76,7 +78,7 @@ function getReceiptFormValues() {
     document.getElementById("receipt-date-stamp")?.checked,
   );
 
-  if (!/^\d{8}$/.test(taxId)) {
+  if (taxId && !/^\d{8}$/.test(taxId)) {
     return { receiptInfo: null, error: "統一編號需為 8 碼數字" };
   }
 
@@ -346,7 +348,7 @@ export async function submitOrder() {
         ${
     receiptInfo
       ? `<br><br><b>收據資訊：</b><br>
-          統一編號：${escapeHtml(receiptInfo.taxId)}<br>
+          統一編號：${escapeHtml(receiptInfo.taxId) || "未填寫"}<br>
           買受人：${escapeHtml(receiptInfo.buyer) || "未填寫"}<br>
           收據地址：${escapeHtml(receiptInfo.address) || "未填寫"}<br>
           壓印日期：${receiptInfo.needDateStamp ? "需要" : "不需要"}`

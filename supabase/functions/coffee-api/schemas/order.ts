@@ -8,7 +8,10 @@ export const orderItemSchema = z.object({
 
 const receiptInfoSchema = z.object({
   buyer: z.string().trim().optional().default(""),
-  taxId: z.string().trim().regex(/^\d{8}$/, "統一編號需為 8 碼數字"),
+  taxId: z.string().trim().optional().default("").refine(
+    (value) => value === "" || /^\d{8}$/.test(value),
+    "統一編號需為 8 碼數字",
+  ),
   address: z.string().trim().optional().default(""),
   needDateStamp: z.boolean().optional().default(false),
 });

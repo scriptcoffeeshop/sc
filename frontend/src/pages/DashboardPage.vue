@@ -406,7 +406,7 @@
                 v-if="order.showReceiptInfo && order.receiptInfo"
                 class="text-xs text-amber-800 bg-amber-50 p-2 rounded mb-2 border border-amber-100"
               >
-                <div><span class="text-gray-500">統一編號：</span>{{ order.receiptInfo.taxId }}</div>
+                <div><span class="text-gray-500">統一編號：</span>{{ order.receiptInfo.taxId || "未填寫" }}</div>
                 <div><span class="text-gray-500">收據買受人：</span>{{ order.receiptInfo.buyer || "未填寫" }}</div>
                 <div><span class="text-gray-500">收據地址：</span>{{ order.receiptInfo.address || "未填寫" }}</div>
                 <div>

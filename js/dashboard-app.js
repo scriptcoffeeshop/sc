@@ -561,6 +561,7 @@ function buildLineFlexMessage(order, newStatus) {
   const paymentStatusStr = order.paymentStatus
     ? ` (${orderPayStatusLabel[order.paymentStatus] || order.paymentStatus})`
     : "";
+  const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
 
   const bodyContents = [
     {
@@ -675,6 +676,120 @@ function buildLineFlexMessage(order, newStatus) {
       ],
     },
   ];
+
+  // 收據資訊
+  if (receiptInfo) {
+    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "收據需求",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: "需要索取",
+          size: "sm",
+          weight: "bold",
+          color: "#b45309",
+          flex: 5,
+        },
+      ],
+    });
+    bodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      margin: "sm",
+      contents: [
+        {
+          type: "text",
+          text: "統一編號",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: receiptInfo.taxId || "未填寫",
+          size: "sm",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    });
+    bodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      margin: "sm",
+      contents: [
+        {
+          type: "text",
+          text: "壓印日期",
+          size: "sm",
+          color: "#888888",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: receiptInfo.needDateStamp ? "需要" : "不需要",
+          size: "sm",
+          flex: 5,
+        },
+      ],
+    });
+    if (receiptInfo.buyer) {
+      bodyContents.push({
+        type: "box",
+        layout: "horizontal",
+        margin: "sm",
+        contents: [
+          {
+            type: "text",
+            text: "買受人",
+            size: "sm",
+            color: "#888888",
+            flex: 3,
+          },
+          {
+            type: "text",
+            text: receiptInfo.buyer,
+            size: "sm",
+            flex: 5,
+            wrap: true,
+          },
+        ],
+      });
+    }
+    if (receiptInfo.address) {
+      bodyContents.push({
+        type: "box",
+        layout: "horizontal",
+        margin: "sm",
+        contents: [
+          {
+            type: "text",
+            text: "收據地址",
+            size: "sm",
+            color: "#888888",
+            flex: 3,
+          },
+          {
+            type: "text",
+            text: receiptInfo.address,
+            size: "sm",
+            flex: 5,
+            wrap: true,
+          },
+        ],
+      });
+    }
+  }
 
   // 物流資訊
   if (order.trackingNumber || order.shippingProvider) {
@@ -1021,14 +1136,16 @@ function normalizeReceiptInfo(raw) {
   const taxId = String(raw.taxId || "").trim();
   const address = String(raw.address || "").trim();
   const needDateStamp = Boolean(raw.needDateStamp);
-  if (!/^\d{8}$/.test(taxId)) return null;
+  if (taxId && !/^\d{8}$/.test(taxId)) return null;
   return { buyer, taxId, address, needDateStamp };
 }
 
 function buildReceiptSummaryHtml(receiptInfo) {
   if (!receiptInfo) return "";
   return `<div class="text-xs text-amber-800 bg-amber-50 p-2 rounded mt-2 border border-amber-100">
-            <div><span class="text-gray-500">統一編號：</span>${esc(receiptInfo.taxId)}</div>
+            <div><span class="text-gray-500">統一編號：</span>${
+    esc(receiptInfo.taxId) || "未填寫"
+  }</div>
             <div><span class="text-gray-500">收據買受人：</span>${
     esc(receiptInfo.buyer) || "未填寫"
   }</div>
