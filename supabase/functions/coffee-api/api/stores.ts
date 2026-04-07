@@ -24,6 +24,22 @@ const MAP_SUBTYPE_MAP: Record<string, string> = {
   FAMIC2C: "FAMIC2C",
 };
 
+function toSafeJsStringLiteral(value: string): string {
+  return JSON.stringify(value)
+    .replace(/<\//g, "<\\/")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
+function buildRedirectScript(clientUrl: string, token: string): string {
+  if (!clientUrl) return "alert('選擇完成，請手動返回原網頁');";
+  const connector = clientUrl.includes("?") ? "&" : "?";
+  const redirectUrl = `${clientUrl}${connector}store_token=${
+    encodeURIComponent(token)
+  }`;
+  return `window.location.replace(${toSafeJsStringLiteral(redirectUrl)});`;
+}
+
 async function generateCheckMacValue(
   params: Record<string, string>,
 ): Promise<string> {
@@ -272,9 +288,7 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
 
   const safeName = escapeHtml(storeName || "（未提供門市名稱）");
   const safeAddr = escapeHtml(storeAddress || "（未提供門市地址）");
-  const redirectScript = clientUrl
-    ? `window.location.replace("${clientUrl}?store_token=${token}");`
-    : `alert('選擇完成，請手動返回原網頁');`;
+  const redirectScript = buildRedirectScript(clientUrl, token);
 
   return htmlResponse(`<!doctype html>
 <html lang="zh-Hant">
@@ -410,9 +424,7 @@ export async function handlePcscMapCallback(
 
   const safeName = escapeHtml(storeName || "（未提供門市名稱）");
   const safeAddr = escapeHtml(storeAddress || "（未提供門市地址）");
-  const redirectScript = clientUrl
-    ? `window.location.replace("${clientUrl}?store_token=${token}");`
-    : `alert('選擇完成，請手動返回原網頁');`;
+  const redirectScript = buildRedirectScript(clientUrl, token);
 
   return htmlResponse(`<!doctype html>
 <html lang="zh-Hant">

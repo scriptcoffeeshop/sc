@@ -15,7 +15,7 @@ const receiptInfoSchema = z.object({
 
 export const submitOrderSchema = z.object({
   lineName: z.string().min(1, "姓名不能為空"),
-  phone: z.string().min(8, "電話號碼格式不正確"),
+  phone: z.string().optional().or(z.literal("")),
   email: z.string().email("Email 格式不正確").optional().or(z.literal("")),
   items: z.array(orderItemSchema).min(1, "購物車是空的"),
   deliveryMethod: z.enum([

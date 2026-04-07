@@ -155,28 +155,68 @@ app.use(
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT_WINDOW_MS = 60000;
 const RATE_LIMIT_MAX_REQ = 100;
+const RATE_LIMIT_CLEANUP_INTERVAL_MS = 10000;
+const RATE_LIMIT_MAX_BUCKETS = 5000;
+let lastRateLimitCleanupAt = 0;
+
+function getClientIp(req: Request): string {
+  const cfConnectingIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfConnectingIp) return cfConnectingIp;
+
+  const xRealIp = req.headers.get("x-real-ip")?.trim();
+  if (xRealIp) return xRealIp;
+
+  const forwarded = req.headers.get("x-forwarded-for");
+  const firstForwardedIp = forwarded?.split(",")[0]?.trim();
+  if (firstForwardedIp) return firstForwardedIp;
+
+  return "unknown";
+}
+
+function cleanupRateLimitMap(now: number) {
+  for (const [key, value] of rateLimitMap.entries()) {
+    if (now > value.resetTime) rateLimitMap.delete(key);
+  }
+
+  if (rateLimitMap.size <= RATE_LIMIT_MAX_BUCKETS) return;
+
+  const overflow = rateLimitMap.size - RATE_LIMIT_MAX_BUCKETS;
+  let removed = 0;
+  for (const key of rateLimitMap.keys()) {
+    rateLimitMap.delete(key);
+    removed++;
+    if (removed >= overflow) break;
+  }
+}
 
 app.use("*", async (c, next) => {
   if (c.req.method === "OPTIONS") return await next();
 
-  const ip = c.req.header("x-forwarded-for")?.split(",")[0].trim() || "unknown";
   const now = Date.now();
+  if (
+    now - lastRateLimitCleanupAt >= RATE_LIMIT_CLEANUP_INTERVAL_MS ||
+    rateLimitMap.size > RATE_LIMIT_MAX_BUCKETS
+  ) {
+    cleanupRateLimitMap(now);
+    lastRateLimitCleanupAt = now;
+  }
+
+  const ip = getClientIp(c.req.raw);
   const record = rateLimitMap.get(ip);
   if (!record || now > record.resetTime) {
     rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
   } else {
     record.count++;
     if (record.count > RATE_LIMIT_MAX_REQ) {
+      const retryAfterSec = Math.max(
+        1,
+        Math.ceil((record.resetTime - now) / 1000),
+      );
+      c.header("Retry-After", String(retryAfterSec));
       return c.json(
         { success: false, error: "您的請求過於頻繁，請稍後再試" },
         429,
       );
-    }
-  }
-
-  if (Math.random() < 0.05) {
-    for (const [key, value] of rateLimitMap.entries()) {
-      if (now > value.resetTime) rateLimitMap.delete(key);
     }
   }
 
