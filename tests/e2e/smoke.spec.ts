@@ -667,6 +667,7 @@ test.describe("smoke", () => {
     expect(updateStatusCalls).toBe(0);
 
     await statusSelect.selectOption("processing");
+    await page.locator('button[data-action="confirm-order-status"][data-order-id="ORD001"]').click();
     await expect.poll(() => updateStatusCalls).toBeGreaterThan(0);
 
     await page.locator("#tab-products").click();
