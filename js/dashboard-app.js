@@ -562,6 +562,8 @@ function buildLineFlexMessage(order, newStatus) {
     ? ` (${orderPayStatusLabel[order.paymentStatus] || order.paymentStatus})`
     : "";
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
+  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
+  const hasTrackingLinkCta = Boolean(order.shippingProvider && customTrackingUrl);
 
   const bodyContents = [
     {
@@ -868,6 +870,31 @@ function buildLineFlexMessage(order, newStatus) {
   // 查詢 site_title（從 DOM 取得當前設定值）
   const siteTitleEl = document.getElementById("s-site-title");
   const siteTitle = siteTitleEl?.value || "Script Coffee";
+  const footerContents = [];
+  if (hasTrackingLinkCta) {
+    footerContents.push({
+      type: "button",
+      style: "primary",
+      color: "#2e7d32",
+      height: "sm",
+      action: {
+        type: "uri",
+        label: "追蹤貨態",
+        uri: customTrackingUrl,
+      },
+    });
+    footerContents.push({
+      type: "separator",
+      margin: "md",
+    });
+  }
+  footerContents.push({
+    type: "text",
+    text: `更新時間：${new Date().toLocaleString("zh-TW")}`,
+    size: "xxs",
+    color: "#aaaaaa",
+    align: "center",
+  });
 
   return {
     type: "flex",
@@ -901,15 +928,7 @@ function buildLineFlexMessage(order, newStatus) {
         type: "box",
         layout: "vertical",
         paddingAll: "12px",
-        contents: [
-          {
-            type: "text",
-            text: `更新時間：${new Date().toLocaleString("zh-TW")}`,
-            size: "xxs",
-            color: "#aaaaaa",
-            align: "center",
-          },
-        ],
+        contents: footerContents,
       },
     },
   };
