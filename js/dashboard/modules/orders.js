@@ -27,6 +27,11 @@ export function createOrdersActionHandlers(deps) {
     "show-flex-history": () => {
       if (deps.showFlexHistory) deps.showFlexHistory();
     },
+    "send-order-flex": (el) => {
+      if (el.dataset.orderId && deps.sendOrderFlexByOrderId) {
+        deps.sendOrderFlexByOrderId(el.dataset.orderId);
+      }
+    },
     "copy-tracking-number": (el) => {
       const trackingNumber = el.dataset.trackingNumber;
       if (!trackingNumber) return;

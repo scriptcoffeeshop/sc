@@ -13,6 +13,18 @@ const receiptInfoSchema = z.object({
   needDateStamp: z.boolean().optional().default(false),
 });
 
+const boolLikeOptionalSchema = z.union([z.boolean(), z.string(), z.number()])
+  .optional().transform((value: unknown) => {
+    if (value === undefined) return undefined;
+    return value === true || value === "true" || value === 1 || value === "1";
+  });
+
+const lineFlexMessageSchema = z.object({
+  type: z.literal("flex"),
+  altText: z.string().trim().min(1, "Flex altText 不能為空"),
+  contents: z.record(z.unknown()),
+});
+
 export const submitOrderSchema = z.object({
   lineName: z.string().min(1, "姓名不能為空"),
   phone: z.string().optional().or(z.literal("")),
@@ -98,4 +110,11 @@ export const batchDeleteOrdersSchema = z.object({
     "請至少選擇一筆訂單",
   )
     .max(200, "單次最多處理 200 筆"),
+});
+
+export const sendLineFlexMessageSchema = z.object({
+  orderId: z.string().trim().min(1, "缺少訂單編號"),
+  to: z.string().trim().min(1, "缺少 LINE 目標 ID").optional(),
+  flexMessage: lineFlexMessageSchema,
+  notificationDisabled: boolLikeOptionalSchema,
 });

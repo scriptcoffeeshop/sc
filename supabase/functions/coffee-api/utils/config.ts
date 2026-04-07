@@ -26,6 +26,13 @@ export const LINEPAY_CHANNEL_ID = Deno.env.get("LINEPAY_CHANNEL_ID") || "";
 export const LINEPAY_CHANNEL_SECRET = Deno.env.get("LINEPAY_CHANNEL_SECRET") ||
   "";
 
+export const LINE_MESSAGING_CHANNEL_ACCESS_TOKEN =
+  Deno.env.get("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN") ||
+  Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") ||
+  "";
+export const LINE_MESSAGING_API_BASE_URL =
+  Deno.env.get("LINE_MESSAGING_API_BASE_URL") || "https://api.line.me";
+
 export const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ||
   "https://scriptcoffeeshop.github.io/sc";
 

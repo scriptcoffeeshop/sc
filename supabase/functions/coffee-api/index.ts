@@ -101,7 +101,7 @@ import {
   handleStoreMapCallback,
 } from "./api/stores.ts";
 
-import { testEmail } from "./api/misc.ts";
+import { sendLineFlexMessage, testEmail } from "./api/misc.ts";
 
 import { validate } from "./utils/validate.ts";
 import { lineLoginSchema, transferInfoSchema } from "./schemas/auth.ts";
@@ -110,6 +110,7 @@ import {
   batchUpdateOrderStatusSchema,
   deleteOrderSchema,
   quoteOrderSchema,
+  sendLineFlexMessageSchema,
   submitOrderSchema,
   updateOrderStatusSchema,
 } from "./schemas/order.ts";
@@ -422,6 +423,10 @@ const actionMap: Record<string, ActionHandler> = {
     return await removeFromBlacklist(v, req);
   },
   testEmail: async (data, req) => await testEmail(data, req),
+  sendLineFlexMessage: async (data, req) => {
+    const v = await validate(sendLineFlexMessageSchema, data);
+    return await sendLineFlexMessage(v, req);
+  },
   addFormField: async (data, req) => {
     const v = await validate(addFormFieldSchema, data);
     return await addFormField(v, req);

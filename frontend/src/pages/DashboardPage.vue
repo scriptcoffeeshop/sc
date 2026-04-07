@@ -426,6 +426,14 @@
                 <span class="font-bold" style="color:var(--accent)">${{ order.total }}</span>
                 <div class="flex gap-2">
                   <button
+                    v-if="order.showSendLineButton"
+                    data-action="send-order-flex"
+                    :data-order-id="order.orderId"
+                    class="text-xs text-emerald-700 hover:text-emerald-900"
+                  >
+                    LINE通知
+                  </button>
+                  <button
                     v-if="order.showRefundButton"
                     data-action="refund-linepay-order"
                     :data-order-id="order.orderId"

@@ -288,6 +288,7 @@ const dashboardActionHandlers = {
   ...createOrdersActionHandlers({
     loadOrders,
     changeOrderStatus,
+    sendOrderFlexByOrderId,
     deleteOrderById,
     linePayRefundOrder,
     confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
@@ -817,30 +818,87 @@ function saveFlexToHistory(flexMsg, orderId, statusLabel) {
   }
 }
 
-async function showFlexMessagePopup(flexMsg, orderId, statusLabel) {
+function resolveOrderLineUserId(order) {
+  return String(order?.lineUserId || order?.line_user_id || "").trim();
+}
+
+async function sendFlexMessageToLine(order, flexMsg) {
+  const orderId = String(order?.orderId || "").trim();
+  const lineUserId = resolveOrderLineUserId(order);
+
+  if (!orderId) {
+    Swal.fire("提醒", "找不到訂單編號，無法發送 LINE 通知", "warning");
+    return false;
+  }
+  if (!lineUserId) {
+    Swal.fire("提醒", "此訂單缺少 LINE 使用者 ID，無法一鍵發送", "warning");
+    return false;
+  }
+
+  try {
+    const response = await authFetch(`${API_URL}?action=sendLineFlexMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId,
+        to: lineUserId,
+        flexMessage: flexMsg,
+      }),
+    });
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || "LINE 訊息發送失敗");
+    }
+    Toast.fire({ icon: "success", title: "LINE 訊息已發送" });
+    return true;
+  } catch (error) {
+    Swal.fire("發送失敗", error?.message || String(error), "error");
+    return false;
+  }
+}
+
+async function showFlexMessagePopup(flexMsg, order, statusLabel) {
+  const orderId = String(order?.orderId || "");
+  const lineUserId = resolveOrderLineUserId(order);
+  const canSendLine = Boolean(lineUserId);
   const jsonStr = JSON.stringify(flexMsg, null, 2);
-  const { isConfirmed } = await Swal.fire({
+  const result = await Swal.fire({
     title: "LINE Flex Message",
     html: `
       <div class="text-left text-sm mb-2">
         <span class="text-gray-500">訂單</span> <b>#${esc(orderId)}</b>
         → <span class="font-bold" style="color:#6F4E37">${esc(statusLabel)}</span>
       </div>
+      ${
+      canSendLine
+        ? `<div class="text-left text-xs text-green-700 mb-2">可直接一鍵發送至 LINE（目標 ID：${
+          esc(lineUserId)
+        }）</div>`
+        : `<div class="text-left text-xs text-amber-700 mb-2">此訂單缺少 LINE 使用者 ID，僅可複製 JSON</div>`
+    }
       <div style="position:relative;">
         <pre id="swal-flex-json" style="text-align:left; font-size:11px; max-height:300px; overflow:auto; background:#f8f6f2; border:1px solid #e5ddd5; border-radius:6px; padding:12px; white-space:pre-wrap; word-break:break-all;">${esc(jsonStr)}</pre>
       </div>
       <p class="text-xs text-gray-400 mt-2">已自動暫存至歷史紀錄，可從訂單列表上方 📋 按鈕查看</p>
     `,
     showCancelButton: true,
-    confirmButtonText: "📋 複製 JSON",
+    showConfirmButton: canSendLine,
+    confirmButtonText: "🚀 一鍵發送 LINE",
+    showDenyButton: true,
+    denyButtonText: "📋 複製 JSON",
     cancelButtonText: "關閉",
-    confirmButtonColor: "#6F4E37",
+    confirmButtonColor: "#2e7d32",
+    denyButtonColor: "#6F4E37",
     width: 600,
     customClass: {
       popup: "flex-message-popup",
     },
   });
-  if (isConfirmed) {
+  if (result.isConfirmed) {
+    await sendFlexMessageToLine(order, flexMsg);
+    return;
+  }
+  if (result.isDenied) {
     try {
       await navigator.clipboard.writeText(jsonStr);
       Toast.fire({ icon: "success", title: "Flex Message 已複製" });
@@ -1014,6 +1072,7 @@ function buildOrderViewModel(order) {
       ? "bg-yellow-50 text-yellow-700"
       : "bg-gray-100 text-gray-600",
     isSelected: selectedOrderIds.has(order.orderId),
+    lineUserId: order.lineUserId || "",
     lineName: order.lineName || "",
     phone: order.phone || "",
     email: order.email || "",
@@ -1033,6 +1092,7 @@ function buildOrderViewModel(order) {
     receiptInfo,
     showReceiptInfo: Boolean(receiptInfo),
     total: Number(order.total) || 0,
+    showSendLineButton: Boolean(order.lineUserId),
     showRefundButton: paymentMethod === "linepay" && paymentStatus === "paid",
     showConfirmTransferButton:
       paymentMethod === "transfer" && paymentStatus === "pending",
@@ -1260,6 +1320,11 @@ function renderOrders() {
         esc(o.orderId)
       }" class="text-xs text-green-600 hover:text-green-800">確認已收款</button>`
       : "";
+    const sendLineBtn = o.lineUserId
+      ? `<button data-action="send-order-flex" data-order-id="${
+        esc(o.orderId)
+      }" class="text-xs text-emerald-700 hover:text-emerald-900">LINE通知</button>`
+      : "";
 
     const trackingLinkHtml = getTrackingLinkHtml(o);
     const hasShippingInfo = !!o.trackingNumber || !!o.shippingProvider ||
@@ -1343,6 +1408,7 @@ function renderOrders() {
             <div class="flex justify-between items-center">
                 <span class="font-bold" style="color:var(--accent)">$${o.total}</span>
                 <div class="flex gap-2">
+                    ${sendLineBtn}
                     ${refundBtn}
                     ${confirmPayBtn}
                     <select data-action="change-order-status" data-order-id="${
@@ -1368,6 +1434,20 @@ function renderOrders() {
             </div>
         </div>`;
   }).join("");
+}
+
+async function sendOrderFlexByOrderId(orderId) {
+  const targetOrder = orders.find((order) => order.orderId === orderId);
+  if (!targetOrder) {
+    Swal.fire("錯誤", "找不到訂單資料，請先重整列表", "error");
+    return;
+  }
+
+  const nextStatus = targetOrder.status || "pending";
+  const statusLabel = orderStatusLabel[nextStatus] || nextStatus;
+  const flexMsg = buildLineFlexMessage(targetOrder, nextStatus);
+  saveFlexToHistory(flexMsg, orderId, statusLabel);
+  await showFlexMessagePopup(flexMsg, targetOrder, statusLabel);
 }
 
 async function changeOrderStatus(orderId, status) {
@@ -1484,7 +1564,7 @@ async function changeOrderStatus(orderId, status) {
       saveFlexToHistory(flexMsg, orderId, newStatusLabel);
       // 先刷新訂單列表，再顯示 Flex Message
       await loadOrders();
-      await showFlexMessagePopup(flexMsg, orderId, newStatusLabel);
+      await showFlexMessagePopup(flexMsg, flexOrder, newStatusLabel);
     } else throw new Error(d.error);
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
