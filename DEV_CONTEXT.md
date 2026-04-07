@@ -305,6 +305,7 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `029a8f3` | 文件：同步專案綁定流程到 README 與 DEV_CONTEXT
 - `2026-04-07` | `ad4664e` | 設定：初始化 RTK（Codex）專案檔案
 - `2026-04-07` | `bfd6c4c` | feat: 新增訂單狀態變更確認流程與 LINE Flex Message 產生器
+- `2026-04-07` | `88e2b69` | test: 修復訂單確認 UI 改動導致 E2E 測試報錯 (移除 mock 失效的 Swal 點擊等待)
 <!-- MAIN_COMMIT_LOG_END -->
 
 ### 📅 v77 — 補強專案級 GitHub / Supabase 綁定與交接文件
