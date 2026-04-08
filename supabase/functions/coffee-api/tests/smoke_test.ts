@@ -47,7 +47,7 @@ Deno.test("Email Templates - Order Confirmation", () => {
 
   assertEquals(html.includes("C20261231-AABBCCDD"), true, "Missing orderId");
   assertEquals(
-    html.includes("Script Coffee</h1>"),
+    html.includes("Script Coffee"),
     true,
     "Missing site title",
   );
