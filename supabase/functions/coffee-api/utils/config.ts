@@ -38,6 +38,10 @@ export const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ||
 
 export const ALLOWED_REDIRECT_ORIGINS = [
   "https://scriptcoffeeshop.github.io",
+  "https://scriptcoffee.com.tw",
+  "http://scriptcoffee.com.tw",
+  "https://www.scriptcoffee.com.tw",
+  "http://www.scriptcoffee.com.tw",
   "http://localhost:5500",
   "http://127.0.0.1:5500",
   "http://localhost:5173",
