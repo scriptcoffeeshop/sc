@@ -21,11 +21,14 @@
       crossorigin="anonymous"
     ></script>
     <link id="dynamic-favicon" rel="icon" href="icons/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/dashboard.css">
   </head>
 
-  <body class="p-4 md:p-6">
+  <body class="dashboard-dark">
     <!-- 登入頁 -->
     <div
       id="login-page"
@@ -82,8 +85,8 @@
         </button>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+      <!-- Sidebar Navigation -->
+      <nav id="sidebar">
         <button
           id="tab-orders"
           data-tab="orders"
@@ -140,7 +143,7 @@
         >
           <span class="tab-with-icon"><img src="icons/blacklist-shield.png" alt="" class="ui-icon-inline">黑名單</span>
         </button>
-      </div>
+      </nav>
 
       <!-- ===== 訂單管理 ===== -->
       <div id="orders-section" class="glass-card p-6 hidden">
@@ -1267,6 +1270,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/dashboard-app.js?v=65"></script>
+    <script type="module" src="js/dashboard-app.js?v=66"></script>
   </body>
 </html>
