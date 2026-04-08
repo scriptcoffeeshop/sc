@@ -65,6 +65,11 @@
   padding: 0;
 }
 
+/* Ensure Tailwind .hidden still overrides grid display */
+.dashboard-dark #admin-page.hidden {
+  display: none !important;
+}
+
 /* Header spans full width */
 .dashboard-dark #admin-page > .flex.justify-between:first-child {
   grid-column: 1 / -1;
