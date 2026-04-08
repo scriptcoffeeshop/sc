@@ -561,6 +561,31 @@ export async function updateOrderStatus(
     );
   }
 
+  if (data.status === "completed" && orderData?.email) {
+    // 查詢 site_title
+    const { data: siteTitleRow } = await supabase.from("coffee_settings")
+      .select("value").eq("key", "site_title").single();
+    const completedSiteTitle = normalizeEmailSiteTitle(
+      String(siteTitleRow?.value || ""),
+    );
+
+    const { buildCompletedNotificationHtml } = await import(
+      "../utils/email-templates.ts"
+    );
+
+    const content = buildCompletedNotificationHtml({
+      orderId: String(data.orderId),
+      siteTitle: completedSiteTitle,
+      lineName: String(orderData.line_name),
+    });
+
+    await sendEmail(
+      String(orderData.email),
+      `[${completedSiteTitle}] 訂單編號 ${data.orderId} 已完成通知`,
+      content,
+    );
+  }
+
   return { success: true, message: "訂單狀態已更新" };
 }
 

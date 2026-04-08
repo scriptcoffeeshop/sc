@@ -1,4 +1,5 @@
 import { sanitize } from "./html.ts";
+import { FRONTEND_URL } from "./config.ts";
 
 export const METHOD_MAP: Record<string, string> = {
   delivery: "配送到府",
@@ -73,7 +74,10 @@ export function buildOrderConfirmationHtml(
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">${sanitize(displaySiteTitle)}</h1>
+    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
+      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
+      ${sanitize(displaySiteTitle)}
+    </h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
@@ -205,7 +209,10 @@ export function buildShippingNotificationHtml(
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
   <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px;">📦 訂單出貨通知</h1>
+    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
+      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
+      📦 訂單出貨通知
+    </h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
@@ -225,6 +232,32 @@ export function buildShippingNotificationHtml(
     </div>
     
     <p style="margin-top: 30px; color: #555;">依據配送方式不同，商品預計於 1-3 個工作天內抵達。<br>若是超商取貨，屆時將有手機簡訊通知取件，請留意您的手機訊息。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+export interface CompletedNotificationParams {
+  orderId: string;
+  siteTitle: string;
+  lineName: string;
+}
+
+export function buildCompletedNotificationHtml(
+  params: CompletedNotificationParams,
+): string {
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  <div style="background-color: #2E7D32; color: #ffffff; padding: 20px; text-align: center;">
+    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
+      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
+      ✅ 訂單已完成
+    </h1>
+  </div>
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #2E7D32; margin-top: 0;">親愛的 ${sanitize(params.lineName)}，您的訂單已順利完成！</h2>
+    <p>這封信是要通知您，您的訂單 <strong>${params.orderId}</strong> 已經順利完成。</p>
+    <p>非常感謝您的購買與支持，期待您再次光臨！如果有任何問題，歡迎隨時與我們聯絡。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>

@@ -381,10 +381,10 @@
           <input
             type="text"
             id="new-cat-name"
-            class="input-field flex-grow"
+            class="input-field flex-grow min-w-0"
             placeholder="新分類名稱"
           >
-          <button data-action="add-category" class="btn-primary text-sm">
+          <button data-action="add-category" class="btn-primary text-sm whitespace-nowrap shrink-0">
             新增
           </button>
         </div>
@@ -441,20 +441,20 @@
 
       <!-- ===== 用戶管理 ===== -->
       <div id="users-section" class="glass-card p-6 hidden">
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
           <h2 class="text-lg font-bold" style="color: var(--primary)">
             用戶管理
           </h2>
-          <div class="flex gap-2 items-center">
+          <div class="flex gap-2 items-center w-full sm:w-auto">
             <input
               type="text"
               id="user-search"
-              class="input-field text-sm py-1"
+              class="input-field text-sm py-1 flex-1 min-w-0"
               placeholder="搜尋名稱/手機/Email"
             >
             <button
               data-action="search-users"
-              class="btn-primary text-sm py-1 px-4"
+              class="btn-primary text-sm py-1 px-4 whitespace-nowrap shrink-0"
             >
               搜尋
             </button>
@@ -931,14 +931,21 @@
                 <tr class="border-b" style="border-color: #e5ddd5">
                   <td class="p-3 font-mono text-gray-500 text-center">cod</td>
                   <td class="p-3">
-                    <div class="flex flex-col gap-2">
+                    <div class="flex flex-col gap-2 min-w-[280px]">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <img class="icon-upload-preview" id="po-cod-icon-preview" src="" alt="金流圖示預覽">
+                        <input type="hidden" id="po-cod-icon-url" value="">
+                        <input type="file" id="po-cod-icon-file" class="text-xs" accept="image/png,image/webp,image/jpeg,image/jpg">
+                        <button type="button" data-action="upload-payment-icon" data-method="cod" class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">上傳圖示</button>
+                      </div>
+                      <p class="text-[11px] text-gray-400 truncate" id="po-cod-icon-url-display"></p>
                       <div class="flex items-center gap-2">
                         <input
                           type="text"
                           id="po-cod-icon"
-                          class="border rounded p-1 w-12 text-center text-xl"
+                          class="border rounded p-1 w-12 text-center text-sm icon-text-fallback"
                           value="💵"
-                          placeholder="圖示"
+                          placeholder="備援字元"
                         >
                         <input
                           type="text"
@@ -964,14 +971,21 @@
                     linepay
                   </td>
                   <td class="p-3">
-                    <div class="flex flex-col gap-2">
+                    <div class="flex flex-col gap-2 min-w-[280px]">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <img class="icon-upload-preview" id="po-linepay-icon-preview" src="" alt="金流圖示預覽">
+                        <input type="hidden" id="po-linepay-icon-url" value="">
+                        <input type="file" id="po-linepay-icon-file" class="text-xs" accept="image/png,image/webp,image/jpeg,image/jpg">
+                        <button type="button" data-action="upload-payment-icon" data-method="linepay" class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">上傳圖示</button>
+                      </div>
+                      <p class="text-[11px] text-gray-400 truncate" id="po-linepay-icon-url-display"></p>
                       <div class="flex items-center gap-2">
                         <input
                           type="text"
                           id="po-linepay-icon"
-                          class="border rounded p-1 w-12 text-center text-xl"
+                          class="border rounded p-1 w-12 text-center text-sm icon-text-fallback"
                           value="💚"
-                          placeholder="圖示"
+                          placeholder="備援字元"
                         >
                         <input
                           type="text"
@@ -997,14 +1011,21 @@
                     transfer
                   </td>
                   <td class="p-3">
-                    <div class="flex flex-col gap-2">
+                    <div class="flex flex-col gap-2 min-w-[280px]">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <img class="icon-upload-preview" id="po-transfer-icon-preview" src="" alt="金流圖示預覽">
+                        <input type="hidden" id="po-transfer-icon-url" value="">
+                        <input type="file" id="po-transfer-icon-file" class="text-xs" accept="image/png,image/webp,image/jpeg,image/jpg">
+                        <button type="button" data-action="upload-payment-icon" data-method="transfer" class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">上傳圖示</button>
+                      </div>
+                      <p class="text-[11px] text-gray-400 truncate" id="po-transfer-icon-url-display"></p>
                       <div class="flex items-center gap-2">
                         <input
                           type="text"
                           id="po-transfer-icon"
-                          class="border rounded p-1 w-12 text-center text-xl"
+                          class="border rounded p-1 w-12 text-center text-sm icon-text-fallback"
                           value="🏦"
-                          placeholder="圖示"
+                          placeholder="備援字元"
                         >
                         <input
                           type="text"

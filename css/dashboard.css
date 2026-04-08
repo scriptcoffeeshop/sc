@@ -82,7 +82,7 @@
 }
 
 .dashboard-enterprise #admin-page > .flex.justify-between:first-child h1 {
-  color: #1E40AF !important;
+  color: #1E293B !important;
   font-weight: 700;
 }
 
@@ -125,8 +125,8 @@
 }
 
 .dashboard-enterprise #sidebar button[data-tab].tab-active {
-  background: rgba(30, 64, 175, 0.06) !important;
-  color: #1E40AF !important;
+  background: rgba(30, 64, 175, 0.05) !important;
+  color: #1E293B !important;
   box-shadow: none;
   font-weight: 600;
 }
@@ -139,7 +139,7 @@
   bottom: 4px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #1E40AF;
+  background: #1E293B;
 }
 
 /* Content area */
@@ -193,7 +193,7 @@
 /* ── Section Headers ── */
 .dashboard-enterprise h2[style*="color: var(--primary)"],
 .dashboard-enterprise h3[style*="color: var(--primary)"] {
-  color: #1E40AF !important;
+  color: #1E293B !important;
 }
 
 /* ── Tables ── */
