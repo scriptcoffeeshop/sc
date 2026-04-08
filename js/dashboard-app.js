@@ -485,14 +485,14 @@ function showTab(tab) {
     const section = document.getElementById(`${t}-section`);
     if (tabBtn) {
       tabBtn.classList.remove("tab-active");
-      tabBtn.classList.add("bg-white", "text-gray-600");
+      tabBtn.classList.add("bg-white", "ui-text-strong");
     }
     if (section) section.classList.add("hidden");
   });
   document.getElementById(`tab-${tab}`).classList.add("tab-active");
   document.getElementById(`tab-${tab}`).classList.remove(
     "bg-white",
-    "text-gray-600",
+    "ui-text-strong",
   );
   document.getElementById(`${tab}-section`).classList.remove("hidden");
   const loader = dashboardTabLoaders[tab];
@@ -1000,20 +1000,20 @@ async function showFlexMessagePopup(flexMsg, order, statusLabel) {
     title: "LINE Flex Message",
     html: `
       <div class="text-left text-sm mb-2">
-        <span class="text-gray-500">訂單</span> <b>#${esc(orderId)}</b>
-        → <span class="font-bold" style="color:#6F4E37">${esc(statusLabel)}</span>
+        <span class="ui-text-subtle">訂單</span> <b class="ui-text-highlight">#${esc(orderId)}</b>
+        → <span class="font-bold ui-text-warning">${esc(statusLabel)}</span>
       </div>
       ${
       canSendLine
         ? `<div class="text-left text-xs text-green-700 mb-2">可直接一鍵發送至 LINE（目標 ID：${
           esc(lineUserId)
         }）</div>`
-        : `<div class="text-left text-xs text-amber-700 mb-2">此訂單缺少 LINE 使用者 ID，僅可複製 JSON</div>`
+        : `<div class="text-left text-xs ui-text-warning mb-2">此訂單缺少 LINE 使用者 ID，僅可複製 JSON</div>`
     }
       <div style="position:relative;">
         <pre id="swal-flex-json" style="text-align:left; font-size:11px; max-height:300px; overflow:auto; background:#f8f6f2; border:1px solid #e5ddd5; border-radius:6px; padding:12px; white-space:pre-wrap; word-break:break-all;">${esc(jsonStr)}</pre>
       </div>
-      <p class="text-xs text-gray-400 mt-2">已自動暫存至歷史紀錄，可從訂單列表上方 📋 按鈕查看</p>
+      <p class="text-xs ui-text-muted mt-2">已自動暫存至歷史紀錄，可從訂單列表上方 📋 按鈕查看</p>
     `,
     showCancelButton: true,
     showConfirmButton: canSendLine,
@@ -1065,7 +1065,7 @@ function showFlexHistory() {
       <div class="text-sm">
         <span class="font-bold" style="color:var(--primary)">#${esc(item.orderId)}</span>
         <span class="ml-2 text-xs px-1.5 py-0.5 rounded" style="background:#6F4E37;color:#fff;">${esc(item.statusLabel)}</span>
-        <span class="text-xs text-gray-400 ml-2">${esc(time)}</span>
+        <span class="text-xs ui-text-muted ml-2">${esc(time)}</span>
       </div>
       <button data-flex-idx="${idx}" class="flex-history-copy-btn text-xs px-3 py-1 rounded" style="background:#6F4E37; color:#fff; cursor:pointer;">複製</button>
     </div>`;
@@ -1077,7 +1077,7 @@ function showFlexHistory() {
       <div style="max-height:400px; overflow-y:auto; text-align:left;">
         ${listHtml}
       </div>
-      <button id="flex-history-clear" class="text-xs text-red-500 mt-3 hover:underline">清除所有歷史</button>
+      <button id="flex-history-clear" class="text-xs ui-text-danger mt-3 hover:underline">清除所有歷史</button>
     `,
     showConfirmButton: false,
     showCancelButton: true,
@@ -1161,17 +1161,17 @@ function normalizeReceiptInfo(raw) {
 
 function buildReceiptSummaryHtml(receiptInfo) {
   if (!receiptInfo) return "";
-  return `<div class="text-xs text-amber-800 bg-amber-50 p-2 rounded mt-2 border border-amber-100">
-            <div><span class="text-gray-500">統一編號：</span>${
+  return `<div class="text-xs text-amber-800 ui-primary-soft p-2 rounded mt-2 border border-amber-100">
+            <div><span class="ui-text-subtle">統一編號：</span>${
     esc(receiptInfo.taxId) || "未填寫"
   }</div>
-            <div><span class="text-gray-500">收據買受人：</span>${
+            <div><span class="ui-text-subtle">收據買受人：</span>${
     esc(receiptInfo.buyer) || "未填寫"
   }</div>
-            <div><span class="text-gray-500">收據地址：</span>${
+            <div><span class="ui-text-subtle">收據地址：</span>${
     esc(receiptInfo.address) || "未填寫"
   }</div>
-            <div><span class="text-gray-500">壓印日期：</span>${
+            <div><span class="ui-text-subtle">壓印日期：</span>${
     receiptInfo.needDateStamp ? "需要" : "不需要"
   }</div>
           </div>`;
@@ -1206,7 +1206,7 @@ function buildOrderViewModel(order) {
       ? "bg-purple-50 text-purple-700"
       : paymentStatus === "pending"
       ? "bg-yellow-50 text-yellow-700"
-      : "bg-gray-100 text-gray-600",
+      : "ui-bg-soft ui-text-strong",
     isSelected: selectedOrderIds.has(order.orderId),
     lineUserId: order.lineUserId || "",
     lineName: order.lineName || "",
@@ -1362,7 +1362,7 @@ function getTrackingLinkHtml(order) {
   if (!trackingLink) return "";
   return `<a href="${
     esc(trackingLink.url)
-  }" target="_blank" class="text-xs text-blue-600 hover:underline ml-2">${
+  }" target="_blank" class="text-xs ui-text-highlight hover:underline ml-2">${
     esc(trackingLink.label)
   }</a>`;
 }
@@ -1401,7 +1401,7 @@ function renderOrders() {
   if (!filtered.length) {
     if (container) {
       container.innerHTML =
-        '<p class="text-center text-gray-500 py-8">沒有符合的訂單</p>';
+        '<p class="text-center ui-text-subtle py-8">沒有符合的訂單</p>';
     }
     return;
   }
@@ -1429,13 +1429,13 @@ function renderOrders() {
           ? "bg-purple-50 text-purple-700"
           : ps === "pending"
           ? "bg-yellow-50 text-yellow-700"
-          : "bg-gray-100 text-gray-600"
+          : "ui-bg-soft ui-text-strong"
       }">${orderPayMethodLabel[pm] || pm} ${
         orderPayStatusLabel[ps] || ps
       }</span>`
       : "";
     const transferInfo = pm === "transfer"
-      ? `<div class="text-xs text-blue-800 mt-2 bg-blue-50 p-2 rounded">
+      ? `<div class="text-xs ui-text-highlight mt-2 ui-primary-soft p-2 rounded">
                  <div><b>顧客匯出末5碼:</b> ${
         esc(o.transferAccountLast5 || "未提供")
       }</div>
@@ -1454,7 +1454,7 @@ function renderOrders() {
     const confirmPayBtn = pm === "transfer" && ps === "pending"
       ? `<button data-action="confirm-transfer-payment" data-order-id="${
         esc(o.orderId)
-      }" class="text-xs text-green-600 hover:text-green-800">確認已收款</button>`
+      }" class="text-xs ui-text-success hover:text-green-800">確認已收款</button>`
       : "";
     const sendLineBtn = o.lineUserId
       ? `<button data-action="send-order-flex" data-order-id="${
@@ -1466,21 +1466,21 @@ function renderOrders() {
     const hasShippingInfo = !!o.trackingNumber || !!o.shippingProvider ||
       !!trackingLinkHtml;
     const shippingProviderHtml = o.shippingProvider
-      ? `<div><span class="text-gray-500">物流商：</span>${
+      ? `<div><span class="ui-text-subtle">物流商：</span>${
         esc(o.shippingProvider)
       }</div>`
       : "";
     const trackingNumberHtml = o.trackingNumber
-      ? `<div class="mt-1"><span class="text-gray-500">物流單號：</span>
+      ? `<div class="mt-1"><span class="ui-text-subtle">物流單號：</span>
                     <span class="font-mono font-bold">${
         esc(o.trackingNumber)
       }</span>
                     <button type="button" data-action="copy-tracking-number" data-tracking-number="${
         esc(o.trackingNumber)
-      }" class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700" title="複製單號">複製</button></div>`
+      }" class="ml-2 px-2 py-0.5 ui-bg-soft hover:ui-bg-soft rounded ui-text-strong" title="複製單號">複製</button></div>`
       : "";
     const trackingHtml = hasShippingInfo
-      ? `<div class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200">
+      ? `<div class="text-xs ui-bg-soft p-2 rounded mt-2 border border-gray-200">
                     ${shippingProviderHtml}
                     ${trackingNumberHtml}
                     ${
@@ -1499,7 +1499,7 @@ function renderOrders() {
       esc(o.orderId)
     }" class="w-4 h-4" ${isSelected ? "checked" : ""}>
                     </label>
-                    <span class="font-bold text-sm" style="color:var(--primary)">#${o.orderId}</span>
+                    <span class="font-bold text-sm ui-text-highlight">#${o.orderId}</span>
                     <span class="delivery-tag delivery-${o.deliveryMethod}">${
       orderMethodLabel[o.deliveryMethod] || o.deliveryMethod
     }</span>
@@ -1508,41 +1508,41 @@ function renderOrders() {
     }</span>
                     ${payBadge}
                 </div>
-                <span class="text-xs text-gray-500">${time}</span>
+                <span class="text-xs ui-text-subtle">${time}</span>
             </div>
             <div class="grid grid-cols-2 gap-2 text-sm mb-2">
-                <div><span class="text-gray-500">顧客：</span>${
+                <div><span class="ui-text-subtle">顧客：</span>${
       esc(o.lineName)
     }</div>
-                <div><span class="text-gray-500">電話：</span>${
+                <div><span class="ui-text-subtle">電話：</span>${
       esc(o.phone)
     }</div>
-                <div class="col-span-2"><span class="text-gray-500">信箱：</span>${
+                <div class="col-span-2"><span class="ui-text-subtle">信箱：</span>${
       o.email
-        ? `<a href="mailto:${esc(o.email)}" class="text-blue-500">${
+        ? `<a href="mailto:${esc(o.email)}" class="ui-text-highlight">${
           esc(o.email)
         }</a>`
         : "無"
     }</div>
-                <div class="col-span-2"><span class="text-gray-500">地址/門市：</span>${
+                <div class="col-span-2"><span class="ui-text-subtle">地址/門市：</span>${
       esc(addrInfo)
     }</div>
                 ${transferInfo}
             </div>
             ${trackingHtml}
             ${receiptHtml}
-            <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2 mt-2">${
+            <div class="text-sm ui-text-strong whitespace-pre-line ui-bg-soft p-3 rounded mb-2 mt-2">${
       esc(o.items)
     }</div>
             ${
       o.note
-        ? `<div class="text-sm text-amber-700 bg-amber-50 p-2 rounded mb-2"> ${
+        ? `<div class="text-sm ui-text-warning ui-primary-soft p-2 rounded mb-2"> ${
           esc(o.note)
         }</div>`
         : ""
     }
             <div class="flex justify-between items-center">
-                <span class="font-bold" style="color:var(--accent)">$${o.total}</span>
+                <span class="font-bold ui-text-warning">$${o.total}</span>
                 <div class="flex gap-2">
                     ${sendLineBtn}
                     ${refundBtn}
@@ -1565,7 +1565,7 @@ function renderOrders() {
     }" class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium" style="background:#6F4E37; color:#fff;">確認</button>
                     <button data-action="delete-order" data-order-id="${
       esc(o.orderId)
-    }" class="text-xs text-red-500 hover:text-red-700">刪除</button>
+    }" class="text-xs ui-text-danger hover:text-red-700">刪除</button>
                 </div>
             </div>
         </div>`;
@@ -1601,15 +1601,15 @@ async function changeOrderStatus(orderId, status) {
         title: "設定已出貨",
         html: `
           <div class="text-left space-y-2">
-            <label class="text-sm text-gray-600 block">物流單號（可選）</label>
+            <label class="text-sm ui-text-strong block">物流單號（可選）</label>
             <input id="swal-tracking-number" class="swal2-input" placeholder="請輸入物流單號" value="${
           esc(targetOrder.trackingNumber || "")
         }">
-            <label class="text-sm text-gray-600 block">物流商（可選）</label>
+            <label class="text-sm ui-text-strong block">物流商（可選）</label>
             <input id="swal-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便" value="${
           esc(targetOrder.shippingProvider || "")
         }">
-            <label class="text-sm text-gray-600 block">物流追蹤網址（可選）</label>
+            <label class="text-sm ui-text-strong block">物流追蹤網址（可選）</label>
             <input id="swal-tracking-url" class="swal2-input" placeholder="https://..." value="${
           esc(targetOrder.trackingUrl || "")
         }">
@@ -1656,8 +1656,8 @@ async function changeOrderStatus(orderId, status) {
       const confirm = await Swal.fire({
         title: "確認變更訂單狀態",
         html: `訂單 <b>#${esc(orderId)}</b><br>
-          <span style="color:#888">${esc(orderStatusLabel[currentStatus] || currentStatus)}</span>
-          → <span style="color:#6F4E37; font-weight:bold;">${esc(newStatusLabel)}</span>`,
+          <span class="ui-text-muted">${esc(orderStatusLabel[currentStatus] || currentStatus)}</span>
+          → <span class="ui-text-warning font-bold">${esc(newStatusLabel)}</span>`,
         icon: "question",
         showCancelButton: true,
         confirmButtonText: "確認變更",
@@ -1778,11 +1778,11 @@ async function batchUpdateOrders() {
       title: "批次出貨設定",
       html: `
         <div class="text-left space-y-2">
-          <label class="text-sm text-gray-600 block">共用物流單號（可選）</label>
+          <label class="text-sm ui-text-strong block">共用物流單號（可選）</label>
           <input id="swal-batch-tracking-number" class="swal2-input" placeholder="請輸入物流單號">
-          <label class="text-sm text-gray-600 block">共用物流商（可選）</label>
+          <label class="text-sm ui-text-strong block">共用物流商（可選）</label>
           <input id="swal-batch-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便">
-          <label class="text-sm text-gray-600 block">共用物流追蹤網址（可選）</label>
+          <label class="text-sm ui-text-strong block">共用物流追蹤網址（可選）</label>
           <input id="swal-batch-tracking-url" class="swal2-input" placeholder="https://...">
         </div>
       `,
@@ -2053,7 +2053,7 @@ function buildProductViewModel(product) {
     roastLevel: product?.roastLevel || "",
     enabled: Boolean(product?.enabled),
     statusLabel: product?.enabled ? "啟用" : "停用",
-    statusClass: product?.enabled ? "text-green-600" : "text-gray-400",
+    statusClass: product?.enabled ? "ui-text-success" : "ui-text-muted",
     priceLines: getProductPriceLines(product),
   };
 }
@@ -2135,7 +2135,7 @@ function renderProducts() {
   if (!grouped.length) {
     const tbody = document.createElement("tbody");
     tbody.innerHTML =
-      '<tr><td colspan="6" class="text-center py-8 text-gray-500">尚無商品</td></tr>';
+      '<tr><td colspan="6" class="text-center py-8 ui-text-subtle">尚無商品</td></tr>';
     table.appendChild(tbody);
     initializeProductSortables(table);
     return;
@@ -2156,22 +2156,22 @@ function renderProducts() {
           html += `
             <tr class="border-b" style="border-color:#f0e6db;" data-id="${product.id}">
                 <td class="p-3 text-center">
-                    <span class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
+                    <span class="drag-handle cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
                     </span>
                 </td>
                 <td class="p-3 text-sm">${esc(product.category)}</td>
                 <td class="p-3">
                     <div class="font-medium mb-1">${esc(product.name)}</div>
-                    <div class="text-xs text-gray-500">${
+                    <div class="text-xs ui-text-subtle">${
         esc(product.description || "")
       } ${product.roastLevel ? "・" + product.roastLevel : ""}</div>
                 </td>
                 <td class="p-3 text-right font-medium">${priceDisplay}</td>
                 <td class="p-3 text-center"><span class="${product.statusClass}">${product.statusLabel}</span></td>
                 <td class="p-3 text-center">
-                    <button data-action="edit-product" data-product-id="${product.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                    <button data-action="delete-product" data-product-id="${product.id}" class="text-sm text-red-500">刪除</button>
+                    <button data-action="edit-product" data-product-id="${product.id}" class="text-sm mr-2 ui-text-highlight">編輯</button>
+                    <button data-action="delete-product" data-product-id="${product.id}" class="text-sm ui-text-danger">刪除</button>
                 </td>
             </tr>`;
     });
@@ -2233,11 +2233,11 @@ function addSpecRow(specData) {
         <input type="text" class="spec-label input-field text-sm py-1" value="${
     esc(s.label)
   }" placeholder="規格名稱" style="width:90px">
-        <span class="text-gray-500 text-sm">$</span>
+        <span class="ui-text-subtle text-sm">$</span>
         <input type="number" class="spec-price input-field text-sm py-1" value="${
     s.price || ""
   }" placeholder="價格" min="0" style="width:80px">
-        <button type="button" data-action="remove-spec-row" class="text-red-400 hover:text-red-600 text-lg font-bold">&times;</button>
+        <button type="button" data-action="remove-spec-row" class="text-red-400 hover:ui-text-danger text-lg font-bold">&times;</button>
     `;
   container.appendChild(div);
 }
@@ -2461,7 +2461,7 @@ function renderCategories() {
 
   if (!categories.length) {
     container.innerHTML =
-      '<p class="text-center text-gray-500 py-4">尚無分類</p>';
+      '<p class="text-center ui-text-subtle py-4">尚無分類</p>';
     initializeCategorySortable(container);
     return;
   }
@@ -2469,14 +2469,14 @@ function renderCategories() {
   container.innerHTML = categories.map((c) => `
         <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;" data-id="${c.id}">
             <div class="flex items-center gap-2">
-                <span class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">
+                <span class="drag-handle-cat cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
                 </span>
                 <span class="font-medium">${esc(c.name)}</span>
             </div>
             <div class="flex gap-2">
-                <button data-action="edit-category" data-category-id="${c.id}" class="text-sm" style="color:var(--primary)">編輯</button>
-                <button data-action="delete-category" data-category-id="${c.id}" class="text-sm text-red-500">刪除</button>
+                <button data-action="edit-category" data-category-id="${c.id}" class="text-sm ui-text-highlight">編輯</button>
+                <button data-action="delete-category" data-category-id="${c.id}" class="text-sm ui-text-danger">刪除</button>
             </div>
         </div>
     `).join("");
@@ -2610,7 +2610,7 @@ function buildPromotionViewModel(promotion) {
       : `折 $${promotion?.discountValue}`,
     enabled: Boolean(promotion?.enabled),
     statusLabel: promotion?.enabled ? "啟用" : "停用",
-    statusClass: promotion?.enabled ? "text-green-600" : "text-gray-400",
+    statusClass: promotion?.enabled ? "ui-text-success" : "ui-text-muted",
   };
 }
 
@@ -2677,7 +2677,7 @@ function renderPromotions() {
   table.innerHTML = "";
   if (!proms.length) {
     table.innerHTML =
-      '<tr><td colspan="5" class="text-center py-8 text-gray-500">尚無活動</td></tr>';
+      '<tr><td colspan="5" class="text-center py-8 ui-text-subtle">尚無活動</td></tr>';
     initializePromotionSortable(table);
     return;
   }
@@ -2688,16 +2688,16 @@ function renderPromotions() {
     html += `
         <tr class="border-b" style="border-color:#f0e6db;" data-id="${viewPromotion.id}">
             <td class="p-3 text-center">
-                <span class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
+                <span class="drag-handle-promo cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
                 </span>
             </td>
             <td class="p-3 font-medium">${esc(viewPromotion.name)}</td>
-            <td class="p-3 text-sm text-gray-600">${esc(viewPromotion.conditionText)} <span class="font-bold text-red-500">${esc(viewPromotion.discountText)}</span></td>
+            <td class="p-3 text-sm ui-text-strong">${esc(viewPromotion.conditionText)} <span class="font-bold ui-text-danger">${esc(viewPromotion.discountText)}</span></td>
             <td class="p-3 text-center"><span class="${viewPromotion.statusClass}">${viewPromotion.statusLabel}</span></td>
             <td class="p-3 text-right">
-                <button data-action="edit-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm mr-2" style="color:var(--primary)">編輯</button>
-                <button data-action="delete-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm text-red-500">刪除</button>
+                <button data-action="edit-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm mr-2 ui-text-highlight">編輯</button>
+                <button data-action="delete-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm ui-text-danger">刪除</button>
             </td>
         </tr>`;
   });
@@ -2708,7 +2708,7 @@ function renderPromotions() {
 function renderPromoProducts(selectedItems = []) {
   const list = document.getElementById("prm-products-list");
   if (!products.length) {
-    list.innerHTML = '<p class="text-gray-400">目前沒有商品可選</p>';
+    list.innerHTML = '<p class="ui-text-muted">目前沒有商品可選</p>';
     return;
   }
 
@@ -2728,11 +2728,11 @@ function renderPromoProducts(selectedItems = []) {
       // 無規格商品
       html += `
             <div class="mb-1 border-b pb-1 last:border-0" style="border-color:#f0e6db">
-                <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                <label class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded">
                     <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="" ${
         isSelected(p.id, "") ? "checked" : ""
       }>
-                    <span class="text-gray-700 font-medium">[${
+                    <span class="ui-text-strong font-medium">[${
         esc(p.category)
       }] ${esc(p.name)}</span>
                 </label>
@@ -2741,19 +2741,19 @@ function renderPromoProducts(selectedItems = []) {
       // 有規格商品：標題列 + 規格子選項
       html += `
             <div class="mb-2 border-b pb-1 last:border-0" style="border-color:#f0e6db">
-                <div class="text-gray-700 font-medium p-1 bg-gray-50 rounded">[${
+                <div class="ui-text-strong font-medium p-1 ui-bg-soft rounded">[${
         esc(p.category)
       }] ${esc(p.name)}</div>
                 <div class="pl-4 mt-1 space-y-1">
                     ${
         specs.map((s) => `
-                        <label class="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded text-sm">
+                        <label class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded text-sm">
                             <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="${
           esc(s.key)
         }" ${isSelected(p.id, s.key) ? "checked" : ""}>
-                            <span class="text-gray-600">${
+                            <span class="ui-text-strong">${
           esc(s.label)
-        } <span class="text-xs text-gray-400">($${s.price})</span></span>
+        } <span class="text-xs ui-text-muted">($${s.price})</span></span>
                         </label>
                     `).join("")
       }
@@ -3077,7 +3077,7 @@ function renderDeliveryOptionsAdmin(config) {
   window.deliverySortable = new Sortable(tbody, {
     animation: 150,
     handle: ".cursor-move",
-    ghostClass: "bg-gray-100",
+    ghostClass: "ui-bg-soft",
   });
 }
 
@@ -3115,7 +3115,7 @@ function configToHtml(item, tbody, isNew = false) {
   tr.dataset.defaultIconKey = fallbackKey;
 
   tr.innerHTML = `
-        <td class="p-3 text-center cursor-move text-gray-400 hover:text-gray-600 transition">
+        <td class="p-3 text-center cursor-move ui-text-muted hover:ui-text-strong transition">
             <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
         </td>
         <td class="p-3">
@@ -3128,9 +3128,9 @@ function configToHtml(item, tbody, isNew = false) {
     normalized.icon_url
   )}">
                     <input type="file" class="do-icon-file text-xs" accept="image/png,image/webp,image/jpeg,image/jpg">
-                    <button type="button" data-action="upload-delivery-row-icon" class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">上傳圖示</button>
+                    <button type="button" data-action="upload-delivery-row-icon" class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft">上傳圖示</button>
                 </div>
-                <p class="text-[11px] text-gray-400 truncate do-icon-url-display">${
+                <p class="text-[11px] ui-text-muted truncate do-icon-url-display">${
     esc(normalized.icon_url)
   }</p>
                 <div class="flex items-center gap-2">
@@ -3144,17 +3144,17 @@ function configToHtml(item, tbody, isNew = false) {
     esc(normalized.id)
   }">
                 </div>
-                <input type="text" class="border rounded p-1 w-full text-xs text-gray-600 do-desc" value="${
+                <input type="text" class="border rounded p-1 w-full text-xs ui-text-strong do-desc" value="${
     esc(normalized.description)
   }" placeholder="簡短說明 (例如: 到店自取)">
             </div>
         </td>
-        <td class="p-3 text-center border-l bg-gray-50/50" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l ui-bg-soft/50" style="border-color:#e5ddd5">
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer do-enabled" ${
     normalized.enabled ? "checked" : ""
   }>
-                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                <div class="w-9 h-5 ui-bg-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
             </label>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
@@ -3183,7 +3183,7 @@ function configToHtml(item, tbody, isNew = false) {
   }>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
-            <button type="button" data-action="remove-delivery-option-row" class="text-red-500 hover:text-red-700 p-1" title="刪除此選項">
+            <button type="button" data-action="remove-delivery-option-row" class="ui-text-danger hover:text-red-700 p-1" title="刪除此選項">
                 刪除
             </button>
         </td>
@@ -3418,7 +3418,7 @@ function buildUserViewModel(user, isSuperAdmin) {
       newRole: isAdmin ? "USER" : "ADMIN",
       label: isAdmin ? "移除管理員" : "設為管理員",
       className: isAdmin
-        ? "text-red-600 hover:text-red-800"
+        ? "ui-text-danger hover:text-red-800"
         : "text-purple-600 hover:text-purple-800",
     }
     : null;
@@ -3435,7 +3435,7 @@ function buildUserViewModel(user, isSuperAdmin) {
     roleBadgeText: isAdmin ? "管理員" : "用戶",
     roleBadgeClass: isAdmin
       ? "bg-purple-100 text-purple-800"
-      : "bg-gray-100 text-gray-600",
+      : "ui-bg-soft ui-text-strong",
     statusBadgeText: isBlocked ? "黑名單" : "正常",
     statusBadgeClass: isBlocked
       ? "bg-red-100 text-red-800"
@@ -3446,8 +3446,8 @@ function buildUserViewModel(user, isSuperAdmin) {
     blacklistActionBlockedValue: String(!isBlocked),
     blacklistActionLabel: isBlocked ? "解除封鎖" : "封鎖",
     blacklistActionClass: isBlocked
-      ? "text-green-600 hover:text-green-800"
-      : "text-red-500 hover:text-red-700",
+      ? "ui-text-success hover:text-green-800"
+      : "ui-text-danger hover:text-red-700",
     roleAction,
   };
 }
@@ -3473,7 +3473,7 @@ function renderUsers() {
   }
   if (!users.length) {
     tbody.innerHTML =
-      '<tr><td colspan="4" class="text-center py-8 text-gray-500">無符合條件的用戶</td></tr>';
+      '<tr><td colspan="4" class="text-center py-8 ui-text-subtle">無符合條件的用戶</td></tr>';
     return;
   }
   const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
@@ -3490,18 +3490,18 @@ function renderUsers() {
     if (isBlocked) {
       actions += `<button data-action="toggle-user-blacklist" data-user-id="${
         esc(u.userId)
-      }" data-blocked="false" class="text-green-600 hover:text-green-800 text-sm font-medium mr-3">解除封鎖</button>`;
+      }" data-blocked="false" class="ui-text-success hover:text-green-800 text-sm font-medium mr-3">解除封鎖</button>`;
     } else {
       actions += `<button data-action="toggle-user-blacklist" data-user-id="${
         esc(u.userId)
-      }" data-blocked="true" class="text-red-500 hover:text-red-700 text-sm font-medium mr-3">封鎖</button>`;
+      }" data-blocked="true" class="ui-text-danger hover:text-red-700 text-sm font-medium mr-3">封鎖</button>`;
     }
 
     if (isSuperAdmin && !isUserSuperAdmin) {
       if (isAdmin) {
         actions += `<button data-action="toggle-user-role" data-user-id="${
           esc(u.userId)
-        }" data-new-role="USER" class="text-red-600 hover:text-red-800 text-sm font-medium">移除管理員</button>`;
+        }" data-new-role="USER" class="ui-text-danger hover:text-red-800 text-sm font-medium">移除管理員</button>`;
       } else {
         actions += `<button data-action="toggle-user-role" data-user-id="${
           esc(u.userId)
@@ -3515,13 +3515,13 @@ function renderUsers() {
       esc(u.pictureUrl) || "https://via.placeholder.com/40"
     }" class="w-10 h-10 rounded-full border"></td>
             <td class="p-3">
-                <div class="font-medium text-gray-800">${
+                <div class="font-medium ui-text-strong">${
       esc(u.displayName)
     }</div>
-                <div class="text-xs text-gray-500">${esc(u.email || "")} ${
+                <div class="text-xs ui-text-subtle">${esc(u.email || "")} ${
       u.phone ? "・" + esc(u.phone) : ""
     }</div>
-                <div class="text-xs text-gray-500 mt-1">${
+                <div class="text-xs ui-text-subtle mt-1">${
       u.defaultDeliveryMethod === "delivery"
         ? `宅配 (${esc(u.defaultCity)}${esc(u.defaultDistrict)} ${
           esc(u.defaultAddress)
@@ -3534,7 +3534,7 @@ function renderUsers() {
         } - ${esc(u.defaultStoreId)})`
         : "尚未設定"
     }</div>
-                <div class="text-xs text-gray-400 font-mono mt-1 opacity-50">${
+                <div class="text-xs ui-text-muted font-mono mt-1 opacity-50">${
       esc(u.userId)
     }</div>
             </td>
@@ -3542,14 +3542,14 @@ function renderUsers() {
                 <div>${
       isAdmin
         ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-800">管理員</span>'
-        : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">用戶</span>'
+        : '<span class="px-2 py-0.5 rounded text-xs font-medium ui-bg-soft ui-text-strong">用戶</span>'
     }</div>
                 <div class="mt-1">${
       isBlocked
         ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">黑名單</span>'
         : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">正常</span>'
     }</div>
-                <div class="text-xs text-gray-400 mt-1">登入：${lastLogin}</div>
+                <div class="text-xs ui-text-muted mt-1">登入：${lastLogin}</div>
             </td>
             <td class="p-3 text-right">${actions}</td>
         </tr>`;
@@ -3706,7 +3706,7 @@ function renderBlacklist() {
   }
   if (!blacklist.length) {
     tbody.innerHTML =
-      '<tr><td colspan="3" class="text-center py-8 text-gray-500">目前沒有封鎖名單</td></tr>';
+      '<tr><td colspan="3" class="text-center py-8 ui-text-subtle">目前沒有封鎖名單</td></tr>';
     return;
   }
   tbody.innerHTML = blacklist.map((b) => {
@@ -3717,20 +3717,20 @@ function renderBlacklist() {
         <tr class="border-b" style="border-color:#f0e6db;">
             <td class="p-3">
                 <div class="font-medium">${esc(b.displayName)}</div>
-                <div class="text-xs text-gray-400 font-mono">${
+                <div class="text-xs ui-text-muted font-mono">${
       esc(b.lineUserId)
     }</div>
             </td>
             <td class="p-3">
                 <div class="text-sm">${dt}</div>
-                <div class="text-xs text-red-500 mt-1">${
+                <div class="text-xs ui-text-danger mt-1">${
       esc(b.reason) || "(無原因)"
     }</div>
             </td>
             <td class="p-3 text-right">
                 <button data-action="toggle-user-blacklist" data-user-id="${
       esc(b.lineUserId)
-    }" data-blocked="false" class="text-green-600 hover:text-green-800 text-sm font-medium">解除封鎖</button>
+    }" data-blocked="false" class="ui-text-success hover:text-green-800 text-sm font-medium">解除封鎖</button>
             </td>
         </tr>`;
   }).join("");
@@ -3856,7 +3856,7 @@ function renderFormFields() {
 
   if (!formFields.length) {
     container.innerHTML =
-      '<p class="text-center text-gray-500 py-8">尚無自訂欄位</p>';
+      '<p class="text-center ui-text-subtle py-8">尚無自訂欄位</p>';
     initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
     return;
   }
@@ -3867,23 +3867,23 @@ function renderFormFields() {
     formFields.map((f) => {
       const viewField = buildFormFieldViewModel(f);
       const requiredBadge = viewField.required
-        ? '<span class="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full">必填</span>'
+        ? '<span class="text-xs bg-red-100 ui-text-danger px-2 py-0.5 rounded-full">必填</span>'
         : "";
       const enabledClass = viewField.enabled ? "" : "opacity-50";
       const isProtected = false;
       return `
                 <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${viewField.id}">
-                    <span class="cursor-grab text-gray-400 drag-handle">
+                    <span class="cursor-grab ui-text-muted drag-handle">
                       <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
                     </span>
                     <div class="flex-1">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-medium">${esc(viewField.label)}</span>
-                            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${esc(viewField.fieldTypeLabel)}</span>
+                            <span class="text-xs ui-primary-soft ui-text-highlight px-2 py-0.5 rounded-full">${esc(viewField.fieldTypeLabel)}</span>
                             ${requiredBadge}
                             ${
         !viewField.enabled
-          ? '<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">已停用</span>'
+          ? '<span class="text-xs ui-bg-soft ui-text-subtle px-2 py-0.5 rounded-full">已停用</span>'
           : ""
       }
                             ${
@@ -3892,7 +3892,7 @@ function renderFormFields() {
           : ""
       }
                         </div>
-                        <div class="text-xs text-gray-400 mt-1">key: ${esc(viewField.fieldKey)} ${viewField.placeholder ? "・" + esc(viewField.placeholder) : ""}</div>
+                        <div class="text-xs ui-text-muted mt-1">key: ${esc(viewField.fieldKey)} ${viewField.placeholder ? "・" + esc(viewField.placeholder) : ""}</div>
                         ${
         viewField.hiddenDeliveryMethodsText
           ? `<div class="text-xs text-orange-500 mt-1">${
@@ -3902,11 +3902,11 @@ function renderFormFields() {
       }
                     </div>
                     <div class="flex gap-1 items-center">
-                        <button data-action="toggle-field-enabled" data-field-id="${viewField.id}" data-enabled="${viewField.toggleEnabledValue}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="${viewField.toggleEnabledTitle}">${viewField.toggleEnabledIcon}</button>
-                        <button data-action="edit-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-gray-100" title="編輯">編輯</button>
+                        <button data-action="toggle-field-enabled" data-field-id="${viewField.id}" data-enabled="${viewField.toggleEnabledValue}" class="text-sm px-2 py-1 rounded hover:ui-bg-soft" title="${viewField.toggleEnabledTitle}">${viewField.toggleEnabledIcon}</button>
+                        <button data-action="edit-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:ui-bg-soft" title="編輯">編輯</button>
                         ${
         !isProtected
-          ? `<button data-action="delete-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500" title="刪除">刪除</button>`
+          ? `<button data-action="delete-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 ui-text-danger" title="刪除">刪除</button>`
           : ""
       }
                     </div>
@@ -3932,7 +3932,7 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
   }
   if (!deliveryOptions.length) {
     container.innerHTML =
-      '<p class="text-xs text-gray-400">尚未設定配送方式</p>';
+      '<p class="text-xs ui-text-muted">尚未設定配送方式</p>';
     return;
   }
   let vis = {};
@@ -3990,7 +3990,7 @@ async function showAddFieldModal() {
                 </label>
                 <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
                     <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
-                    <p class="text-xs text-gray-400 mb-2">取消勾選 = 該配送方式下不顯示此欄位，全勾 = 全部顯示</p>
+                    <p class="text-xs ui-text-muted mb-2">取消勾選 = 該配送方式下不顯示此欄位，全勾 = 全部顯示</p>
                     <div id="swal-dv" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>`,
@@ -4113,7 +4113,7 @@ async function editFormField(id) {
                 </label>
                 <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
                     <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
-                    <p class="text-xs text-gray-400 mb-2">取消勾選 = 該配送方式下不顯示此欄位</p>
+                    <p class="text-xs ui-text-muted mb-2">取消勾選 = 該配送方式下不顯示此欄位</p>
                     <div id="swal-dv" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>`,
@@ -4594,36 +4594,36 @@ function renderBankAccountsAdmin() {
       bankAccountsSortable.destroy();
       bankAccountsSortable = null;
     }
-    container.innerHTML = '<p class="text-sm text-gray-500">尚無匯款帳號</p>';
+    container.innerHTML = '<p class="text-sm ui-text-subtle">尚無匯款帳號</p>';
     return;
   }
   container.innerHTML = `
-    <p class="text-xs text-gray-500 mb-2">可拖曳左側排序圖示自由排序匯款帳號</p>
+    <p class="text-xs ui-text-subtle mb-2">可拖曳左側排序圖示自由排序匯款帳號</p>
     <div id="bank-accounts-sortable" class="space-y-2">
       ${
     bankAccounts.map((b) => `
           <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#faf6f2; border:1px solid #e5ddd5;">
               <div class="flex items-start gap-3 min-w-0">
-                  <span class="drag-handle-bank cursor-move text-gray-400 hover:text-gray-600 select-none pt-1" title="拖曳排序">
+                  <span class="drag-handle-bank cursor-move ui-text-muted hover:ui-text-strong select-none pt-1" title="拖曳排序">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
                   </span>
                   <div>
                       <div class="font-medium">${esc(b.bankName)} (${
       esc(b.bankCode)
     })</div>
-                      <div class="text-sm font-mono text-gray-600">${
+                      <div class="text-sm font-mono ui-text-strong">${
       esc(b.accountNumber)
     }</div>
                       ${
       b.accountName
-        ? `<div class="text-xs text-gray-400">戶名: ${esc(b.accountName)}</div>`
+        ? `<div class="text-xs ui-text-muted">戶名: ${esc(b.accountName)}</div>`
         : ""
     }
                   </div>
               </div>
               <div class="flex gap-2 shrink-0">
-                  <button data-action="edit-bank-account" data-bank-account-id="${b.id}" class="text-sm" style="color:var(--primary)">編輯</button>
-                  <button data-action="delete-bank-account" data-bank-account-id="${b.id}" class="text-sm text-red-500">刪除</button>
+                  <button data-action="edit-bank-account" data-bank-account-id="${b.id}" class="text-sm ui-text-highlight">編輯</button>
+                  <button data-action="delete-bank-account" data-bank-account-id="${b.id}" class="text-sm ui-text-danger">刪除</button>
               </div>
           </div>
       `).join("")
@@ -4638,7 +4638,7 @@ function renderBankAccountsAdmin() {
   bankAccountsSortable = new Sortable(sortableRoot, {
     handle: ".drag-handle-bank",
     animation: 150,
-    ghostClass: "bg-gray-100",
+    ghostClass: "ui-bg-soft",
     onEnd: async (evt) => {
       if (evt.oldIndex === evt.newIndex) return;
       const ids = Array.from(

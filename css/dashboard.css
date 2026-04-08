@@ -32,6 +32,16 @@
   --surface-shadow: var(--ui-shadow);
 }
 
+/* ── Text Utilities (Solarized) ── */
+.dashboard-enterprise .ui-text-subtle { color: #839496; }   /* Base0 */
+.dashboard-enterprise .ui-text-muted { color: #93A1A1; }    /* Base1 */
+.dashboard-enterprise .ui-text-strong { color: #073642; }   /* Base02 */
+.dashboard-enterprise .ui-text-highlight { color: #268BD2; } /* Solarized Blue */
+.dashboard-enterprise .ui-text-success { color: #859900; }   /* Solarized Green */
+.dashboard-enterprise .ui-text-danger { color: #DC322F; }    /* Solarized Red */
+.dashboard-enterprise .ui-text-warning { color: #B58900; }   /* Solarized Yellow */
+.dashboard-enterprise .ui-text-violet { color: #6C71C4; }    /* Solarized Violet */
+
 /* ── Body ── */
 .dashboard-enterprise {
   background: #FDF6E3 !important;
@@ -227,27 +237,27 @@
 
 .dashboard-enterprise .status-pending {
   background: #FEF3C7;
-  color: #B58900;
+  color: #B58900;              /* Solarized Yellow */
 }
 
 .dashboard-enterprise .status-processing {
-  background: #DBEAFE;
-  color: #268BD2;
+  background: #E0F2FE;
+  color: #268BD2;              /* Solarized Blue */
 }
 
 .dashboard-enterprise .status-shipped {
   background: #D1FAE5;
-  color: #859900;
+  color: #859900;              /* Solarized Green */
 }
 
 .dashboard-enterprise .status-completed {
   background: #EEE8D5;
-  color: #586E75;
+  color: #586E75;              /* Base01 */
 }
 
 .dashboard-enterprise .status-cancelled {
   background: #FEE2E2;
-  color: #991B1B;
+  color: #DC322F;              /* Solarized Red */
 }
 
 /* ── Delivery Tags ── */
@@ -262,27 +272,27 @@
 
 .dashboard-enterprise .delivery-delivery {
   background: #E0F2FE;
-  color: #0369A1;
+  color: #268BD2;
 }
 
 .dashboard-enterprise .delivery-home_delivery {
   background: #EDE9FE;
-  color: #6D28D9;
+  color: #6C71C4;              /* Solarized Violet */
 }
 
 .dashboard-enterprise .delivery-seven_eleven {
   background: #FEF3C7;
-  color: #92400E;
+  color: #B58900;
 }
 
 .dashboard-enterprise .delivery-family_mart {
   background: #D1FAE5;
-  color: #065F46;
+  color: #859900;
 }
 
 .dashboard-enterprise .delivery-in_store {
-  background: #F1F5F9;
-  color: #334155;
+  background: #EEE8D5;
+  color: #657B83;              /* Base00 */
 }
 
 /* ── Modals ── */
@@ -446,7 +456,7 @@
     padding: 8px 12px;
     gap: 4px;
     border-right: none;
-    border-bottom: 1px solid #E2E8F0;
+    border-bottom: 1px solid #E2DCC8;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }

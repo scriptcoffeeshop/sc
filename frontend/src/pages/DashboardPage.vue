@@ -10,7 +10,7 @@
       <h1 class="text-2xl font-bold mb-2" style="color: var(--primary)">
         咖啡訂購後台
       </h1>
-      <p class="text-gray-500 mb-6">僅限管理員登入</p>
+      <p class="ui-text-subtle mb-6">僅限管理員登入</p>
       <UiButton
         data-action="login-with-line"
         class="h-11 px-6 bg-[#06c755] hover:bg-[#05b84e]"
@@ -34,14 +34,14 @@
             <h1 class="text-xl font-bold" style="color: var(--primary)">
               咖啡訂購後台
             </h1>
-            <p class="text-sm text-gray-500">
+            <p class="text-sm ui-text-subtle">
               歡迎，<span id="admin-name"></span>
             </p>
           </div>
         </div>
         <button
           data-action="logout"
-          class="text-sm text-gray-500 hover:text-red-500"
+          class="text-sm ui-text-subtle hover:ui-text-danger"
         >
           登出
         </button>
@@ -54,7 +54,7 @@
             <button
               id="tab-orders"
               data-tab="orders"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/orders-list.png" alt="" class="ui-icon-inline">訂單管理</span>
             </button>
@@ -63,7 +63,7 @@
             <button
               id="tab-products"
               data-tab="products"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/products-beans.png" alt="" class="ui-icon-inline">商品管理</span>
             </button>
@@ -72,7 +72,7 @@
             <button
               id="tab-categories"
               data-tab="categories"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/categories-folder.png" alt="" class="ui-icon-inline">分類管理</span>
             </button>
@@ -81,7 +81,7 @@
             <button
               id="tab-promotions"
               data-tab="promotions"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/promotions-gift.png" alt="" class="ui-icon-inline">促銷活動</span>
             </button>
@@ -90,7 +90,7 @@
             <button
               id="tab-settings"
               data-tab="settings"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/settings-gear.png" alt="" class="ui-icon-inline">系統設定</span>
             </button>
@@ -99,7 +99,7 @@
             <button
               id="tab-icon-library"
               data-tab="icon-library"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/section-tag.png" alt="" class="ui-icon-inline">Icon 素材庫</span>
             </button>
@@ -108,7 +108,7 @@
             <button
               id="tab-formfields"
               data-tab="formfields"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/form-fields.png" alt="" class="ui-icon-inline">表單管理</span>
             </button>
@@ -117,7 +117,7 @@
             <button
               id="tab-users"
               data-tab="users"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/users-group.png" alt="" class="ui-icon-inline">用戶管理</span>
             </button>
@@ -126,7 +126,7 @@
             <button
               id="tab-blacklist"
               data-tab="blacklist"
-              class="px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-600 whitespace-nowrap"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-white ui-text-strong whitespace-nowrap"
             >
               <span class="tab-with-icon"><img src="../../../icons/blacklist-shield.png" alt="" class="ui-icon-inline">黑名單</span>
             </button>
@@ -145,7 +145,7 @@
               <button
                 data-action="show-flex-history"
                 class="text-sm px-3 py-1 rounded-lg border"
-                style="border-color: #6F4E37; color: #6F4E37;"
+                
                 title="LINE Flex Message 歷史紀錄"
               >
                 📋 Flex 歷史
@@ -242,7 +242,7 @@
 
           <div
             class="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-white border"
-            style="border-color: #e5ddd5"
+            
           >
             <label
               class="inline-flex items-center gap-2 text-sm cursor-pointer"
@@ -255,7 +255,7 @@
               >
               全選目前篩選結果
             </label>
-            <span id="orders-selected-count" class="text-sm text-gray-600"
+            <span id="orders-selected-count" class="text-sm ui-text-strong"
             >已選 0 筆</span>
             <select
               id="batch-order-status"
@@ -296,21 +296,21 @@
             </button>
             <button
               data-action="export-orders-csv"
-              class="text-sm px-4 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+              class="text-sm px-4 py-2 rounded-lg border ui-border text-blue-700 hover:ui-primary-soft"
             >
               匯出篩選 CSV
             </button>
             <button
               data-action="export-selected-orders-csv"
-              class="text-sm px-4 py-2 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50"
+              class="text-sm px-4 py-2 rounded-lg border ui-border text-blue-700 hover:ui-primary-soft"
             >
               匯出勾選 CSV
             </button>
           </div>
         </div>
-        <div id="orders-summary" class="text-sm text-gray-600 mb-3"></div>
+        <div id="orders-summary" class="text-sm ui-text-strong mb-3"></div>
         <div id="orders-list" data-vue-managed="true">
-          <p v-if="ordersView.length === 0" class="text-center text-gray-500 py-8">
+          <p v-if="ordersView.length === 0" class="text-center ui-text-subtle py-8">
             沒有符合的訂單
           </p>
           <template v-else>
@@ -318,7 +318,7 @@
               v-for="order in ordersView"
               :key="order.orderId"
               class="border rounded-xl p-4 mb-3"
-              style="border-color:#e5ddd5;"
+              
             >
               <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center gap-2 flex-wrap">
@@ -346,23 +346,23 @@
                     {{ order.paymentMethodLabel }} {{ order.paymentStatusLabel }}
                   </span>
                 </div>
-                <span class="text-xs text-gray-500">{{ order.timestampText }}</span>
+                <span class="text-xs ui-text-subtle">{{ order.timestampText }}</span>
               </div>
 
               <div class="grid grid-cols-2 gap-2 text-sm mb-2">
-                <div><span class="text-gray-500">顧客：</span>{{ order.lineName }}</div>
-                <div><span class="text-gray-500">電話：</span>{{ order.phone }}</div>
+                <div><span class="ui-text-subtle">顧客：</span>{{ order.lineName }}</div>
+                <div><span class="ui-text-subtle">電話：</span>{{ order.phone }}</div>
                 <div class="col-span-2">
-                  <span class="text-gray-500">信箱：</span>
-                  <a v-if="order.email" :href="`mailto:${order.email}`" class="text-blue-500">
+                  <span class="ui-text-subtle">信箱：</span>
+                  <a v-if="order.email" :href="`mailto:${order.email}`" class="ui-text-highlight">
                     {{ order.email }}
                   </a>
                   <span v-else>無</span>
                 </div>
                 <div class="col-span-2">
-                  <span class="text-gray-500">地址/門市：</span>{{ order.addressInfo }}
+                  <span class="ui-text-subtle">地址/門市：</span>{{ order.addressInfo }}
                 </div>
-                <div v-if="order.showTransferInfo" class="col-span-2 text-xs text-blue-800 mt-2 bg-blue-50 p-2 rounded">
+                <div v-if="order.showTransferInfo" class="col-span-2 text-xs text-blue-800 mt-2 ui-primary-soft p-2 rounded">
                   <div><b>顧客匯出末5碼:</b> {{ order.transferAccountLast5 || "未提供" }}</div>
                   <div class="mt-1 pb-1"><b>匯入目標帳號:</b> {{ order.paymentId || "未提供 (舊版訂單)" }}</div>
                 </div>
@@ -373,16 +373,16 @@
                 class="text-xs bg-gray-100 p-2 rounded mt-2 border border-gray-200"
               >
                 <div v-if="order.shippingProvider">
-                  <span class="text-gray-500">物流商：</span>{{ order.shippingProvider }}
+                  <span class="ui-text-subtle">物流商：</span>{{ order.shippingProvider }}
                 </div>
                 <div v-if="order.trackingNumber" class="mt-1">
-                  <span class="text-gray-500">物流單號：</span>
+                  <span class="ui-text-subtle">物流單號：</span>
                   <span class="font-mono font-bold">{{ order.trackingNumber }}</span>
                   <button
                     type="button"
                     data-action="copy-tracking-number"
                     :data-tracking-number="order.trackingNumber"
-                    class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700"
+                    class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded ui-text-strong"
                     title="複製單號"
                   >
                     複製
@@ -392,25 +392,25 @@
                   <a
                     :href="order.trackingLinkUrl"
                     target="_blank"
-                    class="text-xs text-blue-600 hover:underline"
+                    class="text-xs ui-text-highlight hover:underline"
                   >
                     {{ order.trackingLinkLabel }}
                   </a>
                 </div>
               </div>
 
-              <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2 mt-2">
+              <div class="text-sm ui-text-strong whitespace-pre-line bg-gray-50 p-3 rounded mb-2 mt-2">
                 {{ order.items }}
               </div>
               <div
                 v-if="order.showReceiptInfo && order.receiptInfo"
                 class="text-xs text-amber-800 bg-amber-50 p-2 rounded mb-2 border border-amber-100"
               >
-                <div><span class="text-gray-500">統一編號：</span>{{ order.receiptInfo.taxId || "未填寫" }}</div>
-                <div><span class="text-gray-500">收據買受人：</span>{{ order.receiptInfo.buyer || "未填寫" }}</div>
-                <div><span class="text-gray-500">收據地址：</span>{{ order.receiptInfo.address || "未填寫" }}</div>
+                <div><span class="ui-text-subtle">統一編號：</span>{{ order.receiptInfo.taxId || "未填寫" }}</div>
+                <div><span class="ui-text-subtle">收據買受人：</span>{{ order.receiptInfo.buyer || "未填寫" }}</div>
+                <div><span class="ui-text-subtle">收據地址：</span>{{ order.receiptInfo.address || "未填寫" }}</div>
                 <div>
-                  <span class="text-gray-500">壓印日期：</span>{{
+                  <span class="ui-text-subtle">壓印日期：</span>{{
                     order.receiptInfo.needDateStamp ? "需要" : "不需要"
                   }}
                 </div>
@@ -445,7 +445,7 @@
                     v-if="order.showConfirmTransferButton"
                     data-action="confirm-transfer-payment"
                     :data-order-id="order.orderId"
-                    class="text-xs text-green-600 hover:text-green-800"
+                    class="text-xs ui-text-success hover:text-green-800"
                   >
                     確認已收款
                   </button>
@@ -475,7 +475,7 @@
                   <button
                     data-action="delete-order"
                     :data-order-id="order.orderId"
-                    class="text-xs text-red-500 hover:text-red-700"
+                    class="text-xs ui-text-danger hover:text-red-700"
                   >
                     刪除
                   </button>
@@ -522,7 +522,7 @@
             </thead>
             <tbody v-if="productsGroupsView.length === 0">
               <tr>
-                <td colspan="6" class="text-center py-8 text-gray-500">
+                <td colspan="6" class="text-center py-8 ui-text-subtle">
                   尚無商品
                 </td>
               </tr>
@@ -543,7 +543,7 @@
                 >
                   <td class="p-3 text-center">
                     <span
-                      class="drag-handle cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
+                      class="drag-handle cursor-move ui-text-muted hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
                       title="拖曳排序"
                       style="touch-action: none;"
                     ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
@@ -551,7 +551,7 @@
                   <td class="p-3 text-sm">{{ product.category }}</td>
                   <td class="p-3">
                     <div class="font-medium mb-1">{{ product.name }}</div>
-                    <div class="text-xs text-gray-500">
+                    <div class="text-xs ui-text-subtle">
                       {{ product.description }}<span v-if="product.roastLevel">・{{ product.roastLevel }}</span>
                     </div>
                   </td>
@@ -576,7 +576,7 @@
                     <button
                       data-action="delete-product"
                       :data-product-id="product.id"
-                      class="text-sm text-red-500"
+                      class="text-sm ui-text-danger"
                     >
                       刪除
                     </button>
@@ -607,7 +607,7 @@
           </button>
         </div>
         <div id="categories-list" data-vue-managed="true">
-          <p v-if="categoriesView.length === 0" class="text-center text-gray-500 py-4">
+          <p v-if="categoriesView.length === 0" class="text-center ui-text-subtle py-4">
             尚無分類
           </p>
           <template v-else>
@@ -620,7 +620,7 @@
             >
               <div class="flex items-center gap-2">
                 <span
-                  class="drag-handle-cat cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-1"
+                  class="drag-handle-cat cursor-move ui-text-muted hover:text-amber-700 text-xl font-bold select-none px-1"
                   title="拖曳排序"
                   style="touch-action: none;"
                 ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
@@ -638,7 +638,7 @@
                 <button
                   data-action="delete-category"
                   :data-category-id="category.id"
-                  class="text-sm text-red-500"
+                  class="text-sm ui-text-danger"
                 >
                   刪除
                 </button>
@@ -691,7 +691,7 @@
               data-vue-managed="true"
             >
               <tr v-if="promotionsView.length === 0">
-                <td colspan="5" class="text-center py-8 text-gray-500">
+                <td colspan="5" class="text-center py-8 ui-text-subtle">
                   尚無活動
                 </td>
               </tr>
@@ -705,14 +705,14 @@
                 >
                   <td class="p-3 text-center">
                     <span
-                      class="drag-handle-promo cursor-move text-gray-400 hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
+                      class="drag-handle-promo cursor-move ui-text-muted hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
                       title="拖曳排序"
                       style="touch-action: none;"
                     ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
                   </td>
                   <td class="p-3 font-medium">{{ promotion.name }}</td>
-                  <td class="p-3 text-sm text-gray-600">
-                    {{ promotion.conditionText }} <span class="font-bold text-red-500">{{ promotion.discountText }}</span>
+                  <td class="p-3 text-sm ui-text-strong">
+                    {{ promotion.conditionText }} <span class="font-bold ui-text-danger">{{ promotion.discountText }}</span>
                   </td>
                   <td class="p-3 text-center">
                     <span :class="promotion.statusClass">{{ promotion.statusLabel }}</span>
@@ -729,7 +729,7 @@
                     <button
                       data-action="delete-promotion"
                       :data-promotion-id="promotion.id"
-                      class="text-sm text-red-500"
+                      class="text-sm ui-text-danger"
                     >
                       刪除
                     </button>
@@ -782,7 +782,7 @@
             </thead>
             <tbody id="users-table" data-vue-managed="true">
               <tr v-if="usersView.length === 0">
-                <td colspan="4" class="text-center py-8 text-gray-500">
+                <td colspan="4" class="text-center py-8 ui-text-subtle">
                   無符合條件的用戶
                 </td>
               </tr>
@@ -800,12 +800,12 @@
                     >
                   </td>
                   <td class="p-3">
-                    <div class="font-medium text-gray-800">{{ user.displayName }}</div>
-                    <div class="text-xs text-gray-500">
+                    <div class="font-medium ui-text-strong">{{ user.displayName }}</div>
+                    <div class="text-xs ui-text-subtle">
                       {{ user.email }}<span v-if="user.phone">・{{ user.phone }}</span>
                     </div>
-                    <div class="text-xs text-gray-500 mt-1">{{ user.defaultDeliveryText }}</div>
-                    <div class="text-xs text-gray-400 font-mono mt-1 opacity-50">{{ user.userId }}</div>
+                    <div class="text-xs ui-text-subtle mt-1">{{ user.defaultDeliveryText }}</div>
+                    <div class="text-xs ui-text-muted font-mono mt-1 opacity-50">{{ user.userId }}</div>
                   </td>
                   <td class="p-3">
                     <div>
@@ -824,7 +824,7 @@
                         {{ user.statusBadgeText }}
                       </span>
                     </div>
-                    <div class="text-xs text-gray-400 mt-1">登入：{{ user.lastLoginText }}</div>
+                    <div class="text-xs ui-text-muted mt-1">登入：{{ user.lastLoginText }}</div>
                   </td>
                   <td class="p-3 text-right">
                     <button
@@ -876,7 +876,7 @@
             </thead>
             <tbody id="blacklist-table" data-vue-managed="true">
               <tr v-if="blacklistView.length === 0">
-                <td colspan="3" class="text-center py-8 text-gray-500">
+                <td colspan="3" class="text-center py-8 ui-text-subtle">
                   目前沒有封鎖名單
                 </td>
               </tr>
@@ -889,18 +889,18 @@
                 >
                   <td class="p-3">
                     <div class="font-medium">{{ blacklistEntry.displayName }}</div>
-                    <div class="text-xs text-gray-400 font-mono">{{ blacklistEntry.lineUserId }}</div>
+                    <div class="text-xs ui-text-muted font-mono">{{ blacklistEntry.lineUserId }}</div>
                   </td>
                   <td class="p-3">
                     <div class="text-sm">{{ blacklistEntry.blockedAtText }}</div>
-                    <div class="text-xs text-red-500 mt-1">{{ blacklistEntry.reasonText }}</div>
+                    <div class="text-xs ui-text-danger mt-1">{{ blacklistEntry.reasonText }}</div>
                   </td>
                   <td class="p-3 text-right">
                     <button
                       data-action="toggle-user-blacklist"
                       :data-user-id="blacklistEntry.lineUserId"
                       data-blocked="false"
-                      class="text-green-600 hover:text-green-800 text-sm font-medium"
+                      class="ui-text-success hover:text-green-800 text-sm font-medium"
                     >
                       解除封鎖
                     </button>
@@ -921,7 +921,7 @@
         <!-- 品牌設定 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
             <img id="settings-brand-logo" src="../../../icons/logo.png" alt="" class="ui-icon-inline-lg">
@@ -929,7 +929,7 @@
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-              <label class="block text-sm text-gray-600 mb-1">網站標題</label>
+              <label class="block text-sm ui-text-strong mb-1">網站標題</label>
               <input
                 type="text"
                 id="s-site-title"
@@ -938,7 +938,7 @@
               >
             </div>
             <div>
-              <label class="block text-sm text-gray-600 mb-1">副標題</label>
+              <label class="block text-sm ui-text-strong mb-1">副標題</label>
               <input
                 type="text"
                 id="s-site-subtitle"
@@ -949,7 +949,7 @@
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
             <div>
-              <label class="block text-sm text-gray-600 mb-1"
+              <label class="block text-sm ui-text-strong mb-1"
               >備援文字圖示（可留空）</label>
               <input
                 type="text"
@@ -959,7 +959,7 @@
               >
             </div>
             <div>
-              <label class="block text-sm text-gray-600 mb-1"
+              <label class="block text-sm ui-text-strong mb-1"
               >品牌 Icon（使用本地 icons/logo.png）</label>
               <div class="flex gap-2 items-center">
                 <img
@@ -967,7 +967,7 @@
                   alt="品牌圖示"
                   class="icon-upload-preview"
                 >
-                <span class="text-xs text-gray-400">icons/logo.png</span>
+                <span class="text-xs ui-text-muted">icons/logo.png</span>
               </div>
             </div>
           </div>
@@ -976,7 +976,7 @@
         <!-- 區塊標題 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
             <img src="../../../icons/section-tag.png" alt="" class="ui-icon-inline-lg">
@@ -984,15 +984,15 @@
           </h3>
 
           <!-- 商品區塊 -->
-          <div class="mb-4 border-b pb-4" style="border-color: #f0e6db">
+          <div class="mb-4 border-b pb-4" >
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-sm font-medium text-gray-700"
+              <label class="block text-sm font-medium ui-text-strong"
               >商品區塊</label>
               <button
                 type="button"
                 data-action="reset-section-title"
                 data-section="products"
-                class="text-xs text-blue-500 hover:text-blue-700"
+                class="text-xs ui-text-highlight hover:text-blue-700"
               >
                 恢復預設
               </button>
@@ -1017,13 +1017,13 @@
                 type="button"
                 data-action="upload-section-icon"
                 data-section="products"
-                class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
               >
                 上傳區塊圖示
               </button>
               <span
                 id="s-products-icon-url-display"
-                class="text-[11px] text-gray-400 truncate max-w-[250px]"
+                class="text-[11px] ui-text-muted truncate max-w-[250px]"
               ></span>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
@@ -1036,7 +1036,7 @@
               <input
                 type="color"
                 id="s-products-color"
-                value="#6F4E37"
+                value=""
                 class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
                 title="文字顏色"
               >
@@ -1060,15 +1060,15 @@
           </div>
 
           <!-- 配送區塊 -->
-          <div class="mb-4 border-b pb-4" style="border-color: #f0e6db">
+          <div class="mb-4 border-b pb-4" >
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-sm font-medium text-gray-700"
+              <label class="block text-sm font-medium ui-text-strong"
               >配送區塊</label>
               <button
                 type="button"
                 data-action="reset-section-title"
                 data-section="delivery"
-                class="text-xs text-blue-500 hover:text-blue-700"
+                class="text-xs ui-text-highlight hover:text-blue-700"
               >
                 恢復預設
               </button>
@@ -1093,13 +1093,13 @@
                 type="button"
                 data-action="upload-section-icon"
                 data-section="delivery"
-                class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
               >
                 上傳區塊圖示
               </button>
               <span
                 id="s-delivery-icon-url-display"
-                class="text-[11px] text-gray-400 truncate max-w-[250px]"
+                class="text-[11px] ui-text-muted truncate max-w-[250px]"
               ></span>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
@@ -1112,7 +1112,7 @@
               <input
                 type="color"
                 id="s-delivery-color"
-                value="#6F4E37"
+                value=""
                 class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
                 title="文字顏色"
               >
@@ -1138,13 +1138,13 @@
           <!-- 備註區塊 -->
           <div>
             <div class="flex justify-between items-center mb-1">
-              <label class="block text-sm font-medium text-gray-700"
+              <label class="block text-sm font-medium ui-text-strong"
               >備註區塊</label>
               <button
                 type="button"
                 data-action="reset-section-title"
                 data-section="notes"
-                class="text-xs text-blue-500 hover:text-blue-700"
+                class="text-xs ui-text-highlight hover:text-blue-700"
               >
                 恢復預設
               </button>
@@ -1169,13 +1169,13 @@
                 type="button"
                 data-action="upload-section-icon"
                 data-section="notes"
-                class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
               >
                 上傳區塊圖示
               </button>
               <span
                 id="s-notes-icon-url-display"
-                class="text-[11px] text-gray-400 truncate max-w-[250px]"
+                class="text-[11px] ui-text-muted truncate max-w-[250px]"
               ></span>
             </div>
             <div class="flex flex-wrap gap-2 items-center">
@@ -1188,7 +1188,7 @@
               <input
                 type="color"
                 id="s-notes-color"
-                value="#6F4E37"
+                value=""
                 class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
                 title="文字顏色"
               >
@@ -1215,7 +1215,7 @@
         <!-- 公告 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
             <img src="../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
@@ -1236,7 +1236,7 @@
         <!-- 營業狀態 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
             <img src="../../../icons/status-store.png" alt="" class="ui-icon-inline-lg">
@@ -1261,7 +1261,7 @@
         <!-- 取貨與金流設定 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <div
             class="flex flex-col md:flex-row md:justify-between md:items-center mb-3"
@@ -1278,61 +1278,61 @@
               + 新增取貨方式
             </button>
           </div>
-          <p class="text-sm text-gray-500 mb-4">
+          <p class="text-sm ui-text-subtle mb-4">
             您可以自由拖曳排序、修改名稱與說明，並個別設定支援哪些付款方式。設定完成後請記得「儲存設定」。
           </p>
           <div
             class="overflow-x-auto mb-4 border rounded"
-            style="border-color: #e5ddd5"
+            
           >
             <table class="w-full text-sm text-left whitespace-nowrap">
-              <thead class="bg-gray-50 border-b" style="border-color: #e5ddd5">
+              <thead class="bg-gray-50 border-b" >
                 <tr>
-                  <th class="p-3 font-medium text-gray-700 w-10 text-center">
+                  <th class="p-3 font-medium ui-text-strong w-10 text-center">
                     排序
                   </th>
-                  <th class="p-3 font-medium text-gray-700">
+                  <th class="p-3 font-medium ui-text-strong">
                     圖示與名稱 / 說明
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 w-16 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong w-16 text-center border-l"
+                    
                   >
                     啟用
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 w-20 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong w-20 text-center border-l"
+                    
                   >
                     運費
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 w-24 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong w-24 text-center border-l"
+                    
                   >
                     免運門檻
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong text-center border-l"
+                    
                   >
                     貨到/取貨付款
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong text-center border-l"
+                    
                   >
                     LINE Pay
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong text-center border-l"
+                    
                   >
                     線上轉帳
                   </th>
                   <th
-                    class="p-3 font-medium text-gray-700 w-16 text-center border-l"
-                    style="border-color: #e5ddd5"
+                    class="p-3 font-medium ui-text-strong w-16 text-center border-l"
+                    
                   >
                     操作
                   </th>
@@ -1355,36 +1355,36 @@
         <!-- 金流選項顯示設定 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <h3 class="font-semibold text-lg mb-3 flex items-center" style="color: var(--primary)">
             <img src="../../../icons/payment-cash.png" alt="" class="ui-icon-inline-lg">
             金流選項顯示設定
           </h3>
-          <p class="text-sm text-gray-500 mb-4">
+          <p class="text-sm ui-text-subtle mb-4">
             您可以自訂前台三種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
           </p>
           <div
             class="overflow-x-auto border rounded"
-            style="border-color: #e5ddd5"
+            
           >
             <table class="w-full text-sm text-left">
-              <thead class="bg-gray-50 border-b" style="border-color: #e5ddd5">
+              <thead class="bg-gray-50 border-b" >
                 <tr>
                   <th
-                    class="p-3 font-medium text-gray-700 w-24 whitespace-nowrap"
+                    class="p-3 font-medium ui-text-strong w-24 whitespace-nowrap"
                   >
                     系統代碼
                   </th>
-                  <th class="p-3 font-medium text-gray-700">
+                  <th class="p-3 font-medium ui-text-strong">
                     圖示與名稱 / 說明
                   </th>
                 </tr>
               </thead>
               <tbody id="payment-options-table">
                 <!-- 貨到付款 -->
-                <tr class="border-b" style="border-color: #e5ddd5">
-                  <td class="p-3 font-mono text-gray-500 text-center">cod</td>
+                <tr class="border-b" >
+                  <td class="p-3 font-mono ui-text-subtle text-center">cod</td>
                   <td class="p-3">
                     <div class="flex flex-col gap-2">
                       <div class="flex flex-wrap items-center gap-2">
@@ -1407,13 +1407,13 @@
                           type="button"
                           data-action="upload-payment-icon"
                           data-method="cod"
-                          class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                          class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
                         >
                           上傳付款圖示
                         </button>
                         <span
                           id="po-cod-icon-url-display"
-                          class="text-[11px] text-gray-400 truncate max-w-[260px]"
+                          class="text-[11px] ui-text-muted truncate max-w-[260px]"
                         ></span>
                       </div>
                       <div class="flex items-center gap-2">
@@ -1435,7 +1435,7 @@
                       <input
                         type="text"
                         id="po-cod-desc"
-                        class="border rounded p-1 w-full text-xs text-gray-600"
+                        class="border rounded p-1 w-full text-xs ui-text-strong"
                         value="取貨時付現或宅配到付"
                         placeholder="簡短說明"
                       >
@@ -1443,8 +1443,8 @@
                   </td>
                 </tr>
                 <!-- LINE Pay -->
-                <tr class="border-b" style="border-color: #e5ddd5">
-                  <td class="p-3 font-mono text-gray-500 text-center">
+                <tr class="border-b" >
+                  <td class="p-3 font-mono ui-text-subtle text-center">
                     linepay
                   </td>
                   <td class="p-3">
@@ -1469,13 +1469,13 @@
                           type="button"
                           data-action="upload-payment-icon"
                           data-method="linepay"
-                          class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                          class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
                         >
                           上傳付款圖示
                         </button>
                         <span
                           id="po-linepay-icon-url-display"
-                          class="text-[11px] text-gray-400 truncate max-w-[260px]"
+                          class="text-[11px] ui-text-muted truncate max-w-[260px]"
                         ></span>
                       </div>
                       <div class="flex items-center gap-2">
@@ -1497,7 +1497,7 @@
                       <input
                         type="text"
                         id="po-linepay-desc"
-                        class="border rounded p-1 w-full text-xs text-gray-600"
+                        class="border rounded p-1 w-full text-xs ui-text-strong"
                         value="線上安全付款"
                         placeholder="簡短說明"
                       >
@@ -1505,8 +1505,8 @@
                   </td>
                 </tr>
                 <!-- 線上轉帳 -->
-                <tr class="border-b" style="border-color: #e5ddd5">
-                  <td class="p-3 font-mono text-gray-500 text-center">
+                <tr class="border-b" >
+                  <td class="p-3 font-mono ui-text-subtle text-center">
                     transfer
                   </td>
                   <td class="p-3">
@@ -1531,13 +1531,13 @@
                           type="button"
                           data-action="upload-payment-icon"
                           data-method="transfer"
-                          class="text-xs px-2 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50"
+                          class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
                         >
                           上傳付款圖示
                         </button>
                         <span
                           id="po-transfer-icon-url-display"
-                          class="text-[11px] text-gray-400 truncate max-w-[260px]"
+                          class="text-[11px] ui-text-muted truncate max-w-[260px]"
                         ></span>
                       </div>
                       <div class="flex items-center gap-2">
@@ -1559,7 +1559,7 @@
                       <input
                         type="text"
                         id="po-transfer-desc"
-                        class="border rounded p-1 w-full text-xs text-gray-600"
+                        class="border rounded p-1 w-full text-xs ui-text-strong"
                         value="ATM / 網銀匯款"
                         placeholder="簡短說明"
                       >
@@ -1574,7 +1574,7 @@
         <!-- 匯款帳號管理 -->
         <div
           class="mb-6 p-4 bg-white rounded-xl border"
-          style="border-color: #e5ddd5"
+          
         >
           <h3 class="font-semibold mb-3 flex items-center" style="color: var(--primary)">
             <img src="../../../icons/payment-bank.png" alt="" class="ui-icon-inline-lg">
@@ -1604,12 +1604,12 @@
             <h2 class="text-lg font-bold" style="color: var(--primary)">
               Icon 素材庫管理
             </h2>
-            <p class="text-sm text-gray-500 mt-1">
+            <p class="text-sm ui-text-subtle mt-1">
               依分類瀏覽 icon，選擇套用目標後可一鍵快速套用到設定欄位。
             </p>
           </div>
           <div class="w-full md:w-[340px]">
-            <label class="block text-xs text-gray-500 mb-1">快速搜尋</label>
+            <label class="block text-xs ui-text-subtle mb-1">快速搜尋</label>
             <input
               v-model="iconLibraryKeyword"
               class="input-field"
@@ -1621,7 +1621,7 @@
         <div class="ui-card-section mb-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
             <div>
-              <label class="block text-xs text-gray-500 mb-1">快速套用目標</label>
+              <label class="block text-xs ui-text-subtle mb-1">快速套用目標</label>
               <UiSelect id="icon-library-target">
                 <option value="site">品牌 Icon</option>
                 <option value="products">商品區塊 Icon</option>
@@ -1632,7 +1632,7 @@
                 <option value="transfer">付款：線上轉帳</option>
               </UiSelect>
             </div>
-            <p class="text-xs text-gray-500 leading-relaxed">
+            <p class="text-xs ui-text-subtle leading-relaxed">
               點任一素材卡片的「快速套用」後，會直接寫入對應欄位與預覽圖，最後記得回系統設定按「儲存設定」。
             </p>
           </div>
@@ -1680,7 +1680,7 @@
             </div>
           </div>
         </div>
-        <p v-if="filteredIconCatalog.length === 0" class="text-center text-sm text-gray-500 py-8">
+        <p v-if="filteredIconCatalog.length === 0" class="text-center text-sm ui-text-subtle py-8">
           找不到符合條件的 icon，請調整分類或搜尋關鍵字。
         </p>
       </div>
@@ -1698,11 +1698,11 @@
             + 新增欄位
           </button>
         </div>
-        <p class="text-sm text-gray-500 mb-4">
+        <p class="text-sm ui-text-subtle mb-4">
           管理前台訂購表單的自訂欄位（如聯絡電話、電子郵件、開立收據等）。可拖拽排序、設定必填、啟用/停用。
         </p>
         <div id="formfields-list" data-vue-managed="true">
-          <p v-if="formFieldsView.length === 0" class="text-center text-gray-500 py-8">
+          <p v-if="formFieldsView.length === 0" class="text-center ui-text-subtle py-8">
             尚無自訂欄位
           </p>
           <div v-else class="space-y-2" id="formfields-sortable">
@@ -1710,15 +1710,15 @@
               v-for="field in formFieldsView"
               :key="`field-${field.id}`"
               class="flex items-center gap-3 p-3 bg-white rounded-xl border"
-              style="border-color:#e5ddd5;"
+              
               :class="field.enabled ? '' : 'opacity-50'"
               :data-field-id="field.id"
             >
-              <span class="cursor-grab text-gray-400 drag-handle"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
+              <span class="cursor-grab ui-text-muted drag-handle"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
               <div class="flex-1">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-medium">{{ field.label }}</span>
-                  <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                  <span class="text-xs ui-primary-soft ui-text-highlight px-2 py-0.5 rounded-full">
                     {{ field.fieldTypeLabel }}
                   </span>
                   <span
@@ -1729,12 +1729,12 @@
                   </span>
                   <span
                     v-if="!field.enabled"
-                    class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full"
+                    class="text-xs bg-gray-100 ui-text-subtle px-2 py-0.5 rounded-full"
                   >
                     已停用
                   </span>
                 </div>
-                <div class="text-xs text-gray-400 mt-1">
+                <div class="text-xs ui-text-muted mt-1">
                   key: {{ field.fieldKey }}<span v-if="field.placeholder">・{{ field.placeholder }}</span>
                 </div>
                 <div v-if="field.hiddenDeliveryMethodsText" class="text-xs text-orange-500 mt-1">
@@ -1762,7 +1762,7 @@
                 <button
                   data-action="delete-form-field"
                   :data-field-id="field.id"
-                  class="text-sm px-2 py-1 rounded hover:bg-red-50 text-red-500"
+                  class="text-sm px-2 py-1 rounded hover:bg-red-50 ui-text-danger"
                   title="刪除"
                 >
                   刪除
@@ -1785,13 +1785,13 @@
         <form id="product-form" class="space-y-4">
           <input type="hidden" id="pm-id">
           <div>
-            <label class="block text-sm text-gray-600 mb-1">分類 *</label>
+            <label class="block text-sm ui-text-strong mb-1">分類 *</label>
             <UiSelect id="pm-category" required>
               <option value="">選擇分類</option>
             </UiSelect>
           </div>
           <div>
-            <label class="block text-sm text-gray-600 mb-1">品名 *</label>
+            <label class="block text-sm ui-text-strong mb-1">品名 *</label>
             <UiInput
               type="text"
               id="pm-name"
@@ -1799,7 +1799,7 @@
             />
           </div>
           <div>
-            <label class="block text-sm text-gray-600 mb-1">說明</label>
+            <label class="block text-sm ui-text-strong mb-1">說明</label>
             <UiInput
               type="text"
               id="pm-desc"
@@ -1807,7 +1807,7 @@
             />
           </div>
           <div>
-            <label class="block text-sm text-gray-600 mb-1">烘焙度</label>
+            <label class="block text-sm ui-text-strong mb-1">烘焙度</label>
             <UiInput
               type="text"
               id="pm-roast"
@@ -1817,7 +1817,7 @@
 
           <!-- 規格與價格 -->
           <div class="ui-card-section">
-            <label class="block text-sm text-gray-600 mb-2 font-semibold">規格與價格</label>
+            <label class="block text-sm ui-text-strong mb-2 font-semibold">規格與價格</label>
             <div id="specs-container" class="space-y-2 mb-2"></div>
             <UiButton
               type="button"
@@ -1873,7 +1873,7 @@
           <input type="hidden" id="prm-id">
 
           <div>
-            <label class="block text-sm text-gray-600 mb-1">活動名稱 *</label>
+            <label class="block text-sm ui-text-strong mb-1">活動名稱 *</label>
             <UiInput
               type="text"
               id="prm-name"
@@ -1883,7 +1883,7 @@
           </div>
 
           <div>
-            <label class="block text-sm text-gray-600 mb-1">活動類型 *</label>
+            <label class="block text-sm ui-text-strong mb-1">活動類型 *</label>
             <UiSelect id="prm-type" required>
               <option value="bundle">組合優惠 (多件折扣)</option>
             </UiSelect>
@@ -1891,10 +1891,10 @@
 
           <div class="ui-card-section bg-gray-50">
             <label
-              class="block text-sm text-gray-600 space-x-2 font-medium mb-2"
+              class="block text-sm ui-text-strong space-x-2 font-medium mb-2"
             >觸發條件</label>
             <div class="mb-3">
-              <label class="block text-xs text-gray-500 mb-1"
+              <label class="block text-xs ui-text-subtle mb-1"
               >適用商品 (打勾即納入計算)</label>
               <div
                 id="prm-products-list"
@@ -1918,7 +1918,7 @@
           </div>
 
           <div class="ui-card-section bg-gray-50">
-            <label class="block text-sm text-gray-600 font-medium mb-2"
+            <label class="block text-sm ui-text-strong font-medium mb-2"
             >優惠設定</label>
             <div class="flex items-center gap-2 mb-2">
               <UiSelect id="prm-discount-type" class="w-32">
@@ -1935,7 +1935,7 @@
                 step="0.1"
               />
             </div>
-            <p class="text-xs text-gray-500">
+            <p class="text-xs ui-text-subtle">
               例如：選擇「打折(%)」並輸入 90 表示 9折；選擇「折抵現金($)」並輸入
               100 表示折抵 100元。
             </p>

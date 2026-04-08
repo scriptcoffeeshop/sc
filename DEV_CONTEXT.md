@@ -46,6 +46,12 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - **規則**：每一筆 commit 必須保留獨立條目，不可合併摘要。
 
 <!-- MAIN_COMMIT_LOG_START -->
+- `2026-04-09` | `39d5dbc` | style: bump version to v67 to force Solarized theme refresh
+- `2026-04-09` | `9c36d03` | feat: migrate dashboard theme to Solarized Light
+- `2026-04-09` | `44d388e` | feat: Add Google Merchant Center verification file
+- `2026-04-07` | `e389b59` | ci: fix email template closure error
+- `2026-04-07` | `f23d1f2` | feat: replace email status logic and branding
+- `2026-04-07` | `88e2b69` | test: fix E2E for status confirm dialog
 - `2026-02-22` | `83f5a9a` | 初次提交：咖啡訂購系統與修復
 - `2026-02-22` | `3570cd3` | 新增超商取貨 ECPay 電子地圖門市選擇
 - `2026-02-22` | `12af433` | 改用門市清單 API 搜尋選擇門市
@@ -308,6 +314,32 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `bfd6c4c` | feat: 新增訂單狀態變更確認流程與 LINE Flex Message 產生器
 - `2026-04-07` | `88e2b69` | test: 修復訂單確認 UI 改動導致 E2E 測試報錯 (移除 mock 失效的 Swal 點擊等待)
 <!-- MAIN_COMMIT_LOG_END -->
+
+### 📅 v67 — 後台配色遷移至 Solarized Light (暖色調優化)
+
+- **優化背景**
+  - 使用者反應原本的「企業藍」配色（Enterprise Light）在淺色主題下過於突兀，特別是藍色文字與純白背景的對比。
+  - 將整體配色切換為經典的 **Solarized Light** 風格：
+    - 背景：`#FDF6E3` (Base3)
+    - 側邊欄與表格標題：`#EEE8D5` (Base2)
+    - 主要文字：`#586E75` (Base01)
+    - 主要按鈕與連結：`#268BD2` (Solarized Blue)
+- **視覺修究**
+  - 將所有硬編碼的深藍色 (`#1E293B`) 替換為深灰綠色 (`#073642`)，使整體視覺更柔和一致。
+  - 調整按鈕漸層為 Solarized Blue 系列，懸浮狀態改為 Cyan 色調。
+  - 修正 Modal 遮罩層顏色，由深藍灰改為深色 Solarized。
+- **強制快取刷新**
+  - 前端版本號由 `v=60` 跳升至 `v=67`（中間包含多次微調測試），確保所有瀏覽器（特別是 Safari）能立即載入新的 Solarized 樣式。
+- **驗證**
+  - 使用 Browser Subagent 擷取 `dashboard.html` 畫面，確認米黃色背景與藍色標題已正確生效。
+
+### 📅 v66 — 保護 Google 驗證檔案與基礎設施維護
+
+- **GoogleMerchantCenter 驗證**
+  - 新增並保護 `google6cb7aa3783369937.html`，此檔案嚴禁刪除與修改。
+  - 於 `README.md` 與 `DEV_CONTEXT.md` 建立永久保留規則。
+- **基礎設施**
+  - 同步 origin/main 的最新變更，包含修正 email 模板語法錯誤與 CI 穩定化。
 
 ### 📅 v77 — 補強專案級 GitHub / Supabase 綁定與交接文件
 
