@@ -108,6 +108,12 @@ export function resolveAssetUrl(rawUrl = "") {
     return `${base}${normalized.slice(baseDir.length + 1)}`;
   }
 
+  // 若目前不在 /sc/ 子目錄下（例如自訂網域 scriptcoffee.com.tw），
+  // 但路徑仍帶有舊的 "sc/" 前綴（資料庫殘留），則自動去除
+  if (!baseDir && normalized.startsWith("sc/")) {
+    return `/${normalized.slice(3)}`;
+  }
+
   return `${base}${normalized}`;
 }
 
