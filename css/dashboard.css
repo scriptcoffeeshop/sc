@@ -5,26 +5,26 @@
    Font: Inter / Fira Code
    ============================================ */
 
-/* ── Enterprise Theme Variables ── */
+/* ── Solarized Light Theme Variables ── */
 .dashboard-enterprise {
-  --ui-bg: #F1F5F9;
-  --ui-bg-soft: #E2E8F0;
-  --ui-card: #FFFFFF;
-  --ui-card-strong: #FFFFFF;
-  --ui-text: #0F172A;
-  --ui-text-subtle: #64748B;
-  --ui-border: #CBD5E1;
-  --ui-border-strong: #94A3B8;
-  --ui-primary: #1E40AF;
-  --ui-primary-strong: #1E3A8A;
-  --ui-primary-soft: rgba(30, 64, 175, 0.08);
-  --ui-accent: #F59E0B;
-  --ui-danger: #DC2626;
-  --ui-shadow: rgba(15, 23, 42, 0.08);
+  --ui-bg: #FDF6E3;            /* Base3 */
+  --ui-bg-soft: #EEE8D5;       /* Base2 */
+  --ui-card: #FDF6E3;          /* Base3 */
+  --ui-card-strong: #FFFDF7;   /* Very light tint */
+  --ui-text: #586E75;          /* Base01 */
+  --ui-text-subtle: #839496;   /* Base0 */
+  --ui-border: #E2DCC8;        /* Warm border */
+  --ui-border-strong: #93A1A1; /* Base1 */
+  --ui-primary: #268BD2;       /* Solarized Blue */
+  --ui-primary-strong: #2176B0; /* Darker Blue */
+  --ui-primary-soft: rgba(38, 139, 210, 0.08);
+  --ui-accent: #B58900;        /* Solarized Yellow */
+  --ui-danger: #DC322F;        /* Solarized Red */
+  --ui-shadow: rgba(101, 123, 131, 0.1);
 
   --primary: var(--ui-primary);
   --primary-light: var(--ui-primary-strong);
-  --secondary: #64748B;
+  --secondary: #657B83;        /* Base00 */
   --accent: var(--ui-accent);
   --bg-light: var(--ui-bg);
   --bg-card: var(--ui-card);
@@ -34,25 +34,25 @@
 
 /* ── Body ── */
 .dashboard-enterprise {
-  background: #F1F5F9 !important;
-  color: #0F172A;
+  background: #FDF6E3 !important;
+  color: #586E75;
   font-family: "Inter", "Noto Sans TC", "Manrope", sans-serif;
 }
 
-/* ── Glass Card ── */
+/* ── Card ── */
 .dashboard-enterprise .glass-card,
 .dashboard-enterprise .ui-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.04);
+  background: #FDF6E3;
+  border: 1px solid #E2DCC8;
+  box-shadow: 
+    0 1px 3px rgba(101, 123, 131, 0.08),
+    0 1px 2px rgba(101, 123, 131, 0.05);
   border-radius: 12px;
 }
 
 .dashboard-enterprise .ui-card-section {
-  background: #F8FAFC;
-  border-color: #E2E8F0;
+  background: #FFFDF7;
+  border-color: #E2DCC8;
 }
 
 /* ── Admin Page Layout (sidebar + content) ── */
@@ -74,22 +74,22 @@
 /* Header spans full width */
 .dashboard-enterprise #admin-page > .flex.justify-between:first-child {
   grid-column: 1 / -1;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
+  background: #EEE8D5;
+  border-bottom: 1px solid #E2DCC8;
   padding: 14px 24px;
   margin-bottom: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 2px rgba(101, 123, 131, 0.05);
 }
 
 .dashboard-enterprise #admin-page > .flex.justify-between:first-child h1 {
-  color: #1E293B !important;
+  color: #073642 !important;
   font-weight: 700;
 }
 
 /* ── Sidebar Navigation ── */
 .dashboard-enterprise #sidebar {
-  background: #FFFFFF;
-  border-right: 1px solid #E2E8F0;
+  background: #EEE8D5;
+  border-right: 1px solid #E2DCC8;
   padding: 12px 0;
   display: flex;
   flex-direction: column;
@@ -108,7 +108,7 @@
   padding: 10px 18px;
   border-radius: 0;
   background: transparent;
-  color: #475569;
+  color: #657B83;
   font-size: 0.85rem;
   font-weight: 500;
   border: none;
@@ -120,13 +120,13 @@
 }
 
 .dashboard-enterprise #sidebar button[data-tab]:hover {
-  background: #F1F5F9;
-  color: #1E293B;
+  background: #FDF6E3;
+  color: #073642;
 }
 
 .dashboard-enterprise #sidebar button[data-tab].tab-active {
-  background: rgba(30, 64, 175, 0.05) !important;
-  color: #1E293B !important;
+  background: #FDF6E3 !important;
+  color: #268BD2 !important;
   box-shadow: none;
   font-weight: 600;
 }
@@ -139,7 +139,7 @@
   bottom: 4px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #1E293B;
+  background: #268BD2;
 }
 
 /* Content area */
@@ -170,36 +170,36 @@
 
 /* ── Login Page ── */
 .dashboard-enterprise #login-page {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 10px 25px -8px rgba(15, 23, 42, 0.12);
+  background: #FDF6E3;
+  border: 1px solid #E2DCC8;
+  box-shadow: 0 10px 25px -8px rgba(101, 123, 131, 0.2);
 }
 
 .dashboard-enterprise #login-page h1 {
-  color: #1E40AF !important;
+  color: #268BD2 !important;
 }
 
 /* ── Buttons ── */
 .dashboard-enterprise .btn-primary {
-  background: linear-gradient(135deg, #1E40AF, #1E3A8A);
-  box-shadow: 0 2px 8px -2px rgba(30, 64, 175, 0.4);
+  background: linear-gradient(135deg, #268BD2, #2176B0);
+  box-shadow: 0 2px 8px -2px rgba(38, 139, 210, 0.4);
 }
 
 .dashboard-enterprise .btn-primary:hover {
-  background: linear-gradient(135deg, #2563EB, #1E40AF);
-  box-shadow: 0 4px 12px -2px rgba(30, 64, 175, 0.5);
+  background: linear-gradient(135deg, #2AA198, #268BD2);
+  box-shadow: 0 4px 12px -2px rgba(38, 139, 210, 0.5);
 }
 
 /* ── Section Headers ── */
 .dashboard-enterprise h2[style*="color: var(--primary)"],
 .dashboard-enterprise h3[style*="color: var(--primary)"] {
-  color: #1E293B !important;
+  color: #073642 !important;
 }
 
 /* ── Tables ── */
 .dashboard-enterprise table th {
-  background: #F8FAFC;
-  color: #475569;
+  background: #EEE8D5;
+  color: #657B83;
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.7rem;
@@ -211,7 +211,7 @@
 }
 
 .dashboard-enterprise table tbody tr:hover {
-  background: rgba(30, 64, 175, 0.03);
+  background: rgba(38, 139, 210, 0.05);
 }
 
 /* ── Status Badges ── */
@@ -227,22 +227,22 @@
 
 .dashboard-enterprise .status-pending {
   background: #FEF3C7;
-  color: #92400E;
+  color: #B58900;
 }
 
 .dashboard-enterprise .status-processing {
   background: #DBEAFE;
-  color: #1E40AF;
+  color: #268BD2;
 }
 
 .dashboard-enterprise .status-shipped {
   background: #D1FAE5;
-  color: #065F46;
+  color: #859900;
 }
 
 .dashboard-enterprise .status-completed {
-  background: #F1F5F9;
-  color: #475569;
+  background: #EEE8D5;
+  color: #586E75;
 }
 
 .dashboard-enterprise .status-cancelled {
@@ -294,7 +294,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(7, 54, 66, 0.4);
   backdrop-filter: blur(6px);
 }
 
@@ -308,10 +308,10 @@
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 12px;
-  border: 1px solid #E2E8F0;
-  background: #FFFFFF;
+  border: 1px solid #E2DCC8;
+  background: #FDF6E3;
   padding: 1.25rem;
-  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.3);
 }
 
 /* ── Data Table Utility ── */
@@ -323,12 +323,12 @@
 
 .dashboard-enterprise .ui-data-table th {
   font-weight: 600;
-  color: #475569;
-  background: #F8FAFC;
+  color: #657B83;
+  background: #EEE8D5;
 }
 
 .dashboard-enterprise .ui-data-table tr:not(:last-child) td {
-  border-bottom: 1px solid #F1F5F9;
+  border-bottom: 1px solid #EEE8D5;
 }
 
 /* ── Icon Library Grid ── */
@@ -368,8 +368,8 @@
 .dashboard-enterprise input:focus,
 .dashboard-enterprise textarea:focus,
 .dashboard-enterprise select:focus {
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: #268BD2;
+  box-shadow: 0 0 0 3px rgba(38, 139, 210, 0.15);
 }
 
 /* ── Scrollbar ── */
@@ -394,7 +394,7 @@
 /* ── Checkbox & Radio ── */
 .dashboard-enterprise input[type="checkbox"],
 .dashboard-enterprise input[type="radio"] {
-  accent-color: #1E40AF;
+  accent-color: #268BD2;
 }
 
 /* ── Confirm Status Button ── */
@@ -421,7 +421,7 @@
 /* ── Sortable drag ghost ── */
 .dashboard-enterprise .sortable-ghost {
   opacity: 0.4;
-  background: rgba(30, 64, 175, 0.05);
+  background: rgba(38, 139, 210, 0.1);
 }
 
 /* ── Content spacer ── */

@@ -10,6 +10,7 @@
   - 修改 Edge Functions 後，必須部署至 Supabase：`supabase functions deploy coffee-api --no-verify-jwt`。
   - 建議使用 `python3 scripts/push_and_watch.py` 進行推送，此腳本會自動監控 CI 狀態並嘗試自動修復格式錯誤。
 - **檔案版號與快取**：**不可輕忽的手機 Cache**。只要修改了任何 `.js` 檔案，必須同步修改引用該檔案之 `.html` 或 Vue 元件中的 `v=X` 版號（例如 `?v=52` 提升至 `?v=53`）。
+- **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 
 ## 2. 前端開發規範 (MPA & Vue 3)
 
