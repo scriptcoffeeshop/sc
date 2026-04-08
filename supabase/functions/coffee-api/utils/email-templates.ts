@@ -237,6 +237,9 @@ export function buildShippingNotificationHtml(
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
   </div>
 </div>
+        `;
+}
+
 export interface CompletedNotificationParams {
   orderId: string;
   siteTitle: string;
