@@ -258,7 +258,9 @@ export function buildCompletedNotificationHtml(
     </h1>
   </div>
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
-    <h2 style="font-size: 18px; color: #2E7D32; margin-top: 0;">親愛的 ${sanitize(params.lineName)}，您的訂單已順利完成！</h2>
+    <h2 style="font-size: 18px; color: #2E7D32; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單已順利完成！</h2>
     <p>這封信是要通知您，您的訂單 <strong>${params.orderId}</strong> 已經順利完成。</p>
     <p>非常感謝您的購買與支持，期待您再次光臨！如果有任何問題，歡迎隨時與我們聯絡。</p>
   </div>
