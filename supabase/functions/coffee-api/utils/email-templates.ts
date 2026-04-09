@@ -76,11 +76,9 @@ function buildEmailHeaderHtml(params: EmailHeaderParams): string {
 
   return `
   <div style="background-color: ${params.backgroundColor}; color: #ffffff; padding: 22px 20px 20px; text-align: center;">
-    <div style="display: inline-block; padding: 6px 10px; margin: 0 auto 10px auto; border-radius: 999px; background-color: rgba(255,255,255,0.96); border: 1px solid rgba(255,255,255,0.72);">
-      <img src="${sanitize(logoUrl)}" alt="${
+    <img src="${sanitize(logoUrl)}" alt="${
     sanitize(params.logoAlt)
-  }" style="display: block; height: 18px; width: auto; max-width: 108px; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
-    </div>
+  }" style="display: block; height: 18px; width: auto; max-width: 108px; margin: 0 auto 10px auto; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
     <h1 style="margin: 0; font-size: 22px; line-height: 1.32; font-weight: 700; letter-spacing: 0.2px;">${
     sanitize(params.title)
   }</h1>

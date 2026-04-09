@@ -71,6 +71,11 @@ Deno.test("Email Templates - Order Confirmation", () => {
     "Logo should use compact ratio-preserving size in header",
   );
   assertEquals(
+    html.includes("background-color: rgba(255,255,255,0.96);"),
+    false,
+    "Logo wrapper should not force white background",
+  );
+  assertEquals(
     html.includes("height: 40px; width: 40px;"),
     false,
     "Logo should not be forced into square dimensions",
@@ -126,6 +131,11 @@ Deno.test("Email Templates - Shipping Notification", () => {
     html.includes("height: 18px; width: auto; max-width: 108px;"),
     true,
     "Shipping email logo should use compact ratio-preserving size",
+  );
+  assertEquals(
+    html.includes("background-color: rgba(255,255,255,0.96);"),
+    false,
+    "Shipping logo wrapper should not force white background",
   );
   assertEquals(
     html.includes("https://cdn.example.com/logo-shipping.png"),
