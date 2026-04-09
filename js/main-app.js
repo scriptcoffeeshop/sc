@@ -27,7 +27,12 @@ import {
   selectStoreFromList,
   updateDistricts,
 } from "./delivery.js";
-import { initReceiptRequestUi, showMyOrders, submitOrder } from "./orders.js";
+import {
+  applySavedOrderFormPrefs,
+  initReceiptRequestUi,
+  showMyOrders,
+  submitOrder,
+} from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
 import { authFetch } from "./auth.js";
 import {
@@ -157,6 +162,7 @@ export async function initMainApp() {
   loadCart();
   // 初始化資料與配送選項渲染完成後，再次套用偏好，避免重新登入後無法自動帶入
   loadDeliveryPrefs();
+  applySavedOrderFormPrefs();
   updateFormState();
 
   const storeToken = urlParams.get("store_token");
@@ -248,8 +254,12 @@ function showUserInfo() {
     state.currentUser.display_name;
   // 回填所有動態表單欄位
   prefillUserFields();
+  applySavedOrderFormPrefs();
   updateFormState();
-  setTimeout(loadDeliveryPrefs, 100);
+  setTimeout(() => {
+    loadDeliveryPrefs();
+    applySavedOrderFormPrefs();
+  }, 100);
 }
 
 /** 將使用者儲存的資料回填到動態表單欄位 */
@@ -521,14 +531,8 @@ async function loadInitData() {
 
       // 登入後再回填一次（因為渲染完才有欄位）
       if (state.currentUser) {
-        const phoneEl = document.getElementById("field-phone");
-        const emailEl = document.getElementById("field-email");
-        if (phoneEl && state.currentUser.phone) {
-          phoneEl.value = state.currentUser.phone;
-        }
-        if (emailEl && state.currentUser.email) {
-          emailEl.value = state.currentUser.email;
-        }
+        prefillUserFields();
+        applySavedOrderFormPrefs();
       }
     } else throw new Error(result.error);
   } catch (e) {

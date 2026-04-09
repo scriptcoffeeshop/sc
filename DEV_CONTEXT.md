@@ -56,8 +56,12 @@
   - `LINE_ORDER_NOTIFY_CHANNEL_SECRET`
 - 已完成函式部署：`npm run supabase:deploy`（project ref: `avnvsjyyeofivgmrchte`）。
 - 已完成資料庫檢查與部署：
-  - `npm run supabase:db:push`（Remote database is up to date）
-  - 前端快取版號已升級為 `v=74`，並通過 `npm run guardrails`。
+  - `npm run supabase:db:push`（已套用 migration：`202604100920_add_user_order_default_fields.sql`）
+  - 前端快取版號已升級為 `v=75`，並通過 `npm run guardrails`。
+- 新增「下單資料記憶」並整合會員資料：
+  - `coffee_users` 新增欄位：`default_payment_method`、`default_transfer_account_last5`、`default_receipt_info`。
+  - 顧客成功下單後，後端 `submitOrder` 會同步保存本次付款方式、匯款末五碼、收據資訊、配送資訊與自訂欄位到會員資料。
+  - 前台登入後會自動帶入上次下單資訊（付款方式、匯款末五碼、收據統編/買受人/地址/壓印日期、既有配送地址與動態欄位），可直接再次下單。
 
 ### 2026-04-09（本次）
 

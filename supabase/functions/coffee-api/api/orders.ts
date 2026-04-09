@@ -357,6 +357,12 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         storeId: String(data.storeId || ""),
         storeName: String(data.storeName || ""),
         storeAddress: String(data.storeAddress || ""),
+        defaultCustomFields: String(data.customFields || "").trim() || "{}",
+        paymentMethod,
+        transferAccountLast5: paymentMethod === "transfer"
+          ? String(data.transferAccountLast5 || "")
+          : "",
+        receiptInfo: receiptInfo ?? null,
       });
     } catch { /* ignore */ }
   }

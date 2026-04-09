@@ -44,6 +44,20 @@ function normalizeReceiptInfo(raw) {
   return { buyer, taxId, address, needDateStamp };
 }
 
+function parseStoredReceiptInfo(raw) {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    const str = raw.trim();
+    if (!str) return null;
+    try {
+      return normalizeReceiptInfo(JSON.parse(str));
+    } catch {
+      return null;
+    }
+  }
+  return normalizeReceiptInfo(raw);
+}
+
 function buildReceiptInfoHtml(receiptInfo) {
   if (!receiptInfo) return "";
   return `<div class="text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2">
@@ -100,18 +114,52 @@ function toggleReceiptFieldsByCheckbox() {
   fieldsEl.classList.toggle("hidden", !requestEl?.checked);
 }
 
-function resetReceiptForm() {
+function applyReceiptFormValues(receiptInfo) {
   const requestEl = document.getElementById("receipt-request");
   const buyerEl = document.getElementById("receipt-buyer");
   const taxIdEl = document.getElementById("receipt-tax-id");
   const addressEl = document.getElementById("receipt-address");
   const dateStampEl = document.getElementById("receipt-date-stamp");
-  if (requestEl) requestEl.checked = false;
-  if (buyerEl) buyerEl.value = "";
-  if (taxIdEl) taxIdEl.value = "";
-  if (addressEl) addressEl.value = "";
-  if (dateStampEl) dateStampEl.checked = false;
+
+  if (!receiptInfo) {
+    if (requestEl) requestEl.checked = false;
+    if (buyerEl) buyerEl.value = "";
+    if (taxIdEl) taxIdEl.value = "";
+    if (addressEl) addressEl.value = "";
+    if (dateStampEl) dateStampEl.checked = false;
+    toggleReceiptFieldsByCheckbox();
+    return;
+  }
+
+  if (requestEl) requestEl.checked = true;
+  if (buyerEl) buyerEl.value = receiptInfo.buyer || "";
+  if (taxIdEl) taxIdEl.value = receiptInfo.taxId || "";
+  if (addressEl) addressEl.value = receiptInfo.address || "";
+  if (dateStampEl) dateStampEl.checked = Boolean(receiptInfo.needDateStamp);
   toggleReceiptFieldsByCheckbox();
+}
+
+export function applySavedOrderFormPrefs() {
+  const u = state.currentUser;
+  if (!u) return;
+
+  const receiptInfo = parseStoredReceiptInfo(u.defaultReceiptInfo);
+  applyReceiptFormValues(receiptInfo);
+
+  const transferLast5El = document.getElementById("transfer-last5");
+  const transferLast5 = String(u.defaultTransferAccountLast5 || "").trim();
+  if (transferLast5El) {
+    transferLast5El.value = /^\d{5}$/.test(transferLast5) ? transferLast5 : "";
+  }
+
+  const paymentMethod = String(u.defaultPaymentMethod || "").trim();
+  if (!["cod", "linepay", "transfer"].includes(paymentMethod)) return;
+
+  const paymentOptionEl = document.getElementById(`${paymentMethod}-option`);
+  if (!paymentOptionEl || paymentOptionEl.classList.contains("hidden")) return;
+  if (typeof window.selectPayment === "function") {
+    window.selectPayment(paymentMethod, { skipQuote: true });
+  }
 }
 
 export function initReceiptRequestUi() {
@@ -277,6 +325,7 @@ export async function submitOrder() {
   // 付款方式驗證
   const paymentMethod = state.selectedPayment || "cod";
   let transferTargetAccountInfo = "";
+  let transferAccountLast5 = "";
   if (
     quote.availablePaymentMethods &&
     !quote.availablePaymentMethods[paymentMethod]
@@ -290,9 +339,13 @@ export async function submitOrder() {
       Swal.fire("錯誤", "請選擇您要匯入的目標帳號", "error");
       return;
     }
-    const last5 = document.getElementById("transfer-last5")?.value?.trim() ||
-      "";
-    if (!last5 || last5.length !== 5 || !/^\d{5}$/.test(last5)) {
+    transferAccountLast5 =
+      document.getElementById("transfer-last5")?.value?.trim() || "";
+    if (
+      !transferAccountLast5 ||
+      transferAccountLast5.length !== 5 ||
+      !/^\d{5}$/.test(transferAccountLast5)
+    ) {
       Swal.fire("錯誤", "請輸入正確的匯款帳號末5碼", "error");
       return;
     }
@@ -407,21 +460,41 @@ export async function submitOrder() {
         receiptInfo: receiptInfo || undefined,
         paymentMethod,
         transferTargetAccount: transferTargetAccountInfo,
-        transferAccountLast5: paymentMethod === "transfer"
-          ? (document.getElementById("transfer-last5")?.value?.trim() || "")
-          : "",
+        transferAccountLast5,
         idempotencyKey: crypto.randomUUID(),
         ...deliveryInfo,
       }),
     });
     const result = await res.json();
     if (result.success) {
-      if (email) u.email = email;
-      if (phone) u.phone = phone;
-      // 將自訂欄位存入 defaultCustomFields
-      if (customFieldsJson) {
-        u.defaultCustomFields = customFieldsJson;
-      }
+      const isDeliveryAddress = deliveryMethod === "delivery" ||
+        deliveryMethod === "home_delivery";
+      const isStorePickup = deliveryMethod === "seven_eleven" ||
+        deliveryMethod === "family_mart" || deliveryMethod === "in_store";
+
+      u.phone = phone || "";
+      u.email = email || "";
+      u.defaultCustomFields = customFieldsJson || "{}";
+      u.defaultDeliveryMethod = deliveryMethod || "";
+      u.defaultCity = isDeliveryAddress ? String(deliveryInfo.city || "") : "";
+      u.defaultDistrict = isDeliveryAddress
+        ? String(deliveryInfo.district || "")
+        : "";
+      u.defaultAddress = isDeliveryAddress
+        ? String(deliveryInfo.address || "")
+        : "";
+      u.defaultStoreId = isStorePickup ? String(deliveryInfo.storeId || "") : "";
+      u.defaultStoreName = isStorePickup
+        ? String(deliveryInfo.storeName || "")
+        : "";
+      u.defaultStoreAddress = isStorePickup
+        ? String(deliveryInfo.storeAddress || "")
+        : "";
+      u.defaultPaymentMethod = paymentMethod || "";
+      u.defaultTransferAccountLast5 = paymentMethod === "transfer"
+        ? transferAccountLast5
+        : "";
+      u.defaultReceiptInfo = receiptInfo ? JSON.stringify(receiptInfo) : "";
       localStorage.setItem("coffee_user", JSON.stringify(u));
       try {
         localStorage.setItem(
@@ -439,7 +512,27 @@ export async function submitOrder() {
             email: email || "",
             defaultCustomFields: customFieldsJson || "{}",
             defaultDeliveryMethod: deliveryMethod || "",
-            ...deliveryInfo,
+            defaultCity: isDeliveryAddress ? String(deliveryInfo.city || "") : "",
+            defaultDistrict: isDeliveryAddress
+              ? String(deliveryInfo.district || "")
+              : "",
+            defaultAddress: isDeliveryAddress
+              ? String(deliveryInfo.address || "")
+              : "",
+            defaultStoreId: isStorePickup
+              ? String(deliveryInfo.storeId || "")
+              : "",
+            defaultStoreName: isStorePickup
+              ? String(deliveryInfo.storeName || "")
+              : "",
+            defaultStoreAddress: isStorePickup
+              ? String(deliveryInfo.storeAddress || "")
+              : "",
+            defaultPaymentMethod: paymentMethod || "",
+            defaultTransferAccountLast5: paymentMethod === "transfer"
+              ? transferAccountLast5
+              : "",
+            defaultReceiptInfo: receiptInfo || "",
           }),
         }).catch(() => {});
       } catch {}
@@ -492,7 +585,7 @@ export async function submitOrder() {
         }).then(() => {
           clearCart();
           document.getElementById("order-note").value = "";
-          resetReceiptForm();
+          applySavedOrderFormPrefs();
         });
         return;
       }
@@ -505,7 +598,7 @@ export async function submitOrder() {
       }).then(() => {
         clearCart();
         document.getElementById("order-note").value = "";
-        resetReceiptForm();
+        applySavedOrderFormPrefs();
       });
     } else throw new Error(result.error || "訂單送出發生未知錯誤");
   } catch (e) {
