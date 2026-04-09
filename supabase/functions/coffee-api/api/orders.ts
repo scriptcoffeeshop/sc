@@ -1,15 +1,12 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin, requireAuth } from "../utils/auth.ts";
-import {
-  FRONTEND_URL,
-  SMTP_USER,
-  VALID_ORDER_STATUSES,
-} from "../utils/config.ts";
+import { FRONTEND_URL, VALID_ORDER_STATUSES } from "../utils/config.ts";
 import { sanitize } from "../utils/html.ts";
 import { sendEmail } from "../utils/email.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
 import { buildOrderQuote } from "./quote.ts";
 import {
+  buildCompletedNotificationHtml,
   buildOrderConfirmationHtml,
   buildShippingNotificationHtml,
   normalizeEmailSiteTitle,
@@ -80,6 +77,65 @@ function stripLegacyReceiptBlock(
   const kept = lines.slice(0, markerIndex);
   while (kept.length > 0 && kept[kept.length - 1].trim() === "") kept.pop();
   return kept.join("\n");
+}
+
+async function buildCustomFieldsHtml(
+  rawCustomFields: unknown,
+): Promise<string> {
+  const raw = rawCustomFields === undefined || rawCustomFields === null
+    ? ""
+    : String(rawCustomFields).trim();
+  if (!raw) return "";
+
+  let parsedFields: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
+        sanitize(raw)
+      }</p>`;
+    }
+    parsedFields = { ...(parsed as Record<string, unknown>) };
+  } catch {
+    return `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
+      sanitize(raw)
+    }</p>`;
+  }
+
+  if (!Object.keys(parsedFields).length) return "";
+
+  const { data: formFields } = await supabase.from("coffee_form_fields")
+    .select("field_key, label, sort_order")
+    .eq("enabled", true)
+    .order("sort_order", { ascending: true });
+
+  let customFieldsHtml = "";
+
+  if (formFields && formFields.length > 0) {
+    for (const field of formFields) {
+      const key = String(field.field_key || "");
+      if (!Object.prototype.hasOwnProperty.call(parsedFields, key)) continue;
+      customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
+        sanitize(String(field.label || key))
+      }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
+      delete parsedFields[key];
+    }
+  }
+
+  for (const [key, val] of Object.entries(parsedFields)) {
+    customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
+      sanitize(key)
+    }：</strong> ${sanitize(String(val))}</p>`;
+  }
+
+  return customFieldsHtml;
+}
+
+async function getEmailSiteTitle(): Promise<string> {
+  const { data: siteRow } = await supabase.from("coffee_settings").select(
+    "value",
+  ).eq("key", "site_title").single();
+  return normalizeEmailSiteTitle(String(siteRow?.value || ""));
 }
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
@@ -211,86 +267,6 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         storeAddress: String(data.storeAddress || ""),
       });
     } catch { /* ignore */ }
-  }
-
-  if (data.email) {
-    // 從資料庫取得表單欄位設定，作為 customFields 的 Label 映射與排序依據
-    const { data: formFields } = await supabase.from("coffee_form_fields")
-      .select("field_key, label, sort_order")
-      .eq("enabled", true)
-      .order("sort_order", { ascending: true });
-
-    let customFieldsHtml = "";
-    if (data.customFields && typeof data.customFields === "string") {
-      try {
-        const parsedFields = JSON.parse(data.customFields);
-        if (Object.keys(parsedFields).length > 0) {
-          // 依據表單欄位定義的順序進行處理
-          if (formFields && formFields.length > 0) {
-            for (const field of formFields) {
-              const key = field.field_key;
-              if (parsedFields[key] !== undefined) {
-                customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
-                  sanitize(field.label)
-                }：</strong> ${sanitize(String(parsedFields[key]))}</p>`;
-                delete parsedFields[key]; // 已處理過的移除
-              }
-            }
-          }
-          // 處理剩餘不在設定中的欄位（若有）
-          for (const [key, val] of Object.entries(parsedFields)) {
-            customFieldsHtml += `<p style="margin: 0 0 10px 0;"><strong>${
-              sanitize(key)
-            }：</strong> ${sanitize(String(val))}</p>`;
-          }
-        }
-      } catch {
-        // 解析失敗則直接以字串顯示
-        customFieldsHtml +=
-          `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
-            sanitize(data.customFields)
-          }</p>`;
-      }
-    }
-
-    // 查詢 site_title
-    const { data: siteRow } = await supabase.from("coffee_settings").select(
-      "value",
-    ).eq("key", "site_title").single();
-    const siteTitle = normalizeEmailSiteTitle(String(siteRow?.value || ""));
-
-    const content = buildOrderConfirmationHtml({
-      orderId,
-      siteTitle,
-      lineName: String(data.lineName),
-      phone,
-      deliveryMethod,
-      city: String(data.city || ""),
-      district: String(data.district || ""),
-      address: String(data.address || ""),
-      storeName: String(data.storeName || ""),
-      storeAddress: String(data.storeAddress || ""),
-      paymentMethod,
-      transferTargetAccount: String(data.transferTargetAccount || ""),
-      transferAccountLast5: String(data.transferAccountLast5 || ""),
-      note: String(data.note || ""),
-      ordersText,
-      total,
-      customFieldsHtml,
-      receiptHtml: buildReceiptHtml(receiptInfo),
-    });
-    await sendEmail(
-      String(data.email),
-      `[${siteTitle}] 訂單編號 ${orderId} 成立確認信`,
-      content,
-    );
-    if (SMTP_USER) {
-      await sendEmail(
-        SMTP_USER,
-        `[${siteTitle}] 新訂單通知 - 訂單編號 ${orderId}`,
-        content,
-      );
-    }
   }
 
   if (paymentMethod === "linepay") {
@@ -509,84 +485,128 @@ export async function updateOrderStatus(
     updates.tracking_url = String(data.trackingUrl);
   }
 
-  const { data: orderData } = await supabase.from("coffee_orders").select(
-    "email, line_name, delivery_method, city, district, address, store_name, store_address, payment_method, payment_status, shipping_provider, tracking_url, tracking_number",
-  ).eq("id", data.orderId).single();
-
   const { error } = await supabase.from("coffee_orders").update(updates).eq(
     "id",
     data.orderId,
   );
   if (error) return { success: false, error: error.message };
 
-  if (data.status === "shipped" && orderData?.email) {
-    // 查詢 site_title
-    const { data: siteTitleRow } = await supabase.from("coffee_settings")
-      .select("value").eq("key", "site_title").single();
-    const shippedSiteTitle = normalizeEmailSiteTitle(
-      String(siteTitleRow?.value || ""),
-    );
+  return { success: true, message: "訂單狀態已更新" };
+}
 
-    const finalTrackingNumber = data.trackingNumber !== undefined
-      ? String(data.trackingNumber || "")
-      : String(orderData.tracking_number || "");
-    const finalShippingProvider = data.shippingProvider !== undefined
-      ? String(data.shippingProvider || "")
-      : String(orderData.shipping_provider || "");
-    const finalTrackingUrl = data.trackingUrl !== undefined
-      ? String(data.trackingUrl || "")
-      : String(orderData.tracking_url || "");
+function resolveOrderEmailMode(
+  modeInput: unknown,
+  orderStatus: string,
+): "confirmation" | "shipping" | "completed" {
+  const mode = String(modeInput || "").trim();
+  if (mode === "confirmation" || mode === "shipping" || mode === "completed") {
+    return mode;
+  }
+  if (orderStatus === "shipped") return "shipping";
+  if (orderStatus === "completed") return "completed";
+  return "confirmation";
+}
 
-    const content = buildShippingNotificationHtml({
-      orderId: String(data.orderId),
-      siteTitle: shippedSiteTitle,
-      lineName: String(orderData.line_name),
-      deliveryMethod: String(orderData.delivery_method),
+export async function sendOrderEmail(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  await requireAdmin(req);
+
+  const orderId = String(data.orderId || "").trim();
+  if (!orderId) return { success: false, error: "缺少訂單編號" };
+
+  const { data: orderData, error } = await supabase.from("coffee_orders")
+    .select(
+      "id, status, line_name, phone, email, items, total, delivery_method, city, district, address, store_name, store_address, note, custom_fields, receipt_info, payment_method, payment_status, payment_id, transfer_account_last5, shipping_provider, tracking_url, tracking_number",
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) return { success: false, error: error.message };
+  if (!orderData) return { success: false, error: "找不到訂單" };
+
+  const to = String(orderData.email || "").trim();
+  if (!to) return { success: false, error: "此訂單未填寫 Email，無法發送" };
+
+  const siteTitle = await getEmailSiteTitle();
+  const orderStatus = String(orderData.status || "pending");
+  const mode = resolveOrderEmailMode(data.mode, orderStatus);
+  const lineName = String(orderData.line_name || "").trim() || "顧客";
+
+  let subject = "";
+  let htmlContent = "";
+
+  if (mode === "shipping") {
+    htmlContent = buildShippingNotificationHtml({
+      orderId,
+      siteTitle,
+      lineName,
+      deliveryMethod: String(orderData.delivery_method || ""),
       city: String(orderData.city || ""),
       district: String(orderData.district || ""),
       address: String(orderData.address || ""),
       storeName: String(orderData.store_name || ""),
       storeAddress: String(orderData.store_address || ""),
-      paymentMethod: String(orderData.payment_method),
-      paymentStatus: String(orderData.payment_status),
-      trackingNumber: finalTrackingNumber,
-      shippingProvider: finalShippingProvider,
-      trackingUrl: finalTrackingUrl,
+      paymentMethod: String(orderData.payment_method || "cod"),
+      paymentStatus: String(orderData.payment_status || ""),
+      trackingNumber: String(orderData.tracking_number || ""),
+      shippingProvider: String(orderData.shipping_provider || ""),
+      trackingUrl: String(orderData.tracking_url || ""),
     });
-
-    await sendEmail(
-      String(orderData.email),
-      `[${shippedSiteTitle}] 訂單編號 ${data.orderId} 已出貨通知`,
-      content,
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 已出貨通知`;
+  } else if (mode === "completed") {
+    htmlContent = buildCompletedNotificationHtml({
+      orderId,
+      siteTitle,
+      lineName,
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
+  } else {
+    const receiptInfo = parseReceiptInfo(orderData.receipt_info);
+    const customFieldsHtml = await buildCustomFieldsHtml(
+      orderData.custom_fields,
     );
+    htmlContent = buildOrderConfirmationHtml({
+      orderId,
+      siteTitle,
+      lineName,
+      phone: String(orderData.phone || ""),
+      deliveryMethod: String(orderData.delivery_method || ""),
+      city: String(orderData.city || ""),
+      district: String(orderData.district || ""),
+      address: String(orderData.address || ""),
+      storeName: String(orderData.store_name || ""),
+      storeAddress: String(orderData.store_address || ""),
+      paymentMethod: String(orderData.payment_method || "cod"),
+      transferTargetAccount: String(orderData.payment_id || ""),
+      transferAccountLast5: String(orderData.transfer_account_last5 || ""),
+      note: String(orderData.note || ""),
+      ordersText: stripLegacyReceiptBlock(orderData.items, receiptInfo),
+      total: Number(orderData.total) || 0,
+      customFieldsHtml,
+      receiptHtml: buildReceiptHtml(receiptInfo),
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 成立確認信`;
   }
 
-  if (data.status === "completed" && orderData?.email) {
-    // 查詢 site_title
-    const { data: siteTitleRow } = await supabase.from("coffee_settings")
-      .select("value").eq("key", "site_title").single();
-    const completedSiteTitle = normalizeEmailSiteTitle(
-      String(siteTitleRow?.value || ""),
-    );
-
-    const { buildCompletedNotificationHtml } = await import(
-      "../utils/email-templates.ts"
-    );
-
-    const content = buildCompletedNotificationHtml({
-      orderId: String(data.orderId),
-      siteTitle: completedSiteTitle,
-      lineName: String(orderData.line_name),
-    });
-
-    await sendEmail(
-      String(orderData.email),
-      `[${completedSiteTitle}] 訂單編號 ${data.orderId} 已完成通知`,
-      content,
-    );
+  const emailResult = await sendEmail(to, subject, htmlContent);
+  if (!emailResult.success) {
+    return { success: false, error: emailResult.error || "信件發送失敗" };
   }
 
-  return { success: true, message: "訂單狀態已更新" };
+  const modeLabel = mode === "shipping"
+    ? "出貨通知"
+    : mode === "completed"
+    ? "完成通知"
+    : "成立確認信";
+
+  return {
+    success: true,
+    message: `信件已發送（${modeLabel}）`,
+    orderId,
+    mode,
+    to,
+  };
 }
 
 export async function deleteOrder(data: Record<string, unknown>, req: Request) {

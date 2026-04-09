@@ -23,6 +23,7 @@ import {
   deleteOrder,
   getMyOrders,
   getOrders,
+  sendOrderEmail,
   submitOrder,
   updateOrderStatus,
 } from "./api/orders.ts";
@@ -111,6 +112,7 @@ import {
   deleteOrderSchema,
   quoteOrderSchema,
   sendLineFlexMessageSchema,
+  sendOrderEmailSchema,
   submitOrderSchema,
   updateOrderStatusSchema,
 } from "./schemas/order.ts";
@@ -395,6 +397,10 @@ const actionMap: Record<string, ActionHandler> = {
   updateOrderStatus: async (data, req) => {
     const v = await validate(updateOrderStatusSchema, data);
     return await updateOrderStatus(v, req);
+  },
+  sendOrderEmail: async (data, req) => {
+    const v = await validate(sendOrderEmailSchema, data);
+    return await sendOrderEmail(v, req);
   },
   batchUpdateOrderStatus: async (data, req) => {
     const v = await validate(batchUpdateOrderStatusSchema, data);

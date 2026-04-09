@@ -241,6 +241,7 @@ window.showTab = showTab;
 window.loadOrders = loadOrders;
 window.renderOrders = renderOrders;
 window.changeOrderStatus = changeOrderStatus;
+window.sendOrderEmailByOrderId = sendOrderEmailByOrderId;
 window.deleteOrderById = deleteOrderById;
 window.showProductModal = showProductModal;
 window.editProduct = editProduct;
@@ -289,6 +290,7 @@ const dashboardActionHandlers = {
     loadOrders,
     changeOrderStatus,
     sendOrderFlexByOrderId,
+    sendOrderEmailByOrderId,
     deleteOrderById,
     linePayRefundOrder,
     confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
@@ -1461,6 +1463,11 @@ function renderOrders() {
         esc(o.orderId)
       }" class="text-xs ui-text-success hover:opacity-80">LINE通知</button>`
       : "";
+    const sendEmailBtn = o.email
+      ? `<button data-action="send-order-email" data-order-id="${
+        esc(o.orderId)
+      }" class="text-xs ui-text-strong hover:opacity-80">發送信件</button>`
+      : "";
 
     const trackingLinkHtml = getTrackingLinkHtml(o);
     const hasShippingInfo = !!o.trackingNumber || !!o.shippingProvider ||
@@ -1545,6 +1552,7 @@ function renderOrders() {
                 <span class="font-bold ui-text-warning">$${o.total}</span>
                 <div class="flex gap-2">
                     ${sendLineBtn}
+                    ${sendEmailBtn}
                     ${refundBtn}
                     ${confirmPayBtn}
                     <select data-action="change-order-status" data-order-id="${
@@ -1584,6 +1592,57 @@ async function sendOrderFlexByOrderId(orderId) {
   const flexMsg = buildLineFlexMessage(targetOrder, nextStatus);
   saveFlexToHistory(flexMsg, orderId, statusLabel);
   await showFlexMessagePopup(flexMsg, targetOrder, statusLabel);
+}
+
+async function sendOrderEmailByOrderId(orderId) {
+  const targetOrder = orders.find((order) => order.orderId === orderId);
+  if (!targetOrder) {
+    Swal.fire("錯誤", "找不到訂單資料，請先重整列表", "error");
+    return;
+  }
+  const targetEmail = String(targetOrder.email || "").trim();
+  if (!targetEmail) {
+    Swal.fire("提醒", "此訂單沒有 Email，無法發送信件", "warning");
+    return;
+  }
+
+  const status = String(targetOrder.status || "pending");
+  const statusLabel = orderStatusLabel[status] || status;
+  const emailTypeLabel = status === "shipped"
+    ? "出貨通知"
+    : status === "completed"
+    ? "完成通知"
+    : "成立確認信";
+
+  const confirm = await Swal.fire({
+    title: "確認發送信件",
+    html: `訂單 <b>#${esc(orderId)}</b><br>
+      將寄送「<b>${esc(emailTypeLabel)}</b>」到<br>
+      <span class="ui-text-highlight">${esc(targetEmail)}</span><br>
+      <span class="text-xs ui-text-subtle">（目前狀態：${esc(statusLabel)}）</span>`,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "發送信件",
+    cancelButtonText: "取消",
+    confirmButtonColor: "#268BD2",
+  });
+  if (!confirm.isConfirmed) return;
+
+  try {
+    const r = await authFetch(`${API_URL}?action=sendOrderEmail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: getAuthUserId(),
+        orderId,
+      }),
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || "信件發送失敗");
+    Toast.fire({ icon: "success", title: d.message || "信件已發送" });
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
 }
 
 async function changeOrderStatus(orderId, status) {

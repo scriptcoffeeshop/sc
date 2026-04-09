@@ -32,6 +32,11 @@ export function createOrdersActionHandlers(deps) {
         deps.sendOrderFlexByOrderId(el.dataset.orderId);
       }
     },
+    "send-order-email": (el) => {
+      if (el.dataset.orderId && deps.sendOrderEmailByOrderId) {
+        deps.sendOrderEmailByOrderId(el.dataset.orderId);
+      }
+    },
     "copy-tracking-number": (el) => {
       const trackingNumber = el.dataset.trackingNumber;
       if (!trackingNumber) return;

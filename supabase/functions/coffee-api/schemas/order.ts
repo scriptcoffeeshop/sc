@@ -121,3 +121,8 @@ export const sendLineFlexMessageSchema = z.object({
   flexMessage: lineFlexMessageSchema,
   notificationDisabled: boolLikeOptionalSchema,
 });
+
+export const sendOrderEmailSchema = z.object({
+  orderId: z.string().trim().min(1, "缺少訂單編號"),
+  mode: z.enum(["confirmation", "shipping", "completed"]).optional(),
+});
