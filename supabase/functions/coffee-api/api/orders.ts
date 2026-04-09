@@ -8,9 +8,11 @@ import { buildOrderQuote } from "./quote.ts";
 import {
   buildCompletedNotificationHtml,
   buildOrderConfirmationHtml,
+  buildStatusUpdateNotificationHtml,
   buildShippingNotificationHtml,
   normalizeEmailSiteTitle,
 } from "../utils/email-templates.ts";
+import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 
 import { registerOrUpdateUser } from "../utils/users.ts";
 
@@ -136,6 +138,117 @@ async function getEmailSiteTitle(): Promise<string> {
     "value",
   ).eq("key", "site_title").single();
   return normalizeEmailSiteTitle(String(siteRow?.value || ""));
+}
+
+function getOrderStatusLabel(status: string): string {
+  switch (status) {
+    case "pending":
+      return "待處理";
+    case "processing":
+      return "處理中";
+    case "shipped":
+      return "已出貨";
+    case "completed":
+      return "已完成";
+    case "cancelled":
+      return "已取消";
+    default:
+      return status || "狀態更新";
+  }
+}
+
+function buildOrderStatusFlexMessage(
+  orderId: string,
+  status: string,
+  shippingProvider: string,
+  trackingNumber: string,
+  trackingUrl: string,
+): Record<string, unknown> {
+  const statusLabel = getOrderStatusLabel(status);
+  const infoRows = [
+    {
+      type: "text",
+      text: `訂單編號：${orderId}`,
+      size: "sm",
+      color: "#6B7280",
+      wrap: true,
+    },
+    {
+      type: "text",
+      text: `目前狀態：${statusLabel}`,
+      size: "md",
+      weight: "bold",
+      color: "#111827",
+      wrap: true,
+    },
+  ];
+
+  if (shippingProvider) {
+    infoRows.push({
+      type: "text",
+      text: `物流商：${shippingProvider}`,
+      size: "sm",
+      color: "#374151",
+      wrap: true,
+    });
+  }
+
+  if (trackingNumber) {
+    infoRows.push({
+      type: "text",
+      text: `物流單號：${trackingNumber}`,
+      size: "sm",
+      color: "#374151",
+      wrap: true,
+    });
+  }
+
+  const footerContents: Record<string, unknown>[] = [];
+  if (trackingUrl && /^https?:\/\//i.test(trackingUrl)) {
+    footerContents.push({
+      type: "button",
+      style: "link",
+      height: "sm",
+      action: {
+        type: "uri",
+        label: "查看物流進度",
+        uri: trackingUrl,
+      },
+    });
+  }
+
+  return {
+    type: "flex",
+    altText: `訂單 ${orderId} 狀態更新：${statusLabel}`,
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "text",
+            text: "📣 訂單狀態更新",
+            weight: "bold",
+            size: "lg",
+            color: "#6F4E37",
+          },
+          ...infoRows,
+        ],
+      },
+      ...(footerContents.length > 0
+        ? {
+          footer: {
+            type: "box",
+            layout: "vertical",
+            spacing: "sm",
+            contents: footerContents,
+          },
+        }
+        : {}),
+    },
+  };
 }
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
@@ -485,13 +598,118 @@ export async function updateOrderStatus(
     updates.tracking_url = String(data.trackingUrl);
   }
 
+  const { data: orderData, error: getOrderError } = await supabase.from(
+    "coffee_orders",
+  ).select(
+    "id, status, line_name, email, line_user_id, delivery_method, city, district, address, store_name, store_address, payment_method, payment_status, tracking_number, shipping_provider, tracking_url",
+  ).eq("id", data.orderId).maybeSingle();
+  if (getOrderError) return { success: false, error: getOrderError.message };
+  if (!orderData) return { success: false, error: "找不到訂單" };
+
   const { error } = await supabase.from("coffee_orders").update(updates).eq(
     "id",
     data.orderId,
   );
   if (error) return { success: false, error: error.message };
 
-  return { success: true, message: "訂單狀態已更新" };
+  const mergedOrder = {
+    ...orderData,
+    status: newStatus,
+    payment_status: updates.payment_status ?? orderData.payment_status,
+    tracking_number: updates.tracking_number ?? orderData.tracking_number,
+    shipping_provider: updates.shipping_provider ?? orderData.shipping_provider,
+    tracking_url: updates.tracking_url ?? orderData.tracking_url,
+  };
+
+  const notifyResult = {
+    email: { attempted: false, sent: false, reason: "" },
+    line: { attempted: false, sent: false, reason: "" },
+  };
+
+  const siteTitle = await getEmailSiteTitle();
+  const lineName = String(mergedOrder.line_name || "").trim() || "顧客";
+  const orderId = String(mergedOrder.id || "").trim();
+  const statusLabel = getOrderStatusLabel(newStatus);
+
+  const emailTo = String(mergedOrder.email || "").trim();
+  if (emailTo) {
+    notifyResult.email.attempted = true;
+    let subject = "";
+    let htmlContent = "";
+
+    if (newStatus === "shipped") {
+      subject = `[${siteTitle}] 訂單編號 ${orderId} 已出貨通知`;
+      htmlContent = buildShippingNotificationHtml({
+        orderId,
+        siteTitle,
+        lineName,
+        deliveryMethod: String(mergedOrder.delivery_method || ""),
+        city: String(mergedOrder.city || ""),
+        district: String(mergedOrder.district || ""),
+        address: String(mergedOrder.address || ""),
+        storeName: String(mergedOrder.store_name || ""),
+        storeAddress: String(mergedOrder.store_address || ""),
+        paymentMethod: String(mergedOrder.payment_method || "cod"),
+        paymentStatus: String(mergedOrder.payment_status || ""),
+        trackingNumber: String(mergedOrder.tracking_number || ""),
+        shippingProvider: String(mergedOrder.shipping_provider || ""),
+        trackingUrl: String(mergedOrder.tracking_url || ""),
+      });
+    } else if (newStatus === "completed") {
+      subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
+      htmlContent = buildCompletedNotificationHtml({
+        orderId,
+        siteTitle,
+        lineName,
+      });
+    } else {
+      subject = `[${siteTitle}] 訂單編號 ${orderId} 狀態更新：${statusLabel}`;
+      htmlContent = buildStatusUpdateNotificationHtml({
+        orderId,
+        siteTitle,
+        lineName,
+        statusLabel,
+      });
+    }
+
+    const emailResult = await sendEmail(emailTo, subject, htmlContent);
+    if (emailResult.success) {
+      notifyResult.email.sent = true;
+    } else {
+      notifyResult.email.reason = emailResult.error || "信件發送失敗";
+    }
+  } else {
+    notifyResult.email.reason = "此訂單未填寫 Email";
+  }
+
+  const lineTo = String(mergedOrder.line_user_id || "").trim();
+  if (lineTo) {
+    notifyResult.line.attempted = true;
+    const lineResult = await pushLineFlexMessage(
+      lineTo,
+      buildOrderStatusFlexMessage(
+        orderId,
+        newStatus,
+        String(mergedOrder.shipping_provider || ""),
+        String(mergedOrder.tracking_number || ""),
+        String(mergedOrder.tracking_url || ""),
+      ),
+    );
+
+    if (lineResult.success) {
+      notifyResult.line.sent = true;
+    } else {
+      notifyResult.line.reason = lineResult.error || "LINE 訊息發送失敗";
+    }
+  } else {
+    notifyResult.line.reason = "此訂單缺少 LINE 使用者 ID";
+  }
+
+  return {
+    success: true,
+    message: "訂單狀態已更新，已嘗試發送 Email 與 LINE 通知",
+    notifications: notifyResult,
+  };
 }
 
 function resolveOrderEmailMode(

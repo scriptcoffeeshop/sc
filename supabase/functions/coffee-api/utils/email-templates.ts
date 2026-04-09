@@ -270,3 +270,38 @@ export function buildCompletedNotificationHtml(
 </div>
         `;
 }
+
+export interface StatusUpdateNotificationParams {
+  orderId: string;
+  siteTitle: string;
+  lineName: string;
+  statusLabel: string;
+}
+
+export function buildStatusUpdateNotificationHtml(
+  params: StatusUpdateNotificationParams,
+): string {
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
+    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
+      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
+      📣 訂單狀態更新通知
+    </h1>
+  </div>
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單狀態已更新！</h2>
+    <p>這封信是要通知您，訂單 <strong>${sanitize(params.orderId)}</strong> 的最新狀態為：</p>
+    <div style="margin: 20px 0; padding: 14px 16px; border-radius: 8px; background-color: #f9f6f0; border: 1px solid #e5ddd5;">
+      <p style="margin: 0; font-size: 18px; color: #6F4E37; font-weight: 700;">${sanitize(params.statusLabel)}</p>
+    </div>
+    <p>若您有任何問題，歡迎隨時與我們聯繫，感謝您的支持！</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+        `;
+}
