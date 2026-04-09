@@ -1,7 +1,7 @@
 /* ============================================
-   dashboard.css — Enterprise Light Dashboard
-   Design: Data-Dense + Executive Dashboard
-   Colors: #F8FAFC bg, #1E40AF primary, #F59E0B accent
+   dashboard.css — Solarized Light Dashboard
+   Design: Data-Dense + Admin Console
+   Palette: Solarized Light (Base3/Base2 + accent hues)
    Font: Inter / Fira Code
    ============================================ */
 
@@ -15,8 +15,8 @@
   --ui-text-subtle: #839496;   /* Base0 */
   --ui-border: #E2DCC8;        /* Warm border */
   --ui-border-strong: #93A1A1; /* Base1 */
-  --ui-primary: #268BD2;       /* Solarized Blue */
-  --ui-primary-strong: #2176B0; /* Darker Blue */
+  --ui-primary: #657B83;       /* Base00 */
+  --ui-primary-strong: #586E75; /* Base01 */
   --ui-primary-soft: rgba(38, 139, 210, 0.08);
   --ui-accent: #B58900;        /* Solarized Yellow */
   --ui-danger: #DC322F;        /* Solarized Red */
@@ -36,7 +36,7 @@
 .dashboard-enterprise .ui-text-subtle { color: #839496; }   /* Base0 */
 .dashboard-enterprise .ui-text-muted { color: #93A1A1; }    /* Base1 */
 .dashboard-enterprise .ui-text-strong { color: #073642; }   /* Base02 */
-.dashboard-enterprise .ui-text-highlight { color: #268BD2; } /* Solarized Blue */
+.dashboard-enterprise .ui-text-highlight { color: #657B83; } /* Base00 */
 .dashboard-enterprise .ui-text-success { color: #859900; }   /* Solarized Green */
 .dashboard-enterprise .ui-text-danger { color: #DC322F; }    /* Solarized Red */
 .dashboard-enterprise .ui-text-warning { color: #B58900; }   /* Solarized Yellow */
@@ -44,6 +44,71 @@
 
 .dashboard-enterprise .ui-border { border-color: #E2DCC8 !important; }
 .dashboard-enterprise .ui-bg-card-strong { background-color: #FFFDF7 !important; }
+
+/* ── Utility Alias + Tailwind Compatibility ── */
+.dashboard-enterprise .ui-bg-soft { background-color: #EEE8D5 !important; }
+.dashboard-enterprise .ui-bg-soft\/50 { background-color: rgba(238, 232, 213, 0.55) !important; }
+.dashboard-enterprise .ui-primary-soft { background-color: rgba(38, 139, 210, 0.12) !important; }
+.dashboard-enterprise .hover\:ui-primary-soft:hover { background-color: rgba(38, 139, 210, 0.16) !important; }
+.dashboard-enterprise .hover\:ui-bg-soft:hover { background-color: #EEE8D5 !important; }
+.dashboard-enterprise .hover\:ui-text-danger:hover { color: #DC322F !important; }
+.dashboard-enterprise .hover\:ui-text-warning:hover { color: #B58900 !important; }
+.dashboard-enterprise .hover\:ui-text-strong:hover { color: #073642 !important; }
+.dashboard-enterprise .hover\:ui-text-highlight:hover { color: #586E75 !important; }
+
+.dashboard-enterprise .border { border-color: #E2DCC8; }
+.dashboard-enterprise .bg-white { background-color: #FFFDF7 !important; }
+.dashboard-enterprise .text-white { color: #FDF6E3 !important; }
+
+.dashboard-enterprise .bg-gray-200 { background-color: #EEE8D5 !important; }
+.dashboard-enterprise .hover\:bg-gray-300:hover { background-color: #E2DCC8 !important; }
+.dashboard-enterprise .text-blue-600,
+.dashboard-enterprise .text-blue-700 { color: #657B83 !important; }
+.dashboard-enterprise .hover\:text-blue-700:hover { color: #586E75 !important; }
+.dashboard-enterprise .hover\:bg-blue-600:hover { background-color: #2176B0 !important; }
+
+.dashboard-enterprise .bg-red-50,
+.dashboard-enterprise .bg-red-100 { background-color: rgba(220, 50, 47, 0.12) !important; }
+.dashboard-enterprise .hover\:bg-red-50:hover,
+.dashboard-enterprise .hover\:bg-red-100:hover { background-color: rgba(220, 50, 47, 0.18) !important; }
+.dashboard-enterprise .text-red-400,
+.dashboard-enterprise .text-red-500,
+.dashboard-enterprise .text-red-600,
+.dashboard-enterprise .text-red-700,
+.dashboard-enterprise .text-red-800 { color: #DC322F !important; }
+.dashboard-enterprise .hover\:text-red-600:hover,
+.dashboard-enterprise .hover\:text-red-700:hover,
+.dashboard-enterprise .hover\:text-red-800:hover { color: #CB4B16 !important; }
+
+.dashboard-enterprise .bg-green-50,
+.dashboard-enterprise .bg-green-100 { background-color: rgba(133, 153, 0, 0.14) !important; }
+.dashboard-enterprise .text-green-700,
+.dashboard-enterprise .text-green-800 { color: #859900 !important; }
+.dashboard-enterprise .hover\:text-green-800:hover { color: #6C7A00 !important; }
+
+.dashboard-enterprise .bg-purple-50,
+.dashboard-enterprise .bg-purple-100 { background-color: rgba(108, 113, 196, 0.16) !important; }
+.dashboard-enterprise .text-purple-600,
+.dashboard-enterprise .text-purple-700,
+.dashboard-enterprise .text-purple-800 { color: #6C71C4 !important; }
+.dashboard-enterprise .hover\:text-purple-800:hover { color: #5A61B2 !important; }
+
+.dashboard-enterprise .bg-yellow-50 { background-color: rgba(181, 137, 0, 0.12) !important; }
+.dashboard-enterprise .text-yellow-600,
+.dashboard-enterprise .text-yellow-700 { color: #B58900 !important; }
+.dashboard-enterprise .text-orange-500 { color: #CB4B16 !important; }
+
+.dashboard-enterprise .bg-amber-50 { background-color: rgba(181, 137, 0, 0.12) !important; }
+.dashboard-enterprise .text-amber-700,
+.dashboard-enterprise .text-amber-800 { color: #B58900 !important; }
+.dashboard-enterprise .border-amber-100,
+.dashboard-enterprise .border-blue-200,
+.dashboard-enterprise .border-gray-300 { border-color: #C9C0A8 !important; }
+
+.dashboard-enterprise .after\:bg-white::after { background-color: #FFFDF7 !important; }
+.dashboard-enterprise .after\:border-gray-300::after { border-color: #C9C0A8 !important; }
+.dashboard-enterprise .peer:checked ~ .peer-checked\:bg-green-500 { background-color: #859900 !important; }
+.dashboard-enterprise .peer:checked ~ .peer-checked\:after\:border-white::after { border-color: #FFFDF7 !important; }
 
 /* ── Body ── */
 .dashboard-enterprise {
@@ -139,7 +204,7 @@
 
 .dashboard-enterprise #sidebar button[data-tab].tab-active {
   background: #FDF6E3 !important;
-  color: #268BD2 !important;
+  color: #586E75 !important;
   box-shadow: none;
   font-weight: 600;
 }
@@ -152,7 +217,7 @@
   bottom: 4px;
   width: 3px;
   border-radius: 0 3px 3px 0;
-  background: #268BD2;
+  background: #93A1A1;
 }
 
 /* Content area */
@@ -189,7 +254,7 @@
 }
 
 .dashboard-enterprise #login-page h1 {
-  color: #268BD2 !important;
+  color: #2AA198 !important;
 }
 
 /* ── Buttons ── */
@@ -201,6 +266,18 @@
 .dashboard-enterprise .btn-primary:hover {
   background: linear-gradient(135deg, #2AA198, #268BD2);
   box-shadow: 0 4px 12px -2px rgba(38, 139, 210, 0.5);
+}
+
+/* ── Login Page: Restore LINE Green ── */
+.dashboard-enterprise #login-page [data-action="login-with-line"] {
+  background: linear-gradient(135deg, #06C755, #05A848) !important;
+  box-shadow: 0 6px 14px -6px rgba(6, 199, 85, 0.45);
+  color: #ffffff !important;
+}
+
+.dashboard-enterprise #login-page [data-action="login-with-line"]:hover {
+  background: linear-gradient(135deg, #08D15C, #06B44D) !important;
+  box-shadow: 0 8px 18px -8px rgba(6, 199, 85, 0.5);
 }
 
 /* ── Section Headers ── */
@@ -239,17 +316,17 @@
 }
 
 .dashboard-enterprise .status-pending {
-  background: #FEF3C7;
+  background: rgba(181, 137, 0, 0.14);
   color: #B58900;              /* Solarized Yellow */
 }
 
 .dashboard-enterprise .status-processing {
-  background: #E0F2FE;
+  background: rgba(38, 139, 210, 0.14);
   color: #268BD2;              /* Solarized Blue */
 }
 
 .dashboard-enterprise .status-shipped {
-  background: #D1FAE5;
+  background: rgba(133, 153, 0, 0.14);
   color: #859900;              /* Solarized Green */
 }
 
@@ -259,7 +336,7 @@
 }
 
 .dashboard-enterprise .status-cancelled {
-  background: #FEE2E2;
+  background: rgba(220, 50, 47, 0.14);
   color: #DC322F;              /* Solarized Red */
 }
 
@@ -274,22 +351,22 @@
 }
 
 .dashboard-enterprise .delivery-delivery {
-  background: #E0F2FE;
+  background: rgba(38, 139, 210, 0.14);
   color: #268BD2;
 }
 
 .dashboard-enterprise .delivery-home_delivery {
-  background: #EDE9FE;
+  background: rgba(108, 113, 196, 0.16);
   color: #6C71C4;              /* Solarized Violet */
 }
 
 .dashboard-enterprise .delivery-seven_eleven {
-  background: #FEF3C7;
+  background: rgba(181, 137, 0, 0.14);
   color: #B58900;
 }
 
 .dashboard-enterprise .delivery-family_mart {
-  background: #D1FAE5;
+  background: rgba(133, 153, 0, 0.14);
   color: #859900;
 }
 
@@ -351,7 +428,7 @@
 
 #icon-library-grid .ui-card-section:hover {
   transform: translateY(-1px);
-  border-color: #94A3B8;
+  border-color: #93A1A1;
   box-shadow: 0 8px 16px -10px rgba(0, 0, 0, 0.15);
 }
 
@@ -363,7 +440,7 @@
   border: 1px solid var(--ui-border);
   object-fit: contain;
   padding: 2px;
-  background: #fff;
+  background: #FFFDF7;
 }
 
 .icon-upload-preview.hidden {
@@ -396,12 +473,12 @@
 }
 
 .dashboard-enterprise ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #D5CEB9;
   border-radius: 3px;
 }
 
 .dashboard-enterprise ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #C0B79F;
 }
 
 /* ── Checkbox & Radio ── */
@@ -423,7 +500,7 @@
 
 .confirm-status-btn {
   background: #268BD2;
-  color: #fff;
+  color: #FFFDF7;
   border: none;
 }
 
@@ -446,6 +523,26 @@
 /* ── Content spacer ── */
 .dashboard-enterprise .content-spacer {
   height: 24px;
+}
+
+/* ── SweetAlert Solarized Skin ── */
+.dashboard-enterprise .swal2-popup {
+  background: #FDF6E3;
+  color: #586E75;
+  border: 1px solid #E2DCC8;
+}
+
+.dashboard-enterprise .swal2-title {
+  color: #073642;
+}
+
+.dashboard-enterprise .swal2-html-container {
+  color: #586E75;
+}
+
+.dashboard-enterprise .swal2-actions .swal2-cancel {
+  background: #EEE8D5 !important;
+  color: #586E75 !important;
 }
 
 /* ══════════════════════════════════

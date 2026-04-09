@@ -553,7 +553,7 @@ const statusColorMap = {
 
 function buildLineFlexMessage(order, newStatus) {
   const statusLabel = orderStatusLabel[newStatus] || newStatus;
-  const statusColor = statusColorMap[newStatus] || "#333333";
+  const statusColor = statusColorMap[newStatus] || "#586E75";
   const deliveryLabel = orderMethodLabel[order.deliveryMethod] ||
     order.deliveryMethod || "";
   const paymentLabel =
@@ -574,7 +574,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "訂單編號",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -597,7 +597,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "訂單狀態",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -620,7 +620,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "配送方式",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -642,7 +642,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "付款方式",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -664,7 +664,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "訂單金額",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -672,7 +672,7 @@ function buildLineFlexMessage(order, newStatus) {
           text: `$${Number(order.total) || 0}`,
           size: "sm",
           weight: "bold",
-          color: "#e63946",
+          color: "#DC322F",
           flex: 5,
         },
       ],
@@ -691,7 +691,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "收據需求",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -699,7 +699,7 @@ function buildLineFlexMessage(order, newStatus) {
           text: "需要索取",
           size: "sm",
           weight: "bold",
-          color: "#b45309",
+          color: "#B58900",
           flex: 5,
         },
       ],
@@ -713,7 +713,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "統一編號",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -734,7 +734,7 @@ function buildLineFlexMessage(order, newStatus) {
           type: "text",
           text: "壓印日期",
           size: "sm",
-          color: "#888888",
+          color: "#839496",
           flex: 3,
         },
         {
@@ -755,7 +755,7 @@ function buildLineFlexMessage(order, newStatus) {
             type: "text",
             text: "買受人",
             size: "sm",
-            color: "#888888",
+            color: "#839496",
             flex: 3,
           },
           {
@@ -778,7 +778,7 @@ function buildLineFlexMessage(order, newStatus) {
             type: "text",
             text: "收據地址",
             size: "sm",
-            color: "#888888",
+            color: "#839496",
             flex: 3,
           },
           {
@@ -806,7 +806,7 @@ function buildLineFlexMessage(order, newStatus) {
             type: "text",
             text: "物流商",
             size: "sm",
-            color: "#888888",
+            color: "#839496",
             flex: 3,
           },
           {
@@ -829,7 +829,7 @@ function buildLineFlexMessage(order, newStatus) {
             type: "text",
             text: "物流單號",
             size: "sm",
-            color: "#888888",
+            color: "#839496",
             flex: 3,
           },
           {
@@ -837,7 +837,7 @@ function buildLineFlexMessage(order, newStatus) {
             text: order.trackingNumber,
             size: "sm",
             weight: "bold",
-            color: "#1e40af",
+            color: "#268BD2",
             flex: 5,
             wrap: true,
           },
@@ -854,14 +854,14 @@ function buildLineFlexMessage(order, newStatus) {
       text: "📦 訂單明細",
       size: "sm",
       weight: "bold",
-      color: "#6F4E37",
+      color: "#073642",
       margin: "md",
     });
     bodyContents.push({
       type: "text",
       text: String(order.items || ""),
       size: "xs",
-      color: "#555555",
+      color: "#586E75",
       wrap: true,
       margin: "sm",
     });
@@ -875,7 +875,7 @@ function buildLineFlexMessage(order, newStatus) {
     footerContents.push({
       type: "button",
       style: "primary",
-      color: "#2e7d32",
+      color: "#859900",
       height: "sm",
       action: {
         type: "uri",
@@ -892,7 +892,7 @@ function buildLineFlexMessage(order, newStatus) {
     type: "text",
     text: `更新時間：${new Date().toLocaleString("zh-TW")}`,
     size: "xxs",
-    color: "#aaaaaa",
+    color: "#93A1A1",
     align: "center",
   });
 
@@ -906,14 +906,14 @@ function buildLineFlexMessage(order, newStatus) {
         type: "box",
         layout: "vertical",
         paddingAll: "16px",
-        backgroundColor: "#f9f6f0",
+        backgroundColor: "#EEE8D5",
         contents: [
           {
             type: "text",
             text: `📋 ${siteTitle} - 訂單通知`,
             weight: "bold",
             size: "md",
-            color: "#6F4E37",
+            color: "#073642",
           },
         ],
       },
@@ -1011,7 +1011,7 @@ async function showFlexMessagePopup(flexMsg, order, statusLabel) {
         : `<div class="text-left text-xs ui-text-warning mb-2">此訂單缺少 LINE 使用者 ID，僅可複製 JSON</div>`
     }
       <div style="position:relative;">
-        <pre id="swal-flex-json" style="text-align:left; font-size:11px; max-height:300px; overflow:auto; background:#f8f6f2; border:1px solid #e5ddd5; border-radius:6px; padding:12px; white-space:pre-wrap; word-break:break-all;">${esc(jsonStr)}</pre>
+        <pre id="swal-flex-json" style="text-align:left; font-size:11px; max-height:300px; overflow:auto; background:#FFFDF7; border:1px solid #E2DCC8; border-radius:6px; padding:12px; white-space:pre-wrap; word-break:break-all;">${esc(jsonStr)}</pre>
       </div>
       <p class="text-xs ui-text-muted mt-2">已自動暫存至歷史紀錄，可從訂單列表上方 📋 按鈕查看</p>
     `,
@@ -1021,8 +1021,8 @@ async function showFlexMessagePopup(flexMsg, order, statusLabel) {
     showDenyButton: true,
     denyButtonText: "📋 複製 JSON",
     cancelButtonText: "關閉",
-    confirmButtonColor: "#2e7d32",
-    denyButtonColor: "#6F4E37",
+    confirmButtonColor: "#859900",
+    denyButtonColor: "#268BD2",
     width: 600,
     customClass: {
       popup: "flex-message-popup",
@@ -1061,13 +1061,13 @@ function showFlexHistory() {
 
   const listHtml = history.map((item, idx) => {
     const time = new Date(item.timestamp).toLocaleString("zh-TW");
-    return `<div class="flex items-center justify-between p-2 rounded mb-1" style="background:#faf6f2; border:1px solid #e5ddd5;">
+    return `<div class="flex items-center justify-between p-2 rounded mb-1" style="background:#FFFDF7; border:1px solid #E2DCC8;">
       <div class="text-sm">
         <span class="font-bold" style="color:var(--primary)">#${esc(item.orderId)}</span>
-        <span class="ml-2 text-xs px-1.5 py-0.5 rounded" style="background:#6F4E37;color:#fff;">${esc(item.statusLabel)}</span>
+        <span class="ml-2 text-xs px-1.5 py-0.5 rounded" style="background:#268BD2;color:#FFFDF7;">${esc(item.statusLabel)}</span>
         <span class="text-xs ui-text-muted ml-2">${esc(time)}</span>
       </div>
-      <button data-flex-idx="${idx}" class="flex-history-copy-btn text-xs px-3 py-1 rounded" style="background:#6F4E37; color:#fff; cursor:pointer;">複製</button>
+      <button data-flex-idx="${idx}" class="flex-history-copy-btn text-xs px-3 py-1 rounded" style="background:#268BD2; color:#FFFDF7; cursor:pointer;">複製</button>
     </div>`;
   }).join("");
 
@@ -1712,7 +1712,7 @@ async function deleteOrderById(orderId) {
     title: "刪除訂單？",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
+    confirmButtonColor: "#DC322F",
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
   });
@@ -1789,7 +1789,7 @@ async function batchUpdateOrders() {
       showCancelButton: true,
       confirmButtonText: "確定",
       cancelButtonText: "取消",
-      confirmButtonColor: "#3C2415",
+      confirmButtonColor: "#268BD2",
       focusConfirm: false,
       preConfirm: () => {
         const trackingNumEl = document.getElementById(
@@ -1865,7 +1865,7 @@ async function batchDeleteOrders() {
     text: "此動作無法復原",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
+    confirmButtonColor: "#DC322F",
     confirmButtonText: "批次刪除",
     cancelButtonText: "取消",
   });
@@ -2154,7 +2154,7 @@ function renderProducts() {
           : `$${line.price}`
       ).join("");
           html += `
-            <tr class="border-b" style="border-color:#f0e6db;" data-id="${product.id}">
+            <tr class="border-b" style="border-color:#E2DCC8;" data-id="${product.id}">
                 <td class="p-3 text-center">
                     <span class="drag-handle cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
                       <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
@@ -2225,7 +2225,7 @@ function addSpecRow(specData) {
   const s = specData || { key: "", label: "", price: 0, enabled: true };
   const div = document.createElement("div");
   div.className = "spec-row flex items-center gap-2 p-2 rounded-lg border";
-  div.style.borderColor = "#e5ddd5";
+  div.style.borderColor = "#E2DCC8";
   div.innerHTML = `
         <label class="flex items-center"><input type="checkbox" class="spec-enabled w-4 h-4" ${
     s.enabled ? "checked" : ""
@@ -2363,7 +2363,7 @@ async function delProduct(id) {
     title: "刪除商品？",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
+    confirmButtonColor: "#DC322F",
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
   });
@@ -2467,7 +2467,7 @@ function renderCategories() {
   }
 
   container.innerHTML = categories.map((c) => `
-        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#faf6f2; border:1px solid #e5ddd5;" data-id="${c.id}">
+        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#FFFDF7; border:1px solid #E2DCC8;" data-id="${c.id}">
             <div class="flex items-center gap-2">
                 <span class="drag-handle-cat cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
@@ -2543,7 +2543,7 @@ async function delCategory(id) {
     title: "刪除分類？",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
+    confirmButtonColor: "#DC322F",
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
   });
@@ -2686,7 +2686,7 @@ function renderPromotions() {
   proms.forEach((promotion) => {
     const viewPromotion = buildPromotionViewModel(promotion);
     html += `
-        <tr class="border-b" style="border-color:#f0e6db;" data-id="${viewPromotion.id}">
+        <tr class="border-b" style="border-color:#E2DCC8;" data-id="${viewPromotion.id}">
             <td class="p-3 text-center">
                 <span class="drag-handle-promo cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
@@ -2727,7 +2727,7 @@ function renderPromoProducts(selectedItems = []) {
     if (specs.length === 0) {
       // 無規格商品
       html += `
-            <div class="mb-1 border-b pb-1 last:border-0" style="border-color:#f0e6db">
+            <div class="mb-1 border-b pb-1 last:border-0" style="border-color:#E2DCC8">
                 <label class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded">
                     <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="" ${
         isSelected(p.id, "") ? "checked" : ""
@@ -2740,7 +2740,7 @@ function renderPromoProducts(selectedItems = []) {
     } else {
       // 有規格商品：標題列 + 規格子選項
       html += `
-            <div class="mb-2 border-b pb-1 last:border-0" style="border-color:#f0e6db">
+            <div class="mb-2 border-b pb-1 last:border-0" style="border-color:#E2DCC8">
                 <div class="ui-text-strong font-medium p-1 ui-bg-soft rounded">[${
         esc(p.category)
       }] ${esc(p.name)}</div>
@@ -2852,7 +2852,7 @@ async function delPromotion(id) {
     title: "刪除活動？",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
+    confirmButtonColor: "#DC322F",
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
   });
@@ -2906,7 +2906,7 @@ async function loadSettings() {
       document.getElementById("s-products-title").value =
         s.products_section_title || "";
       document.getElementById("s-products-color").value =
-        s.products_section_color || "#6F4E37";
+        s.products_section_color || "#268BD2";
       document.getElementById("s-products-size").value =
         s.products_section_size || "text-lg";
       document.getElementById("s-products-bold").checked =
@@ -2915,7 +2915,7 @@ async function loadSettings() {
       document.getElementById("s-delivery-title").value =
         s.delivery_section_title || "";
       document.getElementById("s-delivery-color").value =
-        s.delivery_section_color || "#6F4E37";
+        s.delivery_section_color || "#268BD2";
       document.getElementById("s-delivery-size").value =
         s.delivery_section_size || "text-lg";
       document.getElementById("s-delivery-bold").checked =
@@ -2924,7 +2924,7 @@ async function loadSettings() {
       document.getElementById("s-notes-title").value = s.notes_section_title ||
         "";
       document.getElementById("s-notes-color").value = s.notes_section_color ||
-        "#6F4E37";
+        "#268BD2";
       document.getElementById("s-notes-size").value = s.notes_section_size ||
         "text-base";
       document.getElementById("s-notes-bold").checked =
@@ -3110,7 +3110,7 @@ function configToHtml(item, tbody, isNew = false) {
   const tr = document.createElement("tr");
   tr.className = "border-b delivery-option-row group" +
     (isNew ? " bg-yellow-50" : "");
-  tr.style.borderColor = "#e5ddd5";
+  tr.style.borderColor = "#E2DCC8";
   tr.dataset.id = normalized.id;
   tr.dataset.defaultIconKey = fallbackKey;
 
@@ -3149,7 +3149,7 @@ function configToHtml(item, tbody, isNew = false) {
   }" placeholder="簡短說明 (例如: 到店自取)">
             </div>
         </td>
-        <td class="p-3 text-center border-l ui-bg-soft/50" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l ui-bg-soft/50" style="border-color:#E2DCC8">
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer do-enabled" ${
     normalized.enabled ? "checked" : ""
@@ -3157,32 +3157,32 @@ function configToHtml(item, tbody, isNew = false) {
                 <div class="w-9 h-5 ui-bg-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
             </label>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <input type="number" class="border rounded p-1 w-16 text-center text-sm do-fee" value="${
     normalized.fee !== undefined ? normalized.fee : 0
   }" min="0">
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <input type="number" class="border rounded p-1 w-20 text-center text-sm do-free-threshold" value="${
     normalized.free_threshold !== undefined ? normalized.free_threshold : 0
   }" min="0">
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <input type="checkbox" class="w-4 h-4 do-cod" ${
     normalized.payment?.cod ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <input type="checkbox" class="w-4 h-4 do-linepay" ${
     normalized.payment?.linepay ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <input type="checkbox" class="w-4 h-4 do-transfer" ${
     normalized.payment?.transfer ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#e5ddd5">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <button type="button" data-action="remove-delivery-option-row" class="ui-text-danger hover:text-red-700 p-1" title="刪除此選項">
                 刪除
             </button>
@@ -3199,21 +3199,21 @@ function resetSectionTitle(section) {
   const defaults = {
     products: {
       title: "咖啡豆選購",
-      color: "#6F4E37",
+      color: "#268BD2",
       size: "text-lg",
       bold: true,
       iconUrl: getDefaultIconUrl("products"),
     },
     delivery: {
       title: "配送方式",
-      color: "#6F4E37",
+      color: "#268BD2",
       size: "text-lg",
       bold: true,
       iconUrl: getDefaultIconUrl("delivery"),
     },
     notes: {
       title: "訂單備註",
-      color: "#6F4E37",
+      color: "#268BD2",
       size: "text-base",
       bold: true,
       iconUrl: getDefaultIconUrl("notes"),
@@ -3510,7 +3510,7 @@ function renderUsers() {
     }
 
     return `
-        <tr class="border-b" style="border-color:#f0e6db;">
+        <tr class="border-b" style="border-color:#E2DCC8;">
             <td class="p-3"><img src="${
       esc(u.pictureUrl) || "https://via.placeholder.com/40"
     }" class="w-10 h-10 rounded-full border"></td>
@@ -3714,7 +3714,7 @@ function renderBlacklist() {
       ? new Date(b.blockedAt).toLocaleString("zh-TW")
       : "無紀錄";
     return `
-        <tr class="border-b" style="border-color:#f0e6db;">
+        <tr class="border-b" style="border-color:#E2DCC8;">
             <td class="p-3">
                 <div class="font-medium">${esc(b.displayName)}</div>
                 <div class="text-xs ui-text-muted font-mono">${
@@ -3872,7 +3872,7 @@ function renderFormFields() {
       const enabledClass = viewField.enabled ? "" : "opacity-50";
       const isProtected = false;
       return `
-                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#e5ddd5;" data-field-id="${viewField.id}">
+                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#E2DCC8;" data-field-id="${viewField.id}">
                     <span class="cursor-grab ui-text-muted drag-handle">
                       <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
                     </span>
@@ -3943,7 +3943,7 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
   }
   container.innerHTML = deliveryOptions.map((opt) => {
     const checked = vis[opt.id] !== false; // null/undefined/true 都是 checked
-    return `<label class="flex items-center gap-1 text-sm cursor-pointer px-2 py-1 rounded-lg border" style="border-color:#e5ddd5">
+    return `<label class="flex items-center gap-1 text-sm cursor-pointer px-2 py-1 rounded-lg border" style="border-color:#E2DCC8">
             <input type="checkbox" class="dv-cb" data-delivery-id="${
       esc(opt.id)
     }" ${checked ? "checked" : ""}> ${esc(opt.label || opt.id)}
@@ -3988,7 +3988,7 @@ async function showAddFieldModal() {
                 <label class="flex items-center gap-2 cursor-pointer mt-2">
                     <input type="checkbox" id="swal-fr"> <span class="text-sm">必填</span>
                 </label>
-                <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
+                <div class="mt-3 pt-3 border-t" style="border-color:#E2DCC8">
                     <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
                     <p class="text-xs ui-text-muted mb-2">取消勾選 = 該配送方式下不顯示此欄位，全勾 = 全部顯示</p>
                     <div id="swal-dv" class="flex flex-wrap gap-2"></div>
@@ -3998,7 +3998,7 @@ async function showAddFieldModal() {
     showCancelButton: true,
     confirmButtonText: "新增",
     cancelButtonText: "取消",
-    confirmButtonColor: "#3C2415",
+    confirmButtonColor: "#268BD2",
     didOpen: () => renderDeliveryVisibilityCheckboxes(null),
     preConfirm: () => {
       const fieldKey = document.getElementById("swal-fk").value.trim();
@@ -4111,7 +4111,7 @@ async function editFormField(id) {
       f.required ? "checked" : ""
     }> <span class="text-sm">必填</span>
                 </label>
-                <div class="mt-3 pt-3 border-t" style="border-color:#e5ddd5">
+                <div class="mt-3 pt-3 border-t" style="border-color:#E2DCC8">
                     <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
                     <p class="text-xs ui-text-muted mb-2">取消勾選 = 該配送方式下不顯示此欄位</p>
                     <div id="swal-dv" class="flex flex-wrap gap-2"></div>
@@ -4121,7 +4121,7 @@ async function editFormField(id) {
     showCancelButton: true,
     confirmButtonText: "儲存",
     cancelButtonText: "取消",
-    confirmButtonColor: "#3C2415",
+    confirmButtonColor: "#268BD2",
     didOpen: () =>
       renderDeliveryVisibilityCheckboxes(f.delivery_visibility || null),
     preConfirm: () => {
@@ -4187,7 +4187,7 @@ async function deleteFormField(id) {
     showCancelButton: true,
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
-    confirmButtonColor: "#ef4444",
+    confirmButtonColor: "#DC322F",
   });
   if (!confirm.isConfirmed) return;
 
@@ -4511,7 +4511,7 @@ async function linePayRefundOrder(orderId) {
     text: `確定要對訂單 #${orderId} 進行退款嗎？`,
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#7c3aed",
+    confirmButtonColor: "#6C71C4",
     confirmButtonText: "確認退款",
     cancelButtonText: "取消",
   });
@@ -4602,7 +4602,7 @@ function renderBankAccountsAdmin() {
     <div id="bank-accounts-sortable" class="space-y-2">
       ${
     bankAccounts.map((b) => `
-          <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#faf6f2; border:1px solid #e5ddd5;">
+          <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#FFFDF7; border:1px solid #E2DCC8;">
               <div class="flex items-start gap-3 min-w-0">
                   <span class="drag-handle-bank cursor-move ui-text-muted hover:ui-text-strong select-none pt-1" title="拖曳排序">
                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
@@ -4761,7 +4761,7 @@ async function deleteBankAccount(id) {
     title: "刪除帳號？",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonColor: "#d33",
+    confirmButtonColor: "#DC322F",
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
   });
