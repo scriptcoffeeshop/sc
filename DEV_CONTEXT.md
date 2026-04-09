@@ -46,6 +46,7 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - **規則**：每一筆 commit 必須保留獨立條目，不可合併摘要。
 
 <!-- MAIN_COMMIT_LOG_START -->
+- `2026-04-09` | `a757a83` | fix: resolve duplicate class attributes in dashboard HTML and Vue templates
 - `2026-04-09` | `4e79f97` | style: achieve 100% Solarized consistency for dashboard and bump version to v69
 - `2026-04-09` | `d30c756` | style: harmonize overall text and border colors with Solarized Light theme
 - `2026-04-09` | `39d5dbc` | style: bump version to v67 to force Solarized theme refresh

@@ -152,8 +152,7 @@
               </button>
               <button
                 data-action="reload-orders"
-                class="text-sm"
-                class="ui-text-highlight"
+                class="text-sm ui-text-highlight"
               >
                 <span class="tab-with-icon"><img src="../../../icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
               </button>
@@ -354,7 +353,7 @@
                 <div><span class="ui-text-subtle">電話：</span>{{ order.phone }}</div>
                 <div class="col-span-2">
                   <span class="ui-text-subtle">信箱：</span>
-                  <a v-if="order.email" :href="`mailto:${order.email}` ui-text-highlight">
+                  <a v-if="order.email" :href="`mailto:${order.email}`" class="ui-text-highlight">
                     {{ order.email }}
                   </a>
                   <span v-else>無</span>
@@ -666,8 +665,7 @@
             <thead>
               <tr class="border-b-2 ui-border">
                 <th
-                  class="p-3 text-left w-10 text-center"
-                  class="ui-text-highlight"
+                  class="p-3 text-left w-10 text-center ui-text-highlight"
                 >
                   排序
                 </th>
@@ -1583,8 +1581,7 @@
           <div id="bank-accounts-admin-list" class="mb-3"></div>
           <button
             data-action="show-add-bank-account-modal"
-            class="text-sm font-medium hover:underline"
-            class="ui-text-highlight"
+            class="text-sm font-medium hover:underline ui-text-highlight"
           >
             + 新增匯款帳號
           </button>
@@ -1864,8 +1861,7 @@
       >
         <h3
           id="prm-title"
-          class="text-xl font-bold mb-6"
-          class="ui-text-highlight"
+          class="text-xl font-bold mb-6 ui-text-highlight"
         >
           新增活動
         </h3>
