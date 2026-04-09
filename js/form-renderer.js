@@ -5,6 +5,13 @@
 import { escapeHtml, isValidEmail } from "./utils.js";
 import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
 
+function normalizeSiteSubtitle(value) {
+  const subtitle = String(value || "").trim();
+  if (!subtitle) return "";
+  if (/^咖啡豆\s*[|｜]\s*耳掛$/.test(subtitle)) return "咖啡豆｜耳掛";
+  return subtitle;
+}
+
 /**
  * 根據後端回傳的欄位設定，動態渲染表單欄位
  * @param {Array} fields - coffee_form_fields 記錄
@@ -177,8 +184,9 @@ export function applyBranding(settings) {
 
   // 副標題
   const subtitleEl = document.getElementById("site-subtitle");
-  if (subtitleEl && settings.site_subtitle) {
-    subtitleEl.textContent = settings.site_subtitle;
+  const normalizedSubtitle = normalizeSiteSubtitle(settings.site_subtitle);
+  if (subtitleEl && normalizedSubtitle) {
+    subtitleEl.textContent = normalizedSubtitle;
   }
 
   // Header icon
