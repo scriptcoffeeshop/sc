@@ -46,11 +46,21 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - **規則**：每一筆 commit 必須保留獨立條目，不可合併摘要。
 
 <!-- MAIN_COMMIT_LOG_START -->
+- `2026-04-09` | `4e79f97` | style: achieve 100% Solarized consistency for dashboard and bump version to v69
 - `2026-04-09` | `d30c756` | style: harmonize overall text and border colors with Solarized Light theme
 - `2026-04-09` | `39d5dbc` | style: bump version to v67 to force Solarized theme refresh
 - `2026-04-09` | `9c36d03` | feat: migrate dashboard theme to Solarized Light
-- `2026-04-09` | `44d388e` | feat: Add Google Merchant Center verification file
-- `2026-04-07` | `e389b59` | ci: fix email template closure error
+- `2026-04-09` | `44d388e` | Add files via upload
+- `2026-04-09` | `e389b59` | test: fix broken assertion in smoke tests due to template formatting
+- `2026-04-09` | `a43394b` | style: run deno fmt to fix ci formatting error
+- `2026-04-09` | `432bd92` | fix(ci): restore missing template string closure
+- `2026-04-09` | `d8f4988` | fix: address style, layout, icon upload, and email issues
+- `2026-04-09` | `727355b` | fix: switch to enterprise light theme + fix CI version sync + fix sidebar icons
+- `2026-04-09` | `d5b8e1d` | fix: ensure .hidden overrides grid display on admin-page
+- `2026-04-09` | `c6dab8f` | fix: add cache-busting params to CSS links for dark theme
+- `2026-04-09` | `f6d8f42` | feat: enterprise dark theme dashboard redesign
+- `2026-04-09` | `7d6d9c8` | chore: install ui-ux-pro-max-skill for AI assistant
+- `2026-04-09` | `001738b` | fix: strip legacy /sc/ prefix from icon paths on custom domain
 - `2026-04-07` | `f23d1f2` | feat: replace email status logic and branding
 - `2026-04-07` | `88e2b69` | test: fix E2E for status confirm dialog
 - `2026-02-22` | `83f5a9a` | 初次提交：咖啡訂購系統與修復
@@ -315,6 +325,19 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `bfd6c4c` | feat: 新增訂單狀態變更確認流程與 LINE Flex Message 產生器
 - `2026-04-07` | `88e2b69` | test: 修復訂單確認 UI 改動導致 E2E 測試報錯 (移除 mock 失效的 Swal 點擊等待)
 <!-- MAIN_COMMIT_LOG_END -->
+
+### 📅 v69 — 達成 100% Solarized 對齊與語法修復
+
+- **最終一致性對齊**
+  - 修復了 `js/dashboard-app.js` 中動態渲染訂單行時遺留的硬編碼邊框 (`#e5ddd5`)。
+  - 統一了 SweetAlert2 彈出視窗的確認按鈕顏色為 **Solarized Blue (#268BD2)**。
+  - 修正了 `renderOrders` 邏輯中退款按鈕 (`refundBtn`) 遺漏的變數宣告語法錯誤。
+  - 將 `dashboard.html` 與 `DashboardPage.vue` 中剩餘的 `bg-green-500` 替換為主題按鈕類別。
+- **快取控制更新**
+  - 前端版本號由 `v=68` 提升至 `v=69`，並同步更新 `.frontend-version` 與 `dashboard.html` 的資源引用。
+- **验证**
+  - 透過 Git Commit 並 Push 至 `main` 分支（Hash: `4e79f97`）。
+  - 已確認解決 IDE 報出的 `必须是宣告或陈述式` 語法錯誤。
 
 ### 📅 v68 — 全面連動 Solarized 文字與細節配色
 

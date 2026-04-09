@@ -7,7 +7,7 @@
         alt="品牌圖示"
         class="w-14 h-14 mx-auto mb-4"
       >
-      <h1 class="text-2xl font-bold mb-2" class="ui-text-highlight">
+      <h1 class="text-2xl font-bold mb-2 ui-text-highlight">
         咖啡訂購後台
       </h1>
       <p class="ui-text-subtle mb-6">僅限管理員登入</p>
@@ -31,7 +31,7 @@
         <div class="flex items-center gap-3">
           <img id="dashboard-header-logo" src="../../../icons/logo.png" alt="品牌圖示" class="w-9 h-9">
           <div>
-            <h1 class="text-xl font-bold" class="ui-text-highlight">
+            <h1 class="text-xl font-bold ui-text-highlight">
               咖啡訂購後台
             </h1>
             <p class="text-sm ui-text-subtle">
@@ -138,7 +138,7 @@
       <div id="orders-section" class="glass-card p-6 hidden">
         <div class="flex flex-col gap-4 mb-4">
           <div class="flex justify-between items-center gap-3 flex-wrap">
-            <h2 class="text-lg font-bold" class="ui-text-highlight">
+            <h2 class="text-lg font-bold ui-text-highlight">
               訂單列表
             </h2>
             <div class="flex gap-2 items-center">
@@ -354,7 +354,7 @@
                 <div><span class="ui-text-subtle">電話：</span>{{ order.phone }}</div>
                 <div class="col-span-2">
                   <span class="ui-text-subtle">信箱：</span>
-                  <a v-if="order.email" :href="`mailto:${order.email}`" class="ui-text-highlight">
+                  <a v-if="order.email" :href="`mailto:${order.email}` ui-text-highlight">
                     {{ order.email }}
                   </a>
                   <span v-else>無</span>
@@ -489,7 +489,7 @@
       <!-- ===== 商品管理 ===== -->
       <div id="products-section" class="glass-card p-6 hidden">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" class="ui-text-highlight">
+          <h2 class="text-lg font-bold ui-text-highlight">
             咖啡豆商品
           </h2>
           <button data-action="show-product-modal" class="btn-primary text-sm">
@@ -499,23 +499,23 @@
         <div class="overflow-x-auto">
           <table class="w-full" id="products-main-table" data-vue-managed="true">
             <thead>
-              <tr class="border-b-2" class="ui-border">
-                <th class="p-3 text-left w-10" class="ui-text-highlight">
+              <tr class="border-b-2 ui-border">
+                <th class="p-3 text-left w-10 ui-text-highlight">
                   排序
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   分類
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   品名
                 </th>
-                <th class="p-3 text-right" class="ui-text-highlight">
+                <th class="p-3 text-right ui-text-highlight">
                   價格
                 </th>
-                <th class="p-3 text-center" class="ui-text-highlight">
+                <th class="p-3 text-center ui-text-highlight">
                   狀態
                 </th>
-                <th class="p-3 text-center" class="ui-text-highlight">
+                <th class="p-3 text-center ui-text-highlight">
                   操作
                 </th>
               </tr>
@@ -591,7 +591,7 @@
       <!-- ===== 分類管理 ===== -->
       <div id="categories-section" class="glass-card p-6 hidden">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" class="ui-text-highlight">
+          <h2 class="text-lg font-bold ui-text-highlight">
             商品分類
           </h2>
         </div>
@@ -651,7 +651,7 @@
       <!-- ===== 促銷活動 ===== -->
       <div id="promotions-section" class="glass-card p-6 hidden">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" class="ui-text-highlight">
+          <h2 class="text-lg font-bold ui-text-highlight">
             促銷活動管理
           </h2>
           <button
@@ -664,23 +664,23 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b-2" class="ui-border">
+              <tr class="border-b-2 ui-border">
                 <th
                   class="p-3 text-left w-10 text-center"
                   class="ui-text-highlight"
                 >
                   排序
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   活動名稱
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   條件與折扣
                 </th>
-                <th class="p-3 text-center w-24" class="ui-text-highlight">
+                <th class="p-3 text-center w-24 ui-text-highlight">
                   狀態
                 </th>
-                <th class="p-3 text-right w-32" class="ui-text-highlight">
+                <th class="p-3 text-right w-32 ui-text-highlight">
                   操作
                 </th>
               </tr>
@@ -744,7 +744,7 @@
       <!-- ===== 用戶管理 ===== -->
       <div id="users-section" class="glass-card p-6 hidden">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" class="ui-text-highlight">
+          <h2 class="text-lg font-bold ui-text-highlight">
             用戶管理
           </h2>
           <div class="flex gap-2 items-center">
@@ -765,17 +765,17 @@
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b-2" class="ui-border">
-                <th class="p-3 text-left w-12" class="ui-text-highlight">
+              <tr class="border-b-2 ui-border">
+                <th class="p-3 text-left w-12 ui-text-highlight">
                   頭像
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   用戶資訊
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   角色與狀態
                 </th>
-                <th class="p-3 text-right" class="ui-text-highlight">
+                <th class="p-3 text-right ui-text-highlight">
                   操作
                 </th>
               </tr>
@@ -856,20 +856,20 @@
 
       <!-- ===== 黑名單 ===== -->
       <div id="blacklist-section" class="glass-card p-6 hidden">
-        <h2 class="text-lg font-bold mb-4" class="ui-text-highlight">
+        <h2 class="text-lg font-bold mb-4 ui-text-highlight">
           黑名單
         </h2>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
-              <tr class="border-b-2" class="ui-border">
-                <th class="p-3 text-left" class="ui-text-highlight">
+              <tr class="border-b-2 ui-border">
+                <th class="p-3 text-left ui-text-highlight">
                   用戶名稱
                 </th>
-                <th class="p-3 text-left" class="ui-text-highlight">
+                <th class="p-3 text-left ui-text-highlight">
                   封鎖時間與原因
                 </th>
-                <th class="p-3 text-right" class="ui-text-highlight">
+                <th class="p-3 text-right ui-text-highlight">
                   操作
                 </th>
               </tr>
@@ -914,7 +914,7 @@
 
       <!-- ===== 系統設定 ===== -->
       <div id="settings-section" class="glass-card p-6 hidden">
-        <h2 class="text-lg font-bold mb-6" class="ui-text-highlight">
+        <h2 class="text-lg font-bold mb-6 ui-text-highlight">
           系統設定
         </h2>
 
@@ -923,7 +923,7 @@
           class="mb-6 p-4 bg-white rounded-xl border"
           
         >
-          <h3 class="font-semibold mb-3 flex items-center" class="ui-text-highlight">
+          <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
             <img id="settings-brand-logo" src="../../../icons/logo.png" alt="" class="ui-icon-inline-lg">
             品牌設定
           </h3>
@@ -978,7 +978,7 @@
           class="mb-6 p-4 bg-white rounded-xl border"
           
         >
-          <h3 class="font-semibold mb-3 flex items-center" class="ui-text-highlight">
+          <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
             <img src="../../../icons/section-tag.png" alt="" class="ui-icon-inline-lg">
             區塊標題樣式設定
           </h3>
@@ -1217,7 +1217,7 @@
           class="mb-6 p-4 bg-white rounded-xl border"
           
         >
-          <h3 class="font-semibold mb-3 flex items-center" class="ui-text-highlight">
+          <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
             <img src="../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
             公告設定
           </h3>
@@ -1238,7 +1238,7 @@
           class="mb-6 p-4 bg-white rounded-xl border"
           
         >
-          <h3 class="font-semibold mb-3 flex items-center" class="ui-text-highlight">
+          <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
             <img src="../../../icons/status-store.png" alt="" class="ui-icon-inline-lg">
             營業狀態
           </h3>
@@ -1266,7 +1266,7 @@
           <div
             class="flex flex-col md:flex-row md:justify-between md:items-center mb-3"
           >
-            <h3 class="font-semibold text-lg flex items-center" class="ui-text-highlight">
+            <h3 class="font-semibold text-lg flex items-center ui-text-highlight">
               <img src="../../../icons/payment-card.png" alt="" class="ui-icon-inline-lg">
               取貨方式與付款對應設定
             </h3>
@@ -1357,7 +1357,7 @@
           class="mb-6 p-4 bg-white rounded-xl border"
           
         >
-          <h3 class="font-semibold text-lg mb-3 flex items-center" class="ui-text-highlight">
+          <h3 class="font-semibold text-lg mb-3 flex items-center ui-text-highlight">
             <img src="../../../icons/payment-cash.png" alt="" class="ui-icon-inline-lg">
             金流選項顯示設定
           </h3>
@@ -1576,7 +1576,7 @@
           class="mb-6 p-4 bg-white rounded-xl border"
           
         >
-          <h3 class="font-semibold mb-3 flex items-center" class="ui-text-highlight">
+          <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
             <img src="../../../icons/payment-bank.png" alt="" class="ui-icon-inline-lg">
             匯款帳號管理
           </h3>
@@ -1601,7 +1601,7 @@
       <div id="icon-library-section" class="glass-card p-6 hidden">
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
           <div>
-            <h2 class="text-lg font-bold" class="ui-text-highlight">
+            <h2 class="text-lg font-bold ui-text-highlight">
               Icon 素材庫管理
             </h2>
             <p class="text-sm ui-text-subtle mt-1">
@@ -1688,7 +1688,7 @@
       <!-- ===== 表單管理 ===== -->
       <div id="formfields-section" class="glass-card p-6 hidden">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-bold" class="ui-text-highlight">
+          <h2 class="text-lg font-bold ui-text-highlight">
             表單欄位管理
           </h2>
           <button
@@ -1779,7 +1779,7 @@
     <!-- 商品 Modal -->
     <div id="product-modal" class="modal-overlay hidden">
       <div class="modal-content">
-        <h3 id="pm-title" class="text-xl font-bold mb-5" class="ui-text-highlight">
+        <h3 id="pm-title" class="text-xl font-bold mb-5 ui-text-highlight">
           新增商品
         </h3>
         <form id="product-form" class="space-y-4">
