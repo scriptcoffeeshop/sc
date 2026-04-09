@@ -46,6 +46,7 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - **規則**：每一筆 commit 必須保留獨立條目，不可合併摘要。
 
 <!-- MAIN_COMMIT_LOG_START -->
+- `2026-04-09` | `d30c756` | style: harmonize overall text and border colors with Solarized Light theme
 - `2026-04-09` | `39d5dbc` | style: bump version to v67 to force Solarized theme refresh
 - `2026-04-09` | `9c36d03` | feat: migrate dashboard theme to Solarized Light
 - `2026-04-09` | `44d388e` | feat: Add Google Merchant Center verification file
@@ -314,6 +315,18 @@ AI（Assistant）能快速掌握目前狀態與曾經踩過的坑。
 - `2026-04-07` | `bfd6c4c` | feat: 新增訂單狀態變更確認流程與 LINE Flex Message 產生器
 - `2026-04-07` | `88e2b69` | test: 修復訂單確認 UI 改動導致 E2E 測試報錯 (移除 mock 失效的 Swal 點擊等待)
 <!-- MAIN_COMMIT_LOG_END -->
+
+### 📅 v68 — 全面連動 Solarized 文字與細節配色
+
+- **文字配色深度遷移**
+  - 徹底移除 `dashboard.html` 與 `DashboardPage.vue` 中所有硬編碼的內嵌樣式，包含原本用來對應舊主題的咖啡棕 (`#6F4E37`)、淡褐邊框 (`#e5ddd5`) 以及 Tailwind 預設的灰階類別 (`text-gray-500` 等)。
+  - 引入語意化的 CSS 類別（如 `.ui-text-subtle`, `.ui-text-highlight`, `.ui-text-success`），並將其完全對齊 Solarized 色票（Base01, Blue, Green, Red, Yellow）。
+  - 將 `js/dashboard-app.js` 中所有動態生成的 HTML 標籤（如訂單編號、顧客資訊標籤）更換為對應的語意化類別，解決內部資訊顯示顏色突兀的問題。
+- **邊框與背景同步**
+  - 將原本剩餘的 `bg-gray-50` 與 `border-blue-200` 類別全數替換為 `ui-bg-soft` 與 `ui-border` 變數。
+  - 修正媒體查詢（Mobile/Tablet）中隱藏的邊框顏色殘留。
+- **驗證**
+  - 透過 Browser Subagent 擷取訂單卡片詳情畫面，確認標籤（顧客、電話）與狀態顏色已呈現和諧的 Solarized 灰綠調。
 
 ### 📅 v67 — 後台配色遷移至 Solarized Light (暖色調優化)
 

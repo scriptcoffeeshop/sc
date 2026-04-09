@@ -42,6 +42,9 @@
 .dashboard-enterprise .ui-text-warning { color: #B58900; }   /* Solarized Yellow */
 .dashboard-enterprise .ui-text-violet { color: #6C71C4; }    /* Solarized Violet */
 
+.dashboard-enterprise .ui-border { border-color: #E2DCC8 !important; }
+.dashboard-enterprise .ui-bg-card-strong { background-color: #FFFDF7 !important; }
+
 /* ── Body ── */
 .dashboard-enterprise {
   background: #FDF6E3 !important;
@@ -416,6 +419,12 @@
 .confirm-status-btn:hover {
   opacity: 0.85;
   transform: scale(1.04);
+}
+
+.confirm-status-btn {
+  background: #268BD2;
+  color: #fff;
+  border: none;
 }
 
 .confirm-status-btn.hidden {

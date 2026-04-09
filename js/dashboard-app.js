@@ -544,11 +544,11 @@ const FLEX_HISTORY_KEY = "coffee_flex_message_history";
 const FLEX_HISTORY_MAX = 50;
 
 const statusColorMap = {
-  pending: "#f59e0b",
-  processing: "#3b82f6",
-  shipped: "#2e7d32",
-  completed: "#16a34a",
-  cancelled: "#dc2626",
+  pending: "#B58900",    /* Solarized Yellow */
+  processing: "#268BD2", /* Solarized Blue */
+  shipped: "#859900",    /* Solarized Green */
+  completed: "#586E75",  /* Base01 */
+  cancelled: "#DC322F",  /* Solarized Red */
 };
 
 function buildLineFlexMessage(order, newStatus) {
@@ -1421,14 +1421,21 @@ function renderOrders() {
 
     const pm = o.paymentMethod || "cod";
     const ps = o.paymentStatus || "";
+    const refundBtn = pm === "linepay" && ps === "paid"
+      ? `<button data-action="refund-linepay-order" data-order-id="${
+        esc(o.orderId)
+      }" class="text-xs ui-text-violet hover:opacity-80 inline-flex items-center gap-1"><img src="${
+        esc(getDefaultIconUrl("refund"))
+      }" alt="" class="ui-icon-inline">退款</button>`
+      : "";
     const payBadge = pm !== "cod"
-      ? `<span class="text-xs px-2 py-0.5 rounded-full ${
+      ? `<span class="text-xs px-2 py-0.5 rounded-full ui-border ${
         ps === "paid"
-          ? "bg-green-50 text-green-700"
+          ? "ui-text-success ui-bg-card-strong"
           : ps === "refunded"
-          ? "bg-purple-50 text-purple-700"
+          ? "ui-text-violet ui-bg-card-strong"
           : ps === "pending"
-          ? "bg-yellow-50 text-yellow-700"
+          ? "ui-text-warning ui-bg-card-strong"
           : "ui-bg-soft ui-text-strong"
       }">${orderPayMethodLabel[pm] || pm} ${
         orderPayStatusLabel[ps] || ps
@@ -1444,13 +1451,6 @@ function renderOrders() {
       }</div>
                </div>`
       : "";
-    const refundBtn = pm === "linepay" && ps === "paid"
-      ? `<button data-action="refund-linepay-order" data-order-id="${
-        esc(o.orderId)
-      }" class="text-xs text-purple-600 hover:text-purple-800 inline-flex items-center gap-1"><img src="${
-        esc(getDefaultIconUrl("refund"))
-      }" alt="" class="ui-icon-inline">退款</button>`
-      : "";
     const confirmPayBtn = pm === "transfer" && ps === "pending"
       ? `<button data-action="confirm-transfer-payment" data-order-id="${
         esc(o.orderId)
@@ -1459,7 +1459,7 @@ function renderOrders() {
     const sendLineBtn = o.lineUserId
       ? `<button data-action="send-order-flex" data-order-id="${
         esc(o.orderId)
-      }" class="text-xs text-emerald-700 hover:text-emerald-900">LINE通知</button>`
+      }" class="text-xs ui-text-success hover:opacity-80">LINE通知</button>`
       : "";
 
     const trackingLinkHtml = getTrackingLinkHtml(o);
@@ -1480,7 +1480,7 @@ function renderOrders() {
       }" class="ml-2 px-2 py-0.5 ui-bg-soft hover:ui-bg-soft rounded ui-text-strong" title="複製單號">複製</button></div>`
       : "";
     const trackingHtml = hasShippingInfo
-      ? `<div class="text-xs ui-bg-soft p-2 rounded mt-2 border border-gray-200">
+      ? `<div class="text-xs ui-bg-soft p-2 rounded mt-2 border ui-border">
                     ${shippingProviderHtml}
                     ${trackingNumberHtml}
                     ${
@@ -1491,7 +1491,7 @@ function renderOrders() {
     const receiptHtml = buildReceiptSummaryHtml(receiptInfo);
 
     return `
-        <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
+        <div class="border ui-border rounded-xl p-4 mb-3">
             <div class="flex justify-between items-center mb-2">
                 <div class="flex items-center gap-2 flex-wrap">
                     <label class="inline-flex items-center cursor-pointer">
@@ -1562,7 +1562,7 @@ function renderOrders() {
                     </select>
                     <button data-action="confirm-order-status" data-order-id="${
       esc(o.orderId)
-    }" class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium" style="background:#6F4E37; color:#fff;">確認</button>
+    }" class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium">確認</button>
                     <button data-action="delete-order" data-order-id="${
       esc(o.orderId)
     }" class="text-xs ui-text-danger hover:text-red-700">刪除</button>
@@ -1618,7 +1618,7 @@ async function changeOrderStatus(orderId, status) {
         showCancelButton: true,
         confirmButtonText: "確定出貨",
         cancelButtonText: "取消",
-        confirmButtonColor: "#3C2415",
+        confirmButtonColor: "#268BD2",
         focusConfirm: false,
         preConfirm: () => {
           const trackingNumEl = document.getElementById("swal-tracking-number");
@@ -1662,7 +1662,7 @@ async function changeOrderStatus(orderId, status) {
         showCancelButton: true,
         confirmButtonText: "確認變更",
         cancelButtonText: "取消",
-        confirmButtonColor: "#3C2415",
+        confirmButtonColor: "#268BD2",
       });
       if (!confirm.isConfirmed) {
         loadOrders();
