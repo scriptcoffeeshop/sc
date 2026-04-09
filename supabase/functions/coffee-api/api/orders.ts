@@ -1,9 +1,16 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin, requireAuth } from "../utils/auth.ts";
-import { FRONTEND_URL, VALID_ORDER_STATUSES } from "../utils/config.ts";
+import {
+  FRONTEND_URL,
+  LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN,
+  LINE_ORDER_NOTIFY_TO,
+  VALID_ORDER_STATUSES,
+} from "../utils/config.ts";
 import { sanitize } from "../utils/html.ts";
 import { sendEmail } from "../utils/email.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import { pushLineFlexMessage } from "../utils/line-messaging.ts";
+import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { buildOrderQuote } from "./quote.ts";
 import {
   buildCompletedNotificationHtml,
@@ -131,11 +138,96 @@ async function buildCustomFieldsHtml(
   return customFieldsHtml;
 }
 
-async function getEmailSiteTitle(): Promise<string> {
-  const { data: siteRow } = await supabase.from("coffee_settings").select(
+interface EmailBranding {
+  siteTitle: string;
+  siteLogoUrl: string;
+}
+
+async function getEmailBranding(): Promise<EmailBranding> {
+  const { data: settingsRows } = await supabase.from("coffee_settings")
+    .select("key, value")
+    .in("key", ["site_title", "site_icon_url"]);
+
+  let siteTitleRaw = "";
+  let siteLogoUrl = "";
+  for (const row of settingsRows || []) {
+    const key = String(row.key || "");
+    if (key === "site_title") {
+      siteTitleRaw = String(row.value || "");
+      continue;
+    }
+    if (key === "site_icon_url") {
+      siteLogoUrl = String(row.value || "").trim();
+    }
+  }
+
+  return {
+    siteTitle: normalizeEmailSiteTitle(siteTitleRaw),
+    siteLogoUrl,
+  };
+}
+
+async function isOrderConfirmationAutoEmailEnabled(): Promise<boolean> {
+  const { data: settingRow } = await supabase.from("coffee_settings").select(
     "value",
-  ).eq("key", "site_title").single();
-  return normalizeEmailSiteTitle(String(siteRow?.value || ""));
+  ).eq("key", "order_confirmation_auto_email_enabled").maybeSingle();
+
+  const rawValue = String(settingRow?.value || "").trim();
+  if (!rawValue) return true;
+
+  const normalized = rawValue.toLowerCase();
+  return !["false", "0", "off", "no"].includes(normalized);
+}
+
+async function sendAdminOrderCreatedFlexNotification(params: {
+  orderId: string;
+  status: string;
+  deliveryMethod: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  total: number;
+  ordersText: string;
+  receiptInfo: ReceiptInfo | null;
+}) {
+  const notifyTarget = String(LINE_ORDER_NOTIFY_TO || "").trim();
+  if (!notifyTarget) {
+    console.error(
+      "[submitOrder] missing LINE_ORDER_NOTIFY_TO, skip admin notification",
+    );
+    return;
+  }
+  const notifyToken = String(LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN || "")
+    .trim();
+  if (!notifyToken) {
+    console.error(
+      "[submitOrder] missing LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN, skip admin notification",
+    );
+    return;
+  }
+
+  const { siteTitle } = await getEmailBranding();
+  const flexMessage = buildOrderStatusLineFlexMessage({
+    orderId: params.orderId,
+    siteTitle,
+    status: params.status,
+    deliveryMethod: params.deliveryMethod,
+    paymentMethod: params.paymentMethod,
+    paymentStatus: params.paymentStatus,
+    total: params.total,
+    items: params.ordersText,
+    receiptInfo: params.receiptInfo,
+  });
+
+  const result = await pushLineFlexMessage(
+    notifyTarget,
+    flexMessage,
+    notifyToken,
+  );
+  if (!result.success) {
+    console.error(
+      `[submitOrder] failed to send admin LINE flex notification (notify channel): ${params.orderId} -> ${notifyTarget} (${result.error})`,
+    );
+  }
 }
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
@@ -267,6 +359,79 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         storeAddress: String(data.storeAddress || ""),
       });
     } catch { /* ignore */ }
+  }
+
+  const customerEmail = String(data.email || "").trim();
+  const autoSendConfirmationEmail = await isOrderConfirmationAutoEmailEnabled();
+  if (
+    customerEmail && insertPayload.status === "pending" &&
+    autoSendConfirmationEmail
+  ) {
+    try {
+      const { siteTitle, siteLogoUrl } = await getEmailBranding();
+      const customFieldsHtml = await buildCustomFieldsHtml(data.customFields);
+      const confirmationHtml = buildOrderConfirmationHtml({
+        orderId,
+        siteTitle,
+        logoUrl: siteLogoUrl,
+        lineName: String(data.lineName || "").trim() || "顧客",
+        phone,
+        deliveryMethod,
+        city: String(data.city || ""),
+        district: String(data.district || ""),
+        address: String(data.address || ""),
+        storeName: String(data.storeName || ""),
+        storeAddress: String(data.storeAddress || ""),
+        paymentMethod,
+        transferTargetAccount: String(data.transferTargetAccount || ""),
+        transferAccountLast5: paymentMethod === "transfer"
+          ? String(data.transferAccountLast5 || "")
+          : "",
+        note: String(data.note || ""),
+        ordersText,
+        total,
+        customFieldsHtml,
+        receiptHtml: buildReceiptHtml(receiptInfo),
+      });
+      const subject = `[${siteTitle}] 訂單編號 ${orderId} 成立確認信`;
+      const emailResult = await sendEmail(
+        customerEmail,
+        subject,
+        confirmationHtml,
+      );
+      if (!emailResult.success) {
+        console.error(
+          `[submitOrder] failed to auto send confirmation email: ${orderId} -> ${customerEmail} (${
+            emailResult.error || "unknown"
+          })`,
+        );
+      }
+    } catch (error) {
+      console.error(
+        `[submitOrder] unexpected error while sending confirmation email: ${orderId}`,
+        error,
+      );
+    }
+  }
+
+  if (insertPayload.status === "pending") {
+    try {
+      await sendAdminOrderCreatedFlexNotification({
+        orderId,
+        status: "pending",
+        deliveryMethod,
+        paymentMethod,
+        paymentStatus: String(insertPayload.payment_status || ""),
+        total,
+        ordersText,
+        receiptInfo,
+      });
+    } catch (error) {
+      console.error(
+        `[submitOrder] unexpected error while sending admin LINE flex notification: ${orderId}`,
+        error,
+      );
+    }
   }
 
   if (paymentMethod === "linepay") {
@@ -528,7 +693,7 @@ export async function sendOrderEmail(
   const to = String(orderData.email || "").trim();
   if (!to) return { success: false, error: "此訂單未填寫 Email，無法發送" };
 
-  const siteTitle = await getEmailSiteTitle();
+  const { siteTitle, siteLogoUrl } = await getEmailBranding();
   const orderStatus = String(orderData.status || "pending");
   const mode = resolveOrderEmailMode(data.mode, orderStatus);
   const lineName = String(orderData.line_name || "").trim() || "顧客";
@@ -540,6 +705,7 @@ export async function sendOrderEmail(
     htmlContent = buildShippingNotificationHtml({
       orderId,
       siteTitle,
+      logoUrl: siteLogoUrl,
       lineName,
       deliveryMethod: String(orderData.delivery_method || ""),
       city: String(orderData.city || ""),
@@ -558,6 +724,7 @@ export async function sendOrderEmail(
     htmlContent = buildCompletedNotificationHtml({
       orderId,
       siteTitle,
+      logoUrl: siteLogoUrl,
       lineName,
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
@@ -569,6 +736,7 @@ export async function sendOrderEmail(
     htmlContent = buildOrderConfirmationHtml({
       orderId,
       siteTitle,
+      logoUrl: siteLogoUrl,
       lineName,
       phone: String(orderData.phone || ""),
       deliveryMethod: String(orderData.delivery_method || ""),

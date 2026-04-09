@@ -30,6 +30,9 @@ export const LINE_MESSAGING_CHANNEL_ACCESS_TOKEN =
   Deno.env.get("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN") ||
   Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") ||
   "";
+export const LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN =
+  Deno.env.get("LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN") || "";
+export const LINE_ORDER_NOTIFY_TO = Deno.env.get("LINE_ORDER_NOTIFY_TO") || "";
 export const LINE_MESSAGING_API_BASE_URL =
   Deno.env.get("LINE_MESSAGING_API_BASE_URL") || "https://api.line.me";
 

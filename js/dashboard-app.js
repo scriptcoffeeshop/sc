@@ -177,6 +177,45 @@ function parseBooleanSetting(value, defaultValue = true) {
   return !["false", "0", "off", "no"].includes(normalized);
 }
 
+function applyDashboardBranding(settings = {}) {
+  const siteIconUrl = String(settings.site_icon_url || "").trim();
+  const resolvedLogoUrl = siteIconUrl
+    ? resolveAssetUrl(siteIconUrl)
+    : getDefaultIconUrl("brand");
+  const logoIds = [
+    "dashboard-login-logo",
+    "dashboard-header-logo",
+    "settings-brand-logo",
+  ];
+  logoIds.forEach((id) => {
+    const logoEl = document.getElementById(id);
+    if (!(logoEl instanceof HTMLImageElement) || !resolvedLogoUrl) return;
+    logoEl.src = resolvedLogoUrl;
+  });
+
+  const faviconEl = document.getElementById("dynamic-favicon");
+  if (faviconEl instanceof HTMLLinkElement && resolvedLogoUrl) {
+    faviconEl.href = resolvedLogoUrl;
+  }
+
+  const siteTitle = String(settings.site_title || "").trim();
+  document.title = siteTitle
+    ? `管理後台 | ${siteTitle}`
+    : "管理後台 | Script Coffee";
+}
+
+async function loadPublicDashboardBranding() {
+  try {
+    const response = await fetch(`${API_URL}?action=getSettings&_=${Date.now()}`);
+    if (!response.ok) return;
+    const result = await response.json();
+    if (!result?.success || !result?.settings) return;
+    applyDashboardBranding(result.settings);
+  } catch {
+    // ignore branding prefetch failures on login page
+  }
+}
+
 function readInputValue(id, fallback = "") {
   const el = document.getElementById(id);
   if (el && typeof el.value !== "undefined") {
@@ -379,6 +418,7 @@ export function initDashboardApp() {
     window.renderOrders,
   );
   initializeDashboardEventDelegation();
+  loadPublicDashboardBranding();
   const p = new URLSearchParams(window.location.search);
   if (p.get("code")) handleLineCallback(p.get("code"), p.get("state"));
   else checkLogin();
@@ -2941,9 +2981,19 @@ async function loadSettings() {
     if (d.success) {
       const s = d.settings;
       dashboardSettings = s;
+      applyDashboardBranding(s);
       document.getElementById("s-ann-enabled").checked =
         String(s.announcement_enabled) === "true";
       document.getElementById("s-announcement").value = s.announcement || "";
+      const autoOrderEmailCheckbox = document.getElementById(
+        "s-auto-order-email-enabled",
+      );
+      if (autoOrderEmailCheckbox) {
+        autoOrderEmailCheckbox.checked = parseBooleanSetting(
+          s.order_confirmation_auto_email_enabled,
+          true,
+        );
+      }
       const isOpen = String(s.is_open) !== "false";
       document.querySelector(`input[name="s-open"][value="${isOpen}"]`)
         .checked = true;
@@ -3301,6 +3351,8 @@ async function saveSettings() {
   try {
     const linePaySandboxChecked =
       document.getElementById("s-linepay-sandbox").checked;
+    const autoOrderEmailEnabled =
+      document.getElementById("s-auto-order-email-enabled")?.checked ?? true;
     const payload = {
       userId: getAuthUserId(),
       settings: {
@@ -3308,6 +3360,7 @@ async function saveSettings() {
           document.getElementById("s-ann-enabled").checked,
         ),
         announcement: document.getElementById("s-announcement").value,
+        order_confirmation_auto_email_enabled: String(autoOrderEmailEnabled),
         is_open:
           document.querySelector('input[name="s-open"]:checked')?.value ||
           "true",

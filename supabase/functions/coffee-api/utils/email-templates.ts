@@ -18,6 +18,7 @@ export const PAYMENT_MAP: Record<string, string> = {
 export interface OrderConfirmationParams {
   orderId: string;
   siteTitle: string;
+  logoUrl?: string;
   lineName: string;
   phone: string;
   deliveryMethod: string;
@@ -42,6 +43,49 @@ export function normalizeEmailSiteTitle(siteTitle: string): string {
   const cleanedTitle = rawTitle.replace(/[\s\u3000]*訂購確認[\s\u3000]*$/u, "")
     .trim();
   return cleanedTitle || "咖啡訂購";
+}
+
+interface EmailHeaderParams {
+  backgroundColor: string;
+  title: string;
+  subtitle?: string;
+  logoAlt: string;
+  logoUrl?: string;
+}
+
+function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
+  const raw = String(rawLogoUrl || "").trim();
+  if (!raw) return `${FRONTEND_URL}/icons/logo.png`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const frontendBase = String(FRONTEND_URL || "").replace(/\/+$/, "");
+  const normalized = raw.replace(/^\.?\//, "");
+  if (!frontendBase) return normalized;
+  if (!normalized) return `${frontendBase}/icons/logo.png`;
+  return `${frontendBase}/${normalized}`;
+}
+
+function buildEmailHeaderHtml(params: EmailHeaderParams): string {
+  const subtitle = String(params.subtitle || "").trim();
+  const logoUrl = resolveEmailLogoUrl(params.logoUrl);
+  const subtitleHtml = subtitle
+    ? `<p style="margin: 8px 0 0 0; font-size: 13px; line-height: 1.4; color: #F2EAE4;">${
+      sanitize(subtitle)
+    }</p>`
+    : "";
+
+  return `
+  <div style="background-color: ${params.backgroundColor}; color: #ffffff; padding: 24px 20px 22px; text-align: center;">
+    <div style="display: inline-block; padding: 8px 14px; margin: 0 auto 12px auto; border-radius: 999px; background-color: #ffffff;">
+      <img src="${sanitize(logoUrl)}" alt="${
+    sanitize(params.logoAlt)
+  }" style="display: block; height: 24px; width: auto; max-width: 140px; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
+    </div>
+    <h1 style="margin: 0; font-size: 24px; line-height: 1.32; font-weight: 700; letter-spacing: 0.2px;">${
+    sanitize(params.title)
+  }</h1>
+    ${subtitleHtml}
+  </div>`;
 }
 
 export function buildOrderConfirmationHtml(
@@ -73,12 +117,15 @@ export function buildOrderConfirmationHtml(
 
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
-  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
-      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
-      ${sanitize(displaySiteTitle)}
-    </h1>
-  </div>
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#6F4E37",
+      title: displaySiteTitle,
+      subtitle: "訂單成立通知",
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
     sanitize(params.lineName)
@@ -99,7 +146,6 @@ export function buildOrderConfirmationHtml(
     sanitize(params.note) || "無"
   }</p>
     </div>
-    </div>
     <h3 style="color: #6F4E37; border-bottom: 2px solid #e5ddd5; padding-bottom: 8px; margin-top: 30px;">訂單明細</h3>
     <pre style="font-family: inherit; background-color: #faf9f7; padding: 15px; border: 1px solid #e5ddd5; border-radius: 5px; white-space: pre-wrap; font-size: 14px; color: #444; margin-top: 10px;">${
     sanitize(params.ordersText)
@@ -117,6 +163,7 @@ export function buildOrderConfirmationHtml(
 export interface ShippingNotificationParams {
   orderId: string;
   siteTitle: string;
+  logoUrl?: string;
   lineName: string;
   deliveryMethod: string;
   city: string;
@@ -208,12 +255,15 @@ export function buildShippingNotificationHtml(
 
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
-  <div style="background-color: #6F4E37; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
-      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
-      📦 訂單出貨通知
-    </h1>
-  </div>
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#6F4E37",
+      title: "📦 訂單出貨通知",
+      subtitle: normalizeEmailSiteTitle(params.siteTitle),
+      logoAlt: `${normalizeEmailSiteTitle(params.siteTitle)} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
     sanitize(params.lineName)
@@ -243,20 +293,25 @@ export function buildShippingNotificationHtml(
 export interface CompletedNotificationParams {
   orderId: string;
   siteTitle: string;
+  logoUrl?: string;
   lineName: string;
 }
 
 export function buildCompletedNotificationHtml(
   params: CompletedNotificationParams,
 ): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
   return `
 <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
-  <div style="background-color: #2E7D32; color: #ffffff; padding: 20px; text-align: center;">
-    <h1 style="margin: 0; font-size: 24px; display: flex; align-items: center; justify-content: center;">
-      <img src="${FRONTEND_URL}/icons/logo.png" alt="Logo" style="height: 32px; width: 32px; object-fit: contain; margin-right: 12px; vertical-align: middle; border-radius: 4px;">
-      ✅ 訂單已完成
-    </h1>
-  </div>
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#2E7D32",
+      title: "✅ 訂單已完成",
+      subtitle: displaySiteTitle,
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
   <div style="padding: 30px; color: #333333; line-height: 1.6;">
     <h2 style="font-size: 18px; color: #2E7D32; margin-top: 0;">親愛的 ${
     sanitize(params.lineName)

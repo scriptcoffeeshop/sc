@@ -30,6 +30,35 @@
 
 ## 3) 最近更新（人工摘要）
 
+### 2026-04-10
+
+- 新增「下單即時通知店主」：
+  - 顧客送出訂單成功後，後端會自動用 LINE Messaging API 推播一則 Flex Message 給 `LINE_ORDER_NOTIFY_TO`。
+  - Flex 版型沿用既有後台 `buildLineFlexMessage` 的結構與視覺欄位（訂單編號、狀態、配送、付款、金額、收據資訊、訂單明細）。
+  - 新增後端模板工具：`supabase/functions/coffee-api/utils/line-flex-template.ts`。
+- 修正雙 LINE 帳號相容：
+  - 新增店主通知專用憑證：`LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN`（另可保存 `LINE_ORDER_NOTIFY_CHANNEL_ID` / `LINE_ORDER_NOTIFY_CHANNEL_SECRET`）。
+  - 店主通知固定使用 `LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN` + `LINE_ORDER_NOTIFY_TO`，不再 fallback 舊通道。
+  - 舊有 `LINE_MESSAGING_CHANNEL_ACCESS_TOKEN`（主動發送給消費者）不變。
+  - `pushLineFlexMessage` 支援 token override，讓店主通知與消費者推播可分流。
+  - 已用 LINE API 驗證：新店主通道對 `U2ebb54f01f4c2250f87c56b85176d544` 查詢為 404（尚未綁定），舊通道查詢為 200 且可成功推播。
+- 後台品牌 Logo 同步修正：
+  - `site_icon_url` 現在會同步套用到後台登入頁 Logo、後台 Header Logo、設定頁品牌 Logo 與 favicon。
+- Email Logo 視覺重排：
+  - 訂單信件改用 `coffee_settings.site_icon_url`（未設定時回退 `icons/logo.png`）。
+  - Logo 改為保比例小尺寸（`height: 24px; max-width: 140px`）並置中，避免過大壓迫標題層級。
+- 已更新 Supabase 專案 secrets：
+  - `LINE_MESSAGING_CHANNEL_ACCESS_TOKEN`
+  - `LINE_MESSAGING_CHANNEL_ID`
+  - `LINE_MESSAGING_CHANNEL_SECRET`
+  - `LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN`
+  - `LINE_ORDER_NOTIFY_CHANNEL_ID`
+  - `LINE_ORDER_NOTIFY_CHANNEL_SECRET`
+- 已完成函式部署：`npm run supabase:deploy`（project ref: `avnvsjyyeofivgmrchte`）。
+- 已完成資料庫檢查與部署：
+  - `npm run supabase:db:push`（Remote database is up to date）
+  - 前端快取版號已升級為 `v=74`，並通過 `npm run guardrails`。
+
 ### 2026-04-09（本次）
 
 - 修正前台副標題分隔符不一致造成的視覺跳動：
@@ -42,6 +71,11 @@
 - 重整本文件：
   - 刪除重複且相互矛盾的版本敘述。
   - 保留必要規範與完整 commit 逐筆紀錄。
+- 新增「訂單成立通知自動寄信」可控開關：
+  - 後台系統設定新增 `s-auto-order-email-enabled` 勾選項目，可控制顧客下單（待處理）是否自動寄成立通知信。
+  - `submitOrder` 新增讀取 `coffee_settings.order_confirmation_auto_email_enabled`，預設為開啟（缺值時視為 `true`）。
+  - 新增 migration：`202604091130_add_order_confirmation_auto_email_setting.sql`，補齊既有環境預設值。
+- 已同步前端快取版號至 `v=73`（透過 `scripts/sync_frontend_version.py`），並通過 guardrails。
 
 ### 2026-04-09（稍早）
 

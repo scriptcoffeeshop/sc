@@ -28,6 +28,7 @@ Deno.test("Email Templates - Order Confirmation", () => {
   const html = buildOrderConfirmationHtml({
     orderId: "C20261231-AABBCCDD",
     siteTitle: "Script Coffee 訂購確認",
+    logoUrl: "https://cdn.example.com/logo-new.png",
     lineName: "User",
     phone: "0912345678",
     deliveryMethod: "delivery",
@@ -56,6 +57,33 @@ Deno.test("Email Templates - Order Confirmation", () => {
     false,
     "Unexpected confirmation suffix in title",
   );
+  assertEquals(
+    html.includes(
+      "display: flex; align-items: center; justify-content: center;",
+    ),
+    false,
+    "Logo layout should not rely on flex in email header",
+  );
+  assertEquals(
+    html.includes("height: 24px; width: auto; max-width: 140px;"),
+    true,
+    "Logo should use compact ratio-preserving size in header",
+  );
+  assertEquals(
+    html.includes("height: 40px; width: 40px;"),
+    false,
+    "Logo should not be forced into square dimensions",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-new.png"),
+    true,
+    "Logo should use provided custom URL",
+  );
+  assertEquals(
+    html.includes("訂單成立通知"),
+    true,
+    "Missing header subtitle for confirmation email",
+  );
   assertEquals(html.includes("配送到府"), true, "Missing delivery method");
   assertEquals(html.includes("貨到付款"), true, "Missing payment method");
 });
@@ -64,6 +92,7 @@ Deno.test("Email Templates - Shipping Notification", () => {
   const html = buildShippingNotificationHtml({
     orderId: "C20261231-AABBCCDD",
     siteTitle: "Test Shop",
+    logoUrl: "https://cdn.example.com/logo-shipping.png",
     lineName: "User",
     deliveryMethod: "seven_eleven",
     city: "",
@@ -85,4 +114,22 @@ Deno.test("Email Templates - Shipping Notification", () => {
   assertEquals(html.includes("黑貓宅急便"), true, "Missing shipping provider");
   assertEquals(html.includes("物流追蹤頁面"), true, "Missing tracking link");
   assertEquals(html.includes("統智門市"), true, "Missing store name");
+  assertEquals(
+    html.includes(
+      "display: flex; align-items: center; justify-content: center;",
+    ),
+    false,
+    "Shipping email logo layout should not rely on flex",
+  );
+  assertEquals(
+    html.includes("height: 24px; width: auto; max-width: 140px;"),
+    true,
+    "Shipping email logo should use compact ratio-preserving size",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-shipping.png"),
+    true,
+    "Shipping email should use provided custom logo URL",
+  );
+  assertEquals(html.includes("Test Shop"), true, "Missing site title subtitle");
 });

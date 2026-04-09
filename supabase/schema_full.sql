@@ -70,6 +70,7 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('is_open', 'true'),
   ('announcement', ''),
   ('announcement_enabled', 'false'),
+  ('order_confirmation_auto_email_enabled', 'true'),
   ('store_name', '咖啡訂購'),
   ('delivery_pricing_rules', '[]'),
   ('site_title', '咖啡豆訂購'),
