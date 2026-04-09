@@ -1,6 +1,7 @@
 import { assertEquals } from "std/testing/asserts";
 import {
   buildOrderConfirmationHtml,
+  buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
 
@@ -65,7 +66,7 @@ Deno.test("Email Templates - Order Confirmation", () => {
     "Logo layout should not rely on flex in email header",
   );
   assertEquals(
-    html.includes("height: 24px; width: auto; max-width: 140px;"),
+    html.includes("height: 18px; width: auto; max-width: 108px;"),
     true,
     "Logo should use compact ratio-preserving size in header",
   );
@@ -122,7 +123,7 @@ Deno.test("Email Templates - Shipping Notification", () => {
     "Shipping email logo layout should not rely on flex",
   );
   assertEquals(
-    html.includes("height: 24px; width: auto; max-width: 140px;"),
+    html.includes("height: 18px; width: auto; max-width: 108px;"),
     true,
     "Shipping email logo should use compact ratio-preserving size",
   );
@@ -132,4 +133,42 @@ Deno.test("Email Templates - Shipping Notification", () => {
     "Shipping email should use provided custom logo URL",
   );
   assertEquals(html.includes("Test Shop"), true, "Missing site title subtitle");
+});
+
+Deno.test("Email Templates - Processing Notification", () => {
+  const html = buildProcessingNotificationHtml({
+    orderId: "C20261231-AABBCCDD",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-processing.png",
+    lineName: "User",
+    deliveryMethod: "delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路3號",
+    storeName: "",
+    storeAddress: "",
+    paymentMethod: "linepay",
+    paymentStatus: "pending",
+  });
+
+  assertEquals(
+    html.includes("⏳ 訂單處理中通知"),
+    true,
+    "Missing processing email title",
+  );
+  assertEquals(
+    html.includes("您的訂單已進入處理流程"),
+    true,
+    "Missing processing status content",
+  );
+  assertEquals(
+    html.includes("height: 18px; width: auto; max-width: 108px;"),
+    true,
+    "Processing email logo should use compact ratio-preserving size",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-processing.png"),
+    true,
+    "Processing email should use provided custom logo URL",
+  );
 });

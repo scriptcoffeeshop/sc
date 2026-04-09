@@ -47,6 +47,11 @@
 - Email Logo 視覺重排：
   - 訂單信件改用 `coffee_settings.site_icon_url`（未設定時回退 `icons/logo.png`）。
   - Logo 改為保比例小尺寸（`height: 24px; max-width: 140px`）並置中，避免過大壓迫標題層級。
+- 新增「訂單處理中通知信」：
+  - `sendOrderEmail` 新增 `processing` 模式，當訂單狀態為 `processing` 時預設寄送「處理中通知」。
+  - 後台手動寄信提示文案同步新增「處理中通知」類型。
+- Email Header Logo 再微調：
+  - Header Logo 縮小為 `height: 18px; max-width: 108px`，並改為更緊湊置中膠囊區塊，避免視覺搶主標。
 - 已更新 Supabase 專案 secrets：
   - `LINE_MESSAGING_CHANNEL_ACCESS_TOKEN`
   - `LINE_MESSAGING_CHANNEL_ID`
@@ -57,7 +62,7 @@
 - 已完成函式部署：`npm run supabase:deploy`（project ref: `avnvsjyyeofivgmrchte`）。
 - 已完成資料庫檢查與部署：
   - `npm run supabase:db:push`（已套用 migration：`202604100920_add_user_order_default_fields.sql`）
-  - 前端快取版號已升級為 `v=75`，並通過 `npm run guardrails`。
+  - 前端快取版號已升級為 `v=76`，並通過 `npm run guardrails`。
 - 新增「下單資料記憶」並整合會員資料：
   - `coffee_users` 新增欄位：`default_payment_method`、`default_transfer_account_last5`、`default_receipt_info`。
   - 顧客成功下單後，後端 `submitOrder` 會同步保存本次付款方式、匯款末五碼、收據資訊、配送資訊與自訂欄位到會員資料。

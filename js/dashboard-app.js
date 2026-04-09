@@ -1650,6 +1650,8 @@ async function sendOrderEmailByOrderId(orderId) {
   const statusLabel = orderStatusLabel[status] || status;
   const emailTypeLabel = status === "shipped"
     ? "出貨通知"
+    : status === "processing"
+    ? "處理中通知"
     : status === "completed"
     ? "完成通知"
     : "成立確認信";

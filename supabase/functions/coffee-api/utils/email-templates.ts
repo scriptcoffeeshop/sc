@@ -75,17 +75,30 @@ function buildEmailHeaderHtml(params: EmailHeaderParams): string {
     : "";
 
   return `
-  <div style="background-color: ${params.backgroundColor}; color: #ffffff; padding: 24px 20px 22px; text-align: center;">
-    <div style="display: inline-block; padding: 8px 14px; margin: 0 auto 12px auto; border-radius: 999px; background-color: #ffffff;">
+  <div style="background-color: ${params.backgroundColor}; color: #ffffff; padding: 22px 20px 20px; text-align: center;">
+    <div style="display: inline-block; padding: 6px 10px; margin: 0 auto 10px auto; border-radius: 999px; background-color: rgba(255,255,255,0.96); border: 1px solid rgba(255,255,255,0.72);">
       <img src="${sanitize(logoUrl)}" alt="${
     sanitize(params.logoAlt)
-  }" style="display: block; height: 24px; width: auto; max-width: 140px; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
+  }" style="display: block; height: 18px; width: auto; max-width: 108px; border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic;">
     </div>
-    <h1 style="margin: 0; font-size: 24px; line-height: 1.32; font-weight: 700; letter-spacing: 0.2px;">${
+    <h1 style="margin: 0; font-size: 22px; line-height: 1.32; font-weight: 700; letter-spacing: 0.2px;">${
     sanitize(params.title)
   }</h1>
     ${subtitleHtml}
   </div>`;
+}
+
+function getPaymentStatusPresentation(
+  paymentMethod: string,
+  paymentStatus: string,
+): { text: string; color: string } {
+  if (paymentStatus === "paid") {
+    return { text: "已付款", color: "#2e7d32" };
+  }
+  if (paymentMethod === "cod") {
+    return { text: "貨到付款", color: "#0288d1" };
+  }
+  return { text: "待付款", color: "#d32f2f" };
 }
 
 export function buildOrderConfirmationHtml(
@@ -178,6 +191,21 @@ export interface ShippingNotificationParams {
   trackingUrl: string;
 }
 
+export interface ProcessingNotificationParams {
+  orderId: string;
+  siteTitle: string;
+  logoUrl?: string;
+  lineName: string;
+  deliveryMethod: string;
+  city: string;
+  district: string;
+  address: string;
+  storeName: string;
+  storeAddress: string;
+  paymentMethod: string;
+  paymentStatus: string;
+}
+
 function getDefaultTrackingUrl(deliveryMethod: string): string {
   if (deliveryMethod === "seven_eleven") {
     return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
@@ -215,12 +243,10 @@ export function buildShippingNotificationHtml(
     }`.trim();
 
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
-  const paymentStatusText = params.paymentStatus === "paid"
-    ? "已付款"
-    : (params.paymentMethod === "cod" ? "貨到付款" : "未付款");
-  const paymentStatusColor = params.paymentStatus === "paid"
-    ? "#2e7d32"
-    : (params.paymentMethod === "cod" ? "#0288d1" : "#d32f2f");
+  const paymentStatus = getPaymentStatusPresentation(
+    params.paymentMethod,
+    params.paymentStatus,
+  );
 
   const customTrackingUrl = normalizeTrackingUrl(params.trackingUrl || "");
   const defaultTrackingUrl = getDefaultTrackingUrl(params.deliveryMethod);
@@ -277,11 +303,64 @@ export function buildShippingNotificationHtml(
   }<br><span style="color: #666; font-size: 14px;">${
     sanitize(deliveryText)
   }</span></p>
-      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatusColor}; font-weight: bold;">(${paymentStatusText})</span></p>
+      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatus.color}; font-weight: bold;">(${paymentStatus.text})</span></p>
       ${trackingSection}
     </div>
     
     <p style="margin-top: 30px; color: #555;">依據配送方式不同，商品預計於 1-3 個工作天內抵達。<br>若是超商取貨，屆時將有手機簡訊通知取件，請留意您的手機訊息。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+        `;
+}
+
+export function buildProcessingNotificationHtml(
+  params: ProcessingNotificationParams,
+): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
+  const isDelivery = params.deliveryMethod === "delivery" ||
+    params.deliveryMethod === "home_delivery";
+  const deliveryText = isDelivery
+    ? `${params.city}${params.district} ${params.address}`
+    : `${params.storeName} ${
+      params.storeAddress ? `(${params.storeAddress})` : ""
+    }`.trim();
+  const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
+  const paymentStatus = getPaymentStatusPresentation(
+    params.paymentMethod,
+    params.paymentStatus,
+  );
+
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#6F4E37",
+      title: "⏳ 訂單處理中通知",
+      subtitle: displaySiteTitle,
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #6F4E37; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單已進入處理流程！</h2>
+    <p>我們已開始準備您的商品，完成後會再通知您出貨進度。</p>
+
+    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
+      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
+    METHOD_MAP[params.deliveryMethod] || "一般配送"
+  }<br><span style="color: #666; font-size: 14px;">${
+    sanitize(deliveryText)
+  }</span></p>
+      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatus.color}; font-weight: bold;">(${paymentStatus.text})</span></p>
+    </div>
+
+    <p style="margin-top: 30px; color: #555;">感謝您的耐心等候，我們會盡快完成處理並寄出商品。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>

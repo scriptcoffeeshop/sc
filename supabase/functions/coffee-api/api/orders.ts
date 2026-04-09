@@ -15,6 +15,7 @@ import { buildOrderQuote } from "./quote.ts";
 import {
   buildCompletedNotificationHtml,
   buildOrderConfirmationHtml,
+  buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
   normalizeEmailSiteTitle,
 } from "../utils/email-templates.ts";
@@ -668,11 +669,15 @@ export async function updateOrderStatus(
 function resolveOrderEmailMode(
   modeInput: unknown,
   orderStatus: string,
-): "confirmation" | "shipping" | "completed" {
+): "confirmation" | "processing" | "shipping" | "completed" {
   const mode = String(modeInput || "").trim();
-  if (mode === "confirmation" || mode === "shipping" || mode === "completed") {
+  if (
+    mode === "confirmation" || mode === "processing" || mode === "shipping" ||
+    mode === "completed"
+  ) {
     return mode;
   }
+  if (orderStatus === "processing") return "processing";
   if (orderStatus === "shipped") return "shipping";
   if (orderStatus === "completed") return "completed";
   return "confirmation";
@@ -726,6 +731,22 @@ export async function sendOrderEmail(
       trackingUrl: String(orderData.tracking_url || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已出貨通知`;
+  } else if (mode === "processing") {
+    htmlContent = buildProcessingNotificationHtml({
+      orderId,
+      siteTitle,
+      logoUrl: siteLogoUrl,
+      lineName,
+      deliveryMethod: String(orderData.delivery_method || ""),
+      city: String(orderData.city || ""),
+      district: String(orderData.district || ""),
+      address: String(orderData.address || ""),
+      storeName: String(orderData.store_name || ""),
+      storeAddress: String(orderData.store_address || ""),
+      paymentMethod: String(orderData.payment_method || "cod"),
+      paymentStatus: String(orderData.payment_status || ""),
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 處理中通知`;
   } else if (mode === "completed") {
     htmlContent = buildCompletedNotificationHtml({
       orderId,
@@ -770,6 +791,8 @@ export async function sendOrderEmail(
 
   const modeLabel = mode === "shipping"
     ? "出貨通知"
+    : mode === "processing"
+    ? "處理中通知"
     : mode === "completed"
     ? "完成通知"
     : "成立確認信";
