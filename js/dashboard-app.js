@@ -3120,15 +3120,15 @@ function configToHtml(item, tbody, isNew = false) {
         </td>
         <td class="p-3">
             <div class="flex flex-col gap-2 min-w-[280px]">
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="icon-upload-row">
                     <img class="icon-upload-preview do-icon-preview" src="${esc(
     previewUrl
   )}" alt="配送圖示預覽">
                     <input type="hidden" class="do-icon-url" value="${esc(
     normalized.icon_url
   )}">
-                    <input type="file" class="do-icon-file text-xs" accept="image/png,image/webp,image/jpeg,image/jpg">
-                    <button type="button" data-action="upload-delivery-row-icon" class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft">上傳圖示</button>
+                    <input type="file" class="do-icon-file text-xs icon-upload-file" accept="image/png,image/webp,image/jpeg,image/jpg">
+                    <button type="button" data-action="upload-delivery-row-icon" class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft icon-upload-action">上傳圖示</button>
                 </div>
                 <p class="text-[11px] ui-text-muted truncate do-icon-url-display">${
     esc(normalized.icon_url)

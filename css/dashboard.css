@@ -447,6 +447,34 @@
   display: none;
 }
 
+.icon-upload-row {
+  display: grid;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.icon-upload-file {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  color: #657B83;
+}
+
+.icon-upload-file::file-selector-button {
+  margin-right: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #C9C0A8;
+  border-radius: 8px;
+  background: #FFFDF7;
+  color: #586E75;
+  cursor: pointer;
+}
+
+.icon-upload-action {
+  white-space: nowrap;
+}
+
 .icon-text-fallback {
   width: 4.2rem;
   text-align: center;
@@ -635,6 +663,17 @@
 
   .dashboard-enterprise #user-search {
     flex: 1;
+  }
+
+  .icon-upload-row {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+
+  .icon-upload-row .icon-upload-action {
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 0.15rem;
   }
 }
 
