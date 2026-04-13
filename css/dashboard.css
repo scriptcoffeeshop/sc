@@ -253,6 +253,18 @@
   box-shadow: 0 10px 25px -8px rgba(101, 123, 131, 0.2);
 }
 
+.dashboard-enterprise #dashboard-login-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+
+.dashboard-enterprise #dashboard-header-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
 .dashboard-enterprise #login-page h1 {
   color: #1F2937 !important;
 }
