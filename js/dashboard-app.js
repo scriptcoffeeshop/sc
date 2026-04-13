@@ -619,6 +619,7 @@ function buildLineFlexMessage(order, newStatus) {
     ? ` (${orderPayStatusLabel[order.paymentStatus] || order.paymentStatus})`
     : "";
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
+  const orderNote = String(order.note || "").trim();
   const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
   const hasTrackingLinkCta = Boolean(order.shippingProvider && customTrackingUrl);
 
@@ -735,6 +736,31 @@ function buildLineFlexMessage(order, newStatus) {
       ],
     },
   ];
+
+  if (orderNote) {
+    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "訂單備註",
+          size: "sm",
+          color: "#839496",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: orderNote,
+          size: "sm",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    });
+  }
 
   // 收據資訊
   if (receiptInfo) {

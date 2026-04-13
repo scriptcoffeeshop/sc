@@ -14,6 +14,7 @@ export interface OrderFlexPayload {
   paymentStatus: string;
   total: number;
   items: string;
+  note?: string;
   receiptInfo?: unknown;
   shippingProvider?: string;
   trackingUrl?: string;
@@ -99,6 +100,7 @@ export function buildOrderStatusLineFlexMessage(
   const hasTrackingLinkCta = Boolean(
     order.shippingProvider && customTrackingUrl,
   );
+  const orderNote = String(order.note || "").trim();
   const orderId = String(order.orderId || "").trim();
   const siteTitle = String(order.siteTitle || "Script Coffee").trim() ||
     "Script Coffee";
@@ -216,6 +218,31 @@ export function buildOrderStatusLineFlexMessage(
       ],
     },
   ];
+
+  if (orderNote) {
+    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "訂單備註",
+          size: "sm",
+          color: "#839496",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: orderNote,
+          size: "sm",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    });
+  }
 
   if (receiptInfo) {
     bodyContents.push({ type: "separator", margin: "md" });

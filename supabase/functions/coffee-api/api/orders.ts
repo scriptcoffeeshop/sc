@@ -189,6 +189,7 @@ async function sendAdminOrderCreatedFlexNotification(params: {
   paymentStatus: string;
   total: number;
   ordersText: string;
+  note: string;
   receiptInfo: ReceiptInfo | null;
 }) {
   const notifyTarget = String(LINE_ORDER_NOTIFY_TO || "").trim();
@@ -217,6 +218,7 @@ async function sendAdminOrderCreatedFlexNotification(params: {
     paymentStatus: params.paymentStatus,
     total: params.total,
     items: params.ordersText,
+    note: params.note,
     receiptInfo: params.receiptInfo,
   });
 
@@ -432,6 +434,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         paymentStatus: String(insertPayload.payment_status || ""),
         total,
         ordersText,
+        note: String(data.note || ""),
         receiptInfo,
       });
     } catch (error) {
@@ -739,6 +742,7 @@ export async function sendOrderEmail(
       trackingNumber: String(orderData.tracking_number || ""),
       shippingProvider: String(orderData.shipping_provider || ""),
       trackingUrl: String(orderData.tracking_url || ""),
+      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已出貨通知`;
   } else if (mode === "processing") {
@@ -755,6 +759,7 @@ export async function sendOrderEmail(
       storeAddress: String(orderData.store_address || ""),
       paymentMethod: String(orderData.payment_method || "cod"),
       paymentStatus: String(orderData.payment_status || ""),
+      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 處理中通知`;
   } else if (mode === "completed") {
@@ -763,6 +768,7 @@ export async function sendOrderEmail(
       siteTitle,
       logoUrl: siteLogoUrl,
       lineName,
+      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
   } else if (mode === "cancelled") {
@@ -772,6 +778,7 @@ export async function sendOrderEmail(
       logoUrl: siteLogoUrl,
       lineName,
       cancelReason: String(orderData.cancel_reason || ""),
+      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已取消通知`;
   } else {

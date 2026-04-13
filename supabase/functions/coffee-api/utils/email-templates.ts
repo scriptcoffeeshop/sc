@@ -99,6 +99,11 @@ function getPaymentStatusPresentation(
   return { text: "待付款", color: "#d32f2f" };
 }
 
+function buildOrderNoteHtml(note: string, margin = "0"): string {
+  const safeNote = sanitize(String(note || "").trim()) || "無";
+  return `<p style="margin: ${margin};"><strong>訂單備註：</strong> ${safeNote}</p>`;
+}
+
 export function buildOrderConfirmationHtml(
   params: OrderConfirmationParams,
 ): string {
@@ -187,6 +192,7 @@ export interface ShippingNotificationParams {
   trackingNumber: string;
   shippingProvider: string;
   trackingUrl: string;
+  note?: string;
 }
 
 export interface ProcessingNotificationParams {
@@ -202,6 +208,7 @@ export interface ProcessingNotificationParams {
   storeAddress: string;
   paymentMethod: string;
   paymentStatus: string;
+  note?: string;
 }
 
 function getDefaultTrackingUrl(deliveryMethod: string): string {
@@ -302,6 +309,7 @@ export function buildShippingNotificationHtml(
     sanitize(deliveryText)
   }</span></p>
       <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatus.color}; font-weight: bold;">(${paymentStatus.text})</span></p>
+      ${buildOrderNoteHtml(String(params.note || ""), "10px 0 0 0")}
       ${trackingSection}
     </div>
     
@@ -356,6 +364,7 @@ export function buildProcessingNotificationHtml(
     sanitize(deliveryText)
   }</span></p>
       <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatus.color}; font-weight: bold;">(${paymentStatus.text})</span></p>
+      ${buildOrderNoteHtml(String(params.note || ""), "10px 0 0 0")}
     </div>
 
     <p style="margin-top: 30px; color: #555;">感謝您的耐心等候，我們會盡快完成處理並寄出商品。</p>
@@ -372,6 +381,7 @@ export interface CompletedNotificationParams {
   siteTitle: string;
   logoUrl?: string;
   lineName: string;
+  note?: string;
 }
 
 export interface CancelledNotificationParams {
@@ -380,6 +390,7 @@ export interface CancelledNotificationParams {
   logoUrl?: string;
   lineName: string;
   cancelReason: string;
+  note?: string;
 }
 
 export function buildCompletedNotificationHtml(
@@ -402,6 +413,12 @@ export function buildCompletedNotificationHtml(
     sanitize(params.lineName)
   }，您的訂單已順利完成！</h2>
     <p>這封信是要通知您，您的訂單 <strong>${params.orderId}</strong> 已經順利完成。</p>
+    <div style="background-color: #f9f6f0; border-left: 4px solid #2E7D32; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 8px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
+      ${buildOrderNoteHtml(String(params.note || ""), "0")}
+    </div>
     <p>非常感謝您的購買與支持，期待您再次光臨！如果有任何問題，歡迎隨時與我們聯絡。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
@@ -441,6 +458,7 @@ export function buildCancelledNotificationHtml(
     sanitize(params.orderId)
   }</p>
       <p style="margin: 0;"><strong>取消原因：</strong> ${safeReason}</p>
+      ${buildOrderNoteHtml(String(params.note || ""), "8px 0 0 0")}
     </div>
     <p style="margin-top: 20px; color: #555;">若您有任何疑問，請直接聯繫我們，我們會盡快協助您。</p>
   </div>

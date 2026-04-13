@@ -5,6 +5,7 @@ import {
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
+import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 
 Deno.test("Basic Router Test - Health Check", () => {
   // 這裡可以匯入 router 邏輯進行單元測試
@@ -112,6 +113,7 @@ Deno.test("Email Templates - Shipping Notification", () => {
     trackingNumber: "700123456",
     shippingProvider: "黑貓宅急便",
     trackingUrl: "https://example.com/track/700123456",
+    note: "請放管理室",
   });
 
   assertEquals(html.includes("7-11 取貨"), true, "Missing delivery method");
@@ -144,6 +146,16 @@ Deno.test("Email Templates - Shipping Notification", () => {
     "Shipping email should use provided custom logo URL",
   );
   assertEquals(html.includes("Test Shop"), true, "Missing site title subtitle");
+  assertEquals(
+    html.includes("訂單備註"),
+    true,
+    "Shipping email should include note label",
+  );
+  assertEquals(
+    html.includes("請放管理室"),
+    true,
+    "Shipping email should include note content",
+  );
 });
 
 Deno.test("Email Templates - Processing Notification", () => {
@@ -160,6 +172,7 @@ Deno.test("Email Templates - Processing Notification", () => {
     storeAddress: "",
     paymentMethod: "linepay",
     paymentStatus: "pending",
+    note: "請中午前送達",
   });
 
   assertEquals(
@@ -182,6 +195,11 @@ Deno.test("Email Templates - Processing Notification", () => {
     true,
     "Processing email should use provided custom logo URL",
   );
+  assertEquals(
+    html.includes("請中午前送達"),
+    true,
+    "Processing email should include note content",
+  );
 });
 
 Deno.test("Email Templates - Cancelled Notification", () => {
@@ -191,6 +209,7 @@ Deno.test("Email Templates - Cancelled Notification", () => {
     logoUrl: "https://cdn.example.com/logo-cancelled.png",
     lineName: "User",
     cancelReason: "付款逾時未完成",
+    note: "若可改時間請來電",
   });
 
   assertEquals(
@@ -212,5 +231,35 @@ Deno.test("Email Templates - Cancelled Notification", () => {
     html.includes("https://cdn.example.com/logo-cancelled.png"),
     true,
     "Cancelled email should use provided custom logo URL",
+  );
+  assertEquals(
+    html.includes("若可改時間請來電"),
+    true,
+    "Cancelled email should include note content",
+  );
+});
+
+Deno.test("Line Flex Template - Include Note", () => {
+  const flex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-AABBCCDD",
+    siteTitle: "Script Coffee",
+    status: "processing",
+    deliveryMethod: "delivery",
+    paymentMethod: "linepay",
+    paymentStatus: "paid",
+    total: 1200,
+    items: "衣索比亞 x 2",
+    note: "請先電話聯繫",
+  });
+  const payloadText = JSON.stringify(flex);
+  assertEquals(
+    payloadText.includes("訂單備註"),
+    true,
+    "Flex should include note label",
+  );
+  assertEquals(
+    payloadText.includes("請先電話聯繫"),
+    true,
+    "Flex should include note content",
   );
 });
