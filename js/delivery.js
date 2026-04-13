@@ -482,6 +482,10 @@ export function loadDeliveryPrefs() {
           document.getElementById("delivery-detail-address").value =
             prefs.address;
         }
+        const deliveryCompanyEl = document.getElementById("delivery-company");
+        if (deliveryCompanyEl) {
+          deliveryCompanyEl.value = String(prefs.companyOrBuilding || "").trim();
+        }
       } else if (method === "home_delivery") {
         // home_delivery 的 district 可能是 "300 東區"，回填時需拆出區域名稱
         const countyEl = document.querySelector(".county");
@@ -505,10 +509,6 @@ export function loadDeliveryPrefs() {
         if (prefs.address) {
           const homeAddrEl = document.getElementById("home-delivery-detail");
           if (homeAddrEl) homeAddrEl.value = prefs.address;
-        }
-        const homeCompanyEl = document.getElementById("home-delivery-company");
-        if (homeCompanyEl) {
-          homeCompanyEl.value = String(prefs.companyOrBuilding || "").trim();
         }
       } else if (method === "seven_eleven" || method === "family_mart") {
         if (prefs.storeId) {

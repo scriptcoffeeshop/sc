@@ -34,7 +34,7 @@ function getDefaultTrackingUrl(deliveryMethod) {
   return "";
 }
 
-function composeHomeDeliveryAddress(address, companyOrBuilding) {
+function composeDeliveryAddress(address, companyOrBuilding) {
   const detailAddress = String(address || "").trim();
   const companyText = String(companyOrBuilding || "").trim();
   if (!detailAddress) return "";
@@ -272,6 +272,9 @@ export async function submitOrder() {
     const district = document.getElementById("delivery-district").value;
     const addr = document.getElementById("delivery-detail-address").value
       .trim();
+    const companyOrBuilding = String(
+      document.getElementById("delivery-company")?.value || "",
+    ).trim();
     if (!city) {
       Swal.fire("錯誤", "請選擇縣市", "error");
       return;
@@ -280,7 +283,7 @@ export async function submitOrder() {
       Swal.fire("錯誤", "請填寫詳細地址", "error");
       return;
     }
-    deliveryInfo = { city, district, address: addr };
+    deliveryInfo = { city, district, address: addr, companyOrBuilding };
   } else if (deliveryMethod === "home_delivery") {
     // 全台宅配處理
     const cityObj = document.querySelector(".county");
@@ -290,9 +293,6 @@ export async function submitOrder() {
     const district = distObj ? distObj.value : "";
     const zip = zipObj ? zipObj.value : "";
     const addr = document.getElementById("home-delivery-detail").value.trim();
-    const companyOrBuilding = String(
-      document.getElementById("home-delivery-company")?.value || "",
-    ).trim();
     if (!city || !district) {
       Swal.fire("錯誤", "請選擇全台宅配的縣市及區域", "error");
       return;
@@ -305,7 +305,6 @@ export async function submitOrder() {
       city,
       district: `${zip} ${district}`.trim(),
       address: addr,
-      companyOrBuilding,
     };
   } else if (deliveryMethod === "in_store") {
     deliveryInfo = {
@@ -402,7 +401,7 @@ export async function submitOrder() {
       }`;
   const orderLinesHtml = orderLines.map((line) => escapeHtml(String(line)))
     .join("<br>");
-  const homeDeliveryCompanyText = deliveryMethod === "home_delivery"
+  const deliveryCompanyText = deliveryMethod === "delivery"
     ? String(deliveryInfo.companyOrBuilding || "").trim()
     : "";
 
@@ -411,8 +410,8 @@ export async function submitOrder() {
         <b>配送方式：</b>${methodText[deliveryMethod]}<br>
         <b>取貨地點：</b>${escapeHtml(addrText)}<br><br>
         ${
-    homeDeliveryCompanyText
-      ? `<b>公司行號/社區大樓：</b>${escapeHtml(homeDeliveryCompanyText)}<br><br>`
+    deliveryCompanyText
+      ? `<b>公司行號/社區大樓：</b>${escapeHtml(deliveryCompanyText)}<br><br>`
       : ""
   }
         <b>訂單內容：</b><br>${orderLinesHtml}<br><br>
@@ -468,8 +467,8 @@ export async function submitOrder() {
 
   try {
     const submitDeliveryInfo = { ...deliveryInfo };
-    if (deliveryMethod === "home_delivery") {
-      submitDeliveryInfo.address = composeHomeDeliveryAddress(
+    if (deliveryMethod === "delivery") {
+      submitDeliveryInfo.address = composeDeliveryAddress(
         deliveryInfo.address,
         deliveryInfo.companyOrBuilding,
       );

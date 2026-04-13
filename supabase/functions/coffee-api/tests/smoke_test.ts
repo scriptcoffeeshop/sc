@@ -167,7 +167,7 @@ Deno.test("Email Templates - Processing Notification", () => {
     deliveryMethod: "delivery",
     city: "新竹市",
     district: "東區",
-    address: "測試路3號",
+    address: "測試路3號（公司行號/社區大樓：好日子商辦）",
     storeName: "",
     storeAddress: "",
     paymentMethod: "linepay",
@@ -199,6 +199,11 @@ Deno.test("Email Templates - Processing Notification", () => {
     html.includes("請中午前送達"),
     true,
     "Processing email should include note content",
+  );
+  assertEquals(
+    html.includes("好日子商辦"),
+    true,
+    "Processing email should include delivery company/building text",
   );
 });
 
@@ -245,6 +250,9 @@ Deno.test("Line Flex Template - Include Note", () => {
     siteTitle: "Script Coffee",
     status: "processing",
     deliveryMethod: "delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路3號（公司行號/社區大樓：好日子商辦）",
     paymentMethod: "linepay",
     paymentStatus: "paid",
     total: 1200,
@@ -261,5 +269,15 @@ Deno.test("Line Flex Template - Include Note", () => {
     payloadText.includes("請先電話聯繫"),
     true,
     "Flex should include note content",
+  );
+  assertEquals(
+    payloadText.includes("配送地址"),
+    true,
+    "Flex should include delivery address label",
+  );
+  assertEquals(
+    payloadText.includes("好日子商辦"),
+    true,
+    "Flex should include delivery company/building text",
   );
 });

@@ -613,6 +613,17 @@ function buildLineFlexMessage(order, newStatus) {
   const statusColor = statusColorMap[newStatus] || "#586E75";
   const deliveryLabel = orderMethodLabel[order.deliveryMethod] ||
     order.deliveryMethod || "";
+  const isAddressDelivery = order.deliveryMethod === "delivery" ||
+    order.deliveryMethod === "home_delivery";
+  const deliveryAddressText = isAddressDelivery
+    ? `${String(order.city || "")}${String(order.district || "")} ${
+      String(order.address || "")
+    }`.trim()
+    : `${String(order.storeName || "")}${
+      String(order.storeAddress || "").trim()
+        ? ` (${String(order.storeAddress || "").trim()})`
+        : ""
+    }`.trim();
   const paymentLabel =
     orderPayMethodLabel[order.paymentMethod || "cod"] || "貨到付款";
   const paymentStatusStr = order.paymentStatus
@@ -646,6 +657,29 @@ function buildLineFlexMessage(order, newStatus) {
       ],
     },
     { type: "separator", margin: "md" },
+    ...(deliveryAddressText
+      ? [{
+        type: "box",
+        layout: "horizontal",
+        margin: "md",
+        contents: [
+          {
+            type: "text",
+            text: "配送地址",
+            size: "sm",
+            color: "#839496",
+            flex: 3,
+          },
+          {
+            type: "text",
+            text: deliveryAddressText,
+            size: "sm",
+            flex: 5,
+            wrap: true,
+          },
+        ],
+      }, { type: "separator", margin: "md" }]
+      : []),
     {
       type: "box",
       layout: "horizontal",

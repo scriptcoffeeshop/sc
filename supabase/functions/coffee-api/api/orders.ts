@@ -185,6 +185,11 @@ async function sendAdminOrderCreatedFlexNotification(params: {
   orderId: string;
   status: string;
   deliveryMethod: string;
+  city: string;
+  district: string;
+  address: string;
+  storeName: string;
+  storeAddress: string;
   paymentMethod: string;
   paymentStatus: string;
   total: number;
@@ -214,6 +219,11 @@ async function sendAdminOrderCreatedFlexNotification(params: {
     siteTitle,
     status: params.status,
     deliveryMethod: params.deliveryMethod,
+    city: params.city,
+    district: params.district,
+    address: params.address,
+    storeName: params.storeName,
+    storeAddress: params.storeAddress,
     paymentMethod: params.paymentMethod,
     paymentStatus: params.paymentStatus,
     total: params.total,
@@ -430,6 +440,11 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         orderId,
         status: "pending",
         deliveryMethod,
+        city: String(data.city || ""),
+        district: String(data.district || ""),
+        address: String(data.address || ""),
+        storeName: String(data.storeName || ""),
+        storeAddress: String(data.storeAddress || ""),
         paymentMethod,
         paymentStatus: String(insertPayload.payment_status || ""),
         total,
