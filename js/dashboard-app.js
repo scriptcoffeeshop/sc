@@ -4567,20 +4567,59 @@ function getRowFallbackIconUrl(row) {
   return getDefaultIconUrl(key);
 }
 
+function pushPreviewCandidate(candidates, seen, value) {
+  const normalized = String(value || "").trim();
+  if (!normalized || seen.has(normalized)) return;
+  seen.add(normalized);
+  candidates.push(normalized);
+}
+
+function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
+  const candidates = [];
+  const seen = new Set();
+  const rawValues = [rawUrl, fallbackUrl];
+
+  rawValues.forEach((value) => {
+    const resolved = resolveAssetUrl(value || "");
+    if (!resolved) return;
+
+    pushPreviewCandidate(candidates, seen, resolved);
+
+    if (/^(?:https?:|data:|blob:|\/\/)/i.test(resolved)) return;
+
+    if (resolved.startsWith("/sc/")) {
+      pushPreviewCandidate(candidates, seen, resolved.replace(/^\/sc\//, "/"));
+      return;
+    }
+
+    if (resolved.startsWith("/icons/")) {
+      pushPreviewCandidate(candidates, seen, `/sc${resolved}`);
+    }
+  });
+
+  return candidates;
+}
+
 function setPreviewImageSource(preview, rawUrl, fallbackUrl = "") {
   if (!(preview instanceof HTMLImageElement)) return "";
+  const candidates = buildPreviewSrcCandidates(rawUrl, fallbackUrl);
+  if (!candidates.length) {
+    preview.onerror = null;
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+    return "";
+  }
 
-  const primaryUrl = resolveAssetUrl(rawUrl || "");
-  const resolvedFallbackUrl = resolveAssetUrl(fallbackUrl || "");
+  let candidateIndex = 0;
+  const applyCandidate = () => {
+    preview.src = candidates[candidateIndex];
+    preview.classList.remove("hidden");
+  };
 
-  preview.dataset.fallbackSrc = resolvedFallbackUrl;
-  preview.dataset.usingFallback = "false";
   preview.onerror = () => {
-    const fallbackSrc = preview.dataset.fallbackSrc || "";
-    if (fallbackSrc && preview.dataset.usingFallback !== "true") {
-      preview.dataset.usingFallback = "true";
-      preview.src = fallbackSrc;
-      preview.classList.remove("hidden");
+    candidateIndex += 1;
+    if (candidateIndex < candidates.length) {
+      applyCandidate();
       return;
     }
     preview.onerror = null;
@@ -4588,19 +4627,8 @@ function setPreviewImageSource(preview, rawUrl, fallbackUrl = "") {
     preview.classList.add("hidden");
   };
 
-  const resolved = primaryUrl || resolvedFallbackUrl;
-  if (!resolved) {
-    preview.onerror = null;
-    preview.removeAttribute("src");
-    preview.classList.add("hidden");
-    return "";
-  }
-
-  preview.dataset.usingFallback =
-    resolvedFallbackUrl && resolved === resolvedFallbackUrl ? "true" : "false";
-  preview.src = resolved;
-  preview.classList.remove("hidden");
-  return resolved;
+  applyCandidate();
+  return candidates[0];
 }
 
 function updateIconPreview({ previewId, rawUrl, fallbackUrl = "" }) {
