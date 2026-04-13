@@ -43,6 +43,7 @@ window.promotions = [];
 let dashboardSettings = {};
 let settingsLoadToken = 0;
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
+const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
 
 const DEFAULT_DELIVERY_OPTIONS = {
   in_store: {
@@ -177,6 +178,22 @@ function parseBooleanSetting(value, defaultValue = true) {
   return !["false", "0", "off", "no"].includes(normalized);
 }
 
+function cacheDashboardPublicBranding(settings = {}, resolvedLogoUrl = "") {
+  if (typeof window === "undefined" || !window.localStorage) return;
+
+  try {
+    const payload = {
+      site_title: String(settings.site_title || "").trim(),
+      resolved_logo_url: String(resolvedLogoUrl || "").trim(),
+    };
+    window.localStorage.setItem(
+      DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
+      JSON.stringify(payload),
+    );
+  } catch {
+  }
+}
+
 function applyDashboardBranding(settings = {}) {
   const siteIconUrl = String(settings.site_icon_url || "").trim();
   const resolvedLogoUrl = siteIconUrl
@@ -215,6 +232,8 @@ function applyDashboardBranding(settings = {}) {
     loginSubtitleEl.classList.remove("ui-text-subtle");
     loginSubtitleEl.classList.add("text-slate-600");
   }
+
+  cacheDashboardPublicBranding(settings, resolvedLogoUrl);
 }
 
 async function loadPublicDashboardBranding() {

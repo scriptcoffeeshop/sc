@@ -21,11 +21,29 @@
       crossorigin="anonymous"
     ></script>
     <link id="dynamic-favicon" rel="icon" href="icons/logo.png">
+    <script>
+      (() => {
+        try {
+          const raw = localStorage.getItem("coffee_dashboard_public_branding");
+          if (!raw) return;
+          const cached = JSON.parse(raw);
+          const logoUrl = String(cached?.resolved_logo_url || "").trim();
+          const siteTitle = String(cached?.site_title || "").trim();
+          if (logoUrl) {
+            window.__dashboardBootLogoUrl = logoUrl;
+            const faviconEl = document.getElementById("dynamic-favicon");
+            if (faviconEl instanceof HTMLLinkElement) faviconEl.href = logoUrl;
+          }
+          if (siteTitle) document.title = `管理後台 | ${siteTitle}`;
+        } catch {
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/common.css?v=85">
-    <link rel="stylesheet" href="css/dashboard.css?v=85">
+    <link rel="stylesheet" href="css/common.css?v=86">
+    <link rel="stylesheet" href="css/dashboard.css?v=86">
   </head>
 
   <body class="dashboard-enterprise">
@@ -42,6 +60,15 @@
         height="56"
         class="w-14 h-14 mx-auto mb-4"
       >
+      <script>
+        (() => {
+          const loginLogoEl = document.getElementById("dashboard-login-logo");
+          const cachedLogo = String(window.__dashboardBootLogoUrl || "").trim();
+          if (loginLogoEl instanceof HTMLImageElement && cachedLogo) {
+            loginLogoEl.src = cachedLogo;
+          }
+        })();
+      </script>
       <h1 class="text-2xl font-bold mb-2 text-slate-800">
         後台登入
       </h1>
@@ -72,6 +99,15 @@
             height="36"
             class="w-9 h-9"
           >
+          <script>
+            (() => {
+              const headerLogoEl = document.getElementById("dashboard-header-logo");
+              const cachedLogo = String(window.__dashboardBootLogoUrl || "").trim();
+              if (headerLogoEl instanceof HTMLImageElement && cachedLogo) {
+                headerLogoEl.src = cachedLogo;
+              }
+            })();
+          </script>
           <div>
             <h1 class="text-xl font-bold ui-text-highlight">
               咖啡訂購後台
@@ -1309,6 +1345,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/dashboard-app.js?v=85"></script>
+    <script type="module" src="js/dashboard-app.js?v=86"></script>
   </body>
 </html>
