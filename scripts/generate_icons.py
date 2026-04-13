@@ -17,10 +17,10 @@ from typing import Callable
 from PIL import Image, ImageDraw, ImageFont
 
 SIZE = 128
-FG = (246, 250, 255, 255)
-STROKE = 5
+FG = (51, 65, 85, 255)
+STROKE = 6
 ROUND_RADIUS = 28
-GLYPH_SCALE = 1.28
+GLYPH_SCALE = 1.08
 
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
@@ -43,18 +43,7 @@ def darken(color: tuple[int, int, int], amount: int) -> tuple[int, int, int]:
 
 
 def make_background(top_hex: str, bottom_hex: str) -> Image.Image:
-    canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    base = hex_to_rgb(top_hex)
-    border = darken(base, 22)
-    draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle(
-        (8, 8, SIZE - 8, SIZE - 8),
-        radius=ROUND_RADIUS,
-        fill=(*base, 255),
-        outline=(*border, 255),
-        width=2,
-    )
-    return canvas
+    return Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
 
 
 def draw_list_icon(d: ImageDraw.ImageDraw) -> None:

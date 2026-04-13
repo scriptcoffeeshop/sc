@@ -83,6 +83,10 @@
 - 修正後台登入色彩仍顯示青色問題：
   - `css/dashboard.css` 將登入標題強制色改為灰黑 `#1F2937`，副標改為 `#475569`。
   - `applyDashboardBranding` 在初始化時同步強制登入標題文案為「後台登入」與對應色彩 class，避免舊樣式殘留。
+- 前後台 icon 全面換新（Nucleo 風格）：
+  - 參考 Nucleo 的極簡線條語言，將 icon 改為透明背景、單色線框、統一圓角筆觸。
+  - 透過 `scripts/generate_icons.py` 重新輸出所有 icon 至 `icons/` 與 `frontend/public/icons/`，保留原檔名避免程式碼路徑變更。
+  - 前端快取版號已升級為 `v=79`。
 
 ### 2026-04-09（本次）
 
