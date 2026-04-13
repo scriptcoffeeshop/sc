@@ -18,9 +18,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 SIZE = 128
 FG = (51, 65, 85, 255)
-STROKE = 6
+STROKE = 7
 ROUND_RADIUS = 28
-GLYPH_SCALE = 1.08
+GLYPH_SCALE = 1.2
 
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
@@ -127,12 +127,15 @@ def draw_truck_icon(d: ImageDraw.ImageDraw) -> None:
 
 
 def draw_scooter_icon(d: ImageDraw.ImageDraw) -> None:
-    d.line((34, 72, 52, 72), fill=FG, width=STROKE)
-    d.line((52, 72, 70, 60), fill=FG, width=STROKE)
-    d.line((64, 60, 78, 60), fill=FG, width=STROKE)
-    d.line((74, 60, 82, 68), fill=FG, width=STROKE)
-    d.ellipse((30, 68, 42, 80), outline=FG, width=4)
-    d.ellipse((66, 68, 78, 80), outline=FG, width=4)
+    d.ellipse((22, 72, 44, 94), outline=FG, width=5)
+    d.ellipse((80, 72, 102, 94), outline=FG, width=5)
+    d.line((34, 82, 54, 82), fill=FG, width=STROKE)
+    d.line((54, 82, 72, 66), fill=FG, width=STROKE)
+    d.line((72, 66, 86, 66), fill=FG, width=STROKE)
+    d.line((86, 66, 96, 78), fill=FG, width=STROKE)
+    d.line((62, 82, 84, 82), fill=FG, width=5)
+    d.line((70, 66, 70, 56), fill=FG, width=5)
+    d.line((66, 56, 80, 56), fill=FG, width=5)
 
 
 def draw_note_icon(d: ImageDraw.ImageDraw) -> None:

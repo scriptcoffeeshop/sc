@@ -193,18 +193,18 @@ select.input-field {
 }
 
 .ui-icon-inline {
-  width: 1.12rem;
-  height: 1.12rem;
+  width: 1.26rem;
+  height: 1.26rem;
 }
 
 .ui-icon-inline-lg {
-  width: 1.38rem;
-  height: 1.38rem;
+  width: 1.58rem;
+  height: 1.58rem;
 }
 
 .ui-icon-title {
-  width: 1.34rem;
-  height: 1.34rem;
+  width: 1.52rem;
+  height: 1.52rem;
 }
 
 .ui-icon-img {
@@ -227,7 +227,7 @@ select.input-field {
 }
 
 .ui-icon-fallback {
-  font-size: 1rem;
+  font-size: 1.12rem;
   line-height: 1;
 }
 

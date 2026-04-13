@@ -236,8 +236,8 @@
 }
 
 .dashboard-enterprise .tab-with-icon .ui-icon-inline {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   opacity: 0.6;
   margin-right: 0;
 }
@@ -438,12 +438,12 @@
 
 /* ── Icon Upload Preview ── */
 .icon-upload-preview {
-  width: 2rem;
-  height: 2rem;
+  width: 2.6rem;
+  height: 2.6rem;
   border-radius: 8px;
   border: 1px solid var(--ui-border);
   object-fit: contain;
-  padding: 2px;
+  padding: 4px;
   background: #FFFDF7;
 }
 

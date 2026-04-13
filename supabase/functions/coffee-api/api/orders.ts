@@ -649,9 +649,6 @@ export async function updateOrderStatus(
   const updates: Record<string, unknown> = { status: newStatus };
   const cancelReason = String(data.cancelReason || "").trim();
   if (newStatus === "cancelled") {
-    if (!cancelReason) {
-      return { success: false, error: "訂單取消時必須填寫取消原因" };
-    }
     updates.cancel_reason = cancelReason;
   } else {
     updates.cancel_reason = "";

@@ -1814,7 +1814,7 @@ async function changeOrderStatus(orderId, status) {
         title: "設定已取消",
         html: `
           <div class="text-left space-y-2">
-            <label class="text-sm ui-text-strong block">取消原因（必填）</label>
+            <label class="text-sm ui-text-strong block">取消原因（選填）</label>
             <textarea id="swal-cancel-reason" class="swal2-textarea" placeholder="請輸入取消原因，例如：付款逾時未完成">${esc(String(targetOrder.cancelReason || "").trim())}</textarea>
           </div>
         `,
@@ -1826,10 +1826,6 @@ async function changeOrderStatus(orderId, status) {
         preConfirm: () => {
           const reasonEl = document.getElementById("swal-cancel-reason");
           const reasonValue = String(reasonEl?.value || "").trim();
-          if (!reasonValue) {
-            Swal.showValidationMessage("請輸入取消原因");
-            return false;
-          }
           return { cancelReason: reasonValue };
         },
       });
@@ -3187,11 +3183,20 @@ async function loadSettings() {
       document.getElementById("s-site-emoji").value = s.site_icon_emoji || "";
 
       document.getElementById("s-site-icon-url").value = s.site_icon_url || "";
+      const siteLogoFallbackUrl = getDefaultIconUrl("brand");
       if (s.site_icon_url) {
-        document.getElementById("s-icon-preview").src = resolveAssetUrl(s.site_icon_url);
+        updateIconPreview({
+          previewId: "s-icon-preview",
+          rawUrl: s.site_icon_url,
+          fallbackUrl: siteLogoFallbackUrl,
+        });
         document.getElementById("s-icon-url-display").textContent = "自訂 Logo";
       } else {
-        document.getElementById("s-icon-preview").src = getDefaultIconUrl("brand");
+        updateIconPreview({
+          previewId: "s-icon-preview",
+          rawUrl: siteLogoFallbackUrl,
+          fallbackUrl: siteLogoFallbackUrl,
+        });
         document.getElementById("s-icon-url-display").textContent = "未設定 (預設)";
       }
 
@@ -3482,6 +3487,11 @@ function configToHtml(item, tbody, isNew = false) {
         </td>
     `;
   tbody.appendChild(tr);
+
+  const previewEl = tr.querySelector(".do-icon-preview");
+  if (previewEl instanceof HTMLImageElement) {
+    setPreviewImageSource(previewEl, normalized.icon_url, getDefaultIconUrl(fallbackKey));
+  }
 
   if (isNew) {
     setTimeout(() => tr.classList.remove("bg-yellow-50"), 1500);
@@ -4535,8 +4545,7 @@ function previewIcon(input) {
       const row = input.closest(".delivery-option-row");
       const preview = row?.querySelector(".do-icon-preview");
       if (preview instanceof HTMLImageElement) {
-        preview.src = dataUrl;
-        preview.classList.remove("hidden");
+        setPreviewImageSource(preview, dataUrl, getRowFallbackIconUrl(row));
       }
       return;
     }
@@ -4553,19 +4562,51 @@ function previewIcon(input) {
   reader.readAsDataURL(file);
 }
 
+function getRowFallbackIconUrl(row) {
+  const key = row?.dataset?.defaultIconKey || "delivery";
+  return getDefaultIconUrl(key);
+}
+
+function setPreviewImageSource(preview, rawUrl, fallbackUrl = "") {
+  if (!(preview instanceof HTMLImageElement)) return "";
+
+  const primaryUrl = resolveAssetUrl(rawUrl || "");
+  const resolvedFallbackUrl = resolveAssetUrl(fallbackUrl || "");
+
+  preview.dataset.fallbackSrc = resolvedFallbackUrl;
+  preview.dataset.usingFallback = "false";
+  preview.onerror = () => {
+    const fallbackSrc = preview.dataset.fallbackSrc || "";
+    if (fallbackSrc && preview.dataset.usingFallback !== "true") {
+      preview.dataset.usingFallback = "true";
+      preview.src = fallbackSrc;
+      preview.classList.remove("hidden");
+      return;
+    }
+    preview.onerror = null;
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+  };
+
+  const resolved = primaryUrl || resolvedFallbackUrl;
+  if (!resolved) {
+    preview.onerror = null;
+    preview.removeAttribute("src");
+    preview.classList.add("hidden");
+    return "";
+  }
+
+  preview.dataset.usingFallback =
+    resolvedFallbackUrl && resolved === resolvedFallbackUrl ? "true" : "false";
+  preview.src = resolved;
+  preview.classList.remove("hidden");
+  return resolved;
+}
+
 function updateIconPreview({ previewId, rawUrl, fallbackUrl = "" }) {
   const preview = document.getElementById(previewId);
   if (!(preview instanceof HTMLImageElement)) return "";
-
-  const resolved = resolveAssetUrl(rawUrl || fallbackUrl || "");
-  if (resolved) {
-    preview.src = resolved;
-    preview.classList.remove("hidden");
-  } else {
-    preview.removeAttribute("src");
-    preview.classList.add("hidden");
-  }
-  return resolved;
+  return setPreviewImageSource(preview, rawUrl, fallbackUrl);
 }
 
 function validateIconFile(file) {
@@ -4790,8 +4831,7 @@ async function uploadDeliveryRowIcon(button) {
       if (urlInput) urlInput.value = d.url;
       if (urlDisplay) urlDisplay.textContent = d.url;
       if (preview instanceof HTMLImageElement) {
-        preview.src = resolveAssetUrl(d.url);
-        preview.classList.remove("hidden");
+        setPreviewImageSource(preview, d.url, getRowFallbackIconUrl(row));
       }
       Toast.fire({ icon: "success", title: "物流圖示已更新" });
     } else Swal.fire("錯誤", d.error, "error");
