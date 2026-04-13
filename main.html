@@ -24,6 +24,24 @@
       crossorigin="anonymous"
     ></script>
     <link id="dynamic-favicon" rel="icon" href="icons/logo.png">
+    <script>
+      (() => {
+        try {
+          const raw = localStorage.getItem("coffee_storefront_public_branding");
+          if (!raw) return;
+          const cached = JSON.parse(raw);
+          const logoUrl = String(cached?.resolved_logo_url || "").trim();
+          const siteTitle = String(cached?.site_title || "").trim();
+          if (logoUrl) {
+            window.__storefrontBootLogoUrl = logoUrl;
+            const faviconEl = document.getElementById("dynamic-favicon");
+            if (faviconEl instanceof HTMLLinkElement) faviconEl.href = logoUrl;
+          }
+          if (siteTitle) document.title = siteTitle;
+        } catch {
+        }
+      })();
+    </script>
   </head>
 
   <body class="p-4 md:p-6">
@@ -44,9 +62,27 @@
     <div class="max-w-3xl mx-auto glass-card p-6 md:p-8">
       <!-- Header -->
       <div class="flex items-center gap-3 mb-6">
-        <span id="site-icon">
-          <img src="icons/logo.png" alt="品牌圖示" class="ui-icon-img">
+        <span id="site-icon" style="width:2.95rem;height:2.95rem;display:inline-flex;align-items:center;justify-content:center;">
+          <img
+            src="icons/logo.png"
+            alt="品牌圖示"
+            width="48"
+            height="48"
+            class="ui-icon-img"
+            fetchpriority="high"
+            loading="eager"
+            decoding="sync"
+          >
         </span>
+        <script>
+          (() => {
+            const siteLogoEl = document.querySelector("#site-icon img");
+            const cachedLogo = String(window.__storefrontBootLogoUrl || "").trim();
+            if (siteLogoEl instanceof HTMLImageElement && cachedLogo) {
+              siteLogoEl.src = cachedLogo;
+            }
+          })();
+        </script>
         <div>
           <h1
             class="text-2xl font-bold"
@@ -651,6 +687,6 @@
       </div>
     </div>
 
-    <script type="module" src="js/main-app.js?v=86"></script>
+    <script type="module" src="js/main-app.js?v=87"></script>
   </body>
 </html>

@@ -5,6 +5,9 @@
 import { escapeHtml, isValidEmail } from "./utils.js";
 import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
 
+const STOREFRONT_PUBLIC_BRANDING_CACHE_KEY =
+  "coffee_storefront_public_branding";
+
 function normalizeSiteSubtitle(value) {
   const subtitle = String(value || "").trim();
   if (!subtitle) return "";
@@ -216,6 +219,20 @@ export function applyBranding(settings) {
       document.head.appendChild(favicon);
     }
     favicon.href = faviconUrl;
+  }
+
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      const payload = {
+        site_title: String(settings.site_title || "").trim(),
+        resolved_logo_url: String(faviconUrl || "").trim(),
+      };
+      window.localStorage.setItem(
+        STOREFRONT_PUBLIC_BRANDING_CACHE_KEY,
+        JSON.stringify(payload),
+      );
+    } catch {
+    }
   }
 
   // Page title
