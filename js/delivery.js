@@ -431,6 +431,14 @@ export function selectStoreFromList(el) {
 export function loadDeliveryPrefs() {
   try {
     let prefs = {};
+    let localPrefs = {};
+    const prefsStr = localStorage.getItem("coffee_delivery_prefs");
+    if (prefsStr) {
+      try {
+        localPrefs = JSON.parse(prefsStr);
+      } catch {}
+    }
+
     const u = state.currentUser;
     if (u && u.defaultDeliveryMethod) {
       prefs = {
@@ -442,9 +450,14 @@ export function loadDeliveryPrefs() {
         storeName: u.defaultStoreName,
         storeAddress: u.defaultStoreAddress,
       };
+      if (
+        localPrefs &&
+        String(localPrefs.method || "") === String(u.defaultDeliveryMethod || "")
+      ) {
+        prefs.companyOrBuilding = String(localPrefs.companyOrBuilding || "").trim();
+      }
     } else {
-      const prefsStr = localStorage.getItem("coffee_delivery_prefs");
-      if (prefsStr) prefs = JSON.parse(prefsStr);
+      prefs = localPrefs;
     }
 
     if (prefs && prefs.method) {
@@ -492,6 +505,10 @@ export function loadDeliveryPrefs() {
         if (prefs.address) {
           const homeAddrEl = document.getElementById("home-delivery-detail");
           if (homeAddrEl) homeAddrEl.value = prefs.address;
+        }
+        const homeCompanyEl = document.getElementById("home-delivery-company");
+        if (homeCompanyEl) {
+          homeCompanyEl.value = String(prefs.companyOrBuilding || "").trim();
         }
       } else if (method === "seven_eleven" || method === "family_mart") {
         if (prefs.storeId) {

@@ -34,6 +34,14 @@ function getDefaultTrackingUrl(deliveryMethod) {
   return "";
 }
 
+function composeHomeDeliveryAddress(address, companyOrBuilding) {
+  const detailAddress = String(address || "").trim();
+  const companyText = String(companyOrBuilding || "").trim();
+  if (!detailAddress) return "";
+  if (!companyText) return detailAddress;
+  return `${detailAddress}（公司行號/社區大樓：${companyText}）`;
+}
+
 function normalizeReceiptInfo(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const buyer = String(raw.buyer || "").trim();
@@ -282,6 +290,9 @@ export async function submitOrder() {
     const district = distObj ? distObj.value : "";
     const zip = zipObj ? zipObj.value : "";
     const addr = document.getElementById("home-delivery-detail").value.trim();
+    const companyOrBuilding = String(
+      document.getElementById("home-delivery-company")?.value || "",
+    ).trim();
     if (!city || !district) {
       Swal.fire("錯誤", "請選擇全台宅配的縣市及區域", "error");
       return;
@@ -294,6 +305,7 @@ export async function submitOrder() {
       city,
       district: `${zip} ${district}`.trim(),
       address: addr,
+      companyOrBuilding,
     };
   } else if (deliveryMethod === "in_store") {
     deliveryInfo = {
@@ -390,11 +402,19 @@ export async function submitOrder() {
       }`;
   const orderLinesHtml = orderLines.map((line) => escapeHtml(String(line)))
     .join("<br>");
+  const homeDeliveryCompanyText = deliveryMethod === "home_delivery"
+    ? String(deliveryInfo.companyOrBuilding || "").trim()
+    : "";
 
   const confirmHtml = `
         <div style="text-align:left;font-size:0.95rem;">
         <b>配送方式：</b>${methodText[deliveryMethod]}<br>
         <b>取貨地點：</b>${escapeHtml(addrText)}<br><br>
+        ${
+    homeDeliveryCompanyText
+      ? `<b>公司行號/社區大樓：</b>${escapeHtml(homeDeliveryCompanyText)}<br><br>`
+      : ""
+  }
         <b>訂單內容：</b><br>${orderLinesHtml}<br><br>
         <b>總金額：</b>$${total}
         ${note ? `<br><br><b>訂單備註：</b><br>${escapeHtml(note)}` : ""}
@@ -447,6 +467,14 @@ export async function submitOrder() {
   }));
 
   try {
+    const submitDeliveryInfo = { ...deliveryInfo };
+    if (deliveryMethod === "home_delivery") {
+      submitDeliveryInfo.address = composeHomeDeliveryAddress(
+        deliveryInfo.address,
+        deliveryInfo.companyOrBuilding,
+      );
+    }
+
     const res = await authFetch(`${API_URL}?action=submitOrder`, {
       method: "POST",
       body: JSON.stringify({
@@ -462,7 +490,7 @@ export async function submitOrder() {
         transferTargetAccount: transferTargetAccountInfo,
         transferAccountLast5,
         idempotencyKey: crypto.randomUUID(),
-        ...deliveryInfo,
+        ...submitDeliveryInfo,
       }),
     });
     const result = await res.json();
