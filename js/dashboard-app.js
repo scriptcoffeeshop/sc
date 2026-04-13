@@ -348,10 +348,12 @@ const dashboardActionHandlers = {
     showPromotionModal,
     editProduct,
     delProduct,
+    toggleProductEnabled,
     editCategory,
     delCategory,
     editPromotion,
     delPromotion,
+    togglePromotionEnabled,
     addSpecRow,
     closeProductModal,
     closePromotionModal,
@@ -888,6 +890,33 @@ function buildLineFlexMessage(order, newStatus) {
     }
   }
 
+  const cancelReason = String(order.cancelReason || "").trim();
+  if (newStatus === "cancelled" && cancelReason) {
+    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push({
+      type: "box",
+      layout: "horizontal",
+      margin: "md",
+      contents: [
+        {
+          type: "text",
+          text: "取消原因",
+          size: "sm",
+          color: "#839496",
+          flex: 3,
+        },
+        {
+          type: "text",
+          text: cancelReason,
+          size: "sm",
+          color: "#DC322F",
+          flex: 5,
+          wrap: true,
+        },
+      ],
+    });
+  }
+
   // 訂單明細
   if (order.items) {
     bodyContents.push({ type: "separator", margin: "md" });
@@ -1267,10 +1296,15 @@ function buildOrderViewModel(order) {
     ),
     items: order.items || "",
     note: order.note || "",
+    cancelReason: String(order.cancelReason || "").trim(),
+    showCancellationReason:
+      String(order.status || "") === "cancelled" &&
+      Boolean(String(order.cancelReason || "").trim()),
     receiptInfo,
     showReceiptInfo: Boolean(receiptInfo),
     total: Number(order.total) || 0,
     showSendLineButton: Boolean(order.lineUserId),
+    showSendEmailButton: Boolean(order.email),
     showRefundButton: paymentMethod === "linepay" && paymentStatus === "paid",
     showConfirmTransferButton:
       paymentMethod === "transfer" && paymentStatus === "pending",
@@ -1588,6 +1622,13 @@ function renderOrders() {
         }</div>`
         : ""
     }
+            ${
+      o.status === "cancelled" && String(o.cancelReason || "").trim()
+        ? `<div class="text-sm text-red-700 bg-red-50 p-2 rounded mb-2 border border-red-100"><span class="ui-text-subtle">取消原因：</span>${
+          esc(String(o.cancelReason || "").trim())
+        }</div>`
+        : ""
+    }
             <div class="flex justify-between items-center">
                 <span class="font-bold ui-text-warning">$${o.total}</span>
                 <div class="flex gap-2">
@@ -1654,6 +1695,8 @@ async function sendOrderEmailByOrderId(orderId) {
     ? "處理中通知"
     : status === "completed"
     ? "完成通知"
+    : status === "cancelled"
+    ? "取消通知"
     : "成立確認信";
 
   const confirm = await Swal.fire({
@@ -1697,6 +1740,7 @@ async function changeOrderStatus(orderId, status) {
     let trackingNumber;
     let shippingProvider;
     let trackingUrl;
+    let cancelReason = "";
     if (status === "shipped") {
       const { value: shippingInfo, isConfirmed } = await Swal.fire({
         title: "設定已出貨",
@@ -1752,6 +1796,35 @@ async function changeOrderStatus(orderId, status) {
       trackingNumber = shippingInfo?.trackingNumber || "";
       shippingProvider = shippingInfo?.shippingProvider || "";
       trackingUrl = shippingInfo?.trackingUrl || "";
+    } else if (status === "cancelled") {
+      const { value: cancelInfo, isConfirmed } = await Swal.fire({
+        title: "設定已取消",
+        html: `
+          <div class="text-left space-y-2">
+            <label class="text-sm ui-text-strong block">取消原因（必填）</label>
+            <textarea id="swal-cancel-reason" class="swal2-textarea" placeholder="請輸入取消原因，例如：付款逾時未完成">${esc(String(targetOrder.cancelReason || "").trim())}</textarea>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: "確認取消",
+        cancelButtonText: "取消",
+        confirmButtonColor: "#DC322F",
+        focusConfirm: false,
+        preConfirm: () => {
+          const reasonEl = document.getElementById("swal-cancel-reason");
+          const reasonValue = String(reasonEl?.value || "").trim();
+          if (!reasonValue) {
+            Swal.showValidationMessage("請輸入取消原因");
+            return false;
+          }
+          return { cancelReason: reasonValue };
+        },
+      });
+      if (!isConfirmed) {
+        loadOrders();
+        return;
+      }
+      cancelReason = String(cancelInfo?.cancelReason || "").trim();
     } else {
       // 非出貨狀態：跳出確認彈窗
       const confirm = await Swal.fire({
@@ -1776,6 +1849,10 @@ async function changeOrderStatus(orderId, status) {
       payload.trackingNumber = trackingNumber;
       payload.shippingProvider = shippingProvider;
       payload.trackingUrl = trackingUrl;
+    } else if (status === "cancelled") {
+      payload.cancelReason = cancelReason;
+    } else {
+      payload.cancelReason = "";
     }
 
     const r = await authFetch(`${API_URL}?action=updateOrderStatus`, {
@@ -1796,6 +1873,10 @@ async function changeOrderStatus(orderId, status) {
         flexOrder.trackingNumber = trackingNumber || "";
         flexOrder.shippingProvider = shippingProvider || "";
         flexOrder.trackingUrl = trackingUrl || "";
+      } else if (status === "cancelled") {
+        flexOrder.cancelReason = cancelReason;
+      } else {
+        flexOrder.cancelReason = "";
       }
       const flexMsg = buildLineFlexMessage(flexOrder, status);
       saveFlexToHistory(flexMsg, orderId, newStatusLabel);
@@ -2146,15 +2227,16 @@ function getProductPriceLines(product) {
 }
 
 function buildProductViewModel(product) {
+  const enabled = Boolean(product?.enabled);
   return {
     id: Number(product?.id) || 0,
     category: product?.category || "",
     name: product?.name || "",
     description: product?.description || "",
     roastLevel: product?.roastLevel || "",
-    enabled: Boolean(product?.enabled),
-    statusLabel: product?.enabled ? "啟用" : "停用",
-    statusClass: product?.enabled ? "ui-text-success" : "ui-text-muted",
+    enabled,
+    statusLabel: enabled ? "啟用" : "未啟用",
+    statusClass: enabled ? "ui-text-success" : "ui-text-muted",
     priceLines: getProductPriceLines(product),
   };
 }
@@ -2269,7 +2351,9 @@ function renderProducts() {
       } ${product.roastLevel ? "・" + product.roastLevel : ""}</div>
                 </td>
                 <td class="p-3 text-right font-medium">${priceDisplay}</td>
-                <td class="p-3 text-center"><span class="${product.statusClass}">${product.statusLabel}</span></td>
+                <td class="p-3 text-center">
+                    <button data-action="toggle-product-enabled" data-product-id="${product.id}" data-enabled="${String(!product.enabled)}" class="text-sm font-medium ${product.statusClass} hover:underline">${product.statusLabel}</button>
+                </td>
                 <td class="p-3 text-center">
                     <button data-action="edit-product" data-product-id="${product.id}" class="text-sm mr-2 ui-text-highlight">編輯</button>
                     <button data-action="delete-product" data-product-id="${product.id}" class="text-sm ui-text-danger">刪除</button>
@@ -2480,6 +2564,47 @@ async function delProduct(id) {
       Toast.fire({ icon: "success", title: "已刪除" });
       loadProducts();
     }
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+async function toggleProductEnabled(id, enabled) {
+  const product = productsMap[id];
+  if (!product) {
+    Swal.fire("錯誤", "找不到商品", "error");
+    return;
+  }
+
+  const payload = {
+    userId: getAuthUserId(),
+    id: Number(product.id),
+    category: product.category || "",
+    name: product.name || "",
+    description: product.description || "",
+    price: Number(product.price) || 0,
+    weight: product.weight || "",
+    origin: product.origin || "",
+    roastLevel: product.roastLevel || "",
+    specs: product.specs || "",
+    imageUrl: product.imageUrl || "",
+    enabled: Boolean(enabled),
+  };
+
+  try {
+    const r = await authFetch(`${API_URL}?action=updateProduct`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || "商品狀態更新失敗");
+    product.enabled = Boolean(enabled);
+    renderProducts();
+    Toast.fire({
+      icon: "success",
+      title: enabled ? "商品已啟用" : "商品已停用",
+    });
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
   }
@@ -2702,6 +2827,7 @@ function isVueManagedPromotionsTable(
 
 function buildPromotionViewModel(promotion) {
   const isPercent = promotion?.discountType === "percent";
+  const enabled = Boolean(promotion?.enabled);
   return {
     id: Number(promotion?.id) || 0,
     name: promotion?.name || "",
@@ -2709,9 +2835,9 @@ function buildPromotionViewModel(promotion) {
     discountText: isPercent
       ? `${promotion?.discountValue} 折`
       : `折 $${promotion?.discountValue}`,
-    enabled: Boolean(promotion?.enabled),
-    statusLabel: promotion?.enabled ? "啟用" : "停用",
-    statusClass: promotion?.enabled ? "ui-text-success" : "ui-text-muted",
+    enabled,
+    statusLabel: enabled ? "啟用" : "未啟用",
+    statusClass: enabled ? "ui-text-success" : "ui-text-muted",
   };
 }
 
@@ -2795,7 +2921,7 @@ function renderPromotions() {
             </td>
             <td class="p-3 font-medium">${esc(viewPromotion.name)}</td>
             <td class="p-3 text-sm ui-text-strong">${esc(viewPromotion.conditionText)} <span class="font-bold ui-text-danger">${esc(viewPromotion.discountText)}</span></td>
-            <td class="p-3 text-center"><span class="${viewPromotion.statusClass}">${viewPromotion.statusLabel}</span></td>
+            <td class="p-3 text-center"><button data-action="toggle-promotion-enabled" data-promotion-id="${viewPromotion.id}" data-enabled="${String(!viewPromotion.enabled)}" class="text-sm font-medium ${viewPromotion.statusClass} hover:underline">${viewPromotion.statusLabel}</button></td>
             <td class="p-3 text-right">
                 <button data-action="edit-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm mr-2 ui-text-highlight">編輯</button>
                 <button data-action="delete-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm ui-text-danger">刪除</button>
@@ -2969,6 +3095,49 @@ async function delPromotion(id) {
       Toast.fire({ icon: "success", title: "已刪除" });
       loadPromotions();
     } else throw new Error(d.error);
+  } catch (e) {
+    Swal.fire("錯誤", e.message, "error");
+  }
+}
+
+async function togglePromotionEnabled(id, enabled) {
+  const promotion = promotionsMap[id];
+  if (!promotion) {
+    Swal.fire("錯誤", "找不到活動", "error");
+    return;
+  }
+
+  const payload = {
+    userId: getAuthUserId(),
+    id: Number(promotion.id),
+    name: promotion.name || "",
+    type: promotion.type || "bundle",
+    targetProductIds: Array.isArray(promotion.targetProductIds)
+      ? promotion.targetProductIds
+      : [],
+    targetItems: Array.isArray(promotion.targetItems) ? promotion.targetItems : [],
+    minQuantity: Number(promotion.minQuantity) || 1,
+    discountType: promotion.discountType || "percent",
+    discountValue: Number(promotion.discountValue) || 0,
+    enabled: Boolean(enabled),
+    startTime: promotion.startTime || null,
+    endTime: promotion.endTime || null,
+  };
+
+  try {
+    const r = await authFetch(`${API_URL}?action=updatePromotion`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error || "活動狀態更新失敗");
+    promotion.enabled = Boolean(enabled);
+    renderPromotions();
+    Toast.fire({
+      icon: "success",
+      title: enabled ? "活動已啟用" : "活動已停用",
+    });
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
   }

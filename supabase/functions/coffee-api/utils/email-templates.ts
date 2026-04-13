@@ -374,6 +374,14 @@ export interface CompletedNotificationParams {
   lineName: string;
 }
 
+export interface CancelledNotificationParams {
+  orderId: string;
+  siteTitle: string;
+  logoUrl?: string;
+  lineName: string;
+  cancelReason: string;
+}
+
 export function buildCompletedNotificationHtml(
   params: CompletedNotificationParams,
 ): string {
@@ -395,6 +403,46 @@ export function buildCompletedNotificationHtml(
   }，您的訂單已順利完成！</h2>
     <p>這封信是要通知您，您的訂單 <strong>${params.orderId}</strong> 已經順利完成。</p>
     <p>非常感謝您的購買與支持，期待您再次光臨！如果有任何問題，歡迎隨時與我們聯絡。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+        `;
+}
+
+export function buildCancelledNotificationHtml(
+  params: CancelledNotificationParams,
+): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
+  const reasonText = String(params.cancelReason || "").trim();
+  const safeReason = sanitize(reasonText || "未提供取消原因");
+
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#B42318",
+      title: "⚠️ 訂單已取消通知",
+      subtitle: displaySiteTitle,
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #B42318; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單已取消。</h2>
+    <p>這封信是要通知您，訂單 <strong>${
+    sanitize(params.orderId)
+  }</strong> 已取消。</p>
+    <div style="background-color: #fef3f2; border-left: 4px solid #B42318; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 8px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
+      <p style="margin: 0;"><strong>取消原因：</strong> ${safeReason}</p>
+    </div>
+    <p style="margin-top: 20px; color: #555;">若您有任何疑問，請直接聯繫我們，我們會盡快協助您。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>

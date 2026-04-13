@@ -7,10 +7,10 @@
         alt="品牌圖示"
         class="w-14 h-14 mx-auto mb-4"
       >
-      <h1 class="text-2xl font-bold mb-2 ui-text-highlight">
-        咖啡訂購後台
+      <h1 class="text-2xl font-bold mb-2 text-slate-800">
+        後台登入
       </h1>
-      <p class="ui-text-subtle mb-6">僅限管理員登入</p>
+      <p class="text-slate-600 mb-6">僅限管理員登入</p>
       <UiButton
         data-action="login-with-line"
         class="h-11 px-6 bg-[#06c755] hover:bg-[#05b84e]"
@@ -420,6 +420,12 @@
               >
                 {{ order.note }}
               </div>
+              <div
+                v-if="order.showCancellationReason"
+                class="text-sm text-red-700 bg-red-50 p-2 rounded mb-2 border border-red-100"
+              >
+                <span class="ui-text-subtle">取消原因：</span>{{ order.cancelReason }}
+              </div>
 
               <div class="flex justify-between items-center">
                 <span class="font-bold" style="color:var(--accent)">${{ order.total }}</span>
@@ -431,6 +437,14 @@
                     class="text-xs text-emerald-700 hover:text-emerald-900"
                   >
                     LINE通知
+                  </button>
+                  <button
+                    v-if="order.showSendEmailButton"
+                    data-action="send-order-email"
+                    :data-order-id="order.orderId"
+                    class="text-xs ui-text-strong hover:opacity-80"
+                  >
+                    發送信件
                   </button>
                   <button
                     v-if="order.showRefundButton"
@@ -561,7 +575,15 @@
                     </template>
                   </td>
                   <td class="p-3 text-center">
-                    <span :class="product.statusClass">{{ product.statusLabel }}</span>
+                    <button
+                      data-action="toggle-product-enabled"
+                      :data-product-id="product.id"
+                      :data-enabled="String(!product.enabled)"
+                      class="text-sm font-medium hover:underline"
+                      :class="product.statusClass"
+                    >
+                      {{ product.statusLabel }}
+                    </button>
                   </td>
                   <td class="p-3 text-center">
                     <button
@@ -713,7 +735,15 @@
                     {{ promotion.conditionText }} <span class="font-bold ui-text-danger">{{ promotion.discountText }}</span>
                   </td>
                   <td class="p-3 text-center">
-                    <span :class="promotion.statusClass">{{ promotion.statusLabel }}</span>
+                    <button
+                      data-action="toggle-promotion-enabled"
+                      :data-promotion-id="promotion.id"
+                      :data-enabled="String(!promotion.enabled)"
+                      class="text-sm font-medium hover:underline"
+                      :class="promotion.statusClass"
+                    >
+                      {{ promotion.statusLabel }}
+                    </button>
                   </td>
                   <td class="p-3 text-right">
                     <button

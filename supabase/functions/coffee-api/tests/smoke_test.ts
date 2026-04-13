@@ -1,5 +1,6 @@
 import { assertEquals } from "std/testing/asserts";
 import {
+  buildCancelledNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
@@ -180,5 +181,36 @@ Deno.test("Email Templates - Processing Notification", () => {
     html.includes("https://cdn.example.com/logo-processing.png"),
     true,
     "Processing email should use provided custom logo URL",
+  );
+});
+
+Deno.test("Email Templates - Cancelled Notification", () => {
+  const html = buildCancelledNotificationHtml({
+    orderId: "C20261231-AABBCCDD",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-cancelled.png",
+    lineName: "User",
+    cancelReason: "付款逾時未完成",
+  });
+
+  assertEquals(
+    html.includes("⚠️ 訂單已取消通知"),
+    true,
+    "Missing cancelled email title",
+  );
+  assertEquals(
+    html.includes("付款逾時未完成"),
+    true,
+    "Missing cancelled reason content",
+  );
+  assertEquals(
+    html.includes("height: 18px; width: auto; max-width: 108px;"),
+    true,
+    "Cancelled email logo should use compact ratio-preserving size",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-cancelled.png"),
+    true,
+    "Cancelled email should use provided custom logo URL",
   );
 });

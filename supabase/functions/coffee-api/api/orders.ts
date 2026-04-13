@@ -13,6 +13,7 @@ import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { buildOrderQuote } from "./quote.ts";
 import {
+  buildCancelledNotificationHtml,
   buildCompletedNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
@@ -555,6 +556,7 @@ export async function getOrders(req: Request) {
       storeAddress: r.store_address,
       status: r.status,
       note: r.note,
+      cancelReason: r.cancel_reason || "",
       lineUserId: r.line_user_id,
       paymentMethod: r.payment_method || "cod",
       paymentStatus: r.payment_status || "",
@@ -605,6 +607,7 @@ export async function getMyOrders(req: Request) {
       total: r.total,
       deliveryMethod: r.delivery_method,
       status: r.status,
+      cancelReason: r.cancel_reason || "",
       storeName: r.store_name,
       storeAddress: r.store_address,
       city: r.city,
@@ -644,6 +647,15 @@ export async function updateOrderStatus(
   }
 
   const updates: Record<string, unknown> = { status: newStatus };
+  const cancelReason = String(data.cancelReason || "").trim();
+  if (newStatus === "cancelled") {
+    if (!cancelReason) {
+      return { success: false, error: "訂單取消時必須填寫取消原因" };
+    }
+    updates.cancel_reason = cancelReason;
+  } else {
+    updates.cancel_reason = "";
+  }
   if (data.paymentStatus !== undefined) {
     updates.payment_status = String(data.paymentStatus);
   }
@@ -669,17 +681,18 @@ export async function updateOrderStatus(
 function resolveOrderEmailMode(
   modeInput: unknown,
   orderStatus: string,
-): "confirmation" | "processing" | "shipping" | "completed" {
+): "confirmation" | "processing" | "shipping" | "completed" | "cancelled" {
   const mode = String(modeInput || "").trim();
   if (
     mode === "confirmation" || mode === "processing" || mode === "shipping" ||
-    mode === "completed"
+    mode === "completed" || mode === "cancelled"
   ) {
     return mode;
   }
   if (orderStatus === "processing") return "processing";
   if (orderStatus === "shipped") return "shipping";
   if (orderStatus === "completed") return "completed";
+  if (orderStatus === "cancelled") return "cancelled";
   return "confirmation";
 }
 
@@ -694,7 +707,7 @@ export async function sendOrderEmail(
 
   const { data: orderData, error } = await supabase.from("coffee_orders")
     .select(
-      "id, status, line_name, phone, email, items, total, delivery_method, city, district, address, store_name, store_address, note, custom_fields, receipt_info, payment_method, payment_status, payment_id, transfer_account_last5, shipping_provider, tracking_url, tracking_number",
+      "id, status, line_name, phone, email, items, total, delivery_method, city, district, address, store_name, store_address, note, cancel_reason, custom_fields, receipt_info, payment_method, payment_status, payment_id, transfer_account_last5, shipping_provider, tracking_url, tracking_number",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -755,6 +768,15 @@ export async function sendOrderEmail(
       lineName,
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
+  } else if (mode === "cancelled") {
+    htmlContent = buildCancelledNotificationHtml({
+      orderId,
+      siteTitle,
+      logoUrl: siteLogoUrl,
+      lineName,
+      cancelReason: String(orderData.cancel_reason || ""),
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 已取消通知`;
   } else {
     const receiptInfo = parseReceiptInfo(orderData.receipt_info);
     const customFieldsHtml = await buildCustomFieldsHtml(
@@ -795,6 +817,8 @@ export async function sendOrderEmail(
     ? "處理中通知"
     : mode === "completed"
     ? "完成通知"
+    : mode === "cancelled"
+    ? "取消通知"
     : "成立確認信";
 
   return {

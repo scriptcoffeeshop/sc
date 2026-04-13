@@ -78,6 +78,7 @@ export const updateOrderStatusSchema = z.object({
     "completed",
     "cancelled",
   ]),
+  cancelReason: z.string().optional(),
   paymentStatus: z.string().optional(),
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
@@ -124,5 +125,12 @@ export const sendLineFlexMessageSchema = z.object({
 
 export const sendOrderEmailSchema = z.object({
   orderId: z.string().trim().min(1, "缺少訂單編號"),
-  mode: z.enum(["confirmation", "shipping", "completed"]).optional(),
+  mode: z.enum([
+    "confirmation",
+    "processing",
+    "shipping",
+    "completed",
+    "cancelled",
+  ])
+    .optional(),
 });
