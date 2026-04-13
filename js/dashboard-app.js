@@ -202,6 +202,19 @@ function applyDashboardBranding(settings = {}) {
   document.title = siteTitle
     ? `管理後台 | ${siteTitle}`
     : "管理後台 | Script Coffee";
+
+  const loginTitleEl = document.querySelector("#login-page h1");
+  if (loginTitleEl instanceof HTMLElement) {
+    loginTitleEl.textContent = "後台登入";
+    loginTitleEl.classList.remove("ui-text-highlight");
+    loginTitleEl.classList.add("text-slate-800");
+  }
+
+  const loginSubtitleEl = document.querySelector("#login-page p");
+  if (loginSubtitleEl instanceof HTMLElement) {
+    loginSubtitleEl.classList.remove("ui-text-subtle");
+    loginSubtitleEl.classList.add("text-slate-600");
+  }
 }
 
 async function loadPublicDashboardBranding() {

@@ -254,7 +254,11 @@
 }
 
 .dashboard-enterprise #login-page h1 {
-  color: #2AA198 !important;
+  color: #1F2937 !important;
+}
+
+.dashboard-enterprise #login-page p {
+  color: #475569 !important;
 }
 
 /* ── Buttons ── */
