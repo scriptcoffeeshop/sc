@@ -1592,9 +1592,7 @@ function renderOrders() {
     const refundBtn = pm === "linepay" && ps === "paid"
       ? `<button data-action="refund-linepay-order" data-order-id="${
         esc(o.orderId)
-      }" class="text-xs ui-text-violet hover:opacity-80 inline-flex items-center gap-1"><img src="${
-        esc(getDefaultIconUrl("refund"))
-      }" alt="" class="ui-icon-inline">退款</button>`
+      }" class="text-xs ui-text-violet hover:opacity-80 inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-15-6l-3 2"></path></svg>退款</button>`
       : "";
     const payBadge = pm !== "cod"
       ? `<span class="text-xs px-2 py-0.5 rounded-full ui-border ${

@@ -452,7 +452,7 @@
                     :data-order-id="order.orderId"
                     class="text-xs text-purple-600 hover:text-purple-800 tab-with-icon"
                   >
-                    <img src="../../../icons/refund-arrow.png" alt="" class="ui-icon-inline">退款
+                    <svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-15-6l-3 2" /></svg>退款
                   </button>
                   <button
                     v-if="order.showConfirmTransferButton"

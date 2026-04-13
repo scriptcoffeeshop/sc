@@ -1,6 +1,231 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin, requireAuth } from "../utils/auth.ts";
+import { FRONTEND_URL } from "../utils/config.ts";
+import { sendEmail } from "../utils/email.ts";
+import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
+import { sanitize } from "../utils/html.ts";
+import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
+import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+
+type LinePayStatus = "paid" | "cancelled";
+
+interface EmailBranding {
+  siteTitle: string;
+  siteLogoUrl: string;
+}
+
+function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
+  const raw = String(rawLogoUrl || "").trim();
+  if (!raw) return `${FRONTEND_URL}/icons/logo.png`;
+  if (/^https?:\/\//i.test(raw)) return raw;
+
+  const frontendBase = String(FRONTEND_URL || "").replace(/\/+$/, "");
+  const normalized = raw.replace(/^\.?\//, "");
+  if (!frontendBase) return normalized;
+  if (!normalized) return `${frontendBase}/icons/logo.png`;
+  return `${frontendBase}/${normalized}`;
+}
+
+function parseReceiptInfo(raw: unknown): Record<string, unknown> | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    const value = raw.trim();
+    if (!value) return null;
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return null;
+}
+
+function getDeliveryAddressText(order: Record<string, unknown>): string {
+  const deliveryMethod = String(order.delivery_method || "");
+  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
+    return `${String(order.city || "")}${String(order.district || "")} ${
+      String(order.address || "")
+    }`.trim();
+  }
+  return `${String(order.store_name || "")}${
+    String(order.store_address || "").trim()
+      ? ` (${String(order.store_address || "").trim()})`
+      : ""
+  }`.trim();
+}
+
+function getLinePayStatusLabel(status: LinePayStatus): string {
+  return status === "paid" ? "已付款" : "已取消";
+}
+
+function buildLinePayStatusEmailHtml(params: {
+  orderId: string;
+  siteTitle: string;
+  logoUrl: string;
+  lineName: string;
+  paymentStatus: LinePayStatus;
+  total: number;
+  deliveryText: string;
+  note: string;
+}) {
+  const statusLabel = getLinePayStatusLabel(params.paymentStatus);
+  const statusColor = params.paymentStatus === "paid" ? "#2e7d32" : "#d32f2f";
+  const summaryText = params.paymentStatus === "paid"
+    ? "您的 LINE Pay 付款已成功完成。"
+    : "您的 LINE Pay 付款已取消，若需下單請重新送出。";
+
+  return `
+<div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5ddd5;box-shadow:0 4px 10px rgba(0,0,0,0.08);">
+  <div style="background:#6F4E37;color:#fff;padding:22px 20px 20px;text-align:center;">
+    <img src="${sanitize(resolveEmailLogoUrl(params.logoUrl))}" alt="${
+    sanitize(params.siteTitle)
+  } Logo" style="display:block;height:18px;width:auto;max-width:108px;margin:0 auto 10px auto;border:0;outline:none;text-decoration:none;">
+    <h1 style="margin:0;font-size:22px;line-height:1.32;font-weight:700;letter-spacing:0.2px;">${
+    sanitize(params.siteTitle)
+  }</h1>
+    <p style="margin:8px 0 0 0;font-size:13px;line-height:1.4;color:#F2EAE4;">LINE Pay 付款狀態通知</p>
+  </div>
+  <div style="padding:28px 30px;color:#333;line-height:1.65;">
+    <h2 style="font-size:18px;color:#6F4E37;margin-top:0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您好</h2>
+    <p style="margin:0 0 14px 0;">${sanitize(summaryText)}</p>
+    <div style="background:#f9f6f0;border-left:4px solid #6F4E37;padding:14px 15px;margin:16px 0;border-radius:0 4px 4px 0;">
+      <p style="margin:0 0 10px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
+      <p style="margin:0 0 10px 0;"><strong>付款狀態：</strong> <span style="font-weight:700;color:${statusColor};">${statusLabel}</span></p>
+      <p style="margin:0 0 10px 0;"><strong>訂單金額：</strong> $${
+    Number(params.total) || 0
+  }</p>
+      <p style="margin:0 0 10px 0;"><strong>配送資訊：</strong> ${
+    sanitize(params.deliveryText || "未提供")
+  }</p>
+      <p style="margin:0;"><strong>訂單備註：</strong> ${
+    sanitize(params.note || "無")
+  }</p>
+    </div>
+  </div>
+  <div style="background:#f5f5f5;color:#888;text-align:center;padding:14px 15px;font-size:12px;border-top:1px solid #eee;">
+    <p style="margin:0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>`;
+}
+
+async function getEmailBranding(): Promise<EmailBranding> {
+  const { data: settingsRows } = await supabase.from("coffee_settings")
+    .select("key, value")
+    .in("key", ["site_title", "site_icon_url"]);
+
+  let siteTitleRaw = "";
+  let siteLogoUrl = "";
+  for (const row of settingsRows || []) {
+    const key = String(row.key || "");
+    if (key === "site_title") {
+      siteTitleRaw = String(row.value || "");
+      continue;
+    }
+    if (key === "site_icon_url") {
+      siteLogoUrl = String(row.value || "").trim();
+    }
+  }
+
+  return {
+    siteTitle: normalizeEmailSiteTitle(siteTitleRaw),
+    siteLogoUrl,
+  };
+}
+
+async function notifyLinePayPaymentStatusChanged(
+  orderId: string,
+  paymentStatus: LinePayStatus,
+) {
+  try {
+    const { data: order, error } = await supabase.from("coffee_orders").select(
+      "id, status, line_user_id, line_name, email, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
+    ).eq("id", orderId).maybeSingle();
+
+    if (error || !order) {
+      console.error(
+        `[linePayStatusNotify] failed to load order: ${orderId} (${
+          error?.message || "not found"
+        })`,
+      );
+      return;
+    }
+
+    const { siteTitle, siteLogoUrl } = await getEmailBranding();
+    const deliveryText = getDeliveryAddressText(
+      order as Record<string, unknown>,
+    );
+    const lineName = String(order.line_name || "").trim() || "顧客";
+
+    const lineUserId = String(order.line_user_id || "").trim();
+    if (lineUserId) {
+      const flexMessage = buildOrderStatusLineFlexMessage({
+        orderId,
+        siteTitle,
+        status: String(order.status || "pending"),
+        deliveryMethod: String(order.delivery_method || ""),
+        city: String(order.city || ""),
+        district: String(order.district || ""),
+        address: String(order.address || ""),
+        storeName: String(order.store_name || ""),
+        storeAddress: String(order.store_address || ""),
+        paymentMethod: String(order.payment_method || "linepay"),
+        paymentStatus,
+        total: Number(order.total) || 0,
+        items: String(order.items || ""),
+        note: String(order.note || ""),
+        receiptInfo: parseReceiptInfo(order.receipt_info),
+      });
+      const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
+      if (!flexResult.success) {
+        console.error(
+          `[linePayStatusNotify] failed to send LINE flex: ${orderId} -> ${lineUserId} (${flexResult.error})`,
+        );
+      }
+    }
+
+    const customerEmail = String(order.email || "").trim();
+    if (customerEmail) {
+      const statusSummary = paymentStatus === "paid" ? "付款成功" : "付款取消";
+      const subject =
+        `[${siteTitle}] 訂單編號 ${orderId} LINE Pay ${statusSummary}通知`;
+      const html = buildLinePayStatusEmailHtml({
+        orderId,
+        siteTitle,
+        logoUrl: siteLogoUrl,
+        lineName,
+        paymentStatus,
+        total: Number(order.total) || 0,
+        deliveryText,
+        note: String(order.note || ""),
+      });
+      const emailResult = await sendEmail(customerEmail, subject, html);
+      if (!emailResult.success) {
+        console.error(
+          `[linePayStatusNotify] failed to send email: ${orderId} -> ${customerEmail} (${
+            emailResult.error || "unknown"
+          })`,
+        );
+      }
+    }
+  } catch (error) {
+    console.error(
+      `[linePayStatusNotify] unexpected error while notifying order ${orderId}`,
+      error,
+    );
+  }
+}
 
 export async function linePayConfirm(data: Record<string, unknown>) {
   const transactionId = String(data.transactionId || "");
@@ -41,8 +266,13 @@ export async function linePayConfirm(data: Record<string, unknown>) {
     );
 
     if (confirmRes.returnCode === "0000") {
-      await supabase.from("coffee_orders").update({ payment_status: "paid" })
+      const { error: updateError } = await supabase.from("coffee_orders")
+        .update({ payment_status: "paid" })
         .eq("id", orderId);
+      if (updateError) {
+        return { success: false, error: updateError.message, orderId };
+      }
+      await notifyLinePayPaymentStatusChanged(orderId, "paid");
       return { success: true, message: "付款已確認", orderId };
     } else {
       // 確認失敗時更新狀態為 failed 方便查案
@@ -73,15 +303,29 @@ export async function linePayCancel(
   const orderId = String(data.orderId || "");
   if (!orderId) return { success: false, error: "缺少訂單編號" };
 
-  const { data: order } = await supabase.from("coffee_orders").select(
-    "payment_status, line_user_id",
-  ).eq("id", orderId).maybeSingle();
+  const { data: order, error: orderErr } = await supabase.from("coffee_orders")
+    .select(
+      "payment_status, line_user_id",
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+  if (orderErr) return { success: false, error: orderErr.message };
+
+  let statusChanged = false;
   if (order && order.payment_status === "pending") {
     if (order.line_user_id !== user.userId && !user.isAdmin) {
       return { success: false, error: "無權限取消此訂單" };
     }
-    await supabase.from("coffee_orders").update({ payment_status: "cancelled" })
+    const { error: updateError } = await supabase.from("coffee_orders").update({
+      payment_status: "cancelled",
+    })
       .eq("id", orderId);
+    if (updateError) return { success: false, error: updateError.message };
+    statusChanged = true;
+  }
+
+  if (statusChanged) {
+    await notifyLinePayPaymentStatusChanged(orderId, "cancelled");
   }
   return { success: true, message: "付款已取消", orderId };
 }
