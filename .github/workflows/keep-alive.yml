@@ -11,13 +11,9 @@ jobs:
     steps:
       - name: Ping Supabase REST API
         run: |
-          if [ -z "${{ secrets.SUPABASE_URL }}" ]; then
-            echo "❌ SUPABASE_URL secret is not set. Please configure it in GitHub Secrets."
-            exit 1
-          fi
-          if [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-            echo "❌ SUPABASE_ANON_KEY secret is not set. Please configure it in GitHub Secrets."
-            exit 1
+          if [ -z "${{ secrets.SUPABASE_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
+            echo "::warning::SUPABASE_URL 或 SUPABASE_ANON_KEY 未設定，略過 Keep Alive。"
+            exit 0
           fi
           
           echo "Pinging Supabase REST API..."
@@ -33,4 +29,3 @@ jobs:
             echo "❌ Failed to ping Supabase REST API (Code: $RESPONSE_CODE)."
             exit 1
           fi
-
