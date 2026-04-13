@@ -931,6 +931,7 @@ function showCopySuccess(btn) {
 async function handleLinePayCallback(lpAction, params) {
   const transactionId = params.get("transactionId") || "";
   const orderId = params.get("orderId") || "";
+  const callbackSig = params.get("sig") || "";
 
   if (lpAction === "confirm" && transactionId && orderId) {
     Swal.fire({
@@ -957,11 +958,24 @@ async function handleLinePayCallback(lpAction, params) {
       Swal.fire("錯誤", "付款確認失敗: " + e.message, "error");
     }
   } else if (lpAction === "cancel") {
-    // 通知後端取消
     if (orderId) {
+      const cancelUrl = `${API_URL}?action=linePayCancel&orderId=${
+        encodeURIComponent(orderId)
+      }${
+        callbackSig ? `&sig=${encodeURIComponent(callbackSig)}` : ""
+      }`;
       try {
-        await authFetch(`${API_URL}?action=linePayCancel&orderId=${orderId}`);
-      } catch {}
+        const response = callbackSig
+          ? await fetch(cancelUrl)
+          : await authFetch(cancelUrl);
+        if (!response.ok) {
+          const result = await response.json().catch(() => ({}));
+          const message = String(result.error || "").trim();
+          if (message) console.warn("[linepay-cancel] ", message);
+        }
+      } catch (error) {
+        console.warn("[linepay-cancel] failed to notify backend:", error);
+      }
     }
     Swal.fire({
       icon: "info",

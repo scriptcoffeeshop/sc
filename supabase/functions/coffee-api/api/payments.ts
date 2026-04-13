@@ -1,5 +1,10 @@
 import { supabase } from "../utils/supabase.ts";
-import { requireAdmin, requireAuth } from "../utils/auth.ts";
+import {
+  extractAuth,
+  hmacSign,
+  requireAdmin,
+  requireAuth,
+} from "../utils/auth.ts";
 import { FRONTEND_URL } from "../utils/config.ts";
 import { sendEmail } from "../utils/email.ts";
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
@@ -13,6 +18,25 @@ type LinePayStatus = "paid" | "cancelled";
 interface EmailBranding {
   siteTitle: string;
   siteLogoUrl: string;
+}
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+async function hasValidLinePayCallbackSignature(
+  orderId: string,
+  data: Record<string, unknown>,
+): Promise<boolean> {
+  const signature = String(data.sig || data.signature || "").trim();
+  if (!orderId || !signature) return false;
+  const expected = await hmacSign(`linepay-callback:${orderId}`);
+  return timingSafeEqual(signature, expected);
 }
 
 function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
@@ -299,21 +323,34 @@ export async function linePayCancel(
   data: Record<string, unknown>,
   req: Request,
 ) {
-  const user = await requireAuth(req);
   const orderId = String(data.orderId || "");
   if (!orderId) return { success: false, error: "缺少訂單編號" };
+  const auth = await extractAuth(req);
+  const signatureVerified = await hasValidLinePayCallbackSignature(
+    orderId,
+    data,
+  );
+  if (!auth && !signatureVerified) {
+    return { success: false, error: "請先登入" };
+  }
 
   const { data: order, error: orderErr } = await supabase.from("coffee_orders")
     .select(
-      "payment_status, line_user_id",
+      "payment_status, line_user_id, payment_method",
     )
     .eq("id", orderId)
     .maybeSingle();
   if (orderErr) return { success: false, error: orderErr.message };
+  if (order && String(order.payment_method || "") !== "linepay") {
+    return { success: false, error: "此訂單非使用 LINE Pay 付款" };
+  }
 
   let statusChanged = false;
   if (order && order.payment_status === "pending") {
-    if (order.line_user_id !== user.userId && !user.isAdmin) {
+    const canCancelByAuth = Boolean(
+      auth && (order.line_user_id === auth.userId || auth.isAdmin),
+    );
+    if (!signatureVerified && !canCancelByAuth) {
       return { success: false, error: "無權限取消此訂單" };
     }
     const { error: updateError } = await supabase.from("coffee_orders").update({

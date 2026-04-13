@@ -1,5 +1,5 @@
 import { supabase } from "../utils/supabase.ts";
-import { requireAdmin, requireAuth } from "../utils/auth.ts";
+import { hmacSign, requireAdmin, requireAuth } from "../utils/auth.ts";
 import {
   FRONTEND_URL,
   LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN,
@@ -244,6 +244,12 @@ async function sendAdminOrderCreatedFlexNotification(params: {
   }
 }
 
+async function createLinePayCallbackSignature(
+  orderId: string,
+): Promise<string> {
+  return await hmacSign(`linepay-callback:${orderId}`);
+}
+
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
@@ -462,10 +468,14 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 
   if (paymentMethod === "linepay") {
     try {
+      const callbackSig = encodeURIComponent(
+        await createLinePayCallbackSignature(orderId),
+      );
+      const encodedOrderId = encodeURIComponent(orderId);
       const confirmUrl =
-        `${FRONTEND_URL}/main.html?lpAction=confirm&orderId=${orderId}`;
+        `${FRONTEND_URL}/main.html?lpAction=confirm&orderId=${encodedOrderId}&sig=${callbackSig}`;
       const cancelUrl =
-        `${FRONTEND_URL}/main.html?lpAction=cancel&orderId=${orderId}`;
+        `${FRONTEND_URL}/main.html?lpAction=cancel&orderId=${encodedOrderId}&sig=${callbackSig}`;
 
       const reqBody = {
         amount: total,
