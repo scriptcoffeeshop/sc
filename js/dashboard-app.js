@@ -4721,7 +4721,11 @@ async function uploadSiteIcon() {
     const d = await uploadAssetFile(file, "site_icon_url");
     if (d.success) {
       document.getElementById("s-site-icon-url").value = d.url;
-      document.getElementById("s-icon-preview").src = d.url;
+      updateIconPreview({
+        previewId: "s-icon-preview",
+        rawUrl: d.url,
+        fallbackUrl: getDefaultIconUrl("brand"),
+      });
       document.getElementById("s-icon-url-display").textContent = "自訂 Logo (儲存後生效)";
       Toast.fire({ icon: "success", title: "品牌 Logo 已上傳！請記得點擊儲存設定。" });
     } else {
@@ -4736,7 +4740,11 @@ async function uploadSiteIcon() {
 
 async function resetSiteIcon() {
   document.getElementById("s-site-icon-url").value = "";
-  document.getElementById("s-icon-preview").src = getDefaultIconUrl("brand");
+  updateIconPreview({
+    previewId: "s-icon-preview",
+    rawUrl: getDefaultIconUrl("brand"),
+    fallbackUrl: getDefaultIconUrl("brand"),
+  });
   document.getElementById("s-icon-url-display").textContent = "未設定 (預設)";
   Toast.fire({ icon: "success", title: "已恢復預設 Logo！請記得點擊儲存設定。" });
 }
