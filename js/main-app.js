@@ -543,7 +543,9 @@ async function loadInitData() {
 
 function applySettings(s) {
   if (String(s.announcement_enabled) === "true" && s.announcement) {
-    document.getElementById("announcement-text").textContent = s.announcement;
+    document.getElementById("announcement-text").innerHTML = escapeHtml(
+      s.announcement,
+    ).replace(/\n/g, "<br>");
     document.getElementById("announcement-banner").classList.remove("hidden");
   }
   if (String(s.is_open) === "false") {

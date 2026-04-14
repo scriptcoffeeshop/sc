@@ -87,6 +87,21 @@ export const ICON_CATALOG = Object.entries(ICON_FILE_MAP).map(([key, path]) => (
 
 const ABSOLUTE_URL_RE = /^(?:https?:|data:|blob:|\/\/)/i;
 
+/**
+ * 將 icon_url 正規化為乾淨的相對路徑（不帶 /sc/ 或前導斜線）。
+ * 目的：確保無論部署在 GitHub Pages 子目錄 (/sc/) 還是自訂網域根目錄，
+ * 儲存到資料庫的 icon_url 都是環境無關的相對路徑（如 "icons/in-store-bag.png"）。
+ * 這樣在顯示時由 resolveAssetUrl 負責根據環境補上正確前綴。
+ */
+export function normalizeIconPath(rawUrl = "") {
+  const value = String(rawUrl || "").trim();
+  if (!value) return "";
+  // 絕對 URL（https:// 或 data: 等）不做處理
+  if (ABSOLUTE_URL_RE.test(value)) return value;
+  // 去除前導斜線和 /sc/ 前綴，統一為相對路徑
+  return value.replace(/^\/+/, "").replace(/^sc\//, "");
+}
+
 export function resolveAssetUrl(rawUrl = "") {
   const value = String(rawUrl || "").trim();
   if (!value) return "";

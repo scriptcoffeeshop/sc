@@ -9,6 +9,7 @@ import {
   getDefaultIconUrl,
   getDeliveryIconFallbackKey,
   getPaymentIconFallbackKey,
+  normalizeIconPath,
   resolveAssetUrl,
 } from "./icons.js";
 import {
@@ -125,7 +126,7 @@ function normalizeDeliveryOption(item = {}) {
     ...item,
     id: id || defaults.id,
     icon: String(item.icon ?? defaults.icon ?? ""),
-    icon_url: String(
+    icon_url: normalizeIconPath(
       item.icon_url ?? item.iconUrl ?? defaults.icon_url ?? "",
     ),
     name: String(item.name ?? defaults.name ?? ""),
@@ -149,7 +150,7 @@ function normalizePaymentOption(method, option = {}) {
     ...defaults,
     ...option,
     icon: String(option.icon ?? defaults.icon ?? ""),
-    icon_url: String(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
+    icon_url: normalizeIconPath(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
     name: String(option.name ?? defaults.name ?? ""),
     description: String(option.description ?? defaults.description ?? ""),
   };
