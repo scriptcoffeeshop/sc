@@ -166,6 +166,14 @@ function paymentIconFallbackKey(method) {
   return getPaymentIconFallbackKey(method);
 }
 
+function updateDeliveryRoutingPaymentHeaderIcon(method, rawUrl = "") {
+  return updateIconPreview({
+    previewId: `dr-${method}-icon-preview`,
+    rawUrl,
+    fallbackUrl: getDefaultIconUrl(paymentIconFallbackKey(method)),
+  });
+}
+
 function getAuthUserId() {
   if (!currentUser?.userId) throw new Error("請先登入");
   return currentUser.userId;
@@ -3423,6 +3431,7 @@ async function loadSettings() {
           rawUrl: normalized.icon_url,
           fallbackUrl: getDefaultIconUrl(paymentIconFallbackKey(method)),
         });
+        updateDeliveryRoutingPaymentHeaderIcon(method, normalized.icon_url);
         const urlDisplay = document.getElementById(`po-${method}-icon-url-display`);
         if (urlDisplay) urlDisplay.textContent = normalized.icon_url;
       });
@@ -4761,6 +4770,13 @@ function setIconUrlToField({
       rawUrl: url,
       fallbackUrl: getDefaultIconUrl(fallbackKey),
     });
+  }
+
+  const paymentInputMatch = /^po-(cod|linepay|transfer)-icon-url$/.exec(
+    String(inputId || ""),
+  );
+  if (paymentInputMatch) {
+    updateDeliveryRoutingPaymentHeaderIcon(paymentInputMatch[1], url);
   }
 
 }

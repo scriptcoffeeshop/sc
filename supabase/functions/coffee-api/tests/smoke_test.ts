@@ -120,6 +120,16 @@ Deno.test("Email Templates - Shipping Notification", () => {
   assertEquals(html.includes("已付款"), true, "Missing payment status");
   assertEquals(html.includes("700123456"), true, "Missing tracking number");
   assertEquals(html.includes("複製單號"), true, "Missing copy tracking button");
+  assertEquals(
+    html.includes("copy-tracking.html"),
+    true,
+    "Missing copy tracking page link",
+  );
+  assertEquals(
+    html.includes("navigator.clipboard"),
+    false,
+    "Email should not rely on inline clipboard script",
+  );
   assertEquals(html.includes("黑貓宅急便"), true, "Missing shipping provider");
   assertEquals(html.includes("物流追蹤頁面"), true, "Missing tracking link");
   assertEquals(html.includes("統智門市"), true, "Missing store name");

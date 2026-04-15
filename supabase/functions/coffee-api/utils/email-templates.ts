@@ -236,6 +236,24 @@ function normalizeTrackingUrl(url: string): string {
   }
 }
 
+function buildTrackingCopyUrl(trackingNumber: string): string {
+  const rawTrackingNumber = String(trackingNumber || "").trim();
+  if (!rawTrackingNumber) return "";
+  const frontendBase = String(FRONTEND_URL || "").trim();
+  if (!frontendBase) return "";
+
+  try {
+    const normalizedBase = frontendBase.endsWith("/")
+      ? frontendBase
+      : `${frontendBase}/`;
+    const copyUrl = new URL("copy-tracking.html", normalizedBase);
+    copyUrl.searchParams.set("tracking", rawTrackingNumber);
+    return copyUrl.toString();
+  } catch {
+    return "";
+  }
+}
+
 export function buildShippingNotificationHtml(
   params: ShippingNotificationParams,
 ): string {
@@ -257,7 +275,7 @@ export function buildShippingNotificationHtml(
   const defaultTrackingUrl = getDefaultTrackingUrl(params.deliveryMethod);
   const finalTrackingUrl = customTrackingUrl || defaultTrackingUrl;
   const rawTrackingNumber = String(params.trackingNumber || "").trim();
-  const encodedTrackingNumber = encodeURIComponent(rawTrackingNumber);
+  const trackingCopyUrl = buildTrackingCopyUrl(rawTrackingNumber);
   const hasShippingInfo = !!params.trackingNumber ||
     !!params.shippingProvider ||
     !!finalTrackingUrl;
@@ -275,9 +293,13 @@ export function buildShippingNotificationHtml(
     ? `<p style="margin: 0 0 8px 0;"><strong>物流單號：</strong> <span style="font-family:monospace; font-size:15px; font-weight:bold;">${
       sanitize(params.trackingNumber)
     }</span>
-      <a href="#" data-tracking-number="${
-      sanitize(params.trackingNumber)
-    }" onclick="if(window.navigator && navigator.clipboard){navigator.clipboard.writeText(decodeURIComponent('${encodedTrackingNumber}'));} return false;" style="display:inline-block; margin-left:8px; padding:2px 8px; border:1px solid #d1d5db; border-radius:4px; color:#374151; text-decoration:none; font-size:12px; background:#ffffff;">📋 複製單號</a>
+      ${
+      trackingCopyUrl
+        ? `<a href="${
+          sanitize(trackingCopyUrl)
+        }" target="_blank" style="display:inline-block; margin-left:8px; padding:2px 8px; border:1px solid #d1d5db; border-radius:4px; color:#374151; text-decoration:none; font-size:12px; background:#ffffff;">📋 複製單號</a>`
+        : `<span style="display:inline-block; margin-left:8px; padding:2px 8px; border:1px solid #d1d5db; border-radius:4px; color:#6b7280; font-size:12px; background:#ffffff;">請長按單號複製</span>`
+    }
     </p>`
     : "";
   const trackingSection = hasShippingInfo

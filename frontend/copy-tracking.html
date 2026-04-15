@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>包裹單號一鍵複製</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+          "PingFang TC", "Microsoft JhengHei", sans-serif;
+        background: #f8f6f1;
+        color: #1f2937;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+      }
+      .card {
+        width: min(520px, 100%);
+        background: #fff;
+        border: 1px solid #e6dfd2;
+        border-radius: 16px;
+        box-shadow: 0 16px 32px -24px rgba(0, 0, 0, 0.35);
+        padding: 24px 20px;
+      }
+      .title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #334155;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .title img {
+        width: 24px;
+        height: 24px;
+      }
+      .status {
+        margin: 10px 0 0;
+        color: #475569;
+        font-size: 14px;
+      }
+      .tracking {
+        margin: 16px 0;
+        padding: 12px 14px;
+        border: 1px solid #d9d2c6;
+        border-radius: 10px;
+        background: #fffdf8;
+        font-size: 20px;
+        letter-spacing: 0.04em;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+        word-break: break-all;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      button {
+        border: 1px solid #c7bfae;
+        border-radius: 10px;
+        background: #fff;
+        color: #334155;
+        padding: 8px 14px;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #334155;
+        color: #fff;
+        border-color: #334155;
+      }
+      .tip {
+        margin: 12px 0 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1 class="title">
+        <img src="./icons/copy-doc.png" alt="" />
+        包裹單號一鍵複製
+      </h1>
+      <p id="status" class="status">正在準備複製包裹單號...</p>
+      <div id="tracking-value" class="tracking">--</div>
+      <div class="actions">
+        <button id="copy-btn" class="primary" type="button">再次複製</button>
+        <button id="select-btn" type="button">手動選取單號</button>
+      </div>
+      <p class="tip">
+        若瀏覽器未允許剪貼簿存取，請按「手動選取單號」後自行複製。
+      </p>
+      <textarea id="tracking-hidden" class="hidden"></textarea>
+    </main>
+    <script>
+      (() => {
+        const params = new URLSearchParams(window.location.search);
+        const trackingNumber = String(
+          params.get("tracking") || params.get("value") || "",
+        ).trim();
+        const statusEl = document.getElementById("status");
+        const valueEl = document.getElementById("tracking-value");
+        const copyBtn = document.getElementById("copy-btn");
+        const selectBtn = document.getElementById("select-btn");
+        const hiddenTextarea = document.getElementById("tracking-hidden");
+
+        const setStatus = (message) => {
+          if (statusEl) statusEl.textContent = message;
+        };
+
+        const selectTracking = () => {
+          if (!trackingNumber) return;
+          if (hiddenTextarea instanceof HTMLTextAreaElement) {
+            hiddenTextarea.value = trackingNumber;
+            hiddenTextarea.classList.remove("hidden");
+            hiddenTextarea.focus();
+            hiddenTextarea.select();
+            hiddenTextarea.setSelectionRange(0, trackingNumber.length);
+          }
+          if (valueEl) {
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(valueEl);
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+          }
+        };
+
+        const copyTracking = async () => {
+          if (!trackingNumber) {
+            setStatus("找不到包裹單號，請返回通知信件重新點擊。");
+            return;
+          }
+          try {
+            if (navigator?.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(trackingNumber);
+            } else {
+              selectTracking();
+              document.execCommand("copy");
+            }
+            setStatus("✅ 已複製包裹單號，貼上即可使用。");
+          } catch {
+            selectTracking();
+            setStatus("⚠️ 無法自動複製，已幫您選取單號，請手動複製。");
+          }
+        };
+
+        if (valueEl) valueEl.textContent = trackingNumber || "--";
+        copyBtn?.addEventListener("click", copyTracking);
+        selectBtn?.addEventListener("click", () => {
+          selectTracking();
+          if (trackingNumber) {
+            setStatus("已選取包裹單號，請使用複製快捷鍵。");
+          }
+        });
+
+        copyTracking();
+      })();
+    </script>
+  </body>
+</html>

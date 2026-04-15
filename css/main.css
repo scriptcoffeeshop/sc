@@ -28,6 +28,12 @@
   justify-content: center;
 }
 
+#announcement-text {
+  white-space: pre-line;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
 .section-heading-inline {
   display: inline-flex;
   align-items: center;
