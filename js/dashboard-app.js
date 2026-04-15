@@ -3648,7 +3648,9 @@ async function saveSettings() {
         site_title: document.getElementById("s-site-title").value.trim(),
         site_subtitle: document.getElementById("s-site-subtitle").value.trim(),
         site_icon_emoji: document.getElementById("s-site-emoji").value.trim(),
-        site_icon_url: document.getElementById("s-site-icon-url").value.trim(),
+        site_icon_url: normalizeIconPath(
+          document.getElementById("s-site-icon-url").value.trim(),
+        ),
 
         products_section_title: document.getElementById("s-products-title")
           .value.trim(),
@@ -3658,7 +3660,9 @@ async function saveSettings() {
         products_section_bold: String(
           document.getElementById("s-products-bold").checked,
         ),
-        products_section_icon_url: readInputValue("s-products-icon-url"),
+        products_section_icon_url: normalizeIconPath(
+          readInputValue("s-products-icon-url"),
+        ),
 
         delivery_section_title: document.getElementById("s-delivery-title")
           .value.trim(),
@@ -3668,7 +3672,9 @@ async function saveSettings() {
         delivery_section_bold: String(
           document.getElementById("s-delivery-bold").checked,
         ),
-        delivery_section_icon_url: readInputValue("s-delivery-icon-url"),
+        delivery_section_icon_url: normalizeIconPath(
+          readInputValue("s-delivery-icon-url"),
+        ),
 
         notes_section_title: document.getElementById("s-notes-title").value
           .trim(),
@@ -3677,7 +3683,9 @@ async function saveSettings() {
         notes_section_bold: String(
           document.getElementById("s-notes-bold").checked,
         ),
-        notes_section_icon_url: readInputValue("s-notes-icon-url"),
+        notes_section_icon_url: normalizeIconPath(
+          readInputValue("s-notes-icon-url"),
+        ),
 
         linepay_sandbox: String(linePaySandboxChecked),
       },
@@ -3687,7 +3695,9 @@ async function saveSettings() {
     document.querySelectorAll(".delivery-option-row").forEach((row) => {
       const id = row.querySelector(".do-id").value;
       const icon = row.querySelector(".do-icon").value.trim();
-      const icon_url = row.querySelector(".do-icon-url")?.value.trim() || "";
+      const icon_url = normalizeIconPath(
+        row.querySelector(".do-icon-url")?.value.trim() || "",
+      );
       const name = row.querySelector(".do-name").value.trim();
       const desc = row.querySelector(".do-desc").value.trim();
       const enabled = row.querySelector(".do-enabled").checked;
@@ -3720,19 +3730,19 @@ async function saveSettings() {
     payload.settings.payment_options_config = JSON.stringify({
       cod: {
         icon: document.getElementById("po-cod-icon").value.trim(),
-        icon_url: readInputValue("po-cod-icon-url"),
+        icon_url: normalizeIconPath(readInputValue("po-cod-icon-url")),
         name: document.getElementById("po-cod-name").value.trim(),
         description: document.getElementById("po-cod-desc").value.trim(),
       },
       linepay: {
         icon: document.getElementById("po-linepay-icon").value.trim(),
-        icon_url: readInputValue("po-linepay-icon-url"),
+        icon_url: normalizeIconPath(readInputValue("po-linepay-icon-url")),
         name: document.getElementById("po-linepay-name").value.trim(),
         description: document.getElementById("po-linepay-desc").value.trim(),
       },
       transfer: {
         icon: document.getElementById("po-transfer-icon").value.trim(),
-        icon_url: readInputValue("po-transfer-icon-url"),
+        icon_url: normalizeIconPath(readInputValue("po-transfer-icon-url")),
         name: document.getElementById("po-transfer-name").value.trim(),
         description: document.getElementById("po-transfer-desc").value.trim(),
       },
@@ -4672,7 +4682,24 @@ function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
 
     pushPreviewCandidate(candidates, seen, resolved);
 
-    if (/^(?:https?:|data:|blob:|\/\/)/i.test(resolved)) return;
+    if (/^(?:https?:|data:|blob:|\/\/)/i.test(resolved)) {
+      if (/^(?:data:|blob:|\/\/)/i.test(resolved)) return;
+      try {
+        const parsed = new URL(resolved);
+        const normalizedPath = parsed.pathname || "";
+        if (normalizedPath.startsWith("/sc/icons/")) {
+          pushPreviewCandidate(
+            candidates,
+            seen,
+            `/icons/${normalizedPath.slice("/sc/icons/".length)}`,
+          );
+        } else if (normalizedPath.startsWith("/icons/")) {
+          pushPreviewCandidate(candidates, seen, `/sc${normalizedPath}`);
+        }
+      } catch {
+      }
+      return;
+    }
 
     if (resolved.startsWith("/sc/")) {
       pushPreviewCandidate(candidates, seen, resolved.replace(/^\/sc\//, "/"));
@@ -4757,17 +4784,19 @@ function setIconUrlToField({
   url,
   fallbackKey = "",
 }) {
+  const normalizedUrl = normalizeIconPath(url);
+  const finalUrl = normalizedUrl || String(url || "").trim();
   const input = document.getElementById(inputId);
-  if (input) input.value = url;
+  if (input) input.value = finalUrl;
   const display = document.getElementById(displayId);
   if (display) {
-    const resolvedDisplayUrl = resolveAssetUrl(url) || url;
+    const resolvedDisplayUrl = resolveAssetUrl(finalUrl) || finalUrl;
     display.textContent = resolvedDisplayUrl;
   }
   if (previewId) {
     updateIconPreview({
       previewId,
-      rawUrl: url,
+      rawUrl: finalUrl,
       fallbackUrl: getDefaultIconUrl(fallbackKey),
     });
   }
@@ -4776,7 +4805,7 @@ function setIconUrlToField({
     String(inputId || ""),
   );
   if (paymentInputMatch) {
-    updateDeliveryRoutingPaymentHeaderIcon(paymentInputMatch[1], url);
+    updateDeliveryRoutingPaymentHeaderIcon(paymentInputMatch[1], finalUrl);
   }
 
 }
@@ -4955,13 +4984,18 @@ async function uploadDeliveryRowIcon(button) {
   try {
     const d = await uploadAssetFile(file, "");
     if (d.success) {
+      const normalizedUrl = normalizeIconPath(d.url);
+      const finalUrl = normalizedUrl || String(d.url || "").trim();
       const urlInput = row.querySelector(".do-icon-url");
       const urlDisplay = row.querySelector(".do-icon-url-display");
       const preview = row.querySelector(".do-icon-preview");
-      if (urlInput) urlInput.value = d.url;
-      if (urlDisplay) urlDisplay.textContent = d.url;
+      if (urlInput) urlInput.value = finalUrl;
+      if (urlDisplay) {
+        const resolvedDisplayUrl = resolveAssetUrl(finalUrl) || finalUrl;
+        urlDisplay.textContent = resolvedDisplayUrl;
+      }
       if (preview instanceof HTMLImageElement) {
-        setPreviewImageSource(preview, d.url, getRowFallbackIconUrl(row));
+        setPreviewImageSource(preview, finalUrl, getRowFallbackIconUrl(row));
       }
       Toast.fire({ icon: "success", title: "物流圖示已更新" });
     } else Swal.fire("錯誤", d.error, "error");

@@ -31,6 +31,113 @@ const PUBLIC_SETTINGS_KEYS = [
   "payment_options_config",
 ];
 
+const RELATIVE_ICON_HOSTS = new Set([
+  "scriptcoffee.com.tw",
+  "www.scriptcoffee.com.tw",
+  "scriptcoffeeshop.github.io",
+]);
+
+function normalizeIconPath(rawValue: unknown): string {
+  const value = String(rawValue ?? "").trim();
+  if (!value) return "";
+
+  if (/^https?:\/\//i.test(value)) {
+    try {
+      const parsed = new URL(value);
+      const normalizedPath = parsed.pathname.replace(/^\/+/, "");
+      if (RELATIVE_ICON_HOSTS.has(parsed.hostname)) {
+        if (normalizedPath.startsWith("sc/icons/")) {
+          return normalizedPath.slice(3);
+        }
+        if (normalizedPath.startsWith("icons/")) {
+          return normalizedPath;
+        }
+      }
+    } catch {
+      return value;
+    }
+    return value;
+  }
+
+  if (/^\/?(?:sc\/)?icons\//i.test(value)) {
+    return value
+      .replace(/^\/+/, "")
+      .replace(/^sc\//i, "");
+  }
+
+  return value;
+}
+
+function normalizeDeliveryOptionsConfig(value: string): string {
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return value;
+
+    const normalized = parsed.map((item) => {
+      if (!item || typeof item !== "object") return item;
+      const rawItem = item as Record<string, unknown>;
+      const { iconUrl: _iconUrl, ...rest } = rawItem;
+      const normalizedIconUrl = normalizeIconPath(
+        rawItem.icon_url ?? rawItem.iconUrl ?? "",
+      );
+      return {
+        ...rest,
+        icon_url: normalizedIconUrl,
+      };
+    });
+    return JSON.stringify(normalized);
+  } catch {
+    return value;
+  }
+}
+
+function normalizePaymentOptionsConfig(value: string): string {
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return value;
+    }
+
+    const normalized = Object.entries(parsed as Record<string, unknown>).reduce(
+      (acc, [method, option]) => {
+        if (!option || typeof option !== "object" || Array.isArray(option)) {
+          acc[method] = option;
+          return acc;
+        }
+        const rawOption = option as Record<string, unknown>;
+        const { iconUrl: _iconUrl, ...rest } = rawOption;
+        const normalizedIconUrl = normalizeIconPath(
+          rawOption.icon_url ?? rawOption.iconUrl ?? "",
+        );
+        acc[method] = {
+          ...rest,
+          icon_url: normalizedIconUrl,
+        };
+        return acc;
+      },
+      {} as Record<string, unknown>,
+    );
+
+    return JSON.stringify(normalized);
+  } catch {
+    return value;
+  }
+}
+
+function normalizeSettingValue(key: string, rawValue: unknown): string {
+  const value = String(rawValue ?? "");
+  if (key === "delivery_options_config") {
+    return normalizeDeliveryOptionsConfig(value);
+  }
+  if (key === "payment_options_config") {
+    return normalizePaymentOptionsConfig(value);
+  }
+  if (key.endsWith("_icon_url")) {
+    return normalizeIconPath(value);
+  }
+  return value;
+}
+
 // ============ 設定 ============
 export async function getSettings(isAdmin = false) {
   const { data, error } = await supabase.from("coffee_settings").select("*");
@@ -38,7 +145,7 @@ export async function getSettings(isAdmin = false) {
   const settings: Record<string, string> = {};
   for (const row of (data || [])) {
     if (isAdmin || PUBLIC_SETTINGS_KEYS.includes(row.key)) {
-      settings[row.key] = row.value;
+      settings[row.key] = normalizeSettingValue(row.key, row.value);
     }
   }
   return { success: true, settings };
@@ -52,7 +159,7 @@ export async function updateSettingsAction(
   const settings = data.settings as Record<string, string>;
   const itemsToUpsert = Object.entries(settings).map(([key, value]) => ({
     key,
-    value: String(value),
+    value: normalizeSettingValue(key, value),
   }));
 
   const { error } = await supabase.from("coffee_settings").upsert(

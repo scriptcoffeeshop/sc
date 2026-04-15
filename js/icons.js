@@ -86,6 +86,22 @@ export const ICON_CATALOG = Object.entries(ICON_FILE_MAP).map(([key, path]) => (
 }));
 
 const ABSOLUTE_URL_RE = /^(?:https?:|data:|blob:|\/\/)/i;
+const RELATIVE_ICON_HOSTS = new Set([
+  "scriptcoffee.com.tw",
+  "www.scriptcoffee.com.tw",
+  "scriptcoffeeshop.github.io",
+]);
+
+function shouldNormalizeAbsoluteIconHost(hostname = "") {
+  const normalizedHost = String(hostname || "").trim().toLowerCase();
+  if (!normalizedHost) return false;
+  if (RELATIVE_ICON_HOSTS.has(normalizedHost)) return true;
+  if (typeof window !== "undefined") {
+    const currentHost = String(window.location.hostname || "").trim().toLowerCase();
+    if (currentHost && normalizedHost === currentHost) return true;
+  }
+  return false;
+}
 
 /**
  * 將 icon_url 正規化為乾淨的相對路徑（不帶 /sc/ 或前導斜線）。
@@ -96,8 +112,25 @@ const ABSOLUTE_URL_RE = /^(?:https?:|data:|blob:|\/\/)/i;
 export function normalizeIconPath(rawUrl = "") {
   const value = String(rawUrl || "").trim();
   if (!value) return "";
-  // 絕對 URL（https:// 或 data: 等）不做處理
-  if (ABSOLUTE_URL_RE.test(value)) return value;
+  // 絕對 URL 若是舊有 /sc/icons 或 /icons，且屬於本站網域，轉為相對路徑
+  if (ABSOLUTE_URL_RE.test(value)) {
+    if (/^(?:data:|blob:|\/\/)/i.test(value)) return value;
+    try {
+      const parsed = new URL(value);
+      if (shouldNormalizeAbsoluteIconHost(parsed.hostname)) {
+        const normalizedPath = parsed.pathname.replace(/^\/+/, "");
+        if (normalizedPath.startsWith("sc/icons/")) {
+          return normalizedPath.slice(3);
+        }
+        if (normalizedPath.startsWith("icons/")) {
+          return normalizedPath;
+        }
+      }
+    } catch {
+      return value;
+    }
+    return value;
+  }
   // 去除前導斜線和 /sc/ 前綴，統一為相對路徑
   return value.replace(/^\/+/, "").replace(/^sc\//, "");
 }
