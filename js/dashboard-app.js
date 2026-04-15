@@ -4664,6 +4664,10 @@ function getRowFallbackIconUrl(row) {
   return getDefaultIconUrl(key);
 }
 
+const ICON_PREVIEW_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="7" y="7" width="50" height="50" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="3"/><path d="M20 41l9-10 7 7 8-10 7 13H20z" fill="#94A3B8"/><circle cx="25" cy="24" r="4" fill="#94A3B8"/></svg>',
+)}`;
+
 function pushPreviewCandidate(candidates, seen, value) {
   const normalized = String(value || "").trim();
   if (!normalized || seen.has(normalized)) return;
@@ -4677,10 +4681,18 @@ function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
   const rawValues = [rawUrl, fallbackUrl];
 
   rawValues.forEach((value) => {
-    const resolved = resolveAssetUrl(value || "");
+    const normalizedValue = normalizeIconPath(value || "");
+    const resolved = resolveAssetUrl(normalizedValue);
     if (!resolved) return;
 
     pushPreviewCandidate(candidates, seen, resolved);
+
+    if (
+      typeof window !== "undefined" &&
+      /^\/(?:sc\/)?icons\//.test(resolved)
+    ) {
+      pushPreviewCandidate(candidates, seen, `${window.location.origin}${resolved}`);
+    }
 
     if (/^(?:https?:|data:|blob:|\/\/)/i.test(resolved)) {
       if (/^(?:data:|blob:|\/\/)/i.test(resolved)) return;
@@ -4688,13 +4700,22 @@ function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
         const parsed = new URL(resolved);
         const normalizedPath = parsed.pathname || "";
         if (normalizedPath.startsWith("/sc/icons/")) {
+          const rootPath =
+            `/icons/${normalizedPath.slice("/sc/icons/".length)}`;
           pushPreviewCandidate(
             candidates,
             seen,
-            `/icons/${normalizedPath.slice("/sc/icons/".length)}`,
+            rootPath,
+          );
+          pushPreviewCandidate(
+            candidates,
+            seen,
+            `${parsed.origin}${rootPath}`,
           );
         } else if (normalizedPath.startsWith("/icons/")) {
-          pushPreviewCandidate(candidates, seen, `/sc${normalizedPath}`);
+          const scPath = `/sc${normalizedPath}`;
+          pushPreviewCandidate(candidates, seen, scPath);
+          pushPreviewCandidate(candidates, seen, `${parsed.origin}${scPath}`);
         }
       } catch {
       }
@@ -4702,12 +4723,20 @@ function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
     }
 
     if (resolved.startsWith("/sc/")) {
-      pushPreviewCandidate(candidates, seen, resolved.replace(/^\/sc\//, "/"));
+      const rootPath = resolved.replace(/^\/sc\//, "/");
+      pushPreviewCandidate(candidates, seen, rootPath);
+      if (typeof window !== "undefined") {
+        pushPreviewCandidate(candidates, seen, `${window.location.origin}${rootPath}`);
+      }
       return;
     }
 
     if (resolved.startsWith("/icons/")) {
-      pushPreviewCandidate(candidates, seen, `/sc${resolved}`);
+      const scPath = `/sc${resolved}`;
+      pushPreviewCandidate(candidates, seen, scPath);
+      if (typeof window !== "undefined") {
+        pushPreviewCandidate(candidates, seen, `${window.location.origin}${scPath}`);
+      }
     }
   });
 
@@ -4717,15 +4746,20 @@ function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
 function setPreviewImageSource(preview, rawUrl, fallbackUrl = "") {
   if (!(preview instanceof HTMLImageElement)) return "";
   const candidates = buildPreviewSrcCandidates(rawUrl, fallbackUrl);
-  if (!candidates.length) {
+  const applyPlaceholder = () => {
     preview.onerror = null;
-    preview.removeAttribute("src");
-    preview.classList.add("hidden");
+    preview.src = ICON_PREVIEW_PLACEHOLDER;
+    preview.classList.add("is-placeholder");
+    preview.classList.remove("hidden");
+  };
+  if (!candidates.length) {
+    applyPlaceholder();
     return "";
   }
 
   let candidateIndex = 0;
   const applyCandidate = () => {
+    preview.classList.remove("is-placeholder");
     preview.src = candidates[candidateIndex];
     preview.classList.remove("hidden");
   };
@@ -4736,9 +4770,7 @@ function setPreviewImageSource(preview, rawUrl, fallbackUrl = "") {
       applyCandidate();
       return;
     }
-    preview.onerror = null;
-    preview.removeAttribute("src");
-    preview.classList.add("hidden");
+    applyPlaceholder();
   };
 
   applyCandidate();
