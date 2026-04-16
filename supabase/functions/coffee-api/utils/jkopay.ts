@@ -90,13 +90,11 @@ async function resolveJkoPayBaseUrl(): Promise<string> {
   let isSandbox = true;
   try {
     const { data: settingRow } = await supabase.from("coffee_settings")
-      .select("key, value")
-      .in("key", ["jkopay_sandbox", "linepay_sandbox"])
-      .order("key", { ascending: true });
-    if (Array.isArray(settingRow) && settingRow.length > 0) {
-      const jkoRow = settingRow.find((row) => row.key === "jkopay_sandbox");
-      const lineRow = settingRow.find((row) => row.key === "linepay_sandbox");
-      const raw = String((jkoRow || lineRow)?.value || "").trim().toLowerCase();
+      .select("value")
+      .eq("key", "jkopay_sandbox")
+      .maybeSingle();
+    if (settingRow) {
+      const raw = String(settingRow.value || "").trim().toLowerCase();
       if (raw) {
         isSandbox = !["false", "0", "off", "no"].includes(raw);
       }
