@@ -1333,10 +1333,10 @@
             您可以自由拖曳排序、修改名稱與說明，並個別設定支援哪些付款方式。設定完成後請記得「儲存設定」。
           </p>
           <div
-            class="overflow-x-auto mb-4 border rounded"
+            class="overflow-x-auto mb-4 border rounded settings-responsive-wrap"
             
           >
-            <table class="w-full text-sm text-left whitespace-nowrap">
+            <table class="w-full text-sm text-left whitespace-nowrap settings-routing-table">
               <thead class="ui-bg-soft border-b" >
                 <tr>
                   <th class="p-3 font-medium ui-text-strong w-10 text-center">
@@ -1454,10 +1454,10 @@
             您可以自訂前台四種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
           </p>
           <div
-            class="overflow-x-auto border rounded"
+            class="overflow-x-auto border rounded settings-responsive-wrap"
             
           >
-            <table class="w-full text-sm text-left">
+            <table class="w-full text-sm text-left settings-payment-table">
               <thead class="bg-gray-50 border-b" >
                 <tr>
                   <th
@@ -1473,8 +1473,8 @@
               <tbody id="payment-options-table">
                 <!-- 貨到付款 -->
                 <tr class="border-b" >
-                  <td class="p-3 font-mono ui-text-subtle text-center">cod</td>
-                  <td class="p-3">
+                  <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">cod</td>
+                  <td class="p-3" data-label="圖示與名稱 / 說明">
                     <div class="flex flex-col gap-2">
                       <div class="flex flex-wrap items-center gap-2">
                         <input type="hidden" id="po-cod-icon-url">
@@ -1533,10 +1533,10 @@
                 </tr>
                 <!-- LINE Pay -->
                 <tr class="border-b" >
-                  <td class="p-3 font-mono ui-text-subtle text-center">
+                  <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
                     linepay
                   </td>
-                  <td class="p-3">
+                  <td class="p-3" data-label="圖示與名稱 / 說明">
                     <div class="flex flex-col gap-2">
                       <div class="flex flex-wrap items-center gap-2">
                         <input type="hidden" id="po-linepay-icon-url">
@@ -1595,10 +1595,10 @@
                 </tr>
                 <!-- 街口支付 -->
                 <tr class="border-b" >
-                  <td class="p-3 font-mono ui-text-subtle text-center">
+                  <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
                     jkopay
                   </td>
-                  <td class="p-3">
+                  <td class="p-3" data-label="圖示與名稱 / 說明">
                     <div class="flex flex-col gap-2">
                       <div class="flex flex-wrap items-center gap-2">
                         <input type="hidden" id="po-jkopay-icon-url">
@@ -1657,10 +1657,10 @@
                 </tr>
                 <!-- 線上轉帳 -->
                 <tr class="border-b" >
-                  <td class="p-3 font-mono ui-text-subtle text-center">
+                  <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
                     transfer
                   </td>
-                  <td class="p-3">
+                  <td class="p-3" data-label="圖示與名稱 / 說明">
                     <div class="flex flex-col gap-2">
                       <div class="flex flex-wrap items-center gap-2">
                         <input type="hidden" id="po-transfer-icon-url">

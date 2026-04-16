@@ -3539,10 +3539,10 @@ function configToHtml(item, tbody, isNew = false) {
   tr.dataset.defaultIconKey = fallbackKey;
 
   tr.innerHTML = `
-        <td class="p-3 text-center cursor-move ui-text-muted hover:ui-text-strong transition">
+        <td class="p-3 text-center cursor-move ui-text-muted hover:ui-text-strong transition" data-label="排序">
             <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
         </td>
-        <td class="p-3">
+        <td class="p-3" data-label="圖示與名稱 / 說明">
             <div class="flex flex-col gap-2 min-w-[280px]">
                 <div class="icon-upload-row">
                     <img class="icon-upload-preview do-icon-preview" src="${esc(
@@ -3573,7 +3573,7 @@ function configToHtml(item, tbody, isNew = false) {
   }" placeholder="簡短說明 (例如: 到店自取)">
             </div>
         </td>
-        <td class="p-3 text-center border-l ui-bg-soft/50" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l ui-bg-soft/50" style="border-color:#E2DCC8" data-label="啟用">
             <label class="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" class="sr-only peer do-enabled" ${
     normalized.enabled ? "checked" : ""
@@ -3581,37 +3581,37 @@ function configToHtml(item, tbody, isNew = false) {
                 <div class="w-9 h-5 ui-bg-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
             </label>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="運費">
             <input type="number" class="border rounded p-1 w-16 text-center text-sm do-fee" value="${
     normalized.fee !== undefined ? normalized.fee : 0
   }" min="0">
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="免運門檻">
             <input type="number" class="border rounded p-1 w-20 text-center text-sm do-free-threshold" value="${
     normalized.free_threshold !== undefined ? normalized.free_threshold : 0
   }" min="0">
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="貨到/取貨付款">
             <input type="checkbox" class="w-4 h-4 do-cod" ${
     normalized.payment?.cod ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="LINE Pay">
             <input type="checkbox" class="w-4 h-4 do-linepay" ${
     normalized.payment?.linepay ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="街口支付">
             <input type="checkbox" class="w-4 h-4 do-jkopay" ${
     normalized.payment?.jkopay ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="線上轉帳">
             <input type="checkbox" class="w-4 h-4 do-transfer" ${
     normalized.payment?.transfer ? "checked" : ""
   }>
         </td>
-        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8" data-label="操作">
             <button type="button" data-action="remove-delivery-option-row" class="ui-text-danger hover:text-red-700 p-1" title="刪除此選項">
                 刪除
             </button>
