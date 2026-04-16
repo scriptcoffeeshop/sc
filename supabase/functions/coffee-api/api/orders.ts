@@ -9,6 +9,7 @@ import {
 import { sanitize } from "../utils/html.ts";
 import { sendEmail } from "../utils/email.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import { requestJkoPayEntry } from "../utils/jkopay.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { buildOrderQuote } from "./quote.ts";
@@ -248,6 +249,20 @@ async function createLinePayCallbackSignature(
   orderId: string,
 ): Promise<string> {
   return await hmacSign(`linepay-callback:${orderId}`);
+}
+
+async function createJkoPayCallbackSignature(
+  orderId: string,
+): Promise<string> {
+  return await hmacSign(`jkopay-callback:${orderId}`);
+}
+
+function resolveMainPageUrlWithQuery(query: URLSearchParams): string {
+  const frontendBaseUrl = String(FRONTEND_URL || "").trim().replace(/\/+$/, "");
+  const base = frontendBaseUrl || "main.html";
+  const path = base.endsWith(".html") ? base : `${base}/main.html`;
+  const queryString = query.toString();
+  return queryString ? `${path}?${queryString}` : path;
 }
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
@@ -531,6 +546,71 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       return {
         success: false,
         error: "LINE Pay 付款請求失敗: " + String(e),
+        orderId,
+      };
+    }
+  }
+
+  if (paymentMethod === "jkopay") {
+    try {
+      const callbackSig = encodeURIComponent(
+        await createJkoPayCallbackSignature(orderId),
+      );
+      const encodedOrderId = encodeURIComponent(orderId);
+      const endpoint = new URL(req.url);
+      const callbackBase = `${endpoint.origin}${endpoint.pathname}`;
+      const callbackQuery =
+        `action=jkoPayResult&orderId=${encodedOrderId}&sig=${callbackSig}`;
+      const callbackUrl = `${callbackBase}?${callbackQuery}`;
+      const resultDisplayUrl = resolveMainPageUrlWithQuery(
+        new URLSearchParams({ jkoOrderId: orderId }),
+      );
+
+      const entryRes = await requestJkoPayEntry({
+        platformOrderId: orderId,
+        currency: "TWD",
+        totalPrice: total,
+        finalPrice: total,
+        unredeem: 0,
+        confirmUrl: callbackUrl,
+        resultUrl: callbackUrl,
+        resultDisplayUrl,
+      });
+
+      const resultCode = String(entryRes.result || "").trim();
+      const resultMessage = String(entryRes.message || "").trim();
+      const resultObject = entryRes.result_object &&
+          typeof entryRes.result_object === "object" &&
+          !Array.isArray(entryRes.result_object)
+        ? entryRes.result_object as Record<string, unknown>
+        : {};
+      const paymentUrl = String(resultObject.payment_url || "").trim();
+
+      if (resultCode === "000" && paymentUrl) {
+        return {
+          success: true,
+          orderId,
+          total,
+          paymentUrl,
+          qrImage: String(resultObject.qr_img || "").trim(),
+          qrTimeout: Number(resultObject.qr_timeout || 0) || 0,
+        };
+      }
+
+      await supabase.from("coffee_orders").update({
+        payment_status: "failed",
+      }).eq("id", orderId);
+      return {
+        success: false,
+        error: `街口支付建單失敗: ${resultMessage || resultCode || "未知錯誤"}`,
+        orderId,
+      };
+    } catch (e) {
+      await supabase.from("coffee_orders").update({ payment_status: "failed" })
+        .eq("id", orderId);
+      return {
+        success: false,
+        error: "街口支付建單失敗: " + String(e),
         orderId,
       };
     }

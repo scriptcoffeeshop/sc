@@ -55,6 +55,15 @@
   - 針對「取貨方式與付款對應設定」與「金流選項顯示設定」在小螢幕改為卡片式直向呈現，移除必須左右捲動整張表的情況。
   - `js/dashboard-app.js` 動態產生列新增 `data-label`，搭配 `css/dashboard.css` 響應式規則，在手機/平板可直接完整查看與操作欄位。
   - 前端快取版號升級至 `v=93`。
+- 街口支付正式串接（UAT）第一階段完成：
+  - 後端新增 `utils/jkopay.ts`：封裝 Entry / Inquiry / Refund API、`digest`（HMAC-SHA256 hex lowercase）簽章、timeout/retry、可選 `JKOPAY_PROXY_URL` 代理出口。
+  - `submitOrder` 新增 `paymentMethod = jkopay` 分支，會呼叫街口 Entry API 建立訂單並回傳 `paymentUrl`，失敗時回寫 `payment_status=failed`。
+  - 回呼流程新增 `action=jkoPayResult`，同時支援 `confirm_url` 與 `result_url`，並以 `hmacSign("jkopay-callback:<orderId>")` 簽章驗證 URL query，避免任意偽造 callback。
+  - 新增 `action=jkoPayInquiry`（登入可查本人訂單 / 管理員可查任意訂單）與 `action=jkoPayRefund`（管理員退款）。
+  - 付款狀態對應已接入：`0=paid`、`100=refunded`、`101=failed`、`102=cancelled`。
+  - 前台新增街口回跳處理：`main.html?jkoOrderId=<id>` 會主動查詢並顯示付款狀態提示。
+  - 後台訂單退款按鈕擴充為同時支援 LINE Pay 與街口支付。
+  - 前端快取版號升級至 `v=95`。
 
 ### 2026-04-10
 

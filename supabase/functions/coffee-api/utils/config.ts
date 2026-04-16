@@ -26,6 +26,12 @@ export const LINEPAY_CHANNEL_ID = Deno.env.get("LINEPAY_CHANNEL_ID") || "";
 export const LINEPAY_CHANNEL_SECRET = Deno.env.get("LINEPAY_CHANNEL_SECRET") ||
   "";
 
+export const JKOPAY_STORE_ID = Deno.env.get("JKOPAY_STORE_ID") || "";
+export const JKOPAY_API_KEY = Deno.env.get("JKOPAY_API_KEY") || "";
+export const JKOPAY_SECRET_KEY = Deno.env.get("JKOPAY_SECRET_KEY") || "";
+export const JKOPAY_BASE_URL = Deno.env.get("JKOPAY_BASE_URL") || "";
+export const JKOPAY_PROXY_URL = Deno.env.get("JKOPAY_PROXY_URL") || "";
+
 export const LINE_MESSAGING_CHANNEL_ACCESS_TOKEN =
   Deno.env.get("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN") ||
   Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") ||

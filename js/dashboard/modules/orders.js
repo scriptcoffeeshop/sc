@@ -6,7 +6,17 @@ export function createOrdersActionHandlers(deps) {
   return {
     "reload-orders": () => deps.loadOrders(),
     "refund-linepay-order": (el) => {
-      if (el.dataset.orderId) deps.linePayRefundOrder(el.dataset.orderId);
+      if (el.dataset.orderId && deps.refundOnlinePayOrder) {
+        deps.refundOnlinePayOrder(el.dataset.orderId, "linepay");
+      }
+    },
+    "refund-onlinepay-order": (el) => {
+      if (el.dataset.orderId && deps.refundOnlinePayOrder) {
+        deps.refundOnlinePayOrder(
+          el.dataset.orderId,
+          el.dataset.paymentMethod || "linepay",
+        );
+      }
     },
     "confirm-transfer-payment": (el) => {
       if (el.dataset.orderId) deps.confirmTransferPayment(el.dataset.orderId);

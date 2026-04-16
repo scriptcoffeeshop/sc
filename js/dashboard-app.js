@@ -375,7 +375,8 @@ window.uploadPaymentIcon = uploadPaymentIcon;
 window.uploadDeliveryRowIcon = uploadDeliveryRowIcon;
 window.applyIconFromLibrary = applyIconFromLibrary;
 window.resetSectionTitle = resetSectionTitle;
-window.linePayRefundOrder = linePayRefundOrder;
+window.refundOnlinePayOrder = refundOnlinePayOrder;
+window.linePayRefundOrder = (orderId) => refundOnlinePayOrder(orderId, "linepay");
 window.showAddBankAccountModal = showAddBankAccountModal;
 window.editBankAccount = editBankAccount;
 window.deleteBankAccount = deleteBankAccount;
@@ -394,7 +395,7 @@ const dashboardActionHandlers = {
     sendOrderFlexByOrderId,
     sendOrderEmailByOrderId,
     deleteOrderById,
-    linePayRefundOrder,
+    refundOnlinePayOrder,
     confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
     toggleOrderSelection,
     toggleSelectAllOrders,
@@ -1429,7 +1430,10 @@ function buildOrderViewModel(order) {
     total: Number(order.total) || 0,
     showSendLineButton: Boolean(order.lineUserId),
     showSendEmailButton: Boolean(order.email),
-    showRefundButton: paymentMethod === "linepay" && paymentStatus === "paid",
+    showRefundButton:
+      (paymentMethod === "linepay" || paymentMethod === "jkopay") &&
+      paymentStatus === "paid",
+    refundButtonText: paymentMethod === "jkopay" ? "街口退款" : "LINE退款",
     showConfirmTransferButton:
       paymentMethod === "transfer" && paymentStatus === "pending",
   };
@@ -1621,8 +1625,12 @@ function renderOrders() {
 
     const pm = o.paymentMethod || "cod";
     const ps = o.paymentStatus || "";
-    const refundBtn = pm === "linepay" && ps === "paid"
-      ? `<button data-action="refund-linepay-order" data-order-id="${
+    const canOnlineRefund = (pm === "linepay" || pm === "jkopay") &&
+      ps === "paid";
+    const refundBtn = canOnlineRefund
+      ? `<button data-action="refund-onlinepay-order" data-payment-method="${
+        esc(pm)
+      }" data-order-id="${
         esc(o.orderId)
       }" class="text-xs ui-text-violet hover:opacity-80 inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-15-6l-3 2"></path></svg>退款</button>`
       : "";
@@ -5087,10 +5095,15 @@ async function uploadDeliveryRowIcon(button) {
   }
 }
 
-// ============ LINE Pay 退款 ============
-async function linePayRefundOrder(orderId) {
+// ============ 線上支付退款（LINE Pay / 街口） ============
+async function refundOnlinePayOrder(orderId, paymentMethod = "linepay") {
+  const normalizedMethod = String(paymentMethod || "").trim().toLowerCase();
+  const isJkoPay = normalizedMethod === "jkopay";
+  const action = isJkoPay ? "jkoPayRefund" : "linePayRefund";
+  const title = isJkoPay ? "街口支付退款" : "LINE Pay 退款";
+
   const c = await Swal.fire({
-    title: "LINE Pay 退款",
+    title,
     text: `確定要對訂單 #${orderId} 進行退款嗎？`,
     icon: "warning",
     showCancelButton: true,
@@ -5101,12 +5114,12 @@ async function linePayRefundOrder(orderId) {
   if (!c.isConfirmed) return;
 
   Swal.fire({
-    title: "退款處理中...",
+    title: `${isJkoPay ? "街口" : "LINE Pay"} 退款處理中...`,
     allowOutsideClick: false,
     didOpen: () => Swal.showLoading(),
   });
   try {
-    const r = await authFetch(`${API_URL}?action=linePayRefund`, {
+    const r = await authFetch(`${API_URL}?action=${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: getAuthUserId(), orderId }),

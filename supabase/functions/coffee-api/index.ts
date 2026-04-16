@@ -30,6 +30,9 @@ import {
 import { quoteOrder } from "./api/quote.ts";
 
 import {
+  jkoPayInquiry,
+  jkoPayRefund,
+  jkoPayResult,
   linePayCancel,
   linePayConfirm,
   linePayRefund,
@@ -312,6 +315,7 @@ const actionMap: Record<string, ActionHandler> = {
   pcscMapCallback: async (data) => await handlePcscMapCallback(data),
   linePayConfirm: async (data) => await linePayConfirm(data),
   linePayCancel: async (data, req) => await linePayCancel(data, req),
+  jkoPayResult: async (data, req) => await jkoPayResult(data, req),
 
   // ====== 需登入 ======
   submitOrder: async (data, req) => {
@@ -328,6 +332,7 @@ const actionMap: Record<string, ActionHandler> = {
     const v = await validate(transferInfoSchema, data);
     return await updateTransferInfo(v, req);
   },
+  jkoPayInquiry: async (data, req) => await jkoPayInquiry(data, req),
   verifyAdmin: async (_data, req) => {
     const a = await extractAuth(req);
     return a
@@ -451,6 +456,7 @@ const actionMap: Record<string, ActionHandler> = {
   },
   uploadAsset: async (data, req) => await uploadAsset(data, req),
   linePayRefund: async (data, req) => await linePayRefund(data, req),
+  jkoPayRefund: async (data, req) => await jkoPayRefund(data, req),
   addBankAccount: async (data, req) => {
     const v = await validate(addBankAccountSchema, data);
     return await addBankAccount(v, req);

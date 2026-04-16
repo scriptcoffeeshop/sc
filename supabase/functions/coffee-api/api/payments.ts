@@ -12,6 +12,12 @@ import { sanitize } from "../utils/html.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import {
+  mapJkoStatusCodeToPaymentStatus,
+  parseJkoStatusCode,
+  requestJkoPayInquiry,
+  requestJkoPayRefund,
+} from "../utils/jkopay.ts";
 
 type LinePayStatus = "paid" | "cancelled";
 
@@ -37,6 +43,149 @@ async function hasValidLinePayCallbackSignature(
   if (!orderId || !signature) return false;
   const expected = await hmacSign(`linepay-callback:${orderId}`);
   return timingSafeEqual(signature, expected);
+}
+
+async function hasValidJkoPayCallbackSignature(
+  orderId: string,
+  data: Record<string, unknown>,
+): Promise<boolean> {
+  const signature = String(data.sig || data.signature || "").trim();
+  if (!orderId || !signature) return false;
+  const expected = await hmacSign(`jkopay-callback:${orderId}`);
+  return timingSafeEqual(signature, expected);
+}
+
+function getJkoCallbackTransaction(
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const transaction = data.transaction;
+  if (
+    transaction && typeof transaction === "object" &&
+    !Array.isArray(transaction)
+  ) {
+    return transaction as Record<string, unknown>;
+  }
+  return data;
+}
+
+function getJkoOrderIdFromPayload(
+  data: Record<string, unknown>,
+  transaction: Record<string, unknown>,
+): string {
+  return String(
+    transaction.platform_order_id || data.platform_order_id || data.orderId ||
+      "",
+  )
+    .trim();
+}
+
+function getJkoTradeNoFromPayload(
+  data: Record<string, unknown>,
+  transaction: Record<string, unknown>,
+): string {
+  return String(
+    transaction.tradeNo || transaction.trade_no || data.tradeNo ||
+      data.trade_no || "",
+  )
+    .trim();
+}
+
+function getJkoStatusCodeFromPayload(
+  data: Record<string, unknown>,
+  transaction: Record<string, unknown>,
+): number | null {
+  return parseJkoStatusCode(transaction.status ?? data.status);
+}
+
+async function syncJkoPayOrderStatus(params: {
+  orderId: string;
+  statusCode: number | null;
+  tradeNo: string;
+}): Promise<{
+  success: boolean;
+  orderId: string;
+  paymentStatus: string;
+  statusCode: number | null;
+  tradeNo: string;
+  message?: string;
+  error?: string;
+}> {
+  const { orderId, statusCode, tradeNo } = params;
+  const { data: order, error: orderError } = await supabase.from(
+    "coffee_orders",
+  )
+    .select("id, payment_method, payment_status, payment_id")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (orderError) {
+    return {
+      success: false,
+      orderId,
+      paymentStatus: "pending",
+      statusCode,
+      tradeNo,
+      error: orderError.message,
+    };
+  }
+  if (!order) {
+    return {
+      success: false,
+      orderId,
+      paymentStatus: "pending",
+      statusCode,
+      tradeNo,
+      error: "找不到訂單",
+    };
+  }
+  if (String(order.payment_method || "") !== "jkopay") {
+    return {
+      success: false,
+      orderId,
+      paymentStatus: String(order.payment_status || "pending"),
+      statusCode,
+      tradeNo,
+      error: "此訂單非使用街口支付",
+    };
+  }
+
+  const mappedPaymentStatus = mapJkoStatusCodeToPaymentStatus(statusCode);
+  const nextPaymentStatus = mappedPaymentStatus === "pending"
+    ? String(order.payment_status || "pending") || "pending"
+    : mappedPaymentStatus;
+
+  const updates: Record<string, unknown> = {};
+  if (nextPaymentStatus !== String(order.payment_status || "")) {
+    updates.payment_status = nextPaymentStatus;
+  }
+  if (tradeNo && tradeNo !== String(order.payment_id || "")) {
+    updates.payment_id = tradeNo;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    const { error: updateError } = await supabase.from("coffee_orders").update(
+      updates,
+    )
+      .eq("id", orderId);
+    if (updateError) {
+      return {
+        success: false,
+        orderId,
+        paymentStatus: nextPaymentStatus,
+        statusCode,
+        tradeNo,
+        error: updateError.message,
+      };
+    }
+  }
+
+  return {
+    success: true,
+    orderId,
+    paymentStatus: nextPaymentStatus,
+    statusCode,
+    tradeNo,
+    message: "街口付款狀態已同步",
+  };
 }
 
 function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
@@ -421,6 +570,225 @@ export async function linePayRefund(
     }
   } catch (e) {
     return { success: false, error: "退款失敗: " + String(e) };
+  }
+}
+
+export async function jkoPayResult(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  const transaction = getJkoCallbackTransaction(data);
+  const callbackOrderId = String(data.orderId || "").trim();
+  const payloadOrderId = getJkoOrderIdFromPayload(data, transaction);
+  const orderId = payloadOrderId || callbackOrderId;
+
+  if (!orderId) {
+    return { valid: false, success: false, error: "缺少平台訂單編號" };
+  }
+  if (callbackOrderId && payloadOrderId && callbackOrderId !== payloadOrderId) {
+    return { valid: false, success: false, error: "訂單編號驗證失敗" };
+  }
+
+  const auth = await extractAuth(req);
+  const signatureVerified = await hasValidJkoPayCallbackSignature(
+    orderId,
+    data,
+  );
+  if (!signatureVerified && !auth?.isAdmin) {
+    return { valid: false, success: false, error: "回呼簽章驗證失敗" };
+  }
+
+  const statusCode = getJkoStatusCodeFromPayload(data, transaction);
+  const tradeNo = getJkoTradeNoFromPayload(data, transaction);
+
+  if (statusCode === null) {
+    return {
+      valid: true,
+      success: true,
+      orderId,
+      message: "已收到街口確認通知",
+    };
+  }
+
+  const syncResult = await syncJkoPayOrderStatus({
+    orderId,
+    statusCode,
+    tradeNo,
+  });
+  return {
+    valid: syncResult.success,
+    ...syncResult,
+  };
+}
+
+export async function jkoPayInquiry(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  const auth = await requireAuth(req);
+  const orderId = String(data.orderId || data.platformOrderId || "").trim();
+  if (!orderId) return { success: false, error: "缺少訂單編號" };
+
+  const { data: order, error: orderError } = await supabase.from(
+    "coffee_orders",
+  )
+    .select("id, line_user_id, payment_method")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (orderError) return { success: false, error: orderError.message };
+  if (!order) return { success: false, error: "找不到訂單" };
+  if (String(order.payment_method || "") !== "jkopay") {
+    return { success: false, error: "此訂單非使用街口支付" };
+  }
+  if (!auth.isAdmin && String(order.line_user_id || "") !== auth.userId) {
+    return { success: false, error: "無權限查詢此訂單" };
+  }
+
+  try {
+    const inquiryResponse = await requestJkoPayInquiry([orderId]);
+    const resultCode = String(inquiryResponse.result || "").trim();
+    if (resultCode !== "000") {
+      return {
+        success: false,
+        error: `街口查詢失敗: ${
+          String(inquiryResponse.message || "").trim() || resultCode
+        }`,
+      };
+    }
+
+    const resultObject = inquiryResponse.result_object &&
+        typeof inquiryResponse.result_object === "object" &&
+        !Array.isArray(inquiryResponse.result_object)
+      ? inquiryResponse.result_object as Record<string, unknown>
+      : {};
+    const transactions = Array.isArray(resultObject.transactions)
+      ? resultObject.transactions as Record<string, unknown>[]
+      : [];
+    const transaction = transactions.find((item) =>
+      String(item?.platform_order_id || "").trim() === orderId
+    ) || transactions[0];
+
+    if (!transaction) {
+      return {
+        success: true,
+        orderId,
+        paymentStatus: "pending",
+        message: "尚未取得街口交易資料",
+        inquiry: inquiryResponse,
+      };
+    }
+
+    const statusCode = parseJkoStatusCode(transaction.status);
+    const tradeNo = String(transaction.tradeNo || transaction.trade_no || "")
+      .trim();
+    const syncResult = await syncJkoPayOrderStatus({
+      orderId,
+      statusCode,
+      tradeNo,
+    });
+
+    return {
+      success: syncResult.success,
+      orderId,
+      paymentStatus: syncResult.paymentStatus,
+      statusCode: syncResult.statusCode,
+      tradeNo: syncResult.tradeNo,
+      inquiry: inquiryResponse,
+      error: syncResult.error,
+    };
+  } catch (error) {
+    return { success: false, error: `街口查詢失敗: ${String(error)}` };
+  }
+}
+
+function generateRefundOrderId(orderId: string): string {
+  const base = String(orderId || "").replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase();
+  const randomSuffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12)
+    .toUpperCase();
+  return `R${base}${randomSuffix}`.slice(0, 60);
+}
+
+export async function jkoPayRefund(
+  data: Record<string, unknown>,
+  req: Request,
+) {
+  await requireAdmin(req);
+  const orderId = String(data.orderId || "").trim();
+  if (!orderId) return { success: false, error: "缺少訂單編號" };
+
+  const { data: order, error: orderError } = await supabase.from(
+    "coffee_orders",
+  )
+    .select("id, total, payment_method, payment_status")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (orderError) return { success: false, error: orderError.message };
+  if (!order) return { success: false, error: "找不到訂單" };
+  if (String(order.payment_method || "") !== "jkopay") {
+    return { success: false, error: "此訂單非街口支付，無法線上退款" };
+  }
+  if (String(order.payment_status || "") !== "paid") {
+    return { success: false, error: "此訂單尚未付款或已退款，無法退款" };
+  }
+
+  const totalAmount = Math.round(Number(order.total) || 0);
+  if (totalAmount <= 0) {
+    return { success: false, error: "訂單金額異常，無法退款" };
+  }
+
+  const requestedAmount = Number(data.refundAmount);
+  const hasRefundAmount = Number.isFinite(requestedAmount) &&
+    requestedAmount > 0;
+  const refundAmount = hasRefundAmount
+    ? Math.round(requestedAmount)
+    : totalAmount;
+  if (refundAmount <= 0 || refundAmount > totalAmount) {
+    return { success: false, error: "退款金額不正確" };
+  }
+
+  const refundOrderId = String(data.refundOrderId || "").trim() ||
+    generateRefundOrderId(orderId);
+
+  try {
+    const refundResponse = await requestJkoPayRefund({
+      platformOrderId: orderId,
+      refundOrderId,
+      refundAmount,
+    });
+    const resultCode = String(refundResponse.result || "").trim();
+    if (resultCode !== "000") {
+      return {
+        success: false,
+        error: `街口退款失敗: ${
+          String(refundResponse.message || "").trim() || resultCode
+        }`,
+        refundResponse,
+      };
+    }
+
+    const { error: updateError } = await supabase.from("coffee_orders").update({
+      payment_status: "refunded",
+    }).eq("id", orderId);
+    if (updateError) {
+      return { success: false, error: updateError.message };
+    }
+
+    const resultObject = refundResponse.result_object &&
+        typeof refundResponse.result_object === "object" &&
+        !Array.isArray(refundResponse.result_object)
+      ? refundResponse.result_object as Record<string, unknown>
+      : {};
+    return {
+      success: true,
+      message: "街口退款成功",
+      orderId,
+      refundOrderId,
+      refundTradeNo: String(resultObject.refund_tradeNo || "").trim(),
+      refundResponse,
+    };
+  } catch (error) {
+    return { success: false, error: `街口退款失敗: ${String(error)}` };
   }
 }
 
