@@ -2127,6 +2127,7 @@ import { getDefaultIconUrl, ICON_CATALOG } from "../../../js/icons.js";
 import { initDashboardApp } from "../../../js/dashboard-app.js";
 
 const originalBodyClass = document.body.className;
+const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
 const ordersView = ref([]);
 const productsGroupsView = ref([]);
 const promotionsView = ref([]);
@@ -2185,6 +2186,19 @@ function resolveIconCatalogUrl(iconKey) {
   return getDefaultIconUrl(iconKey);
 }
 
+function buildDashboardBodyClass() {
+  const classSet = new Set(
+    originalBodyClass
+      .split(/\s+/)
+      .map((token) => token.trim())
+      .filter(Boolean),
+  );
+  for (const className of DASHBOARD_BODY_CLASSES) {
+    classSet.add(className);
+  }
+  return Array.from(classSet).join(" ");
+}
+
 function handleDashboardOrdersUpdated(event) {
   const detail = event?.detail || {};
   ordersView.value = Array.isArray(detail.orders) ? detail.orders : [];
@@ -2226,7 +2240,7 @@ function handleDashboardBlacklistUpdated(event) {
 }
 
 onMounted(() => {
-  document.body.className = "p-4 md:p-6";
+  document.body.className = buildDashboardBodyClass();
   const ordersList = document.getElementById("orders-list");
   if (ordersList) ordersList.dataset.vueManaged = "true";
   const productsTable = document.getElementById("products-main-table");
