@@ -4,6 +4,7 @@ import {
   FRONTEND_URL,
   LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN,
   LINE_ORDER_NOTIFY_TO,
+  SUPABASE_URL,
   VALID_ORDER_STATUSES,
 } from "../utils/config.ts";
 import { sanitize } from "../utils/html.ts";
@@ -263,6 +264,19 @@ function resolveMainPageUrlWithQuery(query: URLSearchParams): string {
   const path = base.endsWith(".html") ? base : `${base}/main.html`;
   const queryString = query.toString();
   return queryString ? `${path}?${queryString}` : path;
+}
+
+function resolveApiCallbackBase(req: Request): string {
+  const supabaseBase = String(SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  if (supabaseBase) {
+    return `${supabaseBase}/functions/v1/coffee-api`;
+  }
+
+  const endpoint = new URL(req.url);
+  const origin = endpoint.origin.startsWith("https://")
+    ? endpoint.origin
+    : endpoint.origin.replace(/^http:\/\//i, "https://");
+  return `${origin}${endpoint.pathname}`;
 }
 
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
@@ -557,8 +571,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         await createJkoPayCallbackSignature(orderId),
       );
       const encodedOrderId = encodeURIComponent(orderId);
-      const endpoint = new URL(req.url);
-      const callbackBase = `${endpoint.origin}${endpoint.pathname}`;
+      const callbackBase = resolveApiCallbackBase(req);
       const callbackQuery =
         `action=jkoPayResult&orderId=${encodedOrderId}&sig=${callbackSig}`;
       const callbackUrl = `${callbackBase}?${callbackQuery}`;
@@ -600,9 +613,31 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       await supabase.from("coffee_orders").update({
         payment_status: "failed",
       }).eq("id", orderId);
+      const resultObjectSummary = Object.keys(resultObject).length > 0
+        ? (() => {
+          try {
+            return JSON.stringify(resultObject).slice(0, 240);
+          } catch {
+            return "";
+          }
+        })()
+        : "";
+      const failureParts = [
+        resultMessage || resultCode || "未知錯誤",
+      ];
+      if (resultCode) failureParts.unshift(`code=${resultCode}`);
+      if (resultObjectSummary) failureParts.push(`detail=${resultObjectSummary}`);
+      console.error("[jkopay] entry failed", {
+        orderId,
+        resultCode,
+        resultMessage,
+        resultObject,
+        callbackUrl,
+        resultDisplayUrl,
+      });
       return {
         success: false,
-        error: `街口支付建單失敗: ${resultMessage || resultCode || "未知錯誤"}`,
+        error: `街口支付建單失敗: ${failureParts.join(" | ")}`,
         orderId,
       };
     } catch (e) {
