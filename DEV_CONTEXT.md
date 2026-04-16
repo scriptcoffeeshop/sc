@@ -30,6 +30,24 @@
 
 ## 3) 最近更新（人工摘要）
 
+### 2026-04-17
+
+- 新增「街口支付（jkopay）」顯示與設定骨架（尚未串接正式金流 API）：
+  - 前台付款方式新增街口卡片：`frontend/src/pages/MainPage.vue`、`main.html`。
+  - 後台「取貨方式與付款對應設定」新增街口勾選欄位（`do-jkopay`），可針對每種取貨方式獨立開關。
+  - 後台「金流選項顯示設定」新增 `jkopay` 圖示/名稱/說明設定欄位，並支援 icon 上傳與預覽同步。
+  - 後台訂單付款方式篩選新增「街口支付」選項。
+- icon 設計與資產：
+  - 新增 `payment-jkopay.png`，同步輸出到 `icons/` 與 `frontend/public/icons/`。
+  - `js/icons.js` 與 icon catalog 已註冊 `jkopay` fallback 與分類資訊。
+- 前後端付款 key 同步：
+  - `js/main-app.js`、`js/dashboard-app.js`、`js/orders.js`、`supabase/functions/coffee-api/api/quote.ts`、`schemas/order.ts`、`schemas/profile.ts` 等已納入 `jkopay`。
+  - quote engine 新增 JKO 可用性測試案例（`quote_test.ts`）。
+  - Email/Flex 的付款方式文字映射已加入「街口支付」。
+- 快取與驗證：
+  - 前端版本升級至 `v=91`（`scripts/sync_frontend_version.py 91`）。
+  - 已通過 `npm run ci-local`、`npm run build`。
+
 ### 2026-04-10
 
 - 新增「下單即時通知店主」：

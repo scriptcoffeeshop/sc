@@ -180,6 +180,7 @@
               <option value="all">付款方式：全部</option>
               <option value="cod">貨到/取貨付款</option>
               <option value="linepay">LINE Pay</option>
+              <option value="jkopay">街口支付</option>
               <option value="transfer">轉帳</option>
             </select>
             <select
@@ -1396,6 +1397,20 @@
                   >
                     <span class="routing-payment-header">
                       <img
+                        id="dr-jkopay-icon-preview"
+                        src="../../../icons/payment-jkopay.png"
+                        alt=""
+                        class="routing-payment-icon"
+                      >
+                      <span>街口支付</span>
+                    </span>
+                  </th>
+                  <th
+                    class="p-3 font-medium ui-text-strong text-center border-l"
+                    
+                  >
+                    <span class="routing-payment-header">
+                      <img
                         id="dr-transfer-icon-preview"
                         src="../../../icons/payment-bank.png"
                         alt=""
@@ -1436,7 +1451,7 @@
             金流選項顯示設定
           </h3>
           <p class="text-sm ui-text-subtle mb-4">
-            您可以自訂前台三種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
+            您可以自訂前台四種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
           </p>
           <div
             class="overflow-x-auto border rounded"
@@ -1578,6 +1593,68 @@
                     </div>
                   </td>
                 </tr>
+                <!-- 街口支付 -->
+                <tr class="border-b" >
+                  <td class="p-3 font-mono ui-text-subtle text-center">
+                    jkopay
+                  </td>
+                  <td class="p-3">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <input type="hidden" id="po-jkopay-icon-url">
+                        <input
+                          type="file"
+                          id="po-jkopay-icon-file"
+                          accept="image/*"
+                          class="text-sm icon-upload-input"
+                          data-preview-target="po-jkopay-icon-preview"
+                          data-fallback-key="jkopay"
+                        >
+                        <img
+                          id="po-jkopay-icon-preview"
+                          src=""
+                          alt=""
+                          class="icon-upload-preview hidden"
+                        >
+                        <button
+                          type="button"
+                          data-action="upload-payment-icon"
+                          data-method="jkopay"
+                          class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
+                        >
+                          上傳付款圖示
+                        </button>
+                        <span
+                          id="po-jkopay-icon-url-display"
+                          class="text-[11px] ui-text-muted truncate max-w-[260px]"
+                        ></span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <input
+                          type="text"
+                          id="po-jkopay-icon"
+                          class="border rounded p-1 icon-text-fallback text-sm"
+                          value=""
+                          placeholder="備援字元"
+                        >
+                        <input
+                          type="text"
+                          id="po-jkopay-name"
+                          class="border rounded p-1 flex-1 min-w-[120px]"
+                          value="街口支付"
+                          placeholder="顯示名稱"
+                        >
+                      </div>
+                      <input
+                        type="text"
+                        id="po-jkopay-desc"
+                        class="border rounded p-1 w-full text-xs ui-text-strong"
+                        value="街口支付線上付款"
+                        placeholder="簡短說明"
+                      >
+                    </div>
+                  </td>
+                </tr>
                 <!-- 線上轉帳 -->
                 <tr class="border-b" >
                   <td class="p-3 font-mono ui-text-subtle text-center">
@@ -1702,6 +1779,7 @@
                 <option value="notes">備註區塊 Icon</option>
                 <option value="cod">付款：貨到/取貨付款</option>
                 <option value="linepay">付款：LINE Pay</option>
+                <option value="jkopay">付款：街口支付</option>
                 <option value="transfer">付款：線上轉帳</option>
               </UiSelect>
             </div>

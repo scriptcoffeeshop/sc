@@ -572,7 +572,7 @@ function applySettings(s) {
     } catch (e) {}
   }
 
-  ["cod", "linepay", "transfer"].forEach((method) => {
+  ["cod", "linepay", "jkopay", "transfer"].forEach((method) => {
     const option = paymentOptions[method];
     if (!option) return;
     const iconEl = document.getElementById(`po-${method}-icon-display`);
@@ -614,11 +614,21 @@ function applySettings(s) {
       const le = String(s.linepay_enabled) === "true";
       const te = String(s.transfer_enabled) === "true";
       rConfig = {
-        in_store: { cod: true, linepay: le, transfer: te },
-        delivery: { cod: true, linepay: le, transfer: te },
-        home_delivery: { cod: true, linepay: le, transfer: te },
-        seven_eleven: { cod: true, linepay: false, transfer: false },
-        family_mart: { cod: true, linepay: false, transfer: false },
+        in_store: { cod: true, linepay: le, jkopay: false, transfer: te },
+        delivery: { cod: true, linepay: le, jkopay: false, transfer: te },
+        home_delivery: { cod: true, linepay: le, jkopay: false, transfer: te },
+        seven_eleven: {
+          cod: true,
+          linepay: false,
+          jkopay: false,
+          transfer: false,
+        },
+        family_mart: {
+          cod: true,
+          linepay: false,
+          jkopay: false,
+          transfer: false,
+        },
       };
     }
     deliveryConfig = [
@@ -630,7 +640,7 @@ function applySettings(s) {
         description: "到店自取",
         enabled: true,
         payment: rConfig["in_store"] ||
-          { cod: true, linepay: false, transfer: false },
+          { cod: true, linepay: false, jkopay: false, transfer: false },
       },
       {
         id: "delivery",
@@ -640,7 +650,7 @@ function applySettings(s) {
         description: "專人外送",
         enabled: true,
         payment: rConfig["delivery"] ||
-          { cod: true, linepay: false, transfer: false },
+          { cod: true, linepay: false, jkopay: false, transfer: false },
       },
       {
         id: "home_delivery",
@@ -650,7 +660,7 @@ function applySettings(s) {
         description: "宅配到府",
         enabled: true,
         payment: rConfig["home_delivery"] ||
-          { cod: true, linepay: false, transfer: false },
+          { cod: true, linepay: false, jkopay: false, transfer: false },
       },
       {
         id: "seven_eleven",
@@ -660,7 +670,7 @@ function applySettings(s) {
         description: "超商門市",
         enabled: true,
         payment: rConfig["seven_eleven"] ||
-          { cod: true, linepay: false, transfer: false },
+          { cod: true, linepay: false, jkopay: false, transfer: false },
       },
       {
         id: "family_mart",
@@ -670,7 +680,7 @@ function applySettings(s) {
         description: "超商門市",
         enabled: true,
         payment: rConfig["family_mart"] ||
-          { cod: true, linepay: false, transfer: false },
+          { cod: true, linepay: false, jkopay: false, transfer: false },
       },
     ];
   }
@@ -716,7 +726,7 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
     d.id === state.selectedDelivery
   );
   const fallbackConfig = fallbackConfigOpt?.payment ||
-    { cod: true, linepay: false, transfer: false };
+    { cod: true, linepay: false, jkopay: false, transfer: false };
   const quote = state.orderQuote;
   const canUseQuote = quote &&
     quote.availablePaymentMethods &&
@@ -726,21 +736,25 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
     ? {
       cod: !!quote.availablePaymentMethods.cod,
       linepay: !!quote.availablePaymentMethods.linepay,
+      jkopay: !!quote.availablePaymentMethods.jkopay,
       transfer: !!quote.availablePaymentMethods.transfer,
     }
     : {
       cod: !!fallbackConfig.cod,
       linepay: !!fallbackConfig.linepay,
+      jkopay: !!fallbackConfig.jkopay,
       transfer: !!fallbackConfig.transfer,
     };
 
   const codOpt = document.getElementById("cod-option");
   const lpOpt = document.getElementById("linepay-option");
+  const jkoOpt = document.getElementById("jkopay-option");
   const trOpt = document.getElementById("transfer-option");
 
   // 處理 DOM 更新
   if (codOpt) codOpt.classList.toggle("hidden", !currentConfig.cod);
   if (lpOpt) lpOpt.classList.toggle("hidden", !currentConfig.linepay);
+  if (jkoOpt) jkoOpt.classList.toggle("hidden", !currentConfig.jkopay);
   if (trOpt) trOpt.classList.toggle("hidden", !currentConfig.transfer);
 
   // 如果目前選擇的選向不被該物流允許，則重置為第一個可用的選向
@@ -748,6 +762,8 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
     if (currentConfig.cod) selectPayment("cod", { skipQuote: true });
     else if (currentConfig.linepay) {
       selectPayment("linepay", { skipQuote: true });
+    } else if (currentConfig.jkopay) {
+      selectPayment("jkopay", { skipQuote: true });
     } else if (currentConfig.transfer) {
       selectPayment("transfer", { skipQuote: true });
     } else {
@@ -763,6 +779,8 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
     if (currentConfig.cod) selectPayment("cod", { skipQuote: true });
     else if (currentConfig.linepay) {
       selectPayment("linepay", { skipQuote: true });
+    } else if (currentConfig.jkopay) {
+      selectPayment("jkopay", { skipQuote: true });
     } else if (currentConfig.transfer) {
       selectPayment("transfer", { skipQuote: true });
     }

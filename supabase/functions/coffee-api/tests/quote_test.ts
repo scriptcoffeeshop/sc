@@ -7,20 +7,20 @@ const MOCK_DELIVERY_CONFIG = [
     enabled: true,
     fee: 100,
     free_threshold: 1000,
-    payment: { cod: true, transfer: true, linepay: true },
+    payment: { cod: true, transfer: true, linepay: true, jkopay: true },
   },
   {
     id: "seven_eleven",
     enabled: true,
     fee: 65,
     free_threshold: 1200,
-    payment: { cod: true, transfer: false, linepay: false },
+    payment: { cod: true, transfer: false, linepay: false, jkopay: false },
   },
   {
     id: "disabled_method",
     enabled: false,
     fee: 0,
-    payment: { cod: true, transfer: true, linepay: true },
+    payment: { cod: true, transfer: true, linepay: true, jkopay: true },
   },
 ];
 
@@ -119,6 +119,24 @@ Deno.test("Quote Engine - Product with Specs", () => {
     assertEquals(q.total, 1550);
     assertEquals(q.items[0].unitPrice, 400);
     assertEquals(q.items[1].unitPrice, 750);
+  }
+});
+
+Deno.test("Quote Engine - JKO Pay Availability", () => {
+  const result = computeOrderQuote({
+    cartItems: [{ productId: 1, qty: 1 }],
+    requestedDeliveryMethod: "delivery",
+    requestedPaymentMethod: "jkopay",
+    products: MOCK_PRODUCTS,
+    deliveryConfig: MOCK_DELIVERY_CONFIG,
+    activePromos: [],
+    promoNow: DEFAULT_PROMO_NOW,
+  });
+
+  assertEquals(result.success, true);
+  if (result.success) {
+    const q = result.quote;
+    assertEquals(q.availablePaymentMethods.jkopay, true);
   }
 });
 

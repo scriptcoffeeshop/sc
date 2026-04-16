@@ -16,7 +16,7 @@ export const updateUserProfileSchema = z.object({
   defaultStoreName: optionalTrimmed,
   defaultStoreAddress: optionalTrimmed,
   defaultPaymentMethod: z.union([
-    z.enum(["cod", "linepay", "transfer"]),
+    z.enum(["cod", "linepay", "jkopay", "transfer"]),
     z.literal(""),
   ]).optional(),
   defaultTransferAccountLast5: z.union([

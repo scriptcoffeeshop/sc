@@ -12,6 +12,7 @@ export const METHOD_MAP: Record<string, string> = {
 export const PAYMENT_MAP: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
+  jkopay: "街口支付",
   transfer: "銀行轉帳",
 };
 

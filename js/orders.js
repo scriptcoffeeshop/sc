@@ -161,7 +161,7 @@ export function applySavedOrderFormPrefs() {
   }
 
   const paymentMethod = String(u.defaultPaymentMethod || "").trim();
-  if (!["cod", "linepay", "transfer"].includes(paymentMethod)) return;
+  if (!["cod", "linepay", "jkopay", "transfer"].includes(paymentMethod)) return;
 
   const paymentOptionEl = document.getElementById(`${paymentMethod}-option`);
   if (!paymentOptionEl || paymentOptionEl.classList.contains("hidden")) return;
@@ -430,6 +430,7 @@ export async function submitOrder() {
     {
       cod: "貨到付款",
       linepay: "LINE Pay",
+      jkopay: "街口支付",
       transfer: "線上轉帳",
     }[paymentMethod]
   }
@@ -674,6 +675,7 @@ export async function showMyOrders() {
     const payMethodMap = {
       cod: "貨到付款",
       linepay: "LINE Pay",
+      jkopay: "街口支付",
       transfer: "線上轉帳",
     };
     const payStatusMap = {

@@ -45,6 +45,7 @@ const ORDER_METHOD_LABEL: Record<string, string> = {
 const ORDER_PAY_METHOD_LABEL: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
+  jkopay: "街口支付",
   transfer: "轉帳",
 };
 

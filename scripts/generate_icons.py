@@ -189,6 +189,17 @@ def draw_linepay_icon(d: ImageDraw.ImageDraw) -> None:
     d.text((64 - tw / 2, 58 - th / 2), text, fill=FG, font=font)
 
 
+def draw_jkopay_icon(d: ImageDraw.ImageDraw) -> None:
+    d.rounded_rectangle((30, 40, 98, 84), radius=12, outline=FG, width=STROKE)
+    d.polygon([(54, 84), (62, 96), (70, 84)], fill=FG)
+    font = get_font(18)
+    text = "JKO"
+    bbox = d.textbbox((0, 0), text, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    d.text((64 - tw / 2, 58 - th / 2), text, fill=FG, font=font)
+
+
 def draw_bank_icon(d: ImageDraw.ImageDraw) -> None:
     d.polygon([(64, 34), (32, 50), (96, 50)], outline=FG)
     d.line((32, 88, 96, 88), fill=FG, width=STROKE)
@@ -310,6 +321,7 @@ DRAWERS: dict[str, Drawer] = {
     "card": draw_card_icon,
     "cash": draw_cash_icon,
     "linepay": draw_linepay_icon,
+    "jkopay": draw_jkopay_icon,
     "bank": draw_bank_icon,
     "cart": draw_cart_icon,
     "bell": draw_bell_icon,
@@ -346,6 +358,7 @@ ICON_SPECS: dict[str, tuple[str, str]] = {
     "payment-card.png": ("payment", "card"),
     "payment-cash.png": ("payment", "cash"),
     "payment-linepay.png": ("payment", "linepay"),
+    "payment-jkopay.png": ("payment", "jkopay"),
     "products-beans.png": ("brand", "beans"),
     "profile-user.png": ("accent", "profile"),
     "promotions-gift.png": ("danger", "gift"),

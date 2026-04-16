@@ -102,6 +102,12 @@ const DEFAULT_PAYMENT_OPTIONS = {
     name: "LINE Pay",
     description: "線上安全付款",
   },
+  jkopay: {
+    icon: "",
+    icon_url: getDefaultIconUrl("jkopay"),
+    name: "街口支付",
+    description: "街口支付線上付款",
+  },
   transfer: {
     icon: "",
     icon_url: getDefaultIconUrl("transfer"),
@@ -139,6 +145,7 @@ function normalizeDeliveryOption(item = {}) {
     payment: {
       cod: item.payment?.cod !== false,
       linepay: !!item.payment?.linepay,
+      jkopay: !!item.payment?.jkopay,
       transfer: !!item.payment?.transfer,
     },
   };
@@ -301,6 +308,13 @@ const ICON_LIBRARY_TARGET_MAP = {
     displayId: "po-linepay-icon-url-display",
     previewId: "po-linepay-icon-preview",
     fallbackKey: "linepay",
+  },
+  jkopay: {
+    label: "街口支付 Icon",
+    inputId: "po-jkopay-icon-url",
+    displayId: "po-jkopay-icon-url-display",
+    previewId: "po-jkopay-icon-preview",
+    fallbackKey: "jkopay",
   },
   transfer: {
     label: "線上轉帳 Icon",
@@ -604,6 +618,7 @@ const orderMethodLabel = {
 const orderPayMethodLabel = {
   cod: "貨到付款",
   linepay: "LINE Pay",
+  jkopay: "街口支付",
   transfer: "轉帳",
 };
 
@@ -3358,11 +3373,26 @@ async function loadSettings() {
           const le = String(s.linepay_enabled) === "true";
           const te = String(s.transfer_enabled) === "true";
           routingConfig = {
-            in_store: { cod: true, linepay: le, transfer: te },
-            delivery: { cod: true, linepay: le, transfer: te },
-            home_delivery: { cod: true, linepay: le, transfer: te },
-            seven_eleven: { cod: true, linepay: false, transfer: false },
-            family_mart: { cod: true, linepay: false, transfer: false },
+            in_store: { cod: true, linepay: le, jkopay: false, transfer: te },
+            delivery: { cod: true, linepay: le, jkopay: false, transfer: te },
+            home_delivery: {
+              cod: true,
+              linepay: le,
+              jkopay: false,
+              transfer: te,
+            },
+            seven_eleven: {
+              cod: true,
+              linepay: false,
+              jkopay: false,
+              transfer: false,
+            },
+            family_mart: {
+              cod: true,
+              linepay: false,
+              jkopay: false,
+              transfer: false,
+            },
           };
         }
 
@@ -3372,6 +3402,7 @@ async function loadSettings() {
           payment: routingConfig[item.id] || {
             cod: true,
             linepay: false,
+            jkopay: false,
             transfer: false,
           },
           fee: 0,
@@ -3416,7 +3447,7 @@ async function loadSettings() {
           paymentOptions = JSON.parse(paymentOptionsStr);
         } catch (e) {}
       }
-      ["cod", "linepay", "transfer"].forEach((method) => {
+      ["cod", "linepay", "jkopay", "transfer"].forEach((method) => {
         const normalized = normalizePaymentOption(method, paymentOptions[method]);
         const iconInput = document.getElementById(`po-${method}-icon`);
         const nameInput = document.getElementById(`po-${method}-name`);
@@ -3477,7 +3508,7 @@ function addDeliveryOptionAdmin() {
     enabled: true,
     fee: 0,
     free_threshold: 0,
-    payment: { cod: true, linepay: false, transfer: false },
+    payment: { cod: true, linepay: false, jkopay: false, transfer: false },
   });
 
   const tbody = document.getElementById("delivery-routing-table");
@@ -3560,6 +3591,11 @@ function configToHtml(item, tbody, isNew = false) {
         <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
             <input type="checkbox" class="w-4 h-4 do-linepay" ${
     normalized.payment?.linepay ? "checked" : ""
+  }>
+        </td>
+        <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
+            <input type="checkbox" class="w-4 h-4 do-jkopay" ${
+    normalized.payment?.jkopay ? "checked" : ""
   }>
         </td>
         <td class="p-3 text-center border-l" style="border-color:#E2DCC8">
@@ -3708,6 +3744,7 @@ async function saveSettings() {
 
       const cod = row.querySelector(".do-cod").checked;
       const linepay = row.querySelector(".do-linepay").checked;
+      const jkopay = row.querySelector(".do-jkopay").checked;
       const transfer = row.querySelector(".do-transfer").checked;
 
       if (name) {
@@ -3720,7 +3757,7 @@ async function saveSettings() {
           enabled,
           fee,
           free_threshold,
-          payment: { cod, linepay, transfer },
+          payment: { cod, linepay, jkopay, transfer },
         });
       }
     });
@@ -3739,6 +3776,12 @@ async function saveSettings() {
         icon_url: normalizeIconPath(readInputValue("po-linepay-icon-url")),
         name: document.getElementById("po-linepay-name").value.trim(),
         description: document.getElementById("po-linepay-desc").value.trim(),
+      },
+      jkopay: {
+        icon: document.getElementById("po-jkopay-icon").value.trim(),
+        icon_url: normalizeIconPath(readInputValue("po-jkopay-icon-url")),
+        name: document.getElementById("po-jkopay-name").value.trim(),
+        description: document.getElementById("po-jkopay-desc").value.trim(),
       },
       transfer: {
         icon: document.getElementById("po-transfer-icon").value.trim(),
@@ -4833,7 +4876,7 @@ function setIconUrlToField({
     });
   }
 
-  const paymentInputMatch = /^po-(cod|linepay|transfer)-icon-url$/.exec(
+  const paymentInputMatch = /^po-(cod|linepay|jkopay|transfer)-icon-url$/.exec(
     String(inputId || ""),
   );
   if (paymentInputMatch) {

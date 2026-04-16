@@ -419,6 +419,27 @@
           </div>
           <div
             class="payment-option hidden"
+            id="jkopay-option"
+            data-action="select-payment"
+            data-method="jkopay"
+          >
+            <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
+            <div class="option-icon" id="po-jkopay-icon-display"><img src="../../../icons/payment-jkopay.png" alt="街口支付圖示" class="ui-icon-img"></div>
+            <div
+              class="font-semibold text-orange-600"
+              id="po-jkopay-name-display"
+            >
+              街口支付
+            </div>
+            <div
+              class="text-xs text-gray-500 mt-1"
+              id="po-jkopay-desc-display"
+            >
+              街口支付線上付款
+            </div>
+          </div>
+          <div
+            class="payment-option hidden"
             id="transfer-option"
             data-action="select-payment"
             data-method="transfer"
