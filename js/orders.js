@@ -565,12 +565,17 @@ export async function submitOrder() {
         }).catch(() => {});
       } catch {}
 
-      // LINE Pay: 跳轉到付款頁面
+      // 線上支付: 依付款方式顯示對應跳轉文案
       if (result.paymentUrl) {
+        const providerLabel = paymentMethod === "jkopay"
+          ? "街口支付"
+          : paymentMethod === "linepay"
+          ? "LINE Pay"
+          : "線上付款";
         Swal.fire({
           icon: "info",
-          title: "跳轉至 LINE Pay",
-          text: "即將跳轉至 LINE Pay 付款頁面...",
+          title: `跳轉至 ${providerLabel}`,
+          text: `即將跳轉至 ${providerLabel} 付款頁面...`,
           timer: 2000,
           timerProgressBar: true,
           showConfirmButton: false,
