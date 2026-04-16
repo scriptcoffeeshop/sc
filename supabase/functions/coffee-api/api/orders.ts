@@ -626,7 +626,9 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         resultMessage || resultCode || "未知錯誤",
       ];
       if (resultCode) failureParts.unshift(`code=${resultCode}`);
-      if (resultObjectSummary) failureParts.push(`detail=${resultObjectSummary}`);
+      if (resultObjectSummary) {
+        failureParts.push(`detail=${resultObjectSummary}`);
+      }
       console.error("[jkopay] entry failed", {
         orderId,
         resultCode,
