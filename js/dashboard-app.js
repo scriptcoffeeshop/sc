@@ -127,6 +127,14 @@ function normalizeDeliveryOption(item = {}) {
     enabled: true,
   };
 
+  const hasJkoPayInConfig = Object.prototype.hasOwnProperty.call(
+    item.payment || {},
+    "jkopay",
+  );
+  const inferredJkoPay = hasJkoPayInConfig
+    ? !!item.payment?.jkopay
+    : !!item.payment?.linepay;
+
   return {
     ...defaults,
     ...item,
@@ -145,7 +153,7 @@ function normalizeDeliveryOption(item = {}) {
     payment: {
       cod: item.payment?.cod !== false,
       linepay: !!item.payment?.linepay,
-      jkopay: !!item.payment?.jkopay,
+      jkopay: inferredJkoPay,
       transfer: !!item.payment?.transfer,
     },
   };
@@ -3373,12 +3381,12 @@ async function loadSettings() {
           const le = String(s.linepay_enabled) === "true";
           const te = String(s.transfer_enabled) === "true";
           routingConfig = {
-            in_store: { cod: true, linepay: le, jkopay: false, transfer: te },
-            delivery: { cod: true, linepay: le, jkopay: false, transfer: te },
+            in_store: { cod: true, linepay: le, jkopay: le, transfer: te },
+            delivery: { cod: true, linepay: le, jkopay: le, transfer: te },
             home_delivery: {
               cod: true,
               linepay: le,
-              jkopay: false,
+              jkopay: le,
               transfer: te,
             },
             seven_eleven: {

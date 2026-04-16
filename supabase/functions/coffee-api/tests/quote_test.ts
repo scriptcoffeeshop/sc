@@ -140,6 +140,33 @@ Deno.test("Quote Engine - JKO Pay Availability", () => {
   }
 });
 
+Deno.test("Quote Engine - Legacy Routing Fallback For JKO Pay", () => {
+  const legacyDeliveryConfig = [
+    {
+      id: "delivery",
+      enabled: true,
+      fee: 100,
+      free_threshold: 1000,
+      payment: { cod: true, transfer: true, linepay: true }, // no jkopay key
+    },
+  ];
+
+  const result = computeOrderQuote({
+    cartItems: [{ productId: 1, qty: 1 }],
+    requestedDeliveryMethod: "delivery",
+    requestedPaymentMethod: "jkopay",
+    products: MOCK_PRODUCTS,
+    deliveryConfig: legacyDeliveryConfig,
+    activePromos: [],
+    promoNow: DEFAULT_PROMO_NOW,
+  });
+
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(result.quote.availablePaymentMethods.jkopay, true);
+  }
+});
+
 Deno.test("Quote Engine - Missing or Invalid Specs", () => {
   // Should fail because productId 3 requires a spec
   const res1 = computeOrderQuote({

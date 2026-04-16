@@ -47,6 +47,10 @@
 - 快取與驗證：
   - 前端版本升級至 `v=91`（`scripts/sync_frontend_version.py 91`）。
   - 已通過 `npm run ci-local`、`npm run build`。
+- 可見性相容修正（舊設定資料）：
+  - 若既有 `delivery_options_config.payment` 尚未包含 `jkopay` 欄位，系統會自動沿用 `linepay` 的可用狀態，避免街口支付在前後台被整個隱藏。
+  - 已同步補在前台顯示邏輯、後台設定正規化與後端 quote 可用付款判定。
+  - 快取版號再升級至 `v=92`，確保手機端能強制載入最新腳本。
 
 ### 2026-04-10
 

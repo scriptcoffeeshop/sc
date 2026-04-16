@@ -614,9 +614,9 @@ function applySettings(s) {
       const le = String(s.linepay_enabled) === "true";
       const te = String(s.transfer_enabled) === "true";
       rConfig = {
-        in_store: { cod: true, linepay: le, jkopay: false, transfer: te },
-        delivery: { cod: true, linepay: le, jkopay: false, transfer: te },
-        home_delivery: { cod: true, linepay: le, jkopay: false, transfer: te },
+        in_store: { cod: true, linepay: le, jkopay: le, transfer: te },
+        delivery: { cod: true, linepay: le, jkopay: le, transfer: te },
+        home_delivery: { cod: true, linepay: le, jkopay: le, transfer: te },
         seven_eleven: {
           cod: true,
           linepay: false,
@@ -727,6 +727,13 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
   );
   const fallbackConfig = fallbackConfigOpt?.payment ||
     { cod: true, linepay: false, jkopay: false, transfer: false };
+  const hasJkoPayInFallback = Object.prototype.hasOwnProperty.call(
+    fallbackConfig || {},
+    "jkopay",
+  );
+  const inferredFallbackJkoPay = hasJkoPayInFallback
+    ? !!fallbackConfig.jkopay
+    : !!fallbackConfig.linepay;
   const quote = state.orderQuote;
   const canUseQuote = quote &&
     quote.availablePaymentMethods &&
@@ -742,7 +749,7 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
     : {
       cod: !!fallbackConfig.cod,
       linepay: !!fallbackConfig.linepay,
-      jkopay: !!fallbackConfig.jkopay,
+      jkopay: inferredFallbackJkoPay,
       transfer: !!fallbackConfig.transfer,
     };
 

@@ -71,10 +71,17 @@ function toPaymentAvailability(
   payment: Record<string, unknown> | undefined,
 ): PaymentAvailability {
   const source = payment || {};
+  const linepayEnabled = source.linepay === true || source.linepay === "true";
+  const hasJkoPayInConfig = Object.prototype.hasOwnProperty.call(
+    source,
+    "jkopay",
+  );
   return {
     cod: source.cod === true || source.cod === "true",
-    linepay: source.linepay === true || source.linepay === "true",
-    jkopay: source.jkopay === true || source.jkopay === "true",
+    linepay: linepayEnabled,
+    jkopay: hasJkoPayInConfig
+      ? source.jkopay === true || source.jkopay === "true"
+      : linepayEnabled,
     transfer: source.transfer === true || source.transfer === "true",
   };
 }
@@ -144,19 +151,19 @@ async function loadDeliveryConfig() {
     in_store: {
       cod: true,
       linepay: linePayEnabled,
-      jkopay: false,
+      jkopay: linePayEnabled,
       transfer: transferEnabled,
     },
     delivery: {
       cod: true,
       linepay: linePayEnabled,
-      jkopay: false,
+      jkopay: linePayEnabled,
       transfer: transferEnabled,
     },
     home_delivery: {
       cod: true,
       linepay: linePayEnabled,
-      jkopay: false,
+      jkopay: linePayEnabled,
       transfer: transferEnabled,
     },
     seven_eleven: { cod: true, linepay: false, jkopay: false, transfer: false },
