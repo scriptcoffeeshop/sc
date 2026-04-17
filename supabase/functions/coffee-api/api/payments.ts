@@ -26,7 +26,23 @@ interface EmailBranding {
   siteLogoUrl: string;
 }
 
-function timingSafeEqual(a: string, b: string): boolean {
+interface JkoLineNotifyOptions {
+  force?: boolean;
+}
+
+function trimLineNotifyError(raw: unknown): string {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  return value.slice(0, 240);
+}
+
+function isTerminalJkoPaymentStatus(status: string): boolean {
+  return ["paid", "failed", "cancelled", "expired", "refunded"].includes(
+    String(status || "").trim(),
+  );
+}
+
+export function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let result = 0;
   for (let i = 0; i < a.length; i++) {
@@ -97,7 +113,7 @@ function getJkoStatusCodeFromPayload(
   return parseJkoStatusCode(transaction.status ?? data.status);
 }
 
-function normalizePaymentStatus(
+export function normalizePaymentStatus(
   value: unknown,
   fallback = "pending",
 ): string {
@@ -105,7 +121,7 @@ function normalizePaymentStatus(
   return normalized || fallback;
 }
 
-function parseIsoDate(value: unknown): Date | null {
+export function parseIsoDate(value: unknown): Date | null {
   const raw = String(value || "").trim();
   if (!raw) return null;
   const parsed = new Date(raw);
@@ -113,7 +129,7 @@ function parseIsoDate(value: unknown): Date | null {
   return parsed;
 }
 
-function isPaymentExpired(
+export function isPaymentExpired(
   paymentExpiresAt: unknown,
   now: Date,
 ): boolean {
@@ -131,6 +147,8 @@ async function syncJkoPayOrderStatus(params: {
   success: boolean;
   orderId: string;
   paymentStatus: string;
+  previousPaymentStatus: string;
+  statusChanged: boolean;
   statusCode: number | null;
   tradeNo: string;
   message?: string;
@@ -158,6 +176,8 @@ async function syncJkoPayOrderStatus(params: {
       success: false,
       orderId,
       paymentStatus: "pending",
+      previousPaymentStatus: "pending",
+      statusChanged: false,
       statusCode,
       tradeNo,
       error: orderError.message,
@@ -168,6 +188,8 @@ async function syncJkoPayOrderStatus(params: {
       success: false,
       orderId,
       paymentStatus: "pending",
+      previousPaymentStatus: "pending",
+      statusChanged: false,
       statusCode,
       tradeNo,
       error: "找不到訂單",
@@ -178,6 +200,8 @@ async function syncJkoPayOrderStatus(params: {
       success: false,
       orderId,
       paymentStatus: String(order.payment_status || "pending"),
+      previousPaymentStatus: normalizePaymentStatus(order.payment_status),
+      statusChanged: false,
       statusCode,
       tradeNo,
       error: "此訂單非使用街口支付",
@@ -218,9 +242,11 @@ async function syncJkoPayOrderStatus(params: {
   } else {
     nextPaymentStatus = "pending";
   }
+  const statusChanged = nextPaymentStatus !==
+    String(order.payment_status || "");
 
   const updates: Record<string, unknown> = {};
-  if (nextPaymentStatus !== String(order.payment_status || "")) {
+  if (statusChanged) {
     updates.payment_status = nextPaymentStatus;
   }
   if (tradeNo && tradeNo !== String(order.payment_id || "")) {
@@ -256,6 +282,8 @@ async function syncJkoPayOrderStatus(params: {
         success: false,
         orderId,
         paymentStatus: nextPaymentStatus,
+        previousPaymentStatus: currentPaymentStatus,
+        statusChanged,
         statusCode,
         tradeNo,
         error: updateError.message,
@@ -267,6 +295,8 @@ async function syncJkoPayOrderStatus(params: {
     success: true,
     orderId,
     paymentStatus: nextPaymentStatus,
+    previousPaymentStatus: currentPaymentStatus,
+    statusChanged,
     statusCode,
     tradeNo,
     message: "街口付款狀態已同步",
@@ -285,7 +315,7 @@ function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
   return `${frontendBase}/${normalized}`;
 }
 
-function parseReceiptInfo(raw: unknown): Record<string, unknown> | null {
+export function parseReceiptInfo(raw: unknown): Record<string, unknown> | null {
   if (!raw) return null;
   if (typeof raw === "string") {
     const value = raw.trim();
@@ -482,6 +512,114 @@ async function notifyLinePayPaymentStatusChanged(
       `[linePayStatusNotify] unexpected error while notifying order ${orderId}`,
       error,
     );
+  }
+}
+
+async function notifyJkoPayPaymentStatusChanged(
+  orderId: string,
+  paymentStatus: string,
+  options: JkoLineNotifyOptions = {},
+) {
+  try {
+    const { data: order, error } = await supabase.from("coffee_orders").select(
+      "id, status, line_user_id, payment_status, line_payment_status_notified, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
+    ).eq("id", orderId).maybeSingle();
+
+    if (error || !order) {
+      console.error(
+        `[jkoPayStatusNotify] failed to load order: ${orderId} (${
+          error?.message || "not found"
+        })`,
+      );
+      return;
+    }
+
+    const lineUserId = String(order.line_user_id || "").trim();
+    if (!lineUserId) {
+      const { error: persistError } = await supabase.from("coffee_orders")
+        .update({
+          line_payment_status_notify_error: "缺少 LINE 使用者 ID",
+        }).eq("id", orderId);
+      if (persistError) {
+        console.warn(
+          `[jkoPayStatusNotify] failed to persist missing LINE user id: ${orderId} (${persistError.message})`,
+        );
+      }
+      return;
+    }
+
+    const normalizedPaymentStatus = String(paymentStatus || "").trim() ||
+      String(order.payment_status || "").trim() || "pending";
+    const lastNotifiedStatus = String(order.line_payment_status_notified || "")
+      .trim();
+    if (!options.force && lastNotifiedStatus === normalizedPaymentStatus) {
+      return;
+    }
+
+    const { siteTitle } = await getEmailBranding();
+    const flexMessage = buildOrderStatusLineFlexMessage({
+      orderId,
+      siteTitle,
+      status: String(order.status || "pending"),
+      deliveryMethod: String(order.delivery_method || ""),
+      city: String(order.city || ""),
+      district: String(order.district || ""),
+      address: String(order.address || ""),
+      storeName: String(order.store_name || ""),
+      storeAddress: String(order.store_address || ""),
+      paymentMethod: String(order.payment_method || "jkopay"),
+      paymentStatus: normalizedPaymentStatus,
+      total: Number(order.total) || 0,
+      items: String(order.items || ""),
+      note: String(order.note || ""),
+      receiptInfo: parseReceiptInfo(order.receipt_info),
+    });
+    const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
+    if (!flexResult.success) {
+      console.error(
+        `[jkoPayStatusNotify] failed to send LINE flex: ${orderId} -> ${lineUserId} (${flexResult.error})`,
+      );
+      const { error: persistError } = await supabase.from("coffee_orders")
+        .update({
+          line_payment_status_notify_error: trimLineNotifyError(
+            flexResult.error,
+          ),
+        }).eq("id", orderId);
+      if (persistError) {
+        console.warn(
+          `[jkoPayStatusNotify] failed to persist notification error: ${orderId} (${persistError.message})`,
+        );
+      }
+      return;
+    }
+    const nowIso = new Date().toISOString();
+    const { error: persistError } = await supabase.from("coffee_orders").update(
+      {
+        line_payment_status_notified: normalizedPaymentStatus,
+        line_payment_status_notified_at: nowIso,
+        line_payment_status_notify_error: "",
+      },
+    ).eq("id", orderId);
+    if (persistError) {
+      console.warn(
+        `[jkoPayStatusNotify] failed to persist notification success state: ${orderId} (${persistError.message})`,
+      );
+    }
+  } catch (error) {
+    console.error(
+      `[jkoPayStatusNotify] unexpected error while notifying order ${orderId}`,
+      error,
+    );
+    const { error: persistError } = await supabase.from("coffee_orders").update(
+      {
+        line_payment_status_notify_error: trimLineNotifyError(error),
+      },
+    ).eq("id", orderId);
+    if (persistError) {
+      console.warn(
+        `[jkoPayStatusNotify] failed to persist unexpected error: ${orderId} (${persistError.message})`,
+      );
+    }
   }
 }
 
@@ -703,6 +841,22 @@ export async function jkoPayResult(
       tradeNo,
       preferProcessingForPending: true,
     });
+    if (syncResult.success) {
+      if (syncResult.statusChanged) {
+        await notifyJkoPayPaymentStatusChanged(
+          orderId,
+          syncResult.paymentStatus,
+          {
+            force: true,
+          },
+        );
+      } else if (isTerminalJkoPaymentStatus(syncResult.paymentStatus)) {
+        await notifyJkoPayPaymentStatusChanged(
+          orderId,
+          syncResult.paymentStatus,
+        );
+      }
+    }
     return {
       valid: syncResult.success,
       ...syncResult,
@@ -717,6 +871,19 @@ export async function jkoPayResult(
     statusCode,
     tradeNo,
   });
+  if (syncResult.success) {
+    if (syncResult.statusChanged) {
+      await notifyJkoPayPaymentStatusChanged(
+        orderId,
+        syncResult.paymentStatus,
+        {
+          force: true,
+        },
+      );
+    } else if (isTerminalJkoPaymentStatus(syncResult.paymentStatus)) {
+      await notifyJkoPayPaymentStatusChanged(orderId, syncResult.paymentStatus);
+    }
+  }
   return {
     valid: syncResult.success,
     ...syncResult,
@@ -777,6 +944,20 @@ export async function jkoPayInquiry(
         tradeNo: "",
         preferProcessingForPending: true,
       });
+      if (syncResult.success) {
+        if (syncResult.statusChanged) {
+          await notifyJkoPayPaymentStatusChanged(
+            orderId,
+            syncResult.paymentStatus,
+            { force: true },
+          );
+        } else if (isTerminalJkoPaymentStatus(syncResult.paymentStatus)) {
+          await notifyJkoPayPaymentStatusChanged(
+            orderId,
+            syncResult.paymentStatus,
+          );
+        }
+      }
       return {
         success: syncResult.success,
         orderId,
@@ -796,6 +977,22 @@ export async function jkoPayInquiry(
       tradeNo,
       preferProcessingForPending: true,
     });
+    if (syncResult.success) {
+      if (syncResult.statusChanged) {
+        await notifyJkoPayPaymentStatusChanged(
+          orderId,
+          syncResult.paymentStatus,
+          {
+            force: true,
+          },
+        );
+      } else if (isTerminalJkoPaymentStatus(syncResult.paymentStatus)) {
+        await notifyJkoPayPaymentStatusChanged(
+          orderId,
+          syncResult.paymentStatus,
+        );
+      }
+    }
 
     return {
       success: syncResult.success,

@@ -49,6 +49,18 @@
   - 逾期 (`expired`) 由本地付款期限 `payment_expires_at` 判定。
 - 快取版號更新：
   - 前端版本已升級至 `v=98`（`main.html`、`dashboard.html`）。
+- LINE 訂單通知補強（針對街口支付使用情境）：
+  - 訂單成立時，除了既有 `LINE_ORDER_NOTIFY_TO` 店主通知外，新增推播給下單者本人（`line_user_id`）。
+  - `LINE_ORDER_NOTIFY_TO` 改為支援多目標（可用逗號或換行分隔），避免多人通知設定時因格式造成整批失敗。
+  - 街口付款狀態同步（`jkoPayResult/jkoPayInquiry`）若狀態有變更，會推播 LINE Flex 給下單者，補齊先前僅 LINE Pay 有狀態推播的缺口。
+  - 已重新部署 `coffee-api` 至 Supabase 專案 `avnvsjyyeofivgmrchte`。
+- LINE 通知追蹤與漏送補發（修正「街口付款後未收到 LINE」）：
+  - `coffee_orders` 新增通知追蹤欄位：
+    - `line_order_created_notified_at`、`line_order_created_notify_error`
+    - `line_payment_status_notified`、`line_payment_status_notified_at`、`line_payment_status_notify_error`
+  - 新增 migration：`202604181120_add_line_notification_tracking.sql`。
+  - 建單時（待付款）送 LINE 給下單者後，會寫回成功時間或失敗原因，方便後台追查。
+  - 街口同步結果若為終態（`paid/failed/cancelled/expired/refunded`）且尚未記錄已通知，會自動補送一次；避免修正上線前後的交界訂單漏通知。
 
 ### 2026-04-17
 

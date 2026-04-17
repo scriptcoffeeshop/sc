@@ -183,7 +183,7 @@ async function isOrderConfirmationAutoEmailEnabled(): Promise<boolean> {
   return !["false", "0", "off", "no"].includes(normalized);
 }
 
-async function sendAdminOrderCreatedFlexNotification(params: {
+interface OrderCreatedLineNotifyParams {
   orderId: string;
   status: string;
   deliveryMethod: string;
@@ -198,25 +198,34 @@ async function sendAdminOrderCreatedFlexNotification(params: {
   ordersText: string;
   note: string;
   receiptInfo: ReceiptInfo | null;
-}) {
-  const notifyTarget = String(LINE_ORDER_NOTIFY_TO || "").trim();
-  if (!notifyTarget) {
-    console.error(
-      "[submitOrder] missing LINE_ORDER_NOTIFY_TO, skip admin notification",
-    );
-    return;
-  }
-  const notifyToken = String(LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN || "")
-    .trim();
-  if (!notifyToken) {
-    console.error(
-      "[submitOrder] missing LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN, skip admin notification",
-    );
-    return;
-  }
+}
 
+interface LineNotificationSendResult {
+  attempted: boolean;
+  success: boolean;
+  target: string;
+  error: string;
+}
+
+function parseLineNotifyTargets(raw: string): string[] {
+  const list = String(raw || "")
+    .split(/[\n,]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return [...new Set(list)];
+}
+
+function trimLineNotifyError(raw: unknown): string {
+  const value = String(raw || "").trim();
+  if (!value) return "";
+  return value.slice(0, 240);
+}
+
+async function buildOrderCreatedFlexMessage(
+  params: OrderCreatedLineNotifyParams,
+): Promise<Record<string, unknown>> {
   const { siteTitle } = await getEmailBranding();
-  const flexMessage = buildOrderStatusLineFlexMessage({
+  return buildOrderStatusLineFlexMessage({
     orderId: params.orderId,
     siteTitle,
     status: params.status,
@@ -233,15 +242,97 @@ async function sendAdminOrderCreatedFlexNotification(params: {
     note: params.note,
     receiptInfo: params.receiptInfo,
   });
+}
 
-  const result = await pushLineFlexMessage(
-    notifyTarget,
-    flexMessage,
-    notifyToken,
+async function sendAdminOrderCreatedFlexNotification(
+  params: OrderCreatedLineNotifyParams,
+) {
+  const notifyTargets = parseLineNotifyTargets(
+    String(LINE_ORDER_NOTIFY_TO || ""),
   );
+  if (!notifyTargets.length) {
+    console.error(
+      "[submitOrder] missing LINE_ORDER_NOTIFY_TO, skip admin notification",
+    );
+    return;
+  }
+  const notifyToken = String(LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN || "")
+    .trim();
+  if (!notifyToken) {
+    console.error(
+      "[submitOrder] missing LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN, skip admin notification",
+    );
+    return;
+  }
+
+  const flexMessage = await buildOrderCreatedFlexMessage(params);
+  for (const notifyTarget of notifyTargets) {
+    const result = await pushLineFlexMessage(
+      notifyTarget,
+      flexMessage,
+      notifyToken,
+    );
+    if (!result.success) {
+      console.error(
+        `[submitOrder] failed to send admin LINE flex notification (notify channel): ${params.orderId} -> ${notifyTarget} (${result.error})`,
+      );
+    }
+  }
+}
+
+async function sendCustomerOrderCreatedFlexNotification(
+  params: OrderCreatedLineNotifyParams & { lineUserId: string },
+): Promise<LineNotificationSendResult> {
+  const target = String(params.lineUserId || "").trim();
+  if (!target) {
+    return {
+      attempted: false,
+      success: false,
+      target: "",
+      error: "缺少 LINE 使用者 ID",
+    };
+  }
+  const flexMessage = await buildOrderCreatedFlexMessage(params);
+  const result = await pushLineFlexMessage(target, flexMessage);
   if (!result.success) {
     console.error(
-      `[submitOrder] failed to send admin LINE flex notification (notify channel): ${params.orderId} -> ${notifyTarget} (${result.error})`,
+      `[submitOrder] failed to send customer LINE flex notification: ${params.orderId} -> ${target} (${result.error})`,
+    );
+    return {
+      attempted: true,
+      success: false,
+      target,
+      error: trimLineNotifyError(result.error),
+    };
+  }
+  return {
+    attempted: true,
+    success: true,
+    target,
+    error: "",
+  };
+}
+
+async function persistOrderCreatedLineNotifyResult(
+  orderId: string,
+  result: LineNotificationSendResult,
+) {
+  const updates: Record<string, unknown> = {};
+  if (result.success) {
+    updates.line_order_created_notified_at = new Date().toISOString();
+    updates.line_order_created_notify_error = "";
+  } else {
+    updates.line_order_created_notify_error = trimLineNotifyError(
+      result.error || "LINE 訂單成立通知發送失敗",
+    );
+  }
+  const { error } = await supabase.from("coffee_orders").update(updates).eq(
+    "id",
+    orderId,
+  );
+  if (error) {
+    console.warn(
+      `[submitOrder] failed to persist order-created LINE notify result: ${orderId} (${error.message})`,
     );
   }
 }
@@ -484,28 +575,50 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   }
 
   if (insertPayload.status === "pending") {
+    const lineNotifyPayload = {
+      orderId,
+      status: "pending",
+      deliveryMethod,
+      city: String(data.city || ""),
+      district: String(data.district || ""),
+      address: String(data.address || ""),
+      storeName: String(data.storeName || ""),
+      storeAddress: String(data.storeAddress || ""),
+      paymentMethod,
+      paymentStatus: String(insertPayload.payment_status || ""),
+      total,
+      ordersText,
+      note: String(data.note || ""),
+      receiptInfo,
+    } satisfies OrderCreatedLineNotifyParams;
     try {
-      await sendAdminOrderCreatedFlexNotification({
-        orderId,
-        status: "pending",
-        deliveryMethod,
-        city: String(data.city || ""),
-        district: String(data.district || ""),
-        address: String(data.address || ""),
-        storeName: String(data.storeName || ""),
-        storeAddress: String(data.storeAddress || ""),
-        paymentMethod,
-        paymentStatus: String(insertPayload.payment_status || ""),
-        total,
-        ordersText,
-        note: String(data.note || ""),
-        receiptInfo,
-      });
+      await sendAdminOrderCreatedFlexNotification(lineNotifyPayload);
     } catch (error) {
       console.error(
         `[submitOrder] unexpected error while sending admin LINE flex notification: ${orderId}`,
         error,
       );
+    }
+    try {
+      const customerNotifyResult =
+        await sendCustomerOrderCreatedFlexNotification(
+          {
+            ...lineNotifyPayload,
+            lineUserId,
+          },
+        );
+      await persistOrderCreatedLineNotifyResult(orderId, customerNotifyResult);
+    } catch (error) {
+      console.error(
+        `[submitOrder] unexpected error while sending customer LINE flex notification: ${orderId}`,
+        error,
+      );
+      await persistOrderCreatedLineNotifyResult(orderId, {
+        attempted: true,
+        success: false,
+        target: String(lineUserId || "").trim(),
+        error: trimLineNotifyError(error),
+      });
     }
   }
 
