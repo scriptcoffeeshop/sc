@@ -51,9 +51,11 @@ const ORDER_PAY_METHOD_LABEL: Record<string, string> = {
 
 const ORDER_PAY_STATUS_LABEL: Record<string, string> = {
   pending: "待付款",
+  processing: "付款確認中",
   paid: "已付款",
-  failed: "失敗",
-  cancelled: "取消",
+  failed: "付款失敗",
+  cancelled: "付款取消",
+  expired: "付款逾期",
   refunded: "已退款",
 };
 

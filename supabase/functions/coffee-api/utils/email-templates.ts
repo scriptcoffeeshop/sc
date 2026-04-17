@@ -94,10 +94,25 @@ function getPaymentStatusPresentation(
   if (paymentStatus === "paid") {
     return { text: "已付款", color: "#2e7d32" };
   }
+  if (paymentStatus === "processing") {
+    return { text: "付款確認中", color: "#1565c0" };
+  }
+  if (paymentStatus === "failed") {
+    return { text: "付款失敗", color: "#d32f2f" };
+  }
+  if (paymentStatus === "cancelled") {
+    return { text: "付款取消", color: "#d32f2f" };
+  }
+  if (paymentStatus === "expired") {
+    return { text: "付款逾期", color: "#ef6c00" };
+  }
+  if (paymentStatus === "refunded") {
+    return { text: "已退款", color: "#6a1b9a" };
+  }
   if (paymentMethod === "cod") {
     return { text: "貨到付款", color: "#0288d1" };
   }
-  return { text: "待付款", color: "#d32f2f" };
+  return { text: "待付款", color: "#b58900" };
 }
 
 function buildOrderNoteHtml(note: string, margin = "0"): string {

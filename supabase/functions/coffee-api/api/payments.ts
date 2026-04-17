@@ -97,10 +97,36 @@ function getJkoStatusCodeFromPayload(
   return parseJkoStatusCode(transaction.status ?? data.status);
 }
 
+function normalizePaymentStatus(
+  value: unknown,
+  fallback = "pending",
+): string {
+  const normalized = String(value || "").trim();
+  return normalized || fallback;
+}
+
+function parseIsoDate(value: unknown): Date | null {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function isPaymentExpired(
+  paymentExpiresAt: unknown,
+  now: Date,
+): boolean {
+  const deadline = parseIsoDate(paymentExpiresAt);
+  if (!deadline) return false;
+  return deadline.getTime() <= now.getTime();
+}
+
 async function syncJkoPayOrderStatus(params: {
   orderId: string;
   statusCode: number | null;
   tradeNo: string;
+  preferProcessingForPending?: boolean;
 }): Promise<{
   success: boolean;
   orderId: string;
@@ -110,11 +136,21 @@ async function syncJkoPayOrderStatus(params: {
   message?: string;
   error?: string;
 }> {
-  const { orderId, statusCode, tradeNo } = params;
+  const {
+    orderId,
+    statusCode,
+    tradeNo,
+    preferProcessingForPending = false,
+  } = params;
+  const now = new Date();
+  const nowIso = now.toISOString();
+
   const { data: order, error: orderError } = await supabase.from(
     "coffee_orders",
   )
-    .select("id, payment_method, payment_status, payment_id")
+    .select(
+      "id, payment_method, payment_status, payment_id, payment_expires_at, payment_confirmed_at, payment_last_checked_at, payment_provider_status_code",
+    )
     .eq("id", orderId)
     .maybeSingle();
   if (orderError) {
@@ -148,10 +184,40 @@ async function syncJkoPayOrderStatus(params: {
     };
   }
 
+  const currentPaymentStatus = normalizePaymentStatus(order.payment_status);
+  const terminalStatus = new Set([
+    "paid",
+    "failed",
+    "cancelled",
+    "expired",
+    "refunded",
+  ]);
   const mappedPaymentStatus = mapJkoStatusCodeToPaymentStatus(statusCode);
-  const nextPaymentStatus = mappedPaymentStatus === "pending"
-    ? String(order.payment_status || "pending") || "pending"
-    : mappedPaymentStatus;
+  const paymentExpired = isPaymentExpired(order.payment_expires_at, now);
+
+  let nextPaymentStatus = currentPaymentStatus;
+  if (mappedPaymentStatus === "paid") {
+    nextPaymentStatus = currentPaymentStatus === "refunded"
+      ? "refunded"
+      : "paid";
+  } else if (mappedPaymentStatus === "failed") {
+    nextPaymentStatus = (currentPaymentStatus === "paid" ||
+        currentPaymentStatus === "refunded")
+      ? currentPaymentStatus
+      : "failed";
+  } else if (terminalStatus.has(currentPaymentStatus)) {
+    nextPaymentStatus = currentPaymentStatus;
+  } else if (paymentExpired) {
+    nextPaymentStatus = "expired";
+  } else if (
+    preferProcessingForPending || mappedPaymentStatus === "processing"
+  ) {
+    nextPaymentStatus = "processing";
+  } else if (currentPaymentStatus === "processing") {
+    nextPaymentStatus = "processing";
+  } else {
+    nextPaymentStatus = "pending";
+  }
 
   const updates: Record<string, unknown> = {};
   if (nextPaymentStatus !== String(order.payment_status || "")) {
@@ -160,6 +226,25 @@ async function syncJkoPayOrderStatus(params: {
   if (tradeNo && tradeNo !== String(order.payment_id || "")) {
     updates.payment_id = tradeNo;
   }
+  if (statusCode !== null) {
+    const nextProviderStatusCode = String(statusCode);
+    if (
+      nextProviderStatusCode !==
+        String(order.payment_provider_status_code || "")
+    ) {
+      updates.payment_provider_status_code = nextProviderStatusCode;
+    }
+  }
+  if (nextPaymentStatus === "paid" && !order.payment_confirmed_at) {
+    updates.payment_confirmed_at = nowIso;
+  }
+  if (
+    nextPaymentStatus === "expired" &&
+    !String(order.payment_expires_at || "").trim()
+  ) {
+    updates.payment_expires_at = nowIso;
+  }
+  updates.payment_last_checked_at = nowIso;
 
   if (Object.keys(updates).length > 0) {
     const { error: updateError } = await supabase.from("coffee_orders").update(
@@ -439,8 +524,13 @@ export async function linePayConfirm(data: Record<string, unknown>) {
     );
 
     if (confirmRes.returnCode === "0000") {
+      const nowIso = new Date().toISOString();
       const { error: updateError } = await supabase.from("coffee_orders")
-        .update({ payment_status: "paid" })
+        .update({
+          payment_status: "paid",
+          payment_confirmed_at: nowIso,
+          payment_last_checked_at: nowIso,
+        })
         .eq("id", orderId);
       if (updateError) {
         return { success: false, error: updateError.message, orderId };
@@ -449,7 +539,10 @@ export async function linePayConfirm(data: Record<string, unknown>) {
       return { success: true, message: "付款已確認", orderId };
     } else {
       // 確認失敗時更新狀態為 failed 方便查案
-      await supabase.from("coffee_orders").update({ payment_status: "failed" })
+      await supabase.from("coffee_orders").update({
+        payment_status: "failed",
+        payment_last_checked_at: new Date().toISOString(),
+      })
         .eq("id", orderId);
       return {
         success: false,
@@ -504,6 +597,7 @@ export async function linePayCancel(
     }
     const { error: updateError } = await supabase.from("coffee_orders").update({
       payment_status: "cancelled",
+      payment_last_checked_at: new Date().toISOString(),
     })
       .eq("id", orderId);
     if (updateError) return { success: false, error: updateError.message };
@@ -555,6 +649,7 @@ export async function linePayRefund(
     if (refundRes.returnCode === "0000") {
       await supabase.from("coffee_orders").update({
         payment_status: "refunded",
+        payment_last_checked_at: new Date().toISOString(),
       }).eq("id", orderId);
       return {
         success: true,
@@ -602,11 +697,18 @@ export async function jkoPayResult(
   const tradeNo = getJkoTradeNoFromPayload(data, transaction);
 
   if (statusCode === null) {
-    return {
-      valid: true,
-      success: true,
+    const syncResult = await syncJkoPayOrderStatus({
       orderId,
-      message: "已收到街口確認通知",
+      statusCode: null,
+      tradeNo,
+      preferProcessingForPending: true,
+    });
+    return {
+      valid: syncResult.success,
+      ...syncResult,
+      message: syncResult.success
+        ? "已收到街口確認通知，等待付款結果同步"
+        : syncResult.error || "街口付款狀態同步失敗",
     };
   }
 
@@ -669,12 +771,19 @@ export async function jkoPayInquiry(
     ) || transactions[0];
 
     if (!transaction) {
-      return {
-        success: true,
+      const syncResult = await syncJkoPayOrderStatus({
         orderId,
-        paymentStatus: "pending",
+        statusCode: null,
+        tradeNo: "",
+        preferProcessingForPending: true,
+      });
+      return {
+        success: syncResult.success,
+        orderId,
+        paymentStatus: syncResult.paymentStatus,
         message: "尚未取得街口交易資料",
         inquiry: inquiryResponse,
+        error: syncResult.error,
       };
     }
 
@@ -685,6 +794,7 @@ export async function jkoPayInquiry(
       orderId,
       statusCode,
       tradeNo,
+      preferProcessingForPending: true,
     });
 
     return {
@@ -769,6 +879,7 @@ export async function jkoPayRefund(
 
     const { error: updateError } = await supabase.from("coffee_orders").update({
       payment_status: "refunded",
+      payment_last_checked_at: new Date().toISOString(),
     }).eq("id", orderId);
     if (updateError) {
       return { success: false, error: updateError.message };

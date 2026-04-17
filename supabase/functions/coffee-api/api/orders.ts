@@ -279,6 +279,20 @@ function resolveApiCallbackBase(req: Request): string {
   return `${origin}${endpoint.pathname}`;
 }
 
+function resolveJkoPaymentExpiresAtIso(qrTimeoutRaw: unknown): string {
+  const timeoutNumber = Number(qrTimeoutRaw);
+  if (Number.isFinite(timeoutNumber) && timeoutNumber > 0) {
+    const timeoutMs = timeoutNumber > 1_000_000_000_000
+      ? timeoutNumber
+      : timeoutNumber * 1000;
+    const timeoutDate = new Date(timeoutMs);
+    if (!Number.isNaN(timeoutDate.getTime())) {
+      return timeoutDate.toISOString();
+    }
+  }
+  return new Date(Date.now() + 20 * 60 * 1000).toISOString();
+}
+
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
@@ -533,6 +547,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         const transactionId = String(lpRes.info.transactionId);
         await supabase.from("coffee_orders").update({
           payment_id: transactionId,
+          payment_last_checked_at: new Date().toISOString(),
         }).eq("id", orderId);
         return {
           success: true,
@@ -545,6 +560,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       } else {
         await supabase.from("coffee_orders").update({
           payment_status: "failed",
+          payment_last_checked_at: new Date().toISOString(),
         }).eq("id", orderId);
         return {
           success: false,
@@ -555,7 +571,10 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         };
       }
     } catch (e) {
-      await supabase.from("coffee_orders").update({ payment_status: "failed" })
+      await supabase.from("coffee_orders").update({
+        payment_status: "failed",
+        payment_last_checked_at: new Date().toISOString(),
+      })
         .eq("id", orderId);
       return {
         success: false,
@@ -598,8 +617,23 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         ? entryRes.result_object as Record<string, unknown>
         : {};
       const paymentUrl = String(resultObject.payment_url || "").trim();
+      const paymentExpiresAt = resolveJkoPaymentExpiresAtIso(
+        resultObject.qr_timeout,
+      );
 
       if (resultCode === "000" && paymentUrl) {
+        const { error: updateEntryError } = await supabase.from("coffee_orders")
+          .update({
+            payment_expires_at: paymentExpiresAt,
+            payment_last_checked_at: new Date().toISOString(),
+            payment_provider_status_code: "",
+          })
+          .eq("id", orderId);
+        if (updateEntryError) {
+          console.warn(
+            `[jkopay] failed to persist entry metadata: ${orderId} (${updateEntryError.message})`,
+          );
+        }
         return {
           success: true,
           orderId,
@@ -607,11 +641,14 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
           paymentUrl,
           qrImage: String(resultObject.qr_img || "").trim(),
           qrTimeout: Number(resultObject.qr_timeout || 0) || 0,
+          paymentExpiresAt,
         };
       }
 
       await supabase.from("coffee_orders").update({
         payment_status: "failed",
+        payment_last_checked_at: new Date().toISOString(),
+        payment_provider_status_code: resultCode || "",
       }).eq("id", orderId);
       const resultObjectSummary = Object.keys(resultObject).length > 0
         ? (() => {
@@ -643,8 +680,10 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         orderId,
       };
     } catch (e) {
-      await supabase.from("coffee_orders").update({ payment_status: "failed" })
-        .eq("id", orderId);
+      await supabase.from("coffee_orders").update({
+        payment_status: "failed",
+        payment_last_checked_at: new Date().toISOString(),
+      }).eq("id", orderId);
       return {
         success: false,
         error: "街口支付建單失敗: " + String(e),
@@ -706,6 +745,10 @@ export async function getOrders(req: Request) {
       paymentMethod: r.payment_method || "cod",
       paymentStatus: r.payment_status || "",
       paymentId: r.payment_id || "",
+      paymentExpiresAt: r.payment_expires_at || "",
+      paymentConfirmedAt: r.payment_confirmed_at || "",
+      paymentLastCheckedAt: r.payment_last_checked_at || "",
+      paymentProviderStatusCode: r.payment_provider_status_code || "",
       transferAccountLast5: r.transfer_account_last5 || "",
       receiptInfo,
       trackingNumber: r.tracking_number || "",
@@ -759,6 +802,10 @@ export async function getMyOrders(req: Request) {
       address: r.address,
       paymentMethod: r.payment_method || "cod",
       paymentStatus: r.payment_status || "",
+      paymentExpiresAt: r.payment_expires_at || "",
+      paymentConfirmedAt: r.payment_confirmed_at || "",
+      paymentLastCheckedAt: r.payment_last_checked_at || "",
+      paymentProviderStatusCode: r.payment_provider_status_code || "",
       receiptInfo,
       trackingNumber: r.tracking_number || "",
       shippingProvider: r.shipping_provider || "",
@@ -799,7 +846,12 @@ export async function updateOrderStatus(
     updates.cancel_reason = "";
   }
   if (data.paymentStatus !== undefined) {
-    updates.payment_status = String(data.paymentStatus);
+    const paymentStatus = String(data.paymentStatus).trim();
+    updates.payment_status = paymentStatus;
+    updates.payment_last_checked_at = new Date().toISOString();
+    if (paymentStatus === "paid") {
+      updates.payment_confirmed_at = new Date().toISOString();
+    }
   }
   if (data.trackingNumber !== undefined) {
     updates.tracking_number = String(data.trackingNumber);

@@ -190,9 +190,11 @@
             >
               <option value="all">付款狀態：全部</option>
               <option value="pending">待付款</option>
+              <option value="processing">付款確認中</option>
               <option value="paid">已付款</option>
               <option value="failed">付款失敗</option>
               <option value="cancelled">付款取消</option>
+              <option value="expired">付款逾期</option>
               <option value="refunded">已退款</option>
               <option value="empty">未設定</option>
             </select>
@@ -276,9 +278,11 @@
             >
               <option value="__keep__">付款狀態：維持不變</option>
               <option value="pending">付款待處理</option>
+              <option value="processing">付款確認中</option>
               <option value="paid">付款完成</option>
               <option value="failed">付款失敗</option>
               <option value="cancelled">付款取消</option>
+              <option value="expired">付款逾期</option>
               <option value="refunded">已退款</option>
               <option value="">清空付款狀態</option>
             </select>
@@ -365,6 +369,26 @@
                 <div v-if="order.showTransferInfo" class="col-span-2 text-xs text-blue-800 mt-2 ui-primary-soft p-2 rounded">
                   <div><b>顧客匯出末5碼:</b> {{ order.transferAccountLast5 || "未提供" }}</div>
                   <div class="mt-1 pb-1"><b>匯入目標帳號:</b> {{ order.paymentId || "未提供 (舊版訂單)" }}</div>
+                </div>
+                <div
+                  v-if="order.showPaymentMeta"
+                  class="col-span-2 text-xs text-slate-700 mt-2 bg-slate-50 p-2 rounded border border-slate-200"
+                >
+                  <div v-if="order.showPaymentDeadline">
+                    <b>付款期限：</b>{{ order.paymentExpiresAtText }}
+                  </div>
+                  <div
+                    v-if="order.paymentLastCheckedAtText"
+                    :class="{ 'mt-1': order.showPaymentDeadline }"
+                  >
+                    <b>最近同步：</b>{{ order.paymentLastCheckedAtText }}
+                  </div>
+                  <div
+                    v-if="order.paymentProviderStatusCode"
+                    :class="{ 'mt-1': order.showPaymentDeadline || order.paymentLastCheckedAtText }"
+                  >
+                    <b>金流狀態碼：</b>{{ order.paymentProviderStatusCode }}
+                  </div>
                 </div>
               </div>
 

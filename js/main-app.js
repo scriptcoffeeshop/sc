@@ -1030,6 +1030,20 @@ function getJkoStatusPresentation(paymentStatus) {
   if (normalized === "paid") {
     return { icon: "success", title: "付款成功", text: "街口支付已完成付款。" };
   }
+  if (normalized === "processing") {
+    return {
+      icon: "info",
+      title: "付款確認中",
+      text: "已返回商店，系統正在同步街口付款結果，請稍候再查看我的訂單。",
+    };
+  }
+  if (normalized === "pending") {
+    return {
+      icon: "info",
+      title: "待付款",
+      text: "此訂單尚未完成街口付款，您可回到我的訂單重新確認付款狀態。",
+    };
+  }
   if (normalized === "refunded") {
     return {
       icon: "info",
@@ -1045,6 +1059,13 @@ function getJkoStatusPresentation(paymentStatus) {
       icon: "error",
       title: "付款失敗",
       text: "街口支付回傳付款失敗，請重新下單或聯繫店家。",
+    };
+  }
+  if (normalized === "expired") {
+    return {
+      icon: "warning",
+      title: "付款逾期",
+      text: "此筆街口付款已逾期失效，請重新下單或聯繫店家協助。",
     };
   }
   return {

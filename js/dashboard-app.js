@@ -633,9 +633,11 @@ const orderPayMethodLabel = {
 
 const orderPayStatusLabel = {
   pending: "待付款",
+  processing: "付款確認中",
   paid: "已付款",
-  failed: "失敗",
-  cancelled: "取消",
+  failed: "付款失敗",
+  cancelled: "付款取消",
+  expired: "付款逾期",
   refunded: "已退款",
 };
 
@@ -1355,6 +1357,14 @@ function normalizeReceiptInfo(raw) {
   return { buyer, taxId, address, needDateStamp };
 }
 
+function formatOrderDateTimeText(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleString("zh-TW");
+}
+
 function buildReceiptSummaryHtml(receiptInfo) {
   if (!receiptInfo) return "";
   return `<div class="text-xs text-amber-800 ui-primary-soft p-2 rounded mt-2 border border-amber-100">
@@ -1375,7 +1385,21 @@ function buildReceiptSummaryHtml(receiptInfo) {
 
 function buildOrderViewModel(order) {
   const paymentMethod = order.paymentMethod || "cod";
-  const paymentStatus = order.paymentStatus || "";
+  const paymentStatus = String(order.paymentStatus || "").trim();
+  const paymentExpiresAt = String(order.paymentExpiresAt || "").trim();
+  const paymentLastCheckedAt = String(order.paymentLastCheckedAt || "").trim();
+  const paymentProviderStatusCode = String(order.paymentProviderStatusCode || "")
+    .trim();
+  const paymentExpiresAtText = formatOrderDateTimeText(paymentExpiresAt);
+  const paymentLastCheckedAtText = formatOrderDateTimeText(paymentLastCheckedAt);
+  const showPaymentDeadline = paymentMethod !== "cod" &&
+    Boolean(paymentExpiresAtText) &&
+    ["pending", "processing", "expired"].includes(paymentStatus);
+  const showPaymentMeta = paymentMethod !== "cod" && (
+    showPaymentDeadline ||
+    Boolean(paymentLastCheckedAtText) ||
+    Boolean(paymentProviderStatusCode)
+  );
   const trackingLink = getTrackingLinkInfo(order);
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
   const addressInfo =
@@ -1398,11 +1422,23 @@ function buildOrderViewModel(order) {
     paymentStatusLabel: orderPayStatusLabel[paymentStatus] || paymentStatus,
     payBadgeClass: paymentStatus === "paid"
       ? "bg-green-50 text-green-700"
-      : paymentStatus === "refunded"
-      ? "bg-purple-50 text-purple-700"
+      : paymentStatus === "processing"
+      ? "bg-blue-50 text-blue-700"
       : paymentStatus === "pending"
       ? "bg-yellow-50 text-yellow-700"
+      : paymentStatus === "failed" || paymentStatus === "cancelled" ||
+          paymentStatus === "expired"
+      ? "bg-red-50 text-red-700"
+      : paymentStatus === "refunded"
+      ? "bg-purple-50 text-purple-700"
       : "ui-bg-soft ui-text-strong",
+    paymentExpiresAt,
+    paymentExpiresAtText,
+    paymentLastCheckedAt,
+    paymentLastCheckedAtText,
+    paymentProviderStatusCode,
+    showPaymentDeadline,
+    showPaymentMeta,
     isSelected: selectedOrderIds.has(order.orderId),
     lineUserId: order.lineUserId || "",
     lineName: order.lineName || "",
@@ -1624,7 +1660,13 @@ function renderOrders() {
         }`;
 
     const pm = o.paymentMethod || "cod";
-    const ps = o.paymentStatus || "";
+    const ps = String(o.paymentStatus || "").trim();
+    const paymentExpiresAtText = formatOrderDateTimeText(o.paymentExpiresAt);
+    const paymentLastCheckedAtText = formatOrderDateTimeText(
+      o.paymentLastCheckedAt,
+    );
+    const paymentProviderStatusCode = String(o.paymentProviderStatusCode || "")
+      .trim();
     const canOnlineRefund = (pm === "linepay" || pm === "jkopay") &&
       ps === "paid";
     const refundBtn = canOnlineRefund
@@ -1638,14 +1680,50 @@ function renderOrders() {
       ? `<span class="text-xs px-2 py-0.5 rounded-full ui-border ${
         ps === "paid"
           ? "ui-text-success ui-bg-card-strong"
-          : ps === "refunded"
-          ? "ui-text-violet ui-bg-card-strong"
+          : ps === "processing"
+          ? "bg-blue-50 text-blue-700"
           : ps === "pending"
           ? "ui-text-warning ui-bg-card-strong"
+          : ps === "failed" || ps === "cancelled" || ps === "expired"
+          ? "bg-red-50 text-red-700"
+          : ps === "refunded"
+          ? "ui-text-violet ui-bg-card-strong"
           : "ui-bg-soft ui-text-strong"
       }">${orderPayMethodLabel[pm] || pm} ${
         orderPayStatusLabel[ps] || ps
       }</span>`
+      : "";
+    const paymentMetaHtml = pm !== "cod"
+      ? `<div class="text-xs ui-bg-soft p-2 rounded mt-2 border ui-border">
+            ${
+        paymentExpiresAtText &&
+          (ps === "pending" || ps === "processing" || ps === "expired")
+          ? `<div><span class="ui-text-subtle">付款期限：</span>${
+            esc(paymentExpiresAtText)
+          }</div>`
+          : ""
+      }
+            ${
+        paymentLastCheckedAtText
+          ? `<div${
+            paymentExpiresAtText ? ' class="mt-1"' : ""
+          }><span class="ui-text-subtle">最近同步：</span>${
+            esc(paymentLastCheckedAtText)
+          }</div>`
+          : ""
+      }
+            ${
+        paymentProviderStatusCode
+          ? `<div${
+            (paymentExpiresAtText || paymentLastCheckedAtText)
+              ? ' class="mt-1"'
+              : ""
+          }><span class="ui-text-subtle">金流狀態碼：</span>${
+            esc(paymentProviderStatusCode)
+          }</div>`
+          : ""
+      }
+        </div>`
       : "";
     const transferInfo = pm === "transfer"
       ? `<div class="text-xs ui-text-highlight mt-2 ui-primary-soft p-2 rounded">
@@ -1741,6 +1819,7 @@ function renderOrders() {
                 ${transferInfo}
             </div>
             ${trackingHtml}
+            ${paymentMetaHtml}
             ${receiptHtml}
             <div class="text-sm ui-text-strong whitespace-pre-line ui-bg-soft p-3 rounded mb-2 mt-2">${
       esc(o.items)
@@ -2217,6 +2296,10 @@ function buildOrdersCsv(orderList) {
     "訂單狀態",
     "付款方式",
     "付款狀態",
+    "付款期限",
+    "付款確認時間",
+    "付款同步時間",
+    "金流狀態碼",
     "金額",
     "物流商",
     "物流單號",
@@ -2248,6 +2331,10 @@ function buildOrdersCsv(orderList) {
       orderStatusLabel[o.status] || o.status || "",
       orderPayMethodLabel[o.paymentMethod || "cod"] || o.paymentMethod || "",
       orderPayStatusLabel[o.paymentStatus || ""] || o.paymentStatus || "",
+      o.paymentExpiresAt || "",
+      o.paymentConfirmedAt || "",
+      o.paymentLastCheckedAt || "",
+      o.paymentProviderStatusCode || "",
       Number(o.total) || 0,
       o.shippingProvider || "",
       o.trackingNumber || "",

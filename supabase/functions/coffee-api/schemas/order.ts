@@ -28,6 +28,21 @@ const lineFlexMessageSchema = z.object({
   contents: z.record(z.unknown()),
 });
 
+const paymentStatusValues = [
+  "pending",
+  "processing",
+  "paid",
+  "failed",
+  "cancelled",
+  "expired",
+  "refunded",
+] as const;
+
+const paymentStatusSchema = z.union([
+  z.enum(paymentStatusValues),
+  z.literal(""),
+]);
+
 export const submitOrderSchema = z.object({
   lineName: z.string().min(1, "姓名不能為空"),
   phone: z.string().optional().or(z.literal("")),
@@ -79,7 +94,7 @@ export const updateOrderStatusSchema = z.object({
     "cancelled",
   ]),
   cancelReason: z.string().optional(),
-  paymentStatus: z.string().optional(),
+  paymentStatus: paymentStatusSchema.optional(),
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
   trackingUrl: z.string().optional(),
@@ -102,7 +117,7 @@ export const batchUpdateOrderStatusSchema = z.object({
     "completed",
     "cancelled",
   ]),
-  paymentStatus: z.string().optional(),
+  paymentStatus: paymentStatusSchema.optional(),
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
   trackingUrl: z.string().optional(),

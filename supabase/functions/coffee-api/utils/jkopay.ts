@@ -47,12 +47,12 @@ export function parseJkoStatusCode(value: unknown): number | null {
 
 export function mapJkoStatusCodeToPaymentStatus(
   statusCode: number | null,
-): "paid" | "refunded" | "failed" | "cancelled" | "pending" {
+): "paid" | "failed" | "pending" | "processing" {
   if (statusCode === 0) return "paid";
-  if (statusCode === 100) return "refunded";
-  if (statusCode === 101) return "failed";
-  if (statusCode === 102) return "cancelled";
-  return "pending";
+  if (statusCode === 100) return "failed";
+  if (statusCode === 101) return "pending";
+  if (statusCode === 102) return "pending";
+  return "processing";
 }
 
 function normalizeBaseUrl(raw: string): string {

@@ -5,6 +5,7 @@ import {
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
+import { mapJkoStatusCodeToPaymentStatus } from "../utils/jkopay.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 
 Deno.test("Basic Router Test - Health Check", () => {
@@ -289,5 +290,57 @@ Deno.test("Line Flex Template - Include Note", () => {
     payloadText.includes("好日子商辦"),
     true,
     "Flex should include delivery company/building text",
+  );
+});
+
+Deno.test("JKO Pay Status Mapping - Match Official Inquiry Codes", () => {
+  assertEquals(mapJkoStatusCodeToPaymentStatus(0), "paid");
+  assertEquals(mapJkoStatusCodeToPaymentStatus(100), "failed");
+  assertEquals(mapJkoStatusCodeToPaymentStatus(101), "pending");
+  assertEquals(mapJkoStatusCodeToPaymentStatus(102), "pending");
+  assertEquals(mapJkoStatusCodeToPaymentStatus(null), "processing");
+});
+
+Deno.test("Line Flex Template - Payment Processing Label", () => {
+  const flex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-STATUS01",
+    siteTitle: "Script Coffee",
+    status: "pending",
+    deliveryMethod: "delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路 1 號",
+    paymentMethod: "jkopay",
+    paymentStatus: "processing",
+    total: 300,
+    items: "測試商品 x 1",
+  });
+  const payloadText = JSON.stringify(flex);
+  assertEquals(
+    payloadText.includes("付款確認中"),
+    true,
+    "Flex should include processing payment label",
+  );
+});
+
+Deno.test("Line Flex Template - Payment Expired Label", () => {
+  const flex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-STATUS02",
+    siteTitle: "Script Coffee",
+    status: "cancelled",
+    deliveryMethod: "delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路 2 號",
+    paymentMethod: "jkopay",
+    paymentStatus: "expired",
+    total: 300,
+    items: "測試商品 x 1",
+  });
+  const payloadText = JSON.stringify(flex);
+  assertEquals(
+    payloadText.includes("付款逾期"),
+    true,
+    "Flex should include expired payment label",
   );
 });

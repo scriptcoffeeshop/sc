@@ -30,6 +30,26 @@
 
 ## 3) 最近更新（人工摘要）
 
+### 2026-04-18
+
+- 街口支付訂單狀態流補齊（可供正式串接）：
+  - 新增付款狀態節點與顯示：`pending`（待付款）、`processing`（付款確認中）、`paid`（已付款）、`failed`（付款失敗）、`cancelled`（付款取消）、`expired`（付款逾期）、`refunded`（已退款）。
+  - 前台「我的訂單」與街口回跳提示同步支援 `processing / expired`。
+  - 後台訂單列表、付款狀態篩選、批次付款狀態更新選單同步支援 `processing / expired`，並新增付款期限、最近同步時間、金流狀態碼顯示。
+- 資料結構補欄位（`coffee_orders`）：
+  - 新增 `payment_expires_at`、`payment_confirmed_at`、`payment_last_checked_at`、`payment_provider_status_code`。
+  - 新增 migration：`202604180930_add_payment_flow_fields.sql`。
+  - `schema_full.sql` 已同步，並新增 `payment_status/payment_expires_at` 索引。
+- 後端同步邏輯更新：
+  - `submitOrder`（街口）建單成功會寫入付款期限與初始同步資訊。
+  - `jkoPayResult` / `jkoPayInquiry` 會根據訂單付款階段更新狀態，支援 `pending -> processing -> paid/failed/expired`。
+  - `getOrders/getMyOrders` 已回傳新付款欄位，供前後台顯示。
+- 街口 Inquiry 狀態碼對應更正（依 open-doc）：
+  - `0=paid`、`100=failed`、`101=pending(尚未付款)`、`102=pending(訂單不存在/未命中)`。
+  - 逾期 (`expired`) 由本地付款期限 `payment_expires_at` 判定。
+- 快取版號更新：
+  - 前端版本已升級至 `v=98`（`main.html`、`dashboard.html`）。
+
 ### 2026-04-17
 
 - 新增「街口支付（jkopay）」顯示與設定骨架（尚未串接正式金流 API）：
@@ -60,7 +80,7 @@
   - `submitOrder` 新增 `paymentMethod = jkopay` 分支，會呼叫街口 Entry API 建立訂單並回傳 `paymentUrl`，失敗時回寫 `payment_status=failed`。
   - 回呼流程新增 `action=jkoPayResult`，同時支援 `confirm_url` 與 `result_url`，並以 `hmacSign("jkopay-callback:<orderId>")` 簽章驗證 URL query，避免任意偽造 callback。
   - 新增 `action=jkoPayInquiry`（登入可查本人訂單 / 管理員可查任意訂單）與 `action=jkoPayRefund`（管理員退款）。
-  - 付款狀態對應已接入：`0=paid`、`100=refunded`、`101=failed`、`102=cancelled`。
+  - 付款狀態對應已接入（此處為舊版紀錄，已於 `2026-04-18` 更正為 open-doc 官方對應）。
   - 前台新增街口回跳處理：`main.html?jkoOrderId=<id>` 會主動查詢並顯示付款狀態提示。
   - 後台訂單退款按鈕擴充為同時支援 LINE Pay 與街口支付。
   - 前端快取版號升級至 `v=95`。

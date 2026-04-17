@@ -53,6 +53,10 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   receipt_info TEXT DEFAULT '',
   payment_status TEXT DEFAULT '',
   payment_id TEXT DEFAULT '',
+  payment_expires_at TIMESTAMPTZ,
+  payment_confirmed_at TIMESTAMPTZ,
+  payment_last_checked_at TIMESTAMPTZ,
+  payment_provider_status_code TEXT DEFAULT '',
   payment_method TEXT DEFAULT 'cod',
   transfer_account_last5 TEXT DEFAULT '',
   tracking_number TEXT DEFAULT '',
@@ -191,6 +195,8 @@ CREATE INDEX IF NOT EXISTS idx_coffee_products_enabled ON coffee_products(enable
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_line_user_id ON coffee_orders(line_user_id);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_created_at ON coffee_orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_status ON coffee_orders(status);
+CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_status ON coffee_orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_expires_at ON coffee_orders(payment_expires_at);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_delivery ON coffee_orders(delivery_method);
 CREATE INDEX IF NOT EXISTS idx_store_selections_created ON coffee_store_selections(created_at);
 

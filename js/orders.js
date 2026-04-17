@@ -34,6 +34,14 @@ function getDefaultTrackingUrl(deliveryMethod) {
   return "";
 }
 
+function formatDateTimeText(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleString("zh-TW");
+}
+
 function composeDeliveryAddress(address, companyOrBuilding) {
   const detailAddress = String(address || "").trim();
   const companyText = String(companyOrBuilding || "").trim();
@@ -685,17 +693,24 @@ export async function showMyOrders() {
     };
     const payStatusMap = {
       pending: "待付款",
+      processing: "付款確認中",
       paid: "已付款",
       failed: "付款失敗",
-      cancelled: "已取消",
+      cancelled: "付款取消",
+      expired: "付款逾期",
       refunded: "已退款",
     };
 
     list.innerHTML = result.orders.map((o) => {
+      const paymentStatus = String(o.paymentStatus || "").trim();
       const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
       const customTrackingUrl = normalizeTrackingUrl(o.trackingUrl || "");
       const defaultTrackingUrl = getDefaultTrackingUrl(o.deliveryMethod);
       const trackingUrl = customTrackingUrl || defaultTrackingUrl;
+      const paymentExpiresAtText = formatDateTimeText(o.paymentExpiresAt);
+      const paymentLastCheckedAtText = formatDateTimeText(o.paymentLastCheckedAt);
+      const paymentProviderStatusCode = String(o.paymentProviderStatusCode || "")
+        .trim();
       const shippingInfoHtml = (o.shippingProvider || o.trackingNumber ||
           trackingUrl)
         ? `<div class="text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2">
@@ -724,16 +739,51 @@ export async function showMyOrders() {
         }
             </div>`
         : "";
+      const payBadgeClass = paymentStatus === "paid"
+        ? "bg-green-50 text-green-700"
+        : paymentStatus === "processing"
+        ? "bg-blue-50 text-blue-700"
+        : paymentStatus === "pending"
+        ? "bg-yellow-50 text-yellow-700"
+        : paymentStatus === "failed" || paymentStatus === "cancelled" ||
+            paymentStatus === "expired"
+        ? "bg-red-50 text-red-700"
+        : paymentStatus === "refunded"
+        ? "bg-purple-50 text-purple-700"
+        : "bg-gray-100 text-gray-600";
       const payBadge = o.paymentMethod && o.paymentMethod !== "cod"
-        ? `<span class="text-xs px-2 py-0.5 rounded-full ${
-          o.paymentStatus === "paid"
-            ? "bg-green-50 text-green-700"
-            : o.paymentStatus === "pending"
-            ? "bg-yellow-50 text-yellow-700"
-            : "bg-gray-100 text-gray-600"
-        }">${payMethodMap[o.paymentMethod] || ""} ${
-          payStatusMap[o.paymentStatus] || ""
+        ? `<span class="text-xs px-2 py-0.5 rounded-full ${payBadgeClass}">${
+          payMethodMap[o.paymentMethod] || ""
+        } ${
+          payStatusMap[paymentStatus] || paymentStatus
         }</span>`
+        : "";
+      const paymentMetaHtml = o.paymentMethod && o.paymentMethod !== "cod"
+        ? `<div class="text-xs text-gray-600 bg-slate-50 p-2 rounded mb-2">
+              ${
+          paymentExpiresAtText &&
+            (paymentStatus === "pending" || paymentStatus === "processing" ||
+              paymentStatus === "expired")
+            ? `<div>付款期限：${escapeHtml(paymentExpiresAtText)}</div>`
+            : ""
+        }
+              ${
+          paymentLastCheckedAtText
+            ? `<div${
+              paymentExpiresAtText ? ' class="mt-1"' : ""
+            }>最近同步：${escapeHtml(paymentLastCheckedAtText)}</div>`
+            : ""
+        }
+              ${
+          paymentProviderStatusCode
+            ? `<div${
+              (paymentExpiresAtText || paymentLastCheckedAtText)
+                ? ' class="mt-1"'
+                : ""
+            }>金流狀態碼：${escapeHtml(paymentProviderStatusCode)}</div>`
+            : ""
+        }
+            </div>`
         : "";
       const receiptHtml = buildReceiptInfoHtml(receiptInfo);
       return `
@@ -755,6 +805,7 @@ export async function showMyOrders() {
                     ${payBadge}
                 </div>
                 ${shippingInfoHtml}
+                ${paymentMetaHtml}
                 <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${
         escapeHtml(o.items)
       }</div>
