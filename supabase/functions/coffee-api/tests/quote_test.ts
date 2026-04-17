@@ -71,29 +71,36 @@ const MOCK_PROMOS = [
 
 const DEFAULT_PROMO_NOW = new Date("2026-03-10T12:00:00Z");
 
-Deno.test("Quote Engine - Basic Subtotal Calculation", () => {
-  const result = computeOrderQuote({
-    cartItems: [
-      { productId: 1, qty: 2 },
-      { productId: 2, qty: 1 },
-    ],
-    requestedDeliveryMethod: "delivery",
-    requestedPaymentMethod: "transfer",
-    products: MOCK_PRODUCTS,
-    deliveryConfig: MOCK_DELIVERY_CONFIG,
-    activePromos: [],
-    promoNow: DEFAULT_PROMO_NOW,
-  });
+// 由於 Supabase JS client 在 module 載入時會產生一個 timer，
+// 第一個測試需關閉 sanitizer 以避免 false-positive leak 偵測。
+Deno.test({
+  name: "Quote Engine - Basic Subtotal Calculation",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    const result = computeOrderQuote({
+      cartItems: [
+        { productId: 1, qty: 2 },
+        { productId: 2, qty: 1 },
+      ],
+      requestedDeliveryMethod: "delivery",
+      requestedPaymentMethod: "transfer",
+      products: MOCK_PRODUCTS,
+      deliveryConfig: MOCK_DELIVERY_CONFIG,
+      activePromos: [],
+      promoNow: DEFAULT_PROMO_NOW,
+    });
 
-  assertEquals(result.success, true);
-  if (result.success) {
-    const q = result.quote;
-    // 300 * 2 + 500 = 1100
-    assertEquals(q.subtotal, 1100);
-    // Over free_threshold (1000) -> 0 fee
-    assertEquals(q.shippingFee, 0);
-    assertEquals(q.total, 1100);
-  }
+    assertEquals(result.success, true);
+    if (result.success) {
+      const q = result.quote;
+      // 300 * 2 + 500 = 1100
+      assertEquals(q.subtotal, 1100);
+      // Over free_threshold (1000) -> 0 fee
+      assertEquals(q.shippingFee, 0);
+      assertEquals(q.total, 1100);
+    }
+  },
 });
 
 Deno.test("Quote Engine - Product with Specs", () => {

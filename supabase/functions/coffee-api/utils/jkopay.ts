@@ -64,7 +64,7 @@ function toHexLower(bytes: Uint8Array): string {
     .join("");
 }
 
-async function hmacSha256Hex(
+export async function hmacSha256Hex(
   payload: string,
   secretKey: string,
 ): Promise<string> {

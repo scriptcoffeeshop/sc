@@ -8,93 +8,110 @@ import {
 import { mapJkoStatusCodeToPaymentStatus } from "../utils/jkopay.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 
-Deno.test("Basic Router Test - Health Check", () => {
-  // 這裡可以匯入 router 邏輯進行單元測試
-  // 暫時以純邏輯測試代替
-  const sum = (a: number, b: number) => a + b;
-  assertEquals(sum(1, 2), 3);
+// 由於 Supabase JS client 在 module 載入時會產生一個 timer，
+// 第一個測試需關閉 sanitizer 以避免 false-positive leak 偵測。
+Deno.test({
+  name: "Basic Router Test - Health Check",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    // 這裡可以匯入 router 邏輯進行單元測試
+    // 暫時以純邏輯測試代替
+    const sum = (a: number, b: number) => a + b;
+    assertEquals(sum(1, 2), 3);
+  },
 });
 
-Deno.test("Utility Test - HTML Escape", () => {
-  const map: Record<string, string> = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  const escapeHtml = (text: string) =>
-    String(text).replace(/[&<>"']/g, (m) => map[m]);
-  assertEquals(escapeHtml("<div>"), "&lt;div&gt;");
+Deno.test({
+  name: "Utility Test - HTML Escape",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    const map: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+    const escapeHtml = (text: string) =>
+      String(text).replace(/[&<>"']/g, (m) => map[m]);
+    assertEquals(escapeHtml("<div>"), "&lt;div&gt;");
+  },
 });
 
-Deno.test("Email Templates - Order Confirmation", () => {
-  const html = buildOrderConfirmationHtml({
-    orderId: "C20261231-AABBCCDD",
-    siteTitle: "Script Coffee 訂購確認",
-    logoUrl: "https://cdn.example.com/logo-new.png",
-    lineName: "User",
-    phone: "0912345678",
-    deliveryMethod: "delivery",
-    city: "新竹市",
-    district: "東區",
-    address: "測試路1號",
-    storeName: "",
-    storeAddress: "",
-    paymentMethod: "cod",
-    transferTargetAccount: "",
-    transferAccountLast5: "",
-    note: "請快點",
-    ordersText: "咖啡豆 x 1",
-    total: 500,
-    customFieldsHtml: "<p>Custom</p>",
-  });
+Deno.test({
+  name: "Email Templates - Order Confirmation",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    const html = buildOrderConfirmationHtml({
+      orderId: "C20261231-AABBCCDD",
+      siteTitle: "Script Coffee 訂購確認",
+      logoUrl: "https://cdn.example.com/logo-new.png",
+      lineName: "User",
+      phone: "0912345678",
+      deliveryMethod: "delivery",
+      city: "新竹市",
+      district: "東區",
+      address: "測試路1號",
+      storeName: "",
+      storeAddress: "",
+      paymentMethod: "cod",
+      transferTargetAccount: "",
+      transferAccountLast5: "",
+      note: "請快點",
+      ordersText: "咖啡豆 x 1",
+      total: 500,
+      customFieldsHtml: "<p>Custom</p>",
+    });
 
-  assertEquals(html.includes("C20261231-AABBCCDD"), true, "Missing orderId");
-  assertEquals(
-    html.includes("Script Coffee"),
-    true,
-    "Missing site title",
-  );
-  assertEquals(
-    html.includes("訂購確認"),
-    false,
-    "Unexpected confirmation suffix in title",
-  );
-  assertEquals(
-    html.includes(
-      "display: flex; align-items: center; justify-content: center;",
-    ),
-    false,
-    "Logo layout should not rely on flex in email header",
-  );
-  assertEquals(
-    html.includes("height: 18px; width: auto; max-width: 108px;"),
-    true,
-    "Logo should use compact ratio-preserving size in header",
-  );
-  assertEquals(
-    html.includes("background-color: rgba(255,255,255,0.96);"),
-    false,
-    "Logo wrapper should not force white background",
-  );
-  assertEquals(
-    html.includes("height: 40px; width: 40px;"),
-    false,
-    "Logo should not be forced into square dimensions",
-  );
-  assertEquals(
-    html.includes("https://cdn.example.com/logo-new.png"),
-    true,
-    "Logo should use provided custom URL",
-  );
-  assertEquals(
-    html.includes("訂單成立通知"),
-    true,
-    "Missing header subtitle for confirmation email",
-  );
-  assertEquals(html.includes("配送到府"), true, "Missing delivery method");
-  assertEquals(html.includes("貨到付款"), true, "Missing payment method");
+    assertEquals(html.includes("C20261231-AABBCCDD"), true, "Missing orderId");
+    assertEquals(
+      html.includes("Script Coffee"),
+      true,
+      "Missing site title",
+    );
+    assertEquals(
+      html.includes("訂購確認"),
+      false,
+      "Unexpected confirmation suffix in title",
+    );
+    assertEquals(
+      html.includes(
+        "display: flex; align-items: center; justify-content: center;",
+      ),
+      false,
+      "Logo layout should not rely on flex in email header",
+    );
+    assertEquals(
+      html.includes("height: 18px; width: auto; max-width: 108px;"),
+      true,
+      "Logo should use compact ratio-preserving size in header",
+    );
+    assertEquals(
+      html.includes("background-color: rgba(255,255,255,0.96);"),
+      false,
+      "Logo wrapper should not force white background",
+    );
+    assertEquals(
+      html.includes("height: 40px; width: 40px;"),
+      false,
+      "Logo should not be forced into square dimensions",
+    );
+    assertEquals(
+      html.includes("https://cdn.example.com/logo-new.png"),
+      true,
+      "Logo should use provided custom URL",
+    );
+    assertEquals(
+      html.includes("訂單成立通知"),
+      true,
+      "Missing header subtitle for confirmation email",
+    );
+    assertEquals(html.includes("配送到府"), true, "Missing delivery method");
+    assertEquals(html.includes("貨到付款"), true, "Missing payment method");
+  },
 });
 
 Deno.test("Email Templates - Shipping Notification", () => {
