@@ -957,7 +957,7 @@
             <img id="settings-brand-logo" src="../../../icons/logo.png" alt="" class="ui-icon-inline-lg">
             品牌設定
           </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 settings-two-col-grid">
             <div>
               <label class="block text-sm ui-text-strong mb-1">網站標題</label>
               <input
@@ -977,7 +977,7 @@
               >
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 settings-two-col-grid">
             <div>
               <label class="block text-sm ui-text-strong mb-1"
               >備援文字圖示（可留空）</label>
