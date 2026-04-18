@@ -20,10 +20,13 @@ import {
   createProductsActionHandlers,
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
+import { createPromotionsController } from "./dashboard/modules/promotions.js";
+import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
 } from "./dashboard/modules/settings.js";
+import { createBankAccountsController } from "./dashboard/modules/bank-accounts.js";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
@@ -38,9 +41,6 @@ let orders = [];
 let selectedOrderIds = new Set();
 let users = [];
 let blacklist = [];
-let bankAccounts = [];
-let bankAccountsSortable = null;
-window.promotions = [];
 let dashboardSettings = {};
 let settingsLoadToken = 0;
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
@@ -193,6 +193,38 @@ function getAuthUserId() {
   if (!currentUser?.userId) throw new Error("請先登入");
   return currentUser.userId;
 }
+
+const bankAccountsController = createBankAccountsController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  Sortable: globalThis.Sortable,
+});
+const promotionsController = createPromotionsController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  Sortable: globalThis.Sortable,
+  getProducts: () => products,
+  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
+});
+const formFieldsController = createFormFieldsController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  Sortable: globalThis.Sortable,
+  getDashboardSettings: () => dashboardSettings,
+  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
+});
 
 function parseBooleanSetting(value, defaultValue = true) {
   if (value === undefined || value === null || value === "") {
@@ -362,10 +394,10 @@ window.toggleUserRole = toggleUserRole;
 window.toggleUserBlacklist = toggleUserBlacklist;
 window.loadBlacklist = loadBlacklist;
 window.esc = esc;
-window.showAddFieldModal = showAddFieldModal;
-window.editFormField = editFormField;
-window.deleteFormField = deleteFormField;
-window.toggleFieldEnabled = toggleFieldEnabled;
+window.showAddFieldModal = formFieldsController.showAddFieldModal;
+window.editFormField = formFieldsController.editFormField;
+window.deleteFormField = formFieldsController.deleteFormField;
+window.toggleFieldEnabled = formFieldsController.toggleFieldEnabled;
 window.previewIcon = previewIcon;
 
 window.uploadSiteIcon = uploadSiteIcon;
@@ -377,14 +409,14 @@ window.applyIconFromLibrary = applyIconFromLibrary;
 window.resetSectionTitle = resetSectionTitle;
 window.refundOnlinePayOrder = refundOnlinePayOrder;
 window.linePayRefundOrder = (orderId) => refundOnlinePayOrder(orderId, "linepay");
-window.showAddBankAccountModal = showAddBankAccountModal;
-window.editBankAccount = editBankAccount;
-window.deleteBankAccount = deleteBankAccount;
-window.showPromotionModal = showPromotionModal;
-window.closePromotionModal = closePromotionModal;
-window.savePromotion = savePromotion;
-window.editPromotion = editPromotion;
-window.delPromotion = delPromotion;
+window.showAddBankAccountModal = bankAccountsController.showAddBankAccountModal;
+window.editBankAccount = bankAccountsController.editBankAccount;
+window.deleteBankAccount = bankAccountsController.deleteBankAccount;
+window.showPromotionModal = promotionsController.showPromotionModal;
+window.closePromotionModal = promotionsController.closePromotionModal;
+window.savePromotion = promotionsController.savePromotion;
+window.editPromotion = promotionsController.editPromotion;
+window.delPromotion = promotionsController.delPromotion;
 
 const dashboardActionHandlers = {
   "login-with-line": () => window.loginWithLine(),
@@ -409,20 +441,20 @@ const dashboardActionHandlers = {
   ...createProductsActionHandlers({
     showProductModal,
     addCategory,
-    showPromotionModal,
+    showPromotionModal: promotionsController.showPromotionModal,
     editProduct,
     delProduct,
     toggleProductEnabled,
     editCategory,
     delCategory,
-    editPromotion,
-    delPromotion,
-    togglePromotionEnabled,
+    editPromotion: promotionsController.editPromotion,
+    delPromotion: promotionsController.delPromotion,
+    togglePromotionEnabled: promotionsController.togglePromotionEnabled,
     addSpecRow,
     closeProductModal,
-    closePromotionModal,
+    closePromotionModal: promotionsController.closePromotionModal,
     renderCategories,
-    loadPromotions,
+    loadPromotions: promotionsController.loadPromotions,
   }),
   ...createSettingsActionHandlers({
     uploadSiteIcon,
@@ -433,16 +465,16 @@ const dashboardActionHandlers = {
     applyIconFromLibrary,
     resetSectionTitle,
     addDeliveryOptionAdmin,
-    showAddBankAccountModal,
+    showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
     saveSettings,
-    showAddFieldModal,
-    toggleFieldEnabled,
-    editFormField,
-    deleteFormField,
-    editBankAccount,
-    deleteBankAccount,
+    showAddFieldModal: formFieldsController.showAddFieldModal,
+    toggleFieldEnabled: formFieldsController.toggleFieldEnabled,
+    editFormField: formFieldsController.editFormField,
+    deleteFormField: formFieldsController.deleteFormField,
+    editBankAccount: bankAccountsController.editBankAccount,
+    deleteBankAccount: bankAccountsController.deleteBankAccount,
     loadSettings,
-    loadFormFields,
+    loadFormFields: formFieldsController.loadFormFields,
   }),
   ...createUsersActionHandlers({
     loadUsers,
@@ -454,8 +486,14 @@ const dashboardActionHandlers = {
 
 const dashboardTabLoaders = {
   ...createOrdersTabLoaders({ loadOrders }),
-  ...createProductsTabLoaders({ renderCategories, loadPromotions }),
-  ...createSettingsTabLoaders({ loadSettings, loadFormFields }),
+  ...createProductsTabLoaders({
+    renderCategories,
+    loadPromotions: promotionsController.loadPromotions,
+  }),
+  ...createSettingsTabLoaders({
+    loadSettings,
+    loadFormFields: formFieldsController.loadFormFields,
+  }),
   ...createUsersTabLoaders({ loadUsers, loadBlacklist }),
 };
 
@@ -3015,346 +3053,6 @@ async function updateCategoryOrders(ids) {
   }
 }
 
-// ============ 促銷活動管理 ============
-let promotionsMap = {};
-async function loadPromotions() {
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=getPromotions&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      window.promotions = d.promotions;
-      renderPromotions();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-function isVueManagedPromotionsTable(
-  table = document.getElementById("promotions-table"),
-) {
-  return table?.dataset?.vueManaged === "true";
-}
-
-function buildPromotionViewModel(promotion) {
-  const isPercent = promotion?.discountType === "percent";
-  const enabled = Boolean(promotion?.enabled);
-  return {
-    id: Number(promotion?.id) || 0,
-    name: promotion?.name || "",
-    conditionText: `任選 ${Number(promotion?.minQuantity) || 0} 件`,
-    discountText: isPercent
-      ? `${promotion?.discountValue} 折`
-      : `折 $${promotion?.discountValue}`,
-    enabled,
-    statusLabel: enabled ? "啟用" : "未啟用",
-    statusClass: enabled ? "ui-text-success" : "ui-text-muted",
-  };
-}
-
-function emitDashboardPromotionsUpdated(nextPromotions = window.promotions) {
-  const viewPromotions = (Array.isArray(nextPromotions) ? nextPromotions : [])
-    .map((promotion) => buildPromotionViewModel(promotion));
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-promotions-updated", {
-      detail: { promotions: viewPromotions },
-    }),
-  );
-}
-
-async function savePromotionSort(ids) {
-  const r = await authFetch(`${API_URL}?action=reorderPromotionsBulk`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: getAuthUserId(), ids }),
-  });
-  const d = await r.json();
-  if (!d.success) throw new Error(d.error);
-}
-
-function initializePromotionSortable(table) {
-  if (typeof Sortable === "undefined") return;
-  if (window.promoSortable) {
-    window.promoSortable.destroy();
-    window.promoSortable = null;
-  }
-  if (!table?.querySelector("tr[data-id]")) return;
-  window.promoSortable = Sortable.create(table, {
-    handle: ".drag-handle-promo",
-    animation: 150,
-    onEnd: async function (evt) {
-      if (evt.oldIndex === evt.newIndex) return;
-      const ids = Array.from(table.querySelectorAll("tr[data-id]"))
-        .map((tr) => Number.parseInt(tr.dataset.id || "", 10))
-        .filter((id) => !Number.isNaN(id));
-      try {
-        await savePromotionSort(ids);
-      } catch (e) {
-        Swal.fire("錯誤", e.message, "error");
-        loadPromotions();
-      }
-    },
-  });
-}
-
-function renderPromotions() {
-  const table = document.getElementById("promotions-table");
-  if (!table) return;
-  const proms = window.promotions || [];
-  promotionsMap = {};
-  proms.forEach((promotion) => {
-    promotionsMap[promotion.id] = promotion;
-  });
-
-  if (isVueManagedPromotionsTable(table)) {
-    emitDashboardPromotionsUpdated(proms);
-    requestAnimationFrame(() => initializePromotionSortable(table));
-    return;
-  }
-
-  table.innerHTML = "";
-  if (!proms.length) {
-    table.innerHTML =
-      '<tr><td colspan="5" class="text-center py-8 ui-text-subtle">尚無活動</td></tr>';
-    initializePromotionSortable(table);
-    return;
-  }
-
-  let html = "";
-  proms.forEach((promotion) => {
-    const viewPromotion = buildPromotionViewModel(promotion);
-    html += `
-        <tr class="border-b" style="border-color:#E2DCC8;" data-id="${viewPromotion.id}">
-            <td class="p-3 text-center">
-                <span class="drag-handle-promo cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
-                </span>
-            </td>
-            <td class="p-3 font-medium">${esc(viewPromotion.name)}</td>
-            <td class="p-3 text-sm ui-text-strong">${esc(viewPromotion.conditionText)} <span class="font-bold ui-text-danger">${esc(viewPromotion.discountText)}</span></td>
-            <td class="p-3 text-center"><button data-action="toggle-promotion-enabled" data-promotion-id="${viewPromotion.id}" data-enabled="${String(!viewPromotion.enabled)}" class="text-sm font-medium ${viewPromotion.statusClass} hover:underline">${viewPromotion.statusLabel}</button></td>
-            <td class="p-3 text-right">
-                <button data-action="edit-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm mr-2 ui-text-highlight">編輯</button>
-                <button data-action="delete-promotion" data-promotion-id="${viewPromotion.id}" class="text-sm ui-text-danger">刪除</button>
-            </td>
-        </tr>`;
-  });
-  table.innerHTML = html;
-  initializePromotionSortable(table);
-}
-
-function renderPromoProducts(selectedItems = []) {
-  const list = document.getElementById("prm-products-list");
-  if (!products.length) {
-    list.innerHTML = '<p class="ui-text-muted">目前沒有商品可選</p>';
-    return;
-  }
-
-  // selectedItems 現在是 [{"productId": 1, "specKey": "..."}]
-  const isSelected = (pid, skey) => {
-    return selectedItems.some((i) => i.productId === pid && i.specKey === skey);
-  };
-
-  let html = "";
-  products.forEach((p) => {
-    let specs = [];
-    try {
-      specs = JSON.parse(p.specs || "[]");
-    } catch (e) {}
-
-    if (specs.length === 0) {
-      // 無規格商品
-      html += `
-            <div class="mb-1 border-b pb-1 last:border-0" style="border-color:#E2DCC8">
-                <label class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded">
-                    <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="" ${
-        isSelected(p.id, "") ? "checked" : ""
-      }>
-                    <span class="ui-text-strong font-medium">[${
-        esc(p.category)
-      }] ${esc(p.name)}</span>
-                </label>
-            </div>`;
-    } else {
-      // 有規格商品：標題列 + 規格子選項
-      html += `
-            <div class="mb-2 border-b pb-1 last:border-0" style="border-color:#E2DCC8">
-                <div class="ui-text-strong font-medium p-1 ui-bg-soft rounded">[${
-        esc(p.category)
-      }] ${esc(p.name)}</div>
-                <div class="pl-4 mt-1 space-y-1">
-                    ${
-        specs.map((s) => `
-                        <label class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded text-sm">
-                            <input type="checkbox" class="promo-product-cb" data-pid="${p.id}" data-skey="${
-          esc(s.key)
-        }" ${isSelected(p.id, s.key) ? "checked" : ""}>
-                            <span class="ui-text-strong">${
-          esc(s.label)
-        } <span class="text-xs ui-text-muted">($${s.price})</span></span>
-                        </label>
-                    `).join("")
-      }
-                </div>
-            </div>`;
-    }
-  });
-
-  list.innerHTML = html;
-}
-
-function showPromotionModal() {
-  document.getElementById("prm-title").textContent = "新增活動";
-  document.getElementById("promotion-form").reset();
-  document.getElementById("prm-id").value = "";
-  document.getElementById("prm-enabled").checked = true;
-  renderPromoProducts([]);
-  document.getElementById("promotion-modal").classList.remove("hidden");
-}
-
-function editPromotion(id) {
-  const p = promotionsMap[id];
-  if (!p) return;
-  document.getElementById("prm-title").textContent = "編輯活動";
-  document.getElementById("prm-id").value = p.id;
-  document.getElementById("prm-name").value = p.name;
-  document.getElementById("prm-type").value = p.type || "bundle";
-  document.getElementById("prm-min-qty").value = p.minQuantity || 1;
-  document.getElementById("prm-discount-type").value = p.discountType ||
-    "percent";
-  document.getElementById("prm-discount-value").value = p.discountValue || 0;
-  document.getElementById("prm-enabled").checked = p.enabled;
-  // 相容舊版資料：如果沒有 targetItems，就將 targetProductIds 當作無規格商品轉換
-  let targetItems = p.targetItems || [];
-  if (
-    targetItems.length === 0 && p.targetProductIds &&
-    p.targetProductIds.length > 0
-  ) {
-    targetItems = p.targetProductIds.map((id) => ({
-      productId: id,
-      specKey: "",
-    }));
-  }
-  renderPromoProducts(targetItems);
-  document.getElementById("promotion-modal").classList.remove("hidden");
-}
-
-function closePromotionModal() {
-  document.getElementById("promotion-modal").classList.add("hidden");
-}
-
-async function savePromotion(e) {
-  e.preventDefault();
-  const id = document.getElementById("prm-id").value;
-  const cbs = document.querySelectorAll(".promo-product-cb:checked");
-  const targetItems = Array.from(cbs).map((cb) => ({
-    productId: parseInt(cb.dataset.pid),
-    specKey: cb.dataset.skey || "",
-  }));
-
-  const payload = {
-    userId: getAuthUserId(),
-    name: document.getElementById("prm-name").value.trim(),
-    type: document.getElementById("prm-type").value,
-    targetItems,
-    minQuantity: parseInt(document.getElementById("prm-min-qty").value) || 1,
-    discountType: document.getElementById("prm-discount-type").value,
-    discountValue:
-      parseFloat(document.getElementById("prm-discount-value").value) || 0,
-    enabled: document.getElementById("prm-enabled").checked,
-  };
-  if (id) payload.id = parseInt(id);
-
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=${id ? "updatePromotion" : "addPromotion"}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: id ? "已更新" : "已新增" });
-      closePromotionModal();
-      loadPromotions();
-    } else throw new Error(d.error);
-  } catch (err) {
-    Swal.fire("錯誤", err.message, "error");
-  }
-}
-
-async function delPromotion(id) {
-  const c = await Swal.fire({
-    title: "刪除活動？",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#DC322F",
-    confirmButtonText: "刪除",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=deletePromotion`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "已刪除" });
-      loadPromotions();
-    } else throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function togglePromotionEnabled(id, enabled) {
-  const promotion = promotionsMap[id];
-  if (!promotion) {
-    Swal.fire("錯誤", "找不到活動", "error");
-    return;
-  }
-
-  const payload = {
-    userId: getAuthUserId(),
-    id: Number(promotion.id),
-    name: promotion.name || "",
-    type: promotion.type || "bundle",
-    targetProductIds: Array.isArray(promotion.targetProductIds)
-      ? promotion.targetProductIds
-      : [],
-    targetItems: Array.isArray(promotion.targetItems) ? promotion.targetItems : [],
-    minQuantity: Number(promotion.minQuantity) || 1,
-    discountType: promotion.discountType || "percent",
-    discountValue: Number(promotion.discountValue) || 0,
-    enabled: Boolean(enabled),
-    startTime: promotion.startTime || null,
-    endTime: promotion.endTime || null,
-  };
-
-  try {
-    const r = await authFetch(`${API_URL}?action=updatePromotion`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const d = await r.json();
-    if (!d.success) throw new Error(d.error || "活動狀態更新失敗");
-    promotion.enabled = Boolean(enabled);
-    renderPromotions();
-    Toast.fire({
-      icon: "success",
-      title: enabled ? "活動已啟用" : "活動已停用",
-    });
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
 // ============ 設定 ============
 async function loadSettings() {
   const currentLoadToken = ++settingsLoadToken;
@@ -3572,7 +3270,7 @@ async function loadSettings() {
 
       // 載入匯款帳號
       if (currentLoadToken !== settingsLoadToken) return;
-      await loadBankAccountsAdmin();
+      await bankAccountsController.loadBankAccountsAdmin();
     }
   } catch (e) {
     console.error(e);
@@ -4285,494 +3983,6 @@ function renderBlacklist() {
   }).join("");
 }
 
-// ============ 表單欄位管理 ============
-let formFields = [];
-
-async function loadFormFields() {
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=getFormFieldsAdmin&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      formFields = d.fields || [];
-      renderFormFields();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-const FIELD_TYPE_LABELS = {
-  text: "文字",
-  email: "Email",
-  tel: "電話",
-  number: "數字",
-  select: "下拉選單",
-  checkbox: "勾選框",
-  textarea: "多行文字",
-  section_title: "區塊標題",
-};
-
-function isVueManagedFormFieldsList(
-  container = document.getElementById("formfields-list"),
-) {
-  return container?.dataset?.vueManaged === "true";
-}
-
-function getHiddenDeliveryMethodsText(deliveryVisibility) {
-  if (!deliveryVisibility) return "";
-  try {
-    const visibilityConfig = JSON.parse(deliveryVisibility);
-    const hiddenDeliveryMethods = Object.entries(visibilityConfig)
-      .filter(([, visible]) => visible === false)
-      .map(([deliveryMethod]) => deliveryMethod);
-    if (!hiddenDeliveryMethods.length) return "";
-    return `在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
-  } catch {
-    return "";
-  }
-}
-
-function buildFormFieldViewModel(field) {
-  return {
-    id: Number(field?.id) || 0,
-    label: field?.label || "",
-    fieldTypeLabel: FIELD_TYPE_LABELS[field?.field_type] || field?.field_type ||
-      "",
-    required: Boolean(field?.required),
-    enabled: Boolean(field?.enabled),
-    fieldKey: field?.field_key || "",
-    placeholder: field?.placeholder || "",
-    hiddenDeliveryMethodsText: getHiddenDeliveryMethodsText(
-      field?.delivery_visibility,
-    ),
-    toggleEnabledValue: String(!field?.enabled),
-    toggleEnabledTitle: field?.enabled ? "停用" : "啟用",
-    toggleEnabledIcon: field?.enabled ? "開" : "關",
-  };
-}
-
-function emitDashboardFormFieldsUpdated(nextFields = formFields) {
-  const viewFields = (Array.isArray(nextFields) ? nextFields : [])
-    .map((field) => buildFormFieldViewModel(field));
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-formfields-updated", {
-      detail: { fields: viewFields },
-    }),
-  );
-}
-
-function initializeFormFieldsSortable(container) {
-  if (typeof Sortable === "undefined") return;
-  if (window.formFieldsSortable) {
-    window.formFieldsSortable.destroy();
-    window.formFieldsSortable = null;
-  }
-  if (!container?.querySelector("[data-field-id]")) return;
-  window.formFieldsSortable = new Sortable(container, {
-    handle: ".drag-handle",
-    animation: 150,
-    onEnd: async () => {
-      const ids = Array.from(container.querySelectorAll("[data-field-id]"))
-        .map((el) => Number.parseInt(el.dataset.fieldId || "", 10))
-        .filter((id) => !Number.isNaN(id));
-      try {
-        await authFetch(`${API_URL}?action=reorderFormFields`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: getAuthUserId(), ids }),
-        });
-        Toast.fire({ icon: "success", title: "排序已更新" });
-      } catch (e) {
-        console.error(e);
-      }
-    },
-  });
-}
-
-function renderFormFields() {
-  const container = document.getElementById("formfields-list");
-  if (!container) return;
-
-  if (isVueManagedFormFieldsList(container)) {
-    emitDashboardFormFieldsUpdated(formFields);
-    requestAnimationFrame(() => {
-      initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
-    });
-    return;
-  }
-
-  if (!formFields.length) {
-    container.innerHTML =
-      '<p class="text-center ui-text-subtle py-8">尚無自訂欄位</p>';
-    initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
-    return;
-  }
-
-  container.innerHTML = `
-        <div class="space-y-2" id="formfields-sortable">
-            ${
-    formFields.map((f) => {
-      const viewField = buildFormFieldViewModel(f);
-      const requiredBadge = viewField.required
-        ? '<span class="text-xs bg-red-100 ui-text-danger px-2 py-0.5 rounded-full">必填</span>'
-        : "";
-      const enabledClass = viewField.enabled ? "" : "opacity-50";
-      const isProtected = false;
-      return `
-                <div class="flex items-center gap-3 p-3 bg-white rounded-xl border ${enabledClass}" style="border-color:#E2DCC8;" data-field-id="${viewField.id}">
-                    <span class="cursor-grab ui-text-muted drag-handle">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
-                    </span>
-                    <div class="flex-1">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="font-medium">${esc(viewField.label)}</span>
-                            <span class="text-xs ui-primary-soft ui-text-highlight px-2 py-0.5 rounded-full">${esc(viewField.fieldTypeLabel)}</span>
-                            ${requiredBadge}
-                            ${
-        !viewField.enabled
-          ? '<span class="text-xs ui-bg-soft ui-text-subtle px-2 py-0.5 rounded-full">已停用</span>'
-          : ""
-      }
-                            ${
-        isProtected
-          ? '<span class="text-xs bg-yellow-50 text-yellow-600 px-2 py-0.5 rounded-full">系統</span>'
-          : ""
-      }
-                        </div>
-                        <div class="text-xs ui-text-muted mt-1">key: ${esc(viewField.fieldKey)} ${viewField.placeholder ? "・" + esc(viewField.placeholder) : ""}</div>
-                        ${
-        viewField.hiddenDeliveryMethodsText
-          ? `<div class="text-xs text-orange-500 mt-1">${
-            esc(viewField.hiddenDeliveryMethodsText)
-          }</div>`
-          : ""
-      }
-                    </div>
-                    <div class="flex gap-1 items-center">
-                        <button data-action="toggle-field-enabled" data-field-id="${viewField.id}" data-enabled="${viewField.toggleEnabledValue}" class="text-sm px-2 py-1 rounded hover:ui-bg-soft" title="${viewField.toggleEnabledTitle}">${viewField.toggleEnabledIcon}</button>
-                        <button data-action="edit-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:ui-bg-soft" title="編輯">編輯</button>
-                        ${
-        !isProtected
-          ? `<button data-action="delete-form-field" data-field-id="${viewField.id}" class="text-sm px-2 py-1 rounded hover:bg-red-50 ui-text-danger" title="刪除">刪除</button>`
-          : ""
-      }
-                    </div>
-                </div>`;
-    }).join("")
-  }
-        </div>`;
-
-  initializeFormFieldsSortable(document.getElementById("formfields-sortable"));
-}
-
-/** 渲染配送方式可見性 Checkbox 到 #swal-dv 容器 */
-function renderDeliveryVisibilityCheckboxes(existingVisibility) {
-  const container = document.getElementById("swal-dv");
-  if (!container) return;
-  // 從 delivery_options_config 取得所有配送方式
-  const configStr = dashboardSettings?.delivery_options_config || "";
-  let deliveryOptions = [];
-  if (configStr) {
-    try {
-      deliveryOptions = JSON.parse(configStr);
-    } catch {}
-  }
-  if (!deliveryOptions.length) {
-    container.innerHTML =
-      '<p class="text-xs ui-text-muted">尚未設定配送方式</p>';
-    return;
-  }
-  let vis = {};
-  if (existingVisibility) {
-    try {
-      vis = JSON.parse(existingVisibility);
-    } catch {}
-  }
-  container.innerHTML = deliveryOptions.map((opt) => {
-    const checked = vis[opt.id] !== false; // null/undefined/true 都是 checked
-    return `<label class="flex items-center gap-1 text-sm cursor-pointer px-2 py-1 rounded-lg border" style="border-color:#E2DCC8">
-            <input type="checkbox" class="dv-cb" data-delivery-id="${
-      esc(opt.id)
-    }" ${checked ? "checked" : ""}> ${esc(opt.label || opt.id)}
-        </label>`;
-  }).join("");
-}
-
-/** 收集 #swal-dv 中的勾選狀態，回傳 JSON 字串或 null */
-function collectDeliveryVisibility() {
-  const cbs = document.querySelectorAll(".dv-cb");
-  if (!cbs.length) return null;
-  const vis = {};
-  cbs.forEach((cb) => {
-    vis[cb.dataset.deliveryId] = cb.checked;
-  });
-  return JSON.stringify(vis);
-}
-
-async function showAddFieldModal() {
-  const { value: formValues } = await Swal.fire({
-    title: "新增欄位",
-    html: `
-            <div style="text-align:left;">
-                <label class="block text-sm mb-1 font-medium">欄位識別碼 (英文，唯一)</label>
-                <input id="swal-fk" class="swal2-input" placeholder="例：receipt_type" style="margin:0 0 12px 0;width:100%">
-                <label class="block text-sm mb-1 font-medium">顯示名稱</label>
-                <input id="swal-fl" class="swal2-input" placeholder="例：開立收據" style="margin:0 0 12px 0;width:100%">
-                <label class="block text-sm mb-1 font-medium">類型</label>
-                <select id="swal-ft" class="swal2-select" style="margin:0 0 12px 0;width:100%">
-                    <option value="text">文字</option>
-                    <option value="email">Email</option>
-                    <option value="tel">電話</option>
-                    <option value="number">數字</option>
-                    <option value="select">下拉選單</option>
-                    <option value="checkbox">勾選框</option>
-                    <option value="textarea">多行文字</option>
-                </select>
-                <label class="block text-sm mb-1 font-medium">提示文字 (placeholder)</label>
-                <input id="swal-fp" class="swal2-input" placeholder="例：請選擇" style="margin:0 0 12px 0;width:100%">
-                <label class="block text-sm mb-1 font-medium">選項 (僅下拉選單，逗號分隔)</label>
-                <input id="swal-fo" class="swal2-input" placeholder="例：二聯式,三聯式,免開" style="margin:0 0 12px 0;width:100%">
-                <label class="flex items-center gap-2 cursor-pointer mt-2">
-                    <input type="checkbox" id="swal-fr"> <span class="text-sm">必填</span>
-                </label>
-                <div class="mt-3 pt-3 border-t" style="border-color:#E2DCC8">
-                    <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
-                    <p class="text-xs ui-text-muted mb-2">取消勾選 = 該配送方式下不顯示此欄位，全勾 = 全部顯示</p>
-                    <div id="swal-dv" class="flex flex-wrap gap-2"></div>
-                </div>
-            </div>`,
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: "新增",
-    cancelButtonText: "取消",
-    confirmButtonColor: "#268BD2",
-    didOpen: () => renderDeliveryVisibilityCheckboxes(null),
-    preConfirm: () => {
-      const fieldKey = document.getElementById("swal-fk").value.trim();
-      const label = document.getElementById("swal-fl").value.trim();
-      if (!fieldKey || !label) {
-        Swal.showValidationMessage("識別碼和名稱為必填");
-        return false;
-      }
-      const fieldType = document.getElementById("swal-ft").value;
-      const placeholder = document.getElementById("swal-fp").value.trim();
-      const optionsRaw = document.getElementById("swal-fo").value.trim();
-      const options = optionsRaw
-        ? JSON.stringify(
-          optionsRaw.split(",").map((s) => s.trim()).filter(Boolean),
-        )
-        : "";
-      const required = document.getElementById("swal-fr").checked;
-      const deliveryVisibility = collectDeliveryVisibility();
-      return {
-        fieldKey,
-        label,
-        fieldType,
-        placeholder,
-        options,
-        required,
-        deliveryVisibility,
-      };
-    },
-  });
-
-  // Swal didOpen callback 不能在這裡，改用 setTimeout
-  // 實際上我們需要在 Swal 打開後渲染配送方式 checkbox
-  // 但 SweetAlert2 的 didOpen 已在上面的 html 欄位處處理
-  // 所以我們在這邊用 Swal.getHtmlContainer 不太方便
-  // 改用另一個方式：在 showAddFieldModal 和 editFormField 中使用 didOpen
-
-  if (!formValues) return;
-
-  // 如果全部都是 true 就存 null（= 全部顯示）
-  if (formValues.deliveryVisibility) {
-    try {
-      const vis = JSON.parse(formValues.deliveryVisibility);
-      if (Object.values(vis).every((v) => v === true)) {
-        formValues.deliveryVisibility = null;
-      }
-    } catch {}
-  }
-
-  try {
-    Swal.fire({
-      title: "新增中...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-    const r = await authFetch(`${API_URL}?action=addFormField`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), ...formValues }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "欄位已新增" });
-      loadFormFields();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function editFormField(id) {
-  const f = formFields.find((x) => x.id === id);
-  if (!f) return;
-
-  const optionsStr = (() => {
-    try {
-      return JSON.parse(f.options || "[]").join(",");
-    } catch {
-      return "";
-    }
-  })();
-
-  const { value: formValues } = await Swal.fire({
-    title: "編輯欄位",
-    html: `
-            <div style="text-align:left;">
-                <label class="block text-sm mb-1 font-medium">顯示名稱</label>
-                <input id="swal-fl" class="swal2-input" value="${
-      esc(f.label)
-    }" style="margin:0 0 12px 0;width:100%">
-                <label class="block text-sm mb-1 font-medium">類型</label>
-                <select id="swal-ft" class="swal2-select" style="margin:0 0 12px 0;width:100%">
-                    ${
-      Object.entries(FIELD_TYPE_LABELS).map(([k, v]) =>
-        `<option value="${k}" ${
-          k === f.field_type ? "selected" : ""
-        }>${v}</option>`
-      ).join("")
-    }
-                </select>
-                <label class="block text-sm mb-1 font-medium">提示文字</label>
-                <input id="swal-fp" class="swal2-input" value="${
-      esc(f.placeholder || "")
-    }" style="margin:0 0 12px 0;width:100%">
-                <label class="block text-sm mb-1 font-medium">選項 (下拉選單，逗號分隔)</label>
-                <input id="swal-fo" class="swal2-input" value="${
-      esc(optionsStr)
-    }" style="margin:0 0 12px 0;width:100%">
-                <label class="flex items-center gap-2 cursor-pointer mt-2">
-                    <input type="checkbox" id="swal-fr" ${
-      f.required ? "checked" : ""
-    }> <span class="text-sm">必填</span>
-                </label>
-                <div class="mt-3 pt-3 border-t" style="border-color:#E2DCC8">
-                    <label class="block text-sm mb-1 font-medium">配送方式可見性</label>
-                    <p class="text-xs ui-text-muted mb-2">取消勾選 = 該配送方式下不顯示此欄位</p>
-                    <div id="swal-dv" class="flex flex-wrap gap-2"></div>
-                </div>
-            </div>`,
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: "儲存",
-    cancelButtonText: "取消",
-    confirmButtonColor: "#268BD2",
-    didOpen: () =>
-      renderDeliveryVisibilityCheckboxes(f.delivery_visibility || null),
-    preConfirm: () => {
-      const label = document.getElementById("swal-fl").value.trim();
-      if (!label) {
-        Swal.showValidationMessage("名稱為必填");
-        return false;
-      }
-      const fieldType = document.getElementById("swal-ft").value;
-      const placeholder = document.getElementById("swal-fp").value.trim();
-      const optionsRaw = document.getElementById("swal-fo").value.trim();
-      const options = optionsRaw
-        ? JSON.stringify(
-          optionsRaw.split(",").map((s) => s.trim()).filter(Boolean),
-        )
-        : "";
-      const required = document.getElementById("swal-fr").checked;
-      const deliveryVisibility = collectDeliveryVisibility();
-      return {
-        label,
-        fieldType,
-        placeholder,
-        options,
-        required,
-        deliveryVisibility,
-      };
-    },
-  });
-
-  if (!formValues) return;
-
-  if (formValues.deliveryVisibility) {
-    try {
-      const vis = JSON.parse(formValues.deliveryVisibility);
-      if (Object.values(vis).every((v) => v === true)) {
-        formValues.deliveryVisibility = null;
-      }
-    } catch {}
-  }
-
-  try {
-    const r = await authFetch(`${API_URL}?action=updateFormField`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id, ...formValues }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "已更新" });
-      loadFormFields();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function deleteFormField(id) {
-  const f = formFields.find((x) => x.id === id);
-  const confirm = await Swal.fire({
-    title: "確認刪除",
-    text: `確定要刪除「${f?.label || ""}」欄位嗎？`,
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "刪除",
-    cancelButtonText: "取消",
-    confirmButtonColor: "#DC322F",
-  });
-  if (!confirm.isConfirmed) return;
-
-  try {
-    const r = await authFetch(`${API_URL}?action=deleteFormField`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "已刪除" });
-      loadFormFields();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function toggleFieldEnabled(id, enabled) {
-  try {
-    const r = await authFetch(`${API_URL}?action=updateFormField`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id, enabled }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: enabled ? "已啟用" : "已停用" });
-      loadFormFields();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
 // ============ Icon 上傳 ============
 function previewIcon(input) {
   if (!(input instanceof HTMLInputElement)) return;
@@ -5252,215 +4462,3 @@ window.confirmTransferPayment = async function (orderId) {
     Swal.fire("錯誤", e.message, "error");
   }
 };
-
-// ============ 匯款帳號管理 ============
-async function loadBankAccountsAdmin() {
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=getBankAccounts&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      bankAccounts = d.accounts || [];
-      renderBankAccountsAdmin();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-function renderBankAccountsAdmin() {
-  const container = document.getElementById("bank-accounts-admin-list");
-  if (!container) return;
-  if (!bankAccounts.length) {
-    if (bankAccountsSortable) {
-      bankAccountsSortable.destroy();
-      bankAccountsSortable = null;
-    }
-    container.innerHTML = '<p class="text-sm ui-text-subtle">尚無匯款帳號</p>';
-    return;
-  }
-  container.innerHTML = `
-    <p class="text-xs ui-text-subtle mb-2">可拖曳左側排序圖示自由排序匯款帳號</p>
-    <div id="bank-accounts-sortable" class="space-y-2">
-      ${
-    bankAccounts.map((b) => `
-          <div class="flex items-center justify-between p-3 rounded-lg" data-account-id="${b.id}" style="background:#FFFDF7; border:1px solid #E2DCC8;">
-              <div class="flex items-start gap-3 min-w-0">
-                  <span class="drag-handle-bank cursor-move ui-text-muted hover:ui-text-strong select-none pt-1" title="拖曳排序">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon-sm"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
-                  </span>
-                  <div>
-                      <div class="font-medium">${esc(b.bankName)} (${
-      esc(b.bankCode)
-    })</div>
-                      <div class="text-sm font-mono ui-text-strong">${
-      esc(b.accountNumber)
-    }</div>
-                      ${
-      b.accountName
-        ? `<div class="text-xs ui-text-muted">戶名: ${esc(b.accountName)}</div>`
-        : ""
-    }
-                  </div>
-              </div>
-              <div class="flex gap-2 shrink-0">
-                  <button data-action="edit-bank-account" data-bank-account-id="${b.id}" class="text-sm ui-text-highlight">編輯</button>
-                  <button data-action="delete-bank-account" data-bank-account-id="${b.id}" class="text-sm ui-text-danger">刪除</button>
-              </div>
-          </div>
-      `).join("")
-  }
-    </div>`;
-
-  const sortableRoot = document.getElementById("bank-accounts-sortable");
-  if (!sortableRoot || typeof Sortable === "undefined") return;
-  if (bankAccountsSortable) {
-    bankAccountsSortable.destroy();
-  }
-  bankAccountsSortable = new Sortable(sortableRoot, {
-    handle: ".drag-handle-bank",
-    animation: 150,
-    ghostClass: "ui-bg-soft",
-    onEnd: async (evt) => {
-      if (evt.oldIndex === evt.newIndex) return;
-      const ids = Array.from(
-        sortableRoot.querySelectorAll("[data-account-id]"),
-      ).map((el) => parseInt(el.dataset.accountId, 10)).filter((id) =>
-        Number.isInteger(id)
-      );
-      if (!ids.length) return;
-      try {
-        const r = await authFetch(`${API_URL}?action=reorderBankAccounts`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: getAuthUserId(), ids }),
-        });
-        const d = await r.json();
-        if (!d.success) throw new Error(d.error || "排序更新失敗");
-        Toast.fire({ icon: "success", title: "排序已更新" });
-      } catch (e) {
-        Swal.fire("錯誤", e.message, "error");
-        loadBankAccountsAdmin();
-      }
-    },
-  });
-}
-
-async function showAddBankAccountModal() {
-  const { value: formValues } = await Swal.fire({
-    title: "新增匯款帳號",
-    html: `<div style="text-align:left;">
-            <label class="block text-sm mb-1 font-medium">銀行代碼</label>
-            <input id="swal-bc" class="swal2-input" placeholder="例：013" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">銀行名稱</label>
-            <input id="swal-bn" class="swal2-input" placeholder="例：國泰世華" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">帳號</label>
-            <input id="swal-an" class="swal2-input" placeholder="帳號號碼" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">戶名（選填）</label>
-            <input id="swal-am" class="swal2-input" placeholder="戶名" style="margin:0 0 12px 0;width:100%">
-        </div>`,
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: "新增",
-    cancelButtonText: "取消",
-    preConfirm: () => ({
-      bankCode: document.getElementById("swal-bc").value.trim(),
-      bankName: document.getElementById("swal-bn").value.trim(),
-      accountNumber: document.getElementById("swal-an").value.trim(),
-      accountName: document.getElementById("swal-am").value.trim(),
-    }),
-  });
-  if (!formValues || !formValues.bankCode || !formValues.accountNumber) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=addBankAccount`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), ...formValues }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "帳號已新增" });
-      loadBankAccountsAdmin();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function editBankAccount(id) {
-  const b = bankAccounts.find((a) => a.id === id);
-  if (!b) return;
-  const { value: formValues } = await Swal.fire({
-    title: "編輯匯款帳號",
-    html: `<div style="text-align:left;">
-            <label class="block text-sm mb-1 font-medium">銀行代碼</label>
-            <input id="swal-bc" class="swal2-input" value="${
-      esc(b.bankCode)
-    }" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">銀行名稱</label>
-            <input id="swal-bn" class="swal2-input" value="${
-      esc(b.bankName)
-    }" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">帳號</label>
-            <input id="swal-an" class="swal2-input" value="${
-      esc(b.accountNumber)
-    }" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">戶名（選填）</label>
-            <input id="swal-am" class="swal2-input" value="${
-      esc(b.accountName || "")
-    }" style="margin:0 0 12px 0;width:100%">
-        </div>`,
-    focusConfirm: false,
-    showCancelButton: true,
-    confirmButtonText: "更新",
-    cancelButtonText: "取消",
-    preConfirm: () => ({
-      bankCode: document.getElementById("swal-bc").value.trim(),
-      bankName: document.getElementById("swal-bn").value.trim(),
-      accountNumber: document.getElementById("swal-an").value.trim(),
-      accountName: document.getElementById("swal-am").value.trim(),
-    }),
-  });
-  if (!formValues) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=updateBankAccount`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id, ...formValues }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "帳號已更新" });
-      loadBankAccountsAdmin();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function deleteBankAccount(id) {
-  const c = await Swal.fire({
-    title: "刪除帳號？",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#DC322F",
-    confirmButtonText: "刪除",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=deleteBankAccount`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "帳號已刪除" });
-      loadBankAccountsAdmin();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
