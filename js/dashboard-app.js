@@ -20,6 +20,7 @@ import {
   createProductsActionHandlers,
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
+import { createProductsController } from "./dashboard/modules/products-controller.js";
 import { createPromotionsController } from "./dashboard/modules/promotions.js";
 import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
@@ -275,6 +276,22 @@ const usersController = createUsersController({
   Swal: globalThis.Swal,
   esc,
 });
+const productsController = createProductsController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  getProducts: () => products,
+  setProducts: (nextProducts) => {
+    products = Array.isArray(nextProducts) ? nextProducts : [];
+  },
+  getCategories: () => categories,
+  ensureCategoriesLoaded: () => categoriesController.loadCategories(),
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  Sortable: globalThis.Sortable,
+  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
+});
 const categoriesController = createCategoriesController({
   API_URL,
   authFetch,
@@ -283,7 +300,7 @@ const categoriesController = createCategoriesController({
   setCategories: (nextCategories) => {
     categories = Array.isArray(nextCategories) ? nextCategories : [];
   },
-  loadProducts,
+  loadProducts: productsController.loadProducts,
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
@@ -387,13 +404,13 @@ window.renderOrders = renderOrders;
 window.changeOrderStatus = changeOrderStatus;
 window.sendOrderEmailByOrderId = sendOrderEmailByOrderId;
 window.deleteOrderById = deleteOrderById;
-window.showProductModal = showProductModal;
-window.editProduct = editProduct;
-window.closeProductModal = closeProductModal;
-window.saveProduct = saveProduct;
-window.delProduct = delProduct;
-window.moveProduct = moveProduct;
-window.addSpecRow = addSpecRow;
+window.showProductModal = productsController.showProductModal;
+window.editProduct = productsController.editProduct;
+window.closeProductModal = productsController.closeProductModal;
+window.saveProduct = productsController.saveProduct;
+window.delProduct = productsController.delProduct;
+window.moveProduct = productsController.moveProduct;
+window.addSpecRow = productsController.addSpecRow;
 window.addCategory = categoriesController.addCategory;
 window.editCategory = categoriesController.editCategory;
 window.delCategory = categoriesController.delCategory;
@@ -449,19 +466,19 @@ const dashboardActionHandlers = {
     Toast,
   }),
   ...createProductsActionHandlers({
-    showProductModal,
+    showProductModal: productsController.showProductModal,
     addCategory: categoriesController.addCategory,
     showPromotionModal: promotionsController.showPromotionModal,
-    editProduct,
-    delProduct,
-    toggleProductEnabled,
+    editProduct: productsController.editProduct,
+    delProduct: productsController.delProduct,
+    toggleProductEnabled: productsController.toggleProductEnabled,
     editCategory: categoriesController.editCategory,
     delCategory: categoriesController.delCategory,
     editPromotion: promotionsController.editPromotion,
     delPromotion: promotionsController.delPromotion,
     togglePromotionEnabled: promotionsController.togglePromotionEnabled,
-    addSpecRow,
-    closeProductModal,
+    addSpecRow: productsController.addSpecRow,
+    closeProductModal: productsController.closeProductModal,
     closePromotionModal: promotionsController.closePromotionModal,
     renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
@@ -529,7 +546,7 @@ export function initDashboardApp() {
     showTab,
     window.loadUsers,
     window.previewIcon,
-    window.saveProduct,
+    productsController.saveProduct,
     window.savePromotion,
     window.changeOrderStatus,
     window.renderOrders,
@@ -626,7 +643,7 @@ async function showAdmin() {
     "管理員";
   await Promise.all([
     categoriesController.loadCategories(),
-    loadProducts(),
+    productsController.loadProducts(),
     settingsController.loadSettings(),
   ]);
   showTab("orders");
@@ -2456,426 +2473,6 @@ function exportSelectedOrdersCsv() {
   const csvText = buildOrdersCsv(selectedOrders);
   triggerCsvDownload(`orders-selected-${getCsvTimestamp()}.csv`, csvText);
   Toast.fire({ icon: "success", title: `已匯出 ${selectedOrders.length} 筆` });
-}
-
-// ============ 商品管理 ============
-async function loadProducts() {
-  try {
-    const r = await authFetch(`${API_URL}?action=getProducts&_=${Date.now()}`);
-    const d = await r.json();
-    if (d.success) {
-      products = d.products;
-      renderProducts();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-let productsMap = {};
-function isVueManagedProductsTable(
-  table = document.getElementById("products-main-table"),
-) {
-  return table?.dataset?.vueManaged === "true";
-}
-
-function getProductPriceLines(product) {
-  try {
-    const specs = product.specs ? JSON.parse(product.specs) : [];
-    const enabled = specs.filter((spec) => spec.enabled);
-    if (enabled.length > 0) {
-      return enabled.map((spec) => ({
-        label: spec.label || "",
-        price: Number(spec.price) || 0,
-        isSpec: true,
-      }));
-    }
-  } catch {}
-  return [{ label: "", price: Number(product.price) || 0, isSpec: false }];
-}
-
-function buildProductViewModel(product) {
-  const enabled = Boolean(product?.enabled);
-  return {
-    id: Number(product?.id) || 0,
-    category: product?.category || "",
-    name: product?.name || "",
-    description: product?.description || "",
-    roastLevel: product?.roastLevel || "",
-    enabled,
-    statusLabel: enabled ? "啟用" : "未啟用",
-    statusClass: enabled ? "ui-text-success" : "ui-text-muted",
-    priceLines: getProductPriceLines(product),
-  };
-}
-
-function buildGroupedProductsViewModel(nextProducts = products) {
-  const grouped = {};
-  (Array.isArray(nextProducts) ? nextProducts : []).forEach((product) => {
-    const category = product?.category || "";
-    if (!grouped[category]) grouped[category] = [];
-    grouped[category].push(buildProductViewModel(product));
-  });
-  const categoryOrder = categories.map((category) => category.name);
-  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    const ia = categoryOrder.indexOf(a);
-    const ib = categoryOrder.indexOf(b);
-    if (ia === -1) return 1;
-    if (ib === -1) return -1;
-    return ia - ib;
-  });
-  return sortedCategories.map((category) => ({
-    category,
-    items: grouped[category],
-  }));
-}
-
-function emitDashboardProductsUpdated(nextProducts = products) {
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-products-updated", {
-      detail: { groups: buildGroupedProductsViewModel(nextProducts) },
-    }),
-  );
-}
-
-function initializeProductSortables(table) {
-  if (typeof Sortable === "undefined") return;
-  if (Array.isArray(window.productSortables)) {
-    window.productSortables.forEach((sortable) => sortable?.destroy?.());
-  }
-  window.productSortables = [];
-  if (!table) return;
-
-  const sortables = table.querySelectorAll("tbody.sortable-tbody");
-  sortables.forEach((tbody) => {
-    if (!(tbody instanceof HTMLElement)) return;
-    if (!tbody.querySelector("tr[data-id]")) return;
-    const sortable = Sortable.create(tbody, {
-      handle: ".drag-handle",
-      animation: 150,
-      onEnd: async function (evt) {
-        if (evt.oldIndex === evt.newIndex) return;
-        const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
-          .map((tr) => Number.parseInt(tr.dataset.id || "", 10))
-          .filter((id) => !Number.isNaN(id));
-        await updateProductOrders(ids);
-      },
-    });
-    window.productSortables.push(sortable);
-  });
-}
-
-function renderProducts() {
-  const table = document.getElementById("products-main-table");
-  if (!table) return;
-
-  productsMap = {};
-  products.forEach((product) => {
-    productsMap[product.id] = product;
-  });
-
-  if (isVueManagedProductsTable(table)) {
-    emitDashboardProductsUpdated(products);
-    requestAnimationFrame(() => initializeProductSortables(table));
-    return;
-  }
-
-  table.querySelectorAll("tbody").forEach((el) => el.remove());
-
-  const grouped = buildGroupedProductsViewModel(products);
-  if (!grouped.length) {
-    const tbody = document.createElement("tbody");
-    tbody.innerHTML =
-      '<tr><td colspan="6" class="text-center py-8 ui-text-subtle">尚無商品</td></tr>';
-    table.appendChild(tbody);
-    initializeProductSortables(table);
-    return;
-  }
-
-  grouped.forEach((group) => {
-    const tbody = document.createElement("tbody");
-    tbody.className = "sortable-tbody";
-    tbody.dataset.cat = group.category;
-
-    let html = "";
-    group.items.forEach((product) => {
-      const priceDisplay = product.priceLines.map((line) =>
-        line.isSpec
-          ? `<div class="text-xs">${esc(line.label)}: $${line.price}</div>`
-          : `$${line.price}`
-      ).join("");
-          html += `
-            <tr class="border-b" style="border-color:#E2DCC8;" data-id="${product.id}">
-                <td class="p-3 text-center">
-                    <span class="drag-handle cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-2 inline-block" title="拖曳排序" style="touch-action: none;">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
-                    </span>
-                </td>
-                <td class="p-3 text-sm">${esc(product.category)}</td>
-                <td class="p-3">
-                    <div class="font-medium mb-1">${esc(product.name)}</div>
-                    <div class="text-xs ui-text-subtle">${
-        esc(product.description || "")
-      } ${product.roastLevel ? "・" + product.roastLevel : ""}</div>
-                </td>
-                <td class="p-3 text-right font-medium">${priceDisplay}</td>
-                <td class="p-3 text-center">
-                    <button data-action="toggle-product-enabled" data-product-id="${product.id}" data-enabled="${String(!product.enabled)}" class="text-sm font-medium ${product.statusClass} hover:underline">${product.statusLabel}</button>
-                </td>
-                <td class="p-3 text-center">
-                    <button data-action="edit-product" data-product-id="${product.id}" class="text-sm mr-2 ui-text-highlight">編輯</button>
-                    <button data-action="delete-product" data-product-id="${product.id}" class="text-sm ui-text-danger">刪除</button>
-                </td>
-            </tr>`;
-    });
-    tbody.innerHTML = html;
-    table.appendChild(tbody);
-  });
-  initializeProductSortables(table);
-}
-
-async function moveProduct(id, dir) {
-  // 保留這個 function 防止舊有代碼出錯，但不再被介面呼叫
-  try {
-    const r = await authFetch(`${API_URL}?action=reorderProduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id, direction: dir }),
-    });
-    const d = await r.json();
-    if (d.success) loadProducts();
-    else throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function updateProductOrders(ids) {
-  try {
-    const r = await authFetch(`${API_URL}?action=reorderProductsBulk`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), ids }),
-    });
-    const d = await r.json();
-    if (!d.success) throw new Error(d.error);
-    // 不強制重新 load products，保持畫面順暢，除非發生錯誤
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-    loadProducts(); // 錯誤時重新載入以恢復原狀
-  }
-}
-
-// ======== 預設規格模板 ========
-const defaultSpecs = [
-  { key: "quarter", label: "1/4磅", price: 0, enabled: true },
-  { key: "half", label: "半磅", price: 0, enabled: true },
-  { key: "drip_bag", label: "單包耳掛", price: 0, enabled: true },
-];
-
-function addSpecRow(specData) {
-  const container = document.getElementById("specs-container");
-  const s = specData || { key: "", label: "", price: 0, enabled: true };
-  const div = document.createElement("div");
-  div.className = "spec-row flex items-center gap-2 p-2 rounded-lg border";
-  div.style.borderColor = "#E2DCC8";
-  div.innerHTML = `
-        <label class="flex items-center"><input type="checkbox" class="spec-enabled w-4 h-4" ${
-    s.enabled ? "checked" : ""
-  }></label>
-        <input type="text" class="spec-label input-field text-sm py-1" value="${
-    esc(s.label)
-  }" placeholder="規格名稱" style="width:90px">
-        <span class="ui-text-subtle text-sm">$</span>
-        <input type="number" class="spec-price input-field text-sm py-1" value="${
-    s.price || ""
-  }" placeholder="價格" min="0" style="width:80px">
-        <button type="button" data-action="remove-spec-row" class="text-red-400 hover:ui-text-danger text-lg font-bold">&times;</button>
-    `;
-  container.appendChild(div);
-}
-
-function getSpecsFromForm() {
-  const rows = document.querySelectorAll("#specs-container > div");
-  const specs = [];
-  rows.forEach((row) => {
-    const label = row.querySelector(".spec-label").value.trim();
-    const price = parseInt(row.querySelector(".spec-price").value) || 0;
-    const enabled = row.querySelector(".spec-enabled").checked;
-    if (label) {
-      const key =
-        label.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "_").toLowerCase() ||
-        `spec_${Date.now()}`;
-      specs.push({ key, label, price, enabled });
-    }
-  });
-  return specs;
-}
-
-function loadSpecsToForm(specsStr) {
-  const container = document.getElementById("specs-container");
-  container.innerHTML = "";
-  let specs = [];
-  try {
-    if (specsStr) specs = JSON.parse(specsStr);
-  } catch {}
-  if (!specs.length) specs = JSON.parse(JSON.stringify(defaultSpecs));
-  specs.forEach((s) => addSpecRow(s));
-}
-
-async function showProductModal() {
-  if (!categories || !categories.length) await categoriesController.loadCategories();
-  document.getElementById("pm-title").textContent = "新增商品";
-  document.getElementById("product-form").reset();
-  document.getElementById("pm-id").value = "";
-  document.getElementById("pm-enabled").checked = true;
-  updateCategorySelect();
-  loadSpecsToForm("");
-  document.getElementById("product-modal").classList.remove("hidden");
-}
-
-async function editProduct(id) {
-  if (!categories || !categories.length) await categoriesController.loadCategories();
-  const p = productsMap[id];
-  if (!p) {
-    Swal.fire("錯誤", "找不到商品", "error");
-    return;
-  }
-  document.getElementById("pm-title").textContent = "編輯商品";
-  document.getElementById("pm-id").value = p.id;
-  updateCategorySelect();
-  document.getElementById("pm-category").value = p.category;
-  document.getElementById("pm-name").value = p.name;
-  document.getElementById("pm-desc").value = p.description || "";
-  document.getElementById("pm-roast").value = p.roastLevel || "";
-  document.getElementById("pm-enabled").checked = p.enabled;
-  loadSpecsToForm(p.specs || "");
-  document.getElementById("product-modal").classList.remove("hidden");
-}
-
-function closeProductModal() {
-  document.getElementById("product-modal").classList.add("hidden");
-}
-
-function updateCategorySelect() {
-  const sel = document.getElementById("pm-category");
-  sel.innerHTML = '<option value="">選擇分類</option>' +
-    categories.map((c) => `<option value="${c.name}">${c.name}</option>`).join(
-      "",
-    );
-}
-
-async function saveProduct(e) {
-  e.preventDefault();
-  const id = document.getElementById("pm-id").value;
-  const specs = getSpecsFromForm();
-  const enabledSpecs = specs.filter((s) => s.enabled);
-  if (!enabledSpecs.length) {
-    Swal.fire("錯誤", "請至少啟用一個規格", "error");
-    return;
-  }
-  const hasZeroPrice = enabledSpecs.some((s) => !s.price || s.price <= 0);
-  if (hasZeroPrice) {
-    Swal.fire("錯誤", "已啟用的規格必須設定價格", "error");
-    return;
-  }
-
-  const payload = {
-    userId: getAuthUserId(),
-    category: document.getElementById("pm-category").value,
-    name: document.getElementById("pm-name").value,
-    description: document.getElementById("pm-desc").value,
-    price: enabledSpecs[0]?.price || 0,
-    roastLevel: document.getElementById("pm-roast").value,
-    specs: JSON.stringify(specs),
-    enabled: document.getElementById("pm-enabled").checked,
-  };
-  if (id) payload.id = parseInt(id);
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=${id ? "updateProduct" : "addProduct"}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: id ? "已更新" : "已新增" });
-      closeProductModal();
-      loadProducts();
-    } else throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function delProduct(id) {
-  const c = await Swal.fire({
-    title: "刪除商品？",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#DC322F",
-    confirmButtonText: "刪除",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=deleteProduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "已刪除" });
-      loadProducts();
-    }
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function toggleProductEnabled(id, enabled) {
-  const product = productsMap[id];
-  if (!product) {
-    Swal.fire("錯誤", "找不到商品", "error");
-    return;
-  }
-
-  const payload = {
-    userId: getAuthUserId(),
-    id: Number(product.id),
-    category: product.category || "",
-    name: product.name || "",
-    description: product.description || "",
-    price: Number(product.price) || 0,
-    weight: product.weight || "",
-    origin: product.origin || "",
-    roastLevel: product.roastLevel || "",
-    specs: product.specs || "",
-    imageUrl: product.imageUrl || "",
-    enabled: Boolean(enabled),
-  };
-
-  try {
-    const r = await authFetch(`${API_URL}?action=updateProduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const d = await r.json();
-    if (!d.success) throw new Error(d.error || "商品狀態更新失敗");
-    product.enabled = Boolean(enabled);
-    renderProducts();
-    Toast.fire({
-      icon: "success",
-      title: enabled ? "商品已啟用" : "商品已停用",
-    });
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
 }
 
 // ============ 線上支付退款（LINE Pay / 街口） ============
