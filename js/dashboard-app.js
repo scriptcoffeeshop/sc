@@ -16,6 +16,7 @@ import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
 } from "./dashboard/modules/orders.js";
+import { createOrdersController } from "./dashboard/modules/orders-controller.js";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
@@ -328,6 +329,32 @@ const orderNotificationsController = createOrderNotificationsController({
   normalizeReceiptInfo,
   normalizeTrackingUrl,
 });
+const ordersController = createOrdersController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  getOrders: () => orders,
+  setOrders: (nextOrders) => {
+    orders = Array.isArray(nextOrders) ? nextOrders : [];
+  },
+  getSelectedOrderIdsState: () => selectedOrderIds,
+  setSelectedOrderIdsState: (nextSelectedOrderIds) => {
+    selectedOrderIds = nextSelectedOrderIds instanceof Set
+      ? nextSelectedOrderIds
+      : new Set(nextSelectedOrderIds || []);
+  },
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  orderStatusLabel,
+  orderMethodLabel,
+  orderPayMethodLabel,
+  orderPayStatusLabel,
+  orderStatusOptions,
+  normalizeReceiptInfo,
+  formatOrderDateTimeText,
+  normalizeTrackingUrl,
+});
 const productsController = createProductsController({
   API_URL,
   authFetch,
@@ -451,11 +478,11 @@ window.loginWithLine = () =>
   loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
 window.logout = logout;
 window.showTab = showTab;
-window.loadOrders = loadOrders;
-window.renderOrders = renderOrders;
+window.loadOrders = ordersController.loadOrders;
+window.renderOrders = ordersController.renderOrders;
 window.changeOrderStatus = changeOrderStatus;
 window.sendOrderEmailByOrderId = orderNotificationsController.sendOrderEmailByOrderId;
-window.deleteOrderById = deleteOrderById;
+window.deleteOrderById = ordersController.deleteOrderById;
 window.showProductModal = productsController.showProductModal;
 window.editProduct = productsController.editProduct;
 window.closeProductModal = productsController.closeProductModal;
@@ -501,19 +528,19 @@ const dashboardActionHandlers = {
   "login-with-line": () => window.loginWithLine(),
   "logout": () => logout(),
   ...createOrdersActionHandlers({
-    loadOrders,
+    loadOrders: ordersController.loadOrders,
     changeOrderStatus,
     sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
     sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
-    deleteOrderById,
+    deleteOrderById: ordersController.deleteOrderById,
     refundOnlinePayOrder,
     confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
-    toggleOrderSelection,
-    toggleSelectAllOrders,
-    batchUpdateOrders,
-    batchDeleteOrders,
-    exportFilteredOrdersCsv,
-    exportSelectedOrdersCsv,
+    toggleOrderSelection: ordersController.toggleOrderSelection,
+    toggleSelectAllOrders: ordersController.toggleSelectAllOrders,
+    batchUpdateOrders: ordersController.batchUpdateOrders,
+    batchDeleteOrders: ordersController.batchDeleteOrders,
+    exportFilteredOrdersCsv: ordersController.exportFilteredOrdersCsv,
+    exportSelectedOrdersCsv: ordersController.exportSelectedOrdersCsv,
     showFlexHistory: orderNotificationsController.showFlexHistory,
     Toast,
   }),
@@ -564,7 +591,7 @@ const dashboardActionHandlers = {
 };
 
 const dashboardTabLoaders = {
-  ...createOrdersTabLoaders({ loadOrders }),
+  ...createOrdersTabLoaders({ loadOrders: ordersController.loadOrders }),
   ...createProductsTabLoaders({
     renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
@@ -601,7 +628,7 @@ export function initDashboardApp() {
     productsController.saveProduct,
     window.savePromotion,
     window.changeOrderStatus,
-    window.renderOrders,
+    ordersController.renderOrders,
   );
   initializeDashboardEventDelegation();
   loadPublicDashboardBranding();
@@ -697,6 +724,7 @@ async function showAdmin() {
     categoriesController.loadCategories(),
     productsController.loadProducts(),
     settingsController.loadSettings(),
+    ordersController.loadOrders(),
   ]);
   showTab("orders");
 }
@@ -733,43 +761,6 @@ function showTab(tab) {
 
 // ============ 訂單管理 ============
 
-function isVueManagedOrdersList(container = document.getElementById("orders-list")) {
-  return container?.dataset?.vueManaged === "true";
-}
-
-function getTrackingLinkInfo(order) {
-  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
-  if (customTrackingUrl) {
-    return {
-      url: customTrackingUrl,
-      label: "物流追蹤頁面",
-    };
-  }
-  if (!order.trackingNumber) return null;
-  if (order.deliveryMethod === "seven_eleven") {
-    return {
-      url: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
-      label: "7-11貨態查詢",
-    };
-  }
-  if (order.deliveryMethod === "family_mart") {
-    return {
-      url: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
-      label: "全家貨態查詢",
-    };
-  }
-  if (
-    order.deliveryMethod === "delivery" ||
-    order.deliveryMethod === "home_delivery"
-  ) {
-    return {
-      url: "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100",
-      label: "中華郵政查詢",
-    };
-  }
-  return null;
-}
-
 function normalizeReceiptInfo(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const buyer = String(raw.buyer || "").trim();
@@ -788,226 +779,6 @@ function formatOrderDateTimeText(value) {
   return parsed.toLocaleString("zh-TW");
 }
 
-function buildReceiptSummaryHtml(receiptInfo) {
-  if (!receiptInfo) return "";
-  return `<div class="text-xs text-amber-800 ui-primary-soft p-2 rounded mt-2 border border-amber-100">
-            <div><span class="ui-text-subtle">統一編號：</span>${
-    esc(receiptInfo.taxId) || "未填寫"
-  }</div>
-            <div><span class="ui-text-subtle">收據買受人：</span>${
-    esc(receiptInfo.buyer) || "未填寫"
-  }</div>
-            <div><span class="ui-text-subtle">收據地址：</span>${
-    esc(receiptInfo.address) || "未填寫"
-  }</div>
-            <div><span class="ui-text-subtle">壓印日期：</span>${
-    receiptInfo.needDateStamp ? "需要" : "不需要"
-  }</div>
-          </div>`;
-}
-
-function buildOrderViewModel(order) {
-  const paymentMethod = order.paymentMethod || "cod";
-  const paymentStatus = String(order.paymentStatus || "").trim();
-  const paymentExpiresAt = String(order.paymentExpiresAt || "").trim();
-  const paymentLastCheckedAt = String(order.paymentLastCheckedAt || "").trim();
-  const paymentProviderStatusCode = String(order.paymentProviderStatusCode || "")
-    .trim();
-  const paymentExpiresAtText = formatOrderDateTimeText(paymentExpiresAt);
-  const paymentLastCheckedAtText = formatOrderDateTimeText(paymentLastCheckedAt);
-  const showPaymentDeadline = paymentMethod !== "cod" &&
-    Boolean(paymentExpiresAtText) &&
-    ["pending", "processing", "expired"].includes(paymentStatus);
-  const showPaymentMeta = paymentMethod !== "cod" && (
-    showPaymentDeadline ||
-    Boolean(paymentLastCheckedAtText) ||
-    Boolean(paymentProviderStatusCode)
-  );
-  const trackingLink = getTrackingLinkInfo(order);
-  const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
-  const addressInfo =
-    (order.deliveryMethod === "delivery" || order.deliveryMethod === "home_delivery")
-      ? `${order.city || ""}${order.district || ""} ${order.address || ""}`
-      : `${order.storeName || ""}${order.storeId ? ` [${order.storeId}]` : ""}${
-        order.storeAddress ? ` (${order.storeAddress})` : ""
-      }`;
-
-  return {
-    orderId: String(order.orderId || ""),
-    timestampText: new Date(order.timestamp).toLocaleString("zh-TW"),
-    deliveryMethod: order.deliveryMethod || "",
-    deliveryLabel: orderMethodLabel[order.deliveryMethod] || order.deliveryMethod,
-    status: order.status || "",
-    statusLabel: orderStatusLabel[order.status] || order.status || "",
-    paymentMethod,
-    paymentStatus,
-    paymentMethodLabel: orderPayMethodLabel[paymentMethod] || paymentMethod,
-    paymentStatusLabel: orderPayStatusLabel[paymentStatus] || paymentStatus,
-    payBadgeClass: paymentStatus === "paid"
-      ? "bg-green-50 text-green-700"
-      : paymentStatus === "processing"
-      ? "bg-blue-50 text-blue-700"
-      : paymentStatus === "pending"
-      ? "bg-yellow-50 text-yellow-700"
-      : paymentStatus === "failed" || paymentStatus === "cancelled" ||
-          paymentStatus === "expired"
-      ? "bg-red-50 text-red-700"
-      : paymentStatus === "refunded"
-      ? "bg-purple-50 text-purple-700"
-      : "ui-bg-soft ui-text-strong",
-    paymentExpiresAt,
-    paymentExpiresAtText,
-    paymentLastCheckedAt,
-    paymentLastCheckedAtText,
-    paymentProviderStatusCode,
-    showPaymentDeadline,
-    showPaymentMeta,
-    isSelected: selectedOrderIds.has(order.orderId),
-    lineUserId: order.lineUserId || "",
-    lineName: order.lineName || "",
-    phone: order.phone || "",
-    email: order.email || "",
-    addressInfo,
-    transferAccountLast5: order.transferAccountLast5 || "",
-    paymentId: order.paymentId || "",
-    showTransferInfo: paymentMethod === "transfer",
-    shippingProvider: order.shippingProvider || "",
-    trackingNumber: order.trackingNumber || "",
-    trackingLinkUrl: trackingLink?.url || "",
-    trackingLinkLabel: trackingLink?.label || "",
-    hasShippingInfo: Boolean(
-      order.trackingNumber || order.shippingProvider || trackingLink,
-    ),
-    items: order.items || "",
-    note: order.note || "",
-    cancelReason: String(order.cancelReason || "").trim(),
-    showCancellationReason:
-      String(order.status || "") === "cancelled" &&
-      Boolean(String(order.cancelReason || "").trim()),
-    receiptInfo,
-    showReceiptInfo: Boolean(receiptInfo),
-    total: Number(order.total) || 0,
-    showSendLineButton: Boolean(order.lineUserId),
-    showSendEmailButton: Boolean(order.email),
-    showRefundButton:
-      (paymentMethod === "linepay" || paymentMethod === "jkopay") &&
-      paymentStatus === "paid",
-    refundButtonText: paymentMethod === "jkopay" ? "街口退款" : "LINE退款",
-    showConfirmTransferButton:
-      paymentMethod === "transfer" && paymentStatus === "pending",
-  };
-}
-
-function emitDashboardOrdersUpdated(filteredOrders) {
-  if (!isVueManagedOrdersList()) return;
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-orders-updated", {
-      detail: {
-        orders: filteredOrders.map(buildOrderViewModel),
-        statusOptions: orderStatusOptions,
-      },
-    }),
-  );
-}
-
-function getOrderFilterValue(id, fallback = "all") {
-  const el = document.getElementById(id);
-  if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement)) {
-    return fallback;
-  }
-  if (el.value === undefined || el.value === null) return fallback;
-  return String(el.value).trim();
-}
-
-function parseDateBound(dateStr, isEnd = false) {
-  if (!dateStr) return null;
-  const parsed = new Date(`${dateStr}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return null;
-  if (isEnd) {
-    parsed.setHours(23, 59, 59, 999);
-  }
-  return parsed;
-}
-
-function getFilteredOrders() {
-  const status = getOrderFilterValue("order-filter");
-  const paymentMethod = getOrderFilterValue("order-payment-filter");
-  const paymentStatus = getOrderFilterValue("order-payment-status-filter");
-  const deliveryMethod = getOrderFilterValue("order-delivery-filter");
-  const dateFrom = parseDateBound(getOrderFilterValue("order-date-from", ""));
-  const dateTo = parseDateBound(getOrderFilterValue("order-date-to", ""), true);
-  const minAmountRaw = getOrderFilterValue("order-amount-min", "");
-  const maxAmountRaw = getOrderFilterValue("order-amount-max", "");
-  const minAmount = minAmountRaw === "" ? null : Number(minAmountRaw);
-  const maxAmount = maxAmountRaw === "" ? null : Number(maxAmountRaw);
-
-  return orders.filter((order) => {
-    if (status !== "all" && order.status !== status) return false;
-
-    const pm = order.paymentMethod || "cod";
-    if (paymentMethod !== "all" && pm !== paymentMethod) return false;
-
-    const ps = String(order.paymentStatus || "");
-    if (paymentStatus !== "all") {
-      if (paymentStatus === "empty" && ps !== "") return false;
-      if (paymentStatus !== "empty" && ps !== paymentStatus) return false;
-    }
-
-    if (deliveryMethod !== "all" && order.deliveryMethod !== deliveryMethod) {
-      return false;
-    }
-
-    const ts = new Date(order.timestamp);
-    if (dateFrom && ts < dateFrom) return false;
-    if (dateTo && ts > dateTo) return false;
-
-    const total = Number(order.total) || 0;
-    if (minAmount !== null && !Number.isNaN(minAmount) && total < minAmount) {
-      return false;
-    }
-    if (maxAmount !== null && !Number.isNaN(maxAmount) && total > maxAmount) {
-      return false;
-    }
-
-    return true;
-  });
-}
-
-function updateOrdersSelectionUi(filteredOrders) {
-  const selected = [...selectedOrderIds].filter((orderId) =>
-    orders.some((order) => order.orderId === orderId)
-  );
-  selectedOrderIds = new Set(selected);
-
-  const selectedCountEl = document.getElementById("orders-selected-count");
-  if (selectedCountEl) {
-    selectedCountEl.textContent = `已選 ${selected.length} 筆`;
-  }
-
-  const selectAllEl = document.getElementById("orders-select-all");
-  if (!(selectAllEl instanceof HTMLInputElement)) return;
-  const filteredIds = filteredOrders.map((order) => order.orderId);
-  const selectedVisible = filteredIds.filter((id) => selectedOrderIds.has(id))
-    .length;
-  selectAllEl.checked = filteredIds.length > 0 &&
-    selectedVisible === filteredIds.length;
-  selectAllEl.indeterminate = selectedVisible > 0 &&
-    selectedVisible < filteredIds.length;
-}
-
-function renderOrdersSummary(filteredOrders) {
-  const summaryEl = document.getElementById("orders-summary");
-  if (!summaryEl) return;
-  const totalAmount = filteredOrders.reduce(
-    (sum, order) => sum + (Number(order.total) || 0),
-    0,
-  );
-  summaryEl.textContent =
-    `總訂單 ${orders.length} 筆｜篩選結果 ${filteredOrders.length} 筆｜金額合計 $${
-      totalAmount.toLocaleString("zh-TW")
-    }`;
-}
-
 function normalizeTrackingUrl(url) {
   const raw = String(url || "").trim();
   if (!raw || !/^https?:\/\//i.test(raw)) return "";
@@ -1018,279 +789,6 @@ function normalizeTrackingUrl(url) {
   } catch {
     return "";
   }
-}
-
-function getTrackingLinkHtml(order) {
-  const trackingLink = getTrackingLinkInfo(order);
-  if (!trackingLink) return "";
-  return `<a href="${
-    esc(trackingLink.url)
-  }" target="_blank" class="text-xs ui-text-highlight hover:underline ml-2">${
-    esc(trackingLink.label)
-  }</a>`;
-}
-
-async function loadOrders() {
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=getOrders&userId=${getAuthUserId()}&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      orders = Array.isArray(d.orders) ? d.orders : [];
-      selectedOrderIds = new Set(
-        [...selectedOrderIds].filter((orderId) =>
-          orders.some((order) => order.orderId === orderId)
-        ),
-      );
-      renderOrders();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-function renderOrders() {
-  const filtered = getFilteredOrders();
-  const container = document.getElementById("orders-list");
-  renderOrdersSummary(filtered);
-  updateOrdersSelectionUi(filtered);
-
-  if (isVueManagedOrdersList(container)) {
-    emitDashboardOrdersUpdated(filtered);
-    return;
-  }
-
-  if (!filtered.length) {
-    if (container) {
-      container.innerHTML =
-        '<p class="text-center ui-text-subtle py-8">沒有符合的訂單</p>';
-    }
-    return;
-  }
-
-  if (!container) return;
-
-  container.innerHTML = filtered.map((o) => {
-    const time = new Date(o.timestamp).toLocaleString("zh-TW");
-    const isSelected = selectedOrderIds.has(o.orderId);
-    const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
-    const addrInfo =
-      (o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery")
-        ? `${o.city || ""}${o.district || ""} ${o.address || ""}`
-        : `${o.storeName || ""}${o.storeId ? " [" + o.storeId + "]" : ""}${
-          o.storeAddress ? " (" + o.storeAddress + ")" : ""
-        }`;
-
-    const pm = o.paymentMethod || "cod";
-    const ps = String(o.paymentStatus || "").trim();
-    const paymentExpiresAtText = formatOrderDateTimeText(o.paymentExpiresAt);
-    const paymentLastCheckedAtText = formatOrderDateTimeText(
-      o.paymentLastCheckedAt,
-    );
-    const paymentProviderStatusCode = String(o.paymentProviderStatusCode || "")
-      .trim();
-    const canOnlineRefund = (pm === "linepay" || pm === "jkopay") &&
-      ps === "paid";
-    const refundBtn = canOnlineRefund
-      ? `<button data-action="refund-onlinepay-order" data-payment-method="${
-        esc(pm)
-      }" data-order-id="${
-        esc(o.orderId)
-      }" class="text-xs ui-text-violet hover:opacity-80 inline-flex items-center gap-1.5"><svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-15-6l-3 2"></path></svg>退款</button>`
-      : "";
-    const payBadge = pm !== "cod"
-      ? `<span class="text-xs px-2 py-0.5 rounded-full ui-border ${
-        ps === "paid"
-          ? "ui-text-success ui-bg-card-strong"
-          : ps === "processing"
-          ? "bg-blue-50 text-blue-700"
-          : ps === "pending"
-          ? "ui-text-warning ui-bg-card-strong"
-          : ps === "failed" || ps === "cancelled" || ps === "expired"
-          ? "bg-red-50 text-red-700"
-          : ps === "refunded"
-          ? "ui-text-violet ui-bg-card-strong"
-          : "ui-bg-soft ui-text-strong"
-      }">${orderPayMethodLabel[pm] || pm} ${
-        orderPayStatusLabel[ps] || ps
-      }</span>`
-      : "";
-    const paymentMetaHtml = pm !== "cod"
-      ? `<div class="text-xs ui-bg-soft p-2 rounded mt-2 border ui-border">
-            ${
-        paymentExpiresAtText &&
-          (ps === "pending" || ps === "processing" || ps === "expired")
-          ? `<div><span class="ui-text-subtle">付款期限：</span>${
-            esc(paymentExpiresAtText)
-          }</div>`
-          : ""
-      }
-            ${
-        paymentLastCheckedAtText
-          ? `<div${
-            paymentExpiresAtText ? ' class="mt-1"' : ""
-          }><span class="ui-text-subtle">最近同步：</span>${
-            esc(paymentLastCheckedAtText)
-          }</div>`
-          : ""
-      }
-            ${
-        paymentProviderStatusCode
-          ? `<div${
-            (paymentExpiresAtText || paymentLastCheckedAtText)
-              ? ' class="mt-1"'
-              : ""
-          }><span class="ui-text-subtle">金流狀態碼：</span>${
-            esc(paymentProviderStatusCode)
-          }</div>`
-          : ""
-      }
-        </div>`
-      : "";
-    const transferInfo = pm === "transfer"
-      ? `<div class="text-xs ui-text-highlight mt-2 ui-primary-soft p-2 rounded">
-                 <div><b>顧客匯出末5碼:</b> ${
-        esc(o.transferAccountLast5 || "未提供")
-      }</div>
-                 <div class="mt-1 pb-1"><b>匯入目標帳號:</b> ${
-        esc(o.paymentId || "未提供 (舊版訂單)")
-      }</div>
-               </div>`
-      : "";
-    const confirmPayBtn = pm === "transfer" && ps === "pending"
-      ? `<button data-action="confirm-transfer-payment" data-order-id="${
-        esc(o.orderId)
-      }" class="text-xs ui-text-success hover:text-green-800">確認已收款</button>`
-      : "";
-    const sendLineBtn = o.lineUserId
-      ? `<button data-action="send-order-flex" data-order-id="${
-        esc(o.orderId)
-      }" class="text-xs ui-text-success hover:opacity-80">LINE通知</button>`
-      : "";
-    const sendEmailBtn = o.email
-      ? `<button data-action="send-order-email" data-order-id="${
-        esc(o.orderId)
-      }" class="text-xs ui-text-strong hover:opacity-80">發送信件</button>`
-      : "";
-
-    const trackingLinkHtml = getTrackingLinkHtml(o);
-    const hasShippingInfo = !!o.trackingNumber || !!o.shippingProvider ||
-      !!trackingLinkHtml;
-    const shippingProviderHtml = o.shippingProvider
-      ? `<div><span class="ui-text-subtle">物流商：</span>${
-        esc(o.shippingProvider)
-      }</div>`
-      : "";
-    const trackingNumberHtml = o.trackingNumber
-      ? `<div class="mt-1"><span class="ui-text-subtle">物流單號：</span>
-                    <span class="font-mono font-bold">${
-        esc(o.trackingNumber)
-      }</span>
-                    <button type="button" data-action="copy-tracking-number" data-tracking-number="${
-        esc(o.trackingNumber)
-      }" class="ml-2 px-2 py-0.5 ui-bg-soft hover:ui-bg-soft rounded ui-text-strong" title="複製單號">複製</button></div>`
-      : "";
-    const trackingHtml = hasShippingInfo
-      ? `<div class="text-xs ui-bg-soft p-2 rounded mt-2 border ui-border">
-                    ${shippingProviderHtml}
-                    ${trackingNumberHtml}
-                    ${
-        trackingLinkHtml ? `<div class="mt-1">${trackingLinkHtml}</div>` : ""
-      }
-                </div>`
-      : "";
-    const receiptHtml = buildReceiptSummaryHtml(receiptInfo);
-
-    return `
-        <div class="border ui-border rounded-xl p-4 mb-3">
-            <div class="flex justify-between items-center mb-2">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <label class="inline-flex items-center cursor-pointer">
-                        <input type="checkbox" data-action="toggle-order-selection" data-order-id="${
-      esc(o.orderId)
-    }" class="w-4 h-4" ${isSelected ? "checked" : ""}>
-                    </label>
-                    <span class="font-bold text-sm ui-text-highlight">#${o.orderId}</span>
-                    <span class="delivery-tag delivery-${o.deliveryMethod}">${
-      orderMethodLabel[o.deliveryMethod] || o.deliveryMethod
-    }</span>
-                    <span class="status-badge status-${o.status}">${
-      orderStatusLabel[o.status] || o.status
-    }</span>
-                    ${payBadge}
-                </div>
-                <span class="text-xs ui-text-subtle">${time}</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-sm mb-2">
-                <div><span class="ui-text-subtle">顧客：</span>${
-      esc(o.lineName)
-    }</div>
-                <div><span class="ui-text-subtle">電話：</span>${
-      esc(o.phone)
-    }</div>
-                <div class="col-span-2"><span class="ui-text-subtle">信箱：</span>${
-      o.email
-        ? `<a href="mailto:${esc(o.email)}" class="ui-text-highlight">${
-          esc(o.email)
-        }</a>`
-        : "無"
-    }</div>
-                <div class="col-span-2"><span class="ui-text-subtle">地址/門市：</span>${
-      esc(addrInfo)
-    }</div>
-                ${transferInfo}
-            </div>
-            ${trackingHtml}
-            ${paymentMetaHtml}
-            ${receiptHtml}
-            <div class="text-sm ui-text-strong whitespace-pre-line ui-bg-soft p-3 rounded mb-2 mt-2">${
-      esc(o.items)
-    }</div>
-            ${
-      o.note
-        ? `<div class="text-sm ui-text-warning ui-primary-soft p-2 rounded mb-2"> ${
-          esc(o.note)
-        }</div>`
-        : ""
-    }
-            ${
-      o.status === "cancelled" && String(o.cancelReason || "").trim()
-        ? `<div class="text-sm text-red-700 bg-red-50 p-2 rounded mb-2 border border-red-100"><span class="ui-text-subtle">取消原因：</span>${
-          esc(String(o.cancelReason || "").trim())
-        }</div>`
-        : ""
-    }
-            <div class="flex justify-between items-center">
-                <span class="font-bold ui-text-warning">$${o.total}</span>
-                <div class="flex gap-2">
-                    ${sendLineBtn}
-                    ${sendEmailBtn}
-                    ${refundBtn}
-                    ${confirmPayBtn}
-                    <select data-action="change-order-status" data-order-id="${
-      esc(o.orderId)
-    }" data-current-status="${
-      esc(o.status || "")
-    }" class="text-xs border rounded px-2 py-1">
-                        ${
-      ["pending", "processing", "shipped", "completed", "cancelled"].map((s) =>
-        `<option value="${s}" ${o.status === s ? "selected" : ""}>${
-          orderStatusLabel[s]
-        }</option>`
-      ).join("")
-    }
-                    </select>
-                    <button data-action="confirm-order-status" data-order-id="${
-      esc(o.orderId)
-    }" class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium">確認</button>
-                    <button data-action="delete-order" data-order-id="${
-      esc(o.orderId)
-    }" class="text-xs ui-text-danger hover:text-red-700">刪除</button>
-                </div>
-            </div>
-        </div>`;
-  }).join("");
 }
 
 async function changeOrderStatus(orderId, status) {
@@ -1353,7 +851,7 @@ async function changeOrderStatus(orderId, status) {
       });
       if (!isConfirmed) {
         // 如果取消，則恢復原本的選單狀態 (重新載入一次列表)
-        loadOrders();
+        ordersController.loadOrders();
         return;
       }
       trackingNumber = shippingInfo?.trackingNumber || "";
@@ -1380,7 +878,7 @@ async function changeOrderStatus(orderId, status) {
         },
       });
       if (!isConfirmed) {
-        loadOrders();
+        ordersController.loadOrders();
         return;
       }
       cancelReason = String(cancelInfo?.cancelReason || "").trim();
@@ -1398,7 +896,7 @@ async function changeOrderStatus(orderId, status) {
         confirmButtonColor: "#268BD2",
       });
       if (!confirm.isConfirmed) {
-        loadOrders();
+        ordersController.loadOrders();
         return;
       }
     }
@@ -1438,7 +936,7 @@ async function changeOrderStatus(orderId, status) {
         flexOrder.cancelReason = "";
       }
       // 先刷新訂單列表，再顯示 Flex Message
-      await loadOrders();
+      await ordersController.loadOrders();
       await orderNotificationsController.previewOrderStatusNotification(
         flexOrder,
         status,
@@ -1447,315 +945,6 @@ async function changeOrderStatus(orderId, status) {
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
   }
-}
-
-async function deleteOrderById(orderId) {
-  const c = await Swal.fire({
-    title: "刪除訂單？",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#DC322F",
-    confirmButtonText: "刪除",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=deleteOrder`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), orderId }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      selectedOrderIds.delete(orderId);
-      Toast.fire({ icon: "success", title: "已刪除" });
-      loadOrders();
-    }
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-function toggleOrderSelection(orderId, checked) {
-  if (checked) selectedOrderIds.add(orderId);
-  else selectedOrderIds.delete(orderId);
-  const filtered = getFilteredOrders();
-  updateOrdersSelectionUi(filtered);
-  emitDashboardOrdersUpdated(filtered);
-}
-
-function toggleSelectAllOrders(checked) {
-  const filtered = getFilteredOrders();
-  filtered.forEach((order) => {
-    if (checked) selectedOrderIds.add(order.orderId);
-    else selectedOrderIds.delete(order.orderId);
-  });
-  renderOrders();
-}
-
-function getSelectedOrderIds() {
-  return [...selectedOrderIds].filter((orderId) =>
-    orders.some((order) => order.orderId === orderId)
-  );
-}
-
-async function batchUpdateOrders() {
-  const orderIds = getSelectedOrderIds();
-  if (!orderIds.length) {
-    Swal.fire("提醒", "請先勾選至少一筆訂單", "warning");
-    return;
-  }
-
-  const status = getOrderFilterValue("batch-order-status", "");
-  if (!status) {
-    Swal.fire("提醒", "請先選擇批次狀態", "warning");
-    return;
-  }
-
-  let trackingNumber;
-  let shippingProvider;
-  let trackingUrl;
-  if (status === "shipped") {
-    const { value, isConfirmed } = await Swal.fire({
-      title: "批次出貨設定",
-      html: `
-        <div class="text-left space-y-2">
-          <label class="text-sm ui-text-strong block">共用物流單號（可選）</label>
-          <input id="swal-batch-tracking-number" class="swal2-input" placeholder="請輸入物流單號">
-          <label class="text-sm ui-text-strong block">共用物流商（可選）</label>
-          <input id="swal-batch-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便">
-          <label class="text-sm ui-text-strong block">共用物流追蹤網址（可選）</label>
-          <input id="swal-batch-tracking-url" class="swal2-input" placeholder="https://...">
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: "確定",
-      cancelButtonText: "取消",
-      confirmButtonColor: "#268BD2",
-      focusConfirm: false,
-      preConfirm: () => {
-        const trackingNumEl = document.getElementById(
-          "swal-batch-tracking-number",
-        );
-        const providerEl = document.getElementById(
-          "swal-batch-shipping-provider",
-        );
-        const urlEl = document.getElementById("swal-batch-tracking-url");
-        const trackingNumberValue = String(trackingNumEl?.value || "").trim();
-        const shippingProviderValue = String(providerEl?.value || "").trim();
-        const trackingUrlValue = String(urlEl?.value || "").trim();
-        if (trackingUrlValue && !/^https?:\/\//i.test(trackingUrlValue)) {
-          Swal.showValidationMessage(
-            "物流追蹤網址需以 http:// 或 https:// 開頭",
-          );
-          return false;
-        }
-        return {
-          trackingNumber: trackingNumberValue,
-          shippingProvider: shippingProviderValue,
-          trackingUrl: trackingUrlValue,
-        };
-      },
-    });
-    if (!isConfirmed) return;
-    trackingNumber = value?.trackingNumber || "";
-    shippingProvider = value?.shippingProvider || "";
-    trackingUrl = value?.trackingUrl || "";
-  }
-
-  const paymentStatus = getOrderFilterValue("batch-payment-status", "__keep__");
-  const payload = {
-    userId: getAuthUserId(),
-    orderIds,
-    status,
-  };
-  if (paymentStatus !== "__keep__") payload.paymentStatus = paymentStatus;
-  if (status === "shipped") {
-    payload.trackingNumber = trackingNumber;
-    payload.shippingProvider = shippingProvider;
-    payload.trackingUrl = trackingUrl;
-  }
-
-  try {
-    const r = await authFetch(`${API_URL}?action=batchUpdateOrderStatus`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: d.message || "批次更新完成" });
-    } else {
-      const msg = d.error || "批次更新失敗";
-      await Swal.fire("提醒", msg, d.updatedCount ? "warning" : "error");
-    }
-    await loadOrders();
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function batchDeleteOrders() {
-  const orderIds = getSelectedOrderIds();
-  if (!orderIds.length) {
-    Swal.fire("提醒", "請先勾選至少一筆訂單", "warning");
-    return;
-  }
-
-  const confirmDelete = await Swal.fire({
-    title: `確定刪除 ${orderIds.length} 筆訂單？`,
-    text: "此動作無法復原",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#DC322F",
-    confirmButtonText: "批次刪除",
-    cancelButtonText: "取消",
-  });
-  if (!confirmDelete.isConfirmed) return;
-
-  try {
-    const r = await authFetch(`${API_URL}?action=batchDeleteOrders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: getAuthUserId(),
-        orderIds,
-      }),
-    });
-    const d = await r.json();
-    if (!d.success) throw new Error(d.error || "批次刪除失敗");
-    selectedOrderIds = new Set();
-    Toast.fire({ icon: "success", title: d.message || "批次刪除完成" });
-    await loadOrders();
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-function csvEscape(value) {
-  const str = String(value ?? "").replace(/\r?\n/g, " | ");
-  if (/[",\n]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-function buildOrdersCsv(orderList) {
-  const header = [
-    "訂單編號",
-    "建立時間",
-    "顧客",
-    "電話",
-    "Email",
-    "配送方式",
-    "訂單狀態",
-    "付款方式",
-    "付款狀態",
-    "付款期限",
-    "付款確認時間",
-    "付款同步時間",
-    "金流狀態碼",
-    "金額",
-    "物流商",
-    "物流單號",
-    "追蹤網址",
-    "地址或門市",
-    "訂單內容",
-    "備註",
-    "是否索取收據",
-    "收據統一編號",
-    "收據買受人",
-    "收據地址",
-    "收據壓印日期",
-  ];
-  const rows = orderList.map((o) => {
-    const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
-    const addrInfo =
-      (o.deliveryMethod === "delivery" || o.deliveryMethod === "home_delivery")
-        ? `${o.city || ""}${o.district || ""} ${o.address || ""}`.trim()
-        : `${o.storeName || ""}${o.storeId ? ` [${o.storeId}]` : ""}${
-          o.storeAddress ? ` (${o.storeAddress})` : ""
-        }`.trim();
-    return [
-      o.orderId || "",
-      o.timestamp || "",
-      o.lineName || "",
-      o.phone || "",
-      o.email || "",
-      orderMethodLabel[o.deliveryMethod] || o.deliveryMethod || "",
-      orderStatusLabel[o.status] || o.status || "",
-      orderPayMethodLabel[o.paymentMethod || "cod"] || o.paymentMethod || "",
-      orderPayStatusLabel[o.paymentStatus || ""] || o.paymentStatus || "",
-      o.paymentExpiresAt || "",
-      o.paymentConfirmedAt || "",
-      o.paymentLastCheckedAt || "",
-      o.paymentProviderStatusCode || "",
-      Number(o.total) || 0,
-      o.shippingProvider || "",
-      o.trackingNumber || "",
-      o.trackingUrl || "",
-      addrInfo,
-      o.items || "",
-      o.note || "",
-      receiptInfo ? "是" : "否",
-      receiptInfo?.taxId || "",
-      receiptInfo?.buyer || "",
-      receiptInfo?.address || "",
-      receiptInfo ? (receiptInfo.needDateStamp ? "需要" : "不需要") : "",
-    ];
-  });
-  return [header, ...rows].map((cols) => cols.map(csvEscape).join(",")).join(
-    "\r\n",
-  );
-}
-
-function triggerCsvDownload(fileName, csvText) {
-  const blob = new Blob(["\uFEFF" + csvText], {
-    type: "text/csv;charset=utf-8;",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-function getCsvTimestamp() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  const h = String(now.getHours()).padStart(2, "0");
-  const min = String(now.getMinutes()).padStart(2, "0");
-  return `${y}${m}${d}-${h}${min}`;
-}
-
-function exportFilteredOrdersCsv() {
-  const filtered = getFilteredOrders();
-  if (!filtered.length) {
-    Swal.fire("提醒", "目前沒有可匯出的訂單", "warning");
-    return;
-  }
-  const csvText = buildOrdersCsv(filtered);
-  triggerCsvDownload(`orders-filtered-${getCsvTimestamp()}.csv`, csvText);
-  Toast.fire({ icon: "success", title: `已匯出 ${filtered.length} 筆` });
-}
-
-function exportSelectedOrdersCsv() {
-  const selectedIds = new Set(getSelectedOrderIds());
-  const selectedOrders = orders.filter((order) =>
-    selectedIds.has(order.orderId)
-  );
-  if (!selectedOrders.length) {
-    Swal.fire("提醒", "請先勾選要匯出的訂單", "warning");
-    return;
-  }
-  const csvText = buildOrdersCsv(selectedOrders);
-  triggerCsvDownload(`orders-selected-${getCsvTimestamp()}.csv`, csvText);
-  Toast.fire({ icon: "success", title: `已匯出 ${selectedOrders.length} 筆` });
 }
 
 // ============ 線上支付退款（LINE Pay / 街口） ============
@@ -1790,7 +979,7 @@ async function refundOnlinePayOrder(orderId, paymentMethod = "linepay") {
     const d = await r.json();
     if (d.success) {
       Toast.fire({ icon: "success", title: "退款成功" });
-      loadOrders();
+      ordersController.loadOrders();
     } else Swal.fire("退款失敗", d.error, "error");
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
@@ -1822,7 +1011,7 @@ window.confirmTransferPayment = async function (orderId) {
     const d = await r.json();
     if (d.success) {
       Toast.fire({ icon: "success", title: "已確認收款" });
-      loadOrders();
+      ordersController.loadOrders();
     } else Swal.fire("錯誤", d.error, "error");
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
