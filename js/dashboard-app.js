@@ -23,6 +23,9 @@ import {
 import { createPromotionsController } from "./dashboard/modules/promotions.js";
 import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
+import { createUsersController } from "./dashboard/modules/users-controller.js";
+import { createIconAssetsController } from "./dashboard/modules/icon-assets-controller.js";
+import { createCategoriesController } from "./dashboard/modules/categories-controller.js";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
@@ -40,8 +43,6 @@ let products = [];
 let categories = [];
 let orders = [];
 let selectedOrderIds = new Set();
-let users = [];
-let blacklist = [];
 let dashboardSettings = {};
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
 const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
@@ -182,11 +183,10 @@ function paymentIconFallbackKey(method) {
 }
 
 function updateDeliveryRoutingPaymentHeaderIcon(method, rawUrl = "") {
-  return updateIconPreview({
-    previewId: `dr-${method}-icon-preview`,
+  return iconAssetsController.updateDeliveryRoutingPaymentHeaderIcon(
+    method,
     rawUrl,
-    fallbackUrl: getDefaultIconUrl(paymentIconFallbackKey(method)),
-  });
+  );
 }
 
 function getAuthUserId() {
@@ -225,6 +225,18 @@ const formFieldsController = createFormFieldsController({
   getDashboardSettings: () => dashboardSettings,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
+const iconAssetsController = createIconAssetsController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+  normalizeIconPath,
+  resolveAssetUrl,
+  getDefaultIconUrl,
+  getPaymentIconFallbackKey,
+  sectionIconSettingKey,
+});
 const settingsController = createSettingsController({
   API_URL,
   authFetch,
@@ -242,9 +254,9 @@ const settingsController = createSettingsController({
   normalizePaymentOption,
   normalizeIconPath,
   sectionIconSettingKey,
-  updateIconPreview,
+  updateIconPreview: iconAssetsController.updateIconPreview,
   updateDeliveryRoutingPaymentHeaderIcon,
-  setPreviewImageSource,
+  setPreviewImageSource: iconAssetsController.setPreviewImageSource,
   readInputValue,
   defaultDeliveryOptions: DEFAULT_DELIVERY_OPTIONS,
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
@@ -252,6 +264,30 @@ const settingsController = createSettingsController({
   setDashboardSettings: (settings) => {
     dashboardSettings = settings;
   },
+  esc,
+});
+const usersController = createUsersController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  getCurrentUser: () => currentUser,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+});
+const categoriesController = createCategoriesController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  getCategories: () => categories,
+  setCategories: (nextCategories) => {
+    categories = Array.isArray(nextCategories) ? nextCategories : [];
+  },
+  loadProducts,
+  Toast,
+  Swal: globalThis.Swal,
+  Sortable: globalThis.Sortable,
+  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
   esc,
 });
 
@@ -341,61 +377,6 @@ function readInputValue(id, fallback = "") {
   return fallback;
 }
 
-const ICON_LIBRARY_TARGET_MAP = {
-
-  products: {
-    label: "商品區塊 Icon",
-    inputId: "s-products-icon-url",
-    displayId: "s-products-icon-url-display",
-    previewId: "s-products-icon-preview",
-    fallbackKey: "products",
-  },
-  delivery: {
-    label: "配送區塊 Icon",
-    inputId: "s-delivery-icon-url",
-    displayId: "s-delivery-icon-url-display",
-    previewId: "s-delivery-icon-preview",
-    fallbackKey: "delivery",
-  },
-  notes: {
-    label: "備註區塊 Icon",
-    inputId: "s-notes-icon-url",
-    displayId: "s-notes-icon-url-display",
-    previewId: "s-notes-icon-preview",
-    fallbackKey: "notes",
-  },
-  cod: {
-    label: "貨到/取貨付款 Icon",
-    inputId: "po-cod-icon-url",
-    displayId: "po-cod-icon-url-display",
-    previewId: "po-cod-icon-preview",
-    fallbackKey: "cod",
-  },
-  linepay: {
-    label: "LINE Pay Icon",
-    inputId: "po-linepay-icon-url",
-    displayId: "po-linepay-icon-url-display",
-    previewId: "po-linepay-icon-preview",
-    fallbackKey: "linepay",
-  },
-  jkopay: {
-    label: "街口支付 Icon",
-    inputId: "po-jkopay-icon-url",
-    displayId: "po-jkopay-icon-url-display",
-    previewId: "po-jkopay-icon-preview",
-    fallbackKey: "jkopay",
-  },
-  transfer: {
-    label: "線上轉帳 Icon",
-    inputId: "po-transfer-icon-url",
-    displayId: "po-transfer-icon-url-display",
-    previewId: "po-transfer-icon-preview",
-    fallbackKey: "transfer",
-  },
-};
-
-
-
 // ============ 全域函式掛載（保留舊快取相容性） ============
 window.loginWithLine = () =>
   loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
@@ -413,28 +394,28 @@ window.saveProduct = saveProduct;
 window.delProduct = delProduct;
 window.moveProduct = moveProduct;
 window.addSpecRow = addSpecRow;
-window.addCategory = addCategory;
-window.editCategory = editCategory;
-window.delCategory = delCategory;
-window.updateCategoryOrders = updateCategoryOrders;
+window.addCategory = categoriesController.addCategory;
+window.editCategory = categoriesController.editCategory;
+window.delCategory = categoriesController.delCategory;
+window.updateCategoryOrders = categoriesController.updateCategoryOrders;
 window.saveSettings = settingsController.saveSettings;
-window.loadUsers = loadUsers;
-window.toggleUserRole = toggleUserRole;
-window.toggleUserBlacklist = toggleUserBlacklist;
-window.loadBlacklist = loadBlacklist;
+window.loadUsers = usersController.loadUsers;
+window.toggleUserRole = usersController.toggleUserRole;
+window.toggleUserBlacklist = usersController.toggleUserBlacklist;
+window.loadBlacklist = usersController.loadBlacklist;
 window.esc = esc;
 window.showAddFieldModal = formFieldsController.showAddFieldModal;
 window.editFormField = formFieldsController.editFormField;
 window.deleteFormField = formFieldsController.deleteFormField;
 window.toggleFieldEnabled = formFieldsController.toggleFieldEnabled;
-window.previewIcon = previewIcon;
+window.previewIcon = iconAssetsController.previewIcon;
 
-window.uploadSiteIcon = uploadSiteIcon;
-window.resetSiteIcon = resetSiteIcon;
-window.uploadSectionIcon = uploadSectionIcon;
-window.uploadPaymentIcon = uploadPaymentIcon;
-window.uploadDeliveryRowIcon = uploadDeliveryRowIcon;
-window.applyIconFromLibrary = applyIconFromLibrary;
+window.uploadSiteIcon = iconAssetsController.uploadSiteIcon;
+window.resetSiteIcon = iconAssetsController.resetSiteIcon;
+window.uploadSectionIcon = iconAssetsController.uploadSectionIcon;
+window.uploadPaymentIcon = iconAssetsController.uploadPaymentIcon;
+window.uploadDeliveryRowIcon = iconAssetsController.uploadDeliveryRowIcon;
+window.applyIconFromLibrary = iconAssetsController.applyIconFromLibrary;
 window.resetSectionTitle = settingsController.resetSectionTitle;
 window.refundOnlinePayOrder = refundOnlinePayOrder;
 window.linePayRefundOrder = (orderId) => refundOnlinePayOrder(orderId, "linepay");
@@ -469,29 +450,29 @@ const dashboardActionHandlers = {
   }),
   ...createProductsActionHandlers({
     showProductModal,
-    addCategory,
+    addCategory: categoriesController.addCategory,
     showPromotionModal: promotionsController.showPromotionModal,
     editProduct,
     delProduct,
     toggleProductEnabled,
-    editCategory,
-    delCategory,
+    editCategory: categoriesController.editCategory,
+    delCategory: categoriesController.delCategory,
     editPromotion: promotionsController.editPromotion,
     delPromotion: promotionsController.delPromotion,
     togglePromotionEnabled: promotionsController.togglePromotionEnabled,
     addSpecRow,
     closeProductModal,
     closePromotionModal: promotionsController.closePromotionModal,
-    renderCategories,
+    renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
   }),
   ...createSettingsActionHandlers({
-    uploadSiteIcon,
-    resetSiteIcon,
-    uploadSectionIcon,
-    uploadPaymentIcon,
-    uploadDeliveryRowIcon,
-    applyIconFromLibrary,
+    uploadSiteIcon: iconAssetsController.uploadSiteIcon,
+    resetSiteIcon: iconAssetsController.resetSiteIcon,
+    uploadSectionIcon: iconAssetsController.uploadSectionIcon,
+    uploadPaymentIcon: iconAssetsController.uploadPaymentIcon,
+    uploadDeliveryRowIcon: iconAssetsController.uploadDeliveryRowIcon,
+    applyIconFromLibrary: iconAssetsController.applyIconFromLibrary,
     resetSectionTitle: settingsController.resetSectionTitle,
     addDeliveryOptionAdmin: settingsController.addDeliveryOptionAdmin,
     showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
@@ -506,24 +487,27 @@ const dashboardActionHandlers = {
     loadFormFields: formFieldsController.loadFormFields,
   }),
   ...createUsersActionHandlers({
-    loadUsers,
-    toggleUserBlacklist,
-    toggleUserRole,
-    loadBlacklist,
+    loadUsers: usersController.loadUsers,
+    toggleUserBlacklist: usersController.toggleUserBlacklist,
+    toggleUserRole: usersController.toggleUserRole,
+    loadBlacklist: usersController.loadBlacklist,
   }),
 };
 
 const dashboardTabLoaders = {
   ...createOrdersTabLoaders({ loadOrders }),
   ...createProductsTabLoaders({
-    renderCategories,
+    renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
   }),
   ...createSettingsTabLoaders({
     loadSettings: settingsController.loadSettings,
     loadFormFields: formFieldsController.loadFormFields,
   }),
-  ...createUsersTabLoaders({ loadUsers, loadBlacklist }),
+  ...createUsersTabLoaders({
+    loadUsers: usersController.loadUsers,
+    loadBlacklist: usersController.loadBlacklist,
+  }),
 };
 
 // ============ 初始化 ============
@@ -641,7 +625,7 @@ async function showAdmin() {
   document.getElementById("admin-name").textContent = currentUser.displayName ||
     "管理員";
   await Promise.all([
-    loadCategories(),
+    categoriesController.loadCategories(),
     loadProducts(),
     settingsController.loadSettings(),
   ]);
@@ -2740,7 +2724,7 @@ function loadSpecsToForm(specsStr) {
 }
 
 async function showProductModal() {
-  if (!categories || !categories.length) await loadCategories();
+  if (!categories || !categories.length) await categoriesController.loadCategories();
   document.getElementById("pm-title").textContent = "新增商品";
   document.getElementById("product-form").reset();
   document.getElementById("pm-id").value = "";
@@ -2751,7 +2735,7 @@ async function showProductModal() {
 }
 
 async function editProduct(id) {
-  if (!categories || !categories.length) await loadCategories();
+  if (!categories || !categories.length) await categoriesController.loadCategories();
   const p = productsMap[id];
   if (!p) {
     Swal.fire("錯誤", "找不到商品", "error");
@@ -2889,978 +2873,6 @@ async function toggleProductEnabled(id, enabled) {
       icon: "success",
       title: enabled ? "商品已啟用" : "商品已停用",
     });
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-// ============ 分類管理 ============
-async function loadCategories() {
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=getCategories&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      categories = d.categories;
-      renderCategories();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-let categoriesMap = {};
-function isVueManagedCategoriesList(
-  container = document.getElementById("categories-list"),
-) {
-  return container?.dataset?.vueManaged === "true";
-}
-
-function buildCategoryViewModel(category) {
-  return {
-    id: Number(category?.id) || 0,
-    name: category?.name || "",
-  };
-}
-
-function emitDashboardCategoriesUpdated(nextCategories = categories) {
-  const viewCategories = (Array.isArray(nextCategories) ? nextCategories : [])
-    .map((category) => buildCategoryViewModel(category))
-    .filter((category) => category.id > 0);
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-categories-updated", {
-      detail: { categories: viewCategories },
-    }),
-  );
-}
-
-function initializeCategorySortable(container) {
-  if (typeof Sortable === "undefined") return;
-  if (window.categorySortable) {
-    window.categorySortable.destroy();
-    window.categorySortable = null;
-  }
-  if (!container?.querySelector("[data-id]")) return;
-  window.categorySortable = Sortable.create(container, {
-    handle: ".drag-handle-cat",
-    animation: 150,
-    onEnd: async function () {
-      const ids = Array.from(container.querySelectorAll("[data-id]"))
-        .map((el) => Number.parseInt(el.dataset.id || "", 10))
-        .filter((id) => !Number.isNaN(id));
-      await updateCategoryOrders(ids);
-    },
-  });
-}
-
-function renderCategories() {
-  const container = document.getElementById("categories-list");
-  if (!container) return;
-
-  categoriesMap = {};
-  categories.forEach((c) => {
-    categoriesMap[c.id] = c;
-  });
-
-  if (isVueManagedCategoriesList(container)) {
-    emitDashboardCategoriesUpdated(categories);
-    requestAnimationFrame(() => initializeCategorySortable(container));
-    return;
-  }
-
-  if (!categories.length) {
-    container.innerHTML =
-      '<p class="text-center ui-text-subtle py-4">尚無分類</p>';
-    initializeCategorySortable(container);
-    return;
-  }
-
-  container.innerHTML = categories.map((c) => `
-        <div class="flex items-center justify-between p-3 mb-2 rounded-lg" style="background:#FFFDF7; border:1px solid #E2DCC8;" data-id="${c.id}">
-            <div class="flex items-center gap-2">
-                <span class="drag-handle-cat cursor-move ui-text-muted hover:ui-text-warning text-xl font-bold select-none px-1" title="拖曳排序" style="touch-action: none;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg>
-                </span>
-                <span class="font-medium">${esc(c.name)}</span>
-            </div>
-            <div class="flex gap-2">
-                <button data-action="edit-category" data-category-id="${c.id}" class="text-sm ui-text-highlight">編輯</button>
-                <button data-action="delete-category" data-category-id="${c.id}" class="text-sm ui-text-danger">刪除</button>
-            </div>
-        </div>
-    `).join("");
-
-  initializeCategorySortable(container);
-}
-
-async function addCategory() {
-  const name = document.getElementById("new-cat-name").value.trim();
-  if (!name) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=addCategory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), name }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      document.getElementById("new-cat-name").value = "";
-      Toast.fire({ icon: "success", title: "已新增" });
-      loadCategories();
-    } else throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function editCategory(id) {
-  const cat = categoriesMap[id];
-  if (!cat) {
-    Swal.fire("錯誤", "找不到分類", "error");
-    return;
-  }
-  const oldName = cat.name;
-  const { value } = await Swal.fire({
-    title: "修改分類",
-    input: "text",
-    inputValue: oldName,
-    showCancelButton: true,
-    confirmButtonText: "更新",
-    cancelButtonText: "取消",
-  });
-  if (value && value !== oldName) {
-    try {
-      const r = await authFetch(`${API_URL}?action=updateCategory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: getAuthUserId(), id, name: value }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        Toast.fire({ icon: "success", title: "分類已更新，商品同步完成" });
-        loadCategories();
-        loadProducts();
-      }
-    } catch (e) {
-      Swal.fire("錯誤", e.message, "error");
-    }
-  }
-}
-
-async function delCategory(id) {
-  const c = await Swal.fire({
-    title: "刪除分類？",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#DC322F",
-    confirmButtonText: "刪除",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=deleteCategory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id }),
-    });
-    const d = await r.json();
-    if (d.success) loadCategories();
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function updateCategoryOrders(ids) {
-  try {
-    const r = await authFetch(`${API_URL}?action=reorderCategory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), ids }),
-    });
-    const d = await r.json();
-    if (!d.success) throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-    loadCategories();
-  }
-}
-
-// ============ 用戶管理 ============
-async function loadUsers() {
-  try {
-    const search = document.getElementById("user-search").value;
-    Swal.fire({
-      title: "載入中...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-    const r = await authFetch(
-      `${API_URL}?action=getUsers&userId=${getAuthUserId()}&search=${
-        encodeURIComponent(search)
-      }&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      users = d.users;
-      renderUsers();
-      Swal.close();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-function isVueManagedUsersTable(tbody = document.getElementById("users-table")) {
-  return tbody?.dataset?.vueManaged === "true";
-}
-
-function getUserDefaultDeliveryText(user) {
-  if (user.defaultDeliveryMethod === "delivery") {
-    return `宅配 (${user.defaultCity || ""}${user.defaultDistrict || ""} ${
-      user.defaultAddress || ""
-    })`;
-  }
-  if (user.defaultDeliveryMethod === "in_store") return "來店自取";
-  if (user.defaultDeliveryMethod) {
-    return `${user.defaultDeliveryMethod === "seven_eleven" ? "7-11" : "全家"} (${
-      user.defaultStoreName || ""
-    } - ${user.defaultStoreId || ""})`;
-  }
-  return "尚未設定";
-}
-
-function buildUserViewModel(user, isSuperAdmin) {
-  const isUserSuperAdmin = user.role === "SUPER_ADMIN";
-  const isAdmin = user.role === "ADMIN" || isUserSuperAdmin;
-  const isBlocked = user.status === "BLACKLISTED";
-  const roleAction = isSuperAdmin && !isUserSuperAdmin
-    ? {
-      newRole: isAdmin ? "USER" : "ADMIN",
-      label: isAdmin ? "移除管理員" : "設為管理員",
-      className: isAdmin
-        ? "ui-text-danger hover:text-red-800"
-        : "text-purple-600 hover:text-purple-800",
-    }
-    : null;
-
-  return {
-    userId: user.userId || "",
-    displayName: user.displayName || "",
-    pictureUrl: user.pictureUrl || "https://via.placeholder.com/40",
-    email: user.email || "",
-    phone: user.phone || "",
-    defaultDeliveryText: getUserDefaultDeliveryText(user),
-    isAdmin,
-    isBlocked,
-    roleBadgeText: isAdmin ? "管理員" : "用戶",
-    roleBadgeClass: isAdmin
-      ? "bg-purple-100 text-purple-800"
-      : "ui-bg-soft ui-text-strong",
-    statusBadgeText: isBlocked ? "黑名單" : "正常",
-    statusBadgeClass: isBlocked
-      ? "bg-red-100 text-red-800"
-      : "bg-green-100 text-green-800",
-    lastLoginText: user.lastLogin
-      ? new Date(user.lastLogin).toLocaleString("zh-TW")
-      : "無紀錄",
-    blacklistActionBlockedValue: String(!isBlocked),
-    blacklistActionLabel: isBlocked ? "解除封鎖" : "封鎖",
-    blacklistActionClass: isBlocked
-      ? "ui-text-success hover:text-green-800"
-      : "ui-text-danger hover:text-red-700",
-    roleAction,
-  };
-}
-
-function emitDashboardUsersUpdated(nextUsers = users) {
-  const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
-  const viewUsers = (Array.isArray(nextUsers) ? nextUsers : []).map((user) =>
-    buildUserViewModel(user, isSuperAdmin)
-  );
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-users-updated", {
-      detail: { users: viewUsers },
-    }),
-  );
-}
-
-function renderUsers() {
-  const tbody = document.getElementById("users-table");
-  if (!tbody) return;
-  if (isVueManagedUsersTable(tbody)) {
-    emitDashboardUsersUpdated(users);
-    return;
-  }
-  if (!users.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="4" class="text-center py-8 ui-text-subtle">無符合條件的用戶</td></tr>';
-    return;
-  }
-  const isSuperAdmin = currentUser?.role === "SUPER_ADMIN";
-
-  tbody.innerHTML = users.map((u) => {
-    const isUserSuperAdmin = u.role === "SUPER_ADMIN";
-    const isAdmin = u.role === "ADMIN" || u.role === "SUPER_ADMIN";
-    const isBlocked = u.status === "BLACKLISTED";
-    const lastLogin = u.lastLogin
-      ? new Date(u.lastLogin).toLocaleString("zh-TW")
-      : "無紀錄";
-
-    let actions = "";
-    if (isBlocked) {
-      actions += `<button data-action="toggle-user-blacklist" data-user-id="${
-        esc(u.userId)
-      }" data-blocked="false" class="ui-text-success hover:text-green-800 text-sm font-medium mr-3">解除封鎖</button>`;
-    } else {
-      actions += `<button data-action="toggle-user-blacklist" data-user-id="${
-        esc(u.userId)
-      }" data-blocked="true" class="ui-text-danger hover:text-red-700 text-sm font-medium mr-3">封鎖</button>`;
-    }
-
-    if (isSuperAdmin && !isUserSuperAdmin) {
-      if (isAdmin) {
-        actions += `<button data-action="toggle-user-role" data-user-id="${
-          esc(u.userId)
-        }" data-new-role="USER" class="ui-text-danger hover:text-red-800 text-sm font-medium">移除管理員</button>`;
-      } else {
-        actions += `<button data-action="toggle-user-role" data-user-id="${
-          esc(u.userId)
-        }" data-new-role="ADMIN" class="text-purple-600 hover:text-purple-800 text-sm font-medium">設為管理員</button>`;
-      }
-    }
-
-    return `
-        <tr class="border-b" style="border-color:#E2DCC8;">
-            <td class="p-3"><img src="${
-      esc(u.pictureUrl) || "https://via.placeholder.com/40"
-    }" class="w-10 h-10 rounded-full border"></td>
-            <td class="p-3">
-                <div class="font-medium ui-text-strong">${
-      esc(u.displayName)
-    }</div>
-                <div class="text-xs ui-text-subtle">${esc(u.email || "")} ${
-      u.phone ? "・" + esc(u.phone) : ""
-    }</div>
-                <div class="text-xs ui-text-subtle mt-1">${
-      u.defaultDeliveryMethod === "delivery"
-        ? `宅配 (${esc(u.defaultCity)}${esc(u.defaultDistrict)} ${
-          esc(u.defaultAddress)
-        })`
-        : u.defaultDeliveryMethod === "in_store"
-        ? "來店自取"
-        : u.defaultDeliveryMethod
-        ? `${u.defaultDeliveryMethod === "seven_eleven" ? "7-11" : "全家"} (${
-          esc(u.defaultStoreName)
-        } - ${esc(u.defaultStoreId)})`
-        : "尚未設定"
-    }</div>
-                <div class="text-xs ui-text-muted font-mono mt-1 opacity-50">${
-      esc(u.userId)
-    }</div>
-            </td>
-            <td class="p-3">
-                <div>${
-      isAdmin
-        ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-800">管理員</span>'
-        : '<span class="px-2 py-0.5 rounded text-xs font-medium ui-bg-soft ui-text-strong">用戶</span>'
-    }</div>
-                <div class="mt-1">${
-      isBlocked
-        ? '<span class="px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">黑名單</span>'
-        : '<span class="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">正常</span>'
-    }</div>
-                <div class="text-xs ui-text-muted mt-1">登入：${lastLogin}</div>
-            </td>
-            <td class="p-3 text-right">${actions}</td>
-        </tr>`;
-  }).join("");
-}
-
-async function toggleUserRole(targetUserId, newRole) {
-  const c = await Swal.fire({
-    title: `設為 ${newRole === "ADMIN" ? "管理員" : "一般用戶"}？`,
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "確定",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    Swal.fire({
-      title: "處理中...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
-    const r = await authFetch(`${API_URL}?action=updateUserRole`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetUserId, newRole }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "權限已更新" });
-      loadUsers();
-    } else throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function toggleUserBlacklist(targetUserId, isBlocked) {
-  if (isBlocked) {
-    const { value: reason } = await Swal.fire({
-      title: "封鎖用戶",
-      input: "text",
-      inputPlaceholder: "請輸入封鎖原因（例如惡意棄單）",
-      showCancelButton: true,
-      confirmButtonText: "封鎖",
-    });
-    if (reason === undefined) return;
-    try {
-      Swal.fire({
-        title: "處理中...",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-      });
-      const r = await authFetch(`${API_URL}?action=addToBlacklist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId, reason }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        Toast.fire({ icon: "success", title: "已加入黑名單" });
-        loadUsers();
-        if (
-          document.getElementById("tab-blacklist").classList.contains(
-            "tab-active",
-          )
-        ) loadBlacklist();
-      } else throw new Error(d.error);
-    } catch (e) {
-      Swal.fire("錯誤", e.message, "error");
-    }
-  } else {
-    const c = await Swal.fire({
-      title: "解除封鎖？",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "確定解除",
-    });
-    if (!c.isConfirmed) return;
-    try {
-      Swal.fire({
-        title: "處理中...",
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-      });
-      const r = await authFetch(`${API_URL}?action=removeFromBlacklist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId }),
-      });
-      const d = await r.json();
-      if (d.success) {
-        Toast.fire({ icon: "success", title: "已解除封鎖" });
-        loadUsers();
-        if (
-          document.getElementById("tab-blacklist").classList.contains(
-            "tab-active",
-          )
-        ) loadBlacklist();
-      } else throw new Error(d.error);
-    } catch (e) {
-      Swal.fire("錯誤", e.message, "error");
-    }
-  }
-}
-
-// ============ 黑名單 ============
-async function loadBlacklist() {
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=getBlacklist&userId=${getAuthUserId()}&_=${Date.now()}`,
-    );
-    const d = await r.json();
-    if (d.success) {
-      blacklist = d.blacklist;
-      renderBlacklist();
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-function isVueManagedBlacklistTable(
-  tbody = document.getElementById("blacklist-table"),
-) {
-  return tbody?.dataset?.vueManaged === "true";
-}
-
-function buildBlacklistViewModel(blacklistEntry) {
-  return {
-    displayName: blacklistEntry.displayName || "",
-    lineUserId: blacklistEntry.lineUserId || "",
-    blockedAtText: blacklistEntry.blockedAt
-      ? new Date(blacklistEntry.blockedAt).toLocaleString("zh-TW")
-      : "無紀錄",
-    reasonText: blacklistEntry.reason || "(無原因)",
-  };
-}
-
-function emitDashboardBlacklistUpdated(nextBlacklist = blacklist) {
-  const viewBlacklist = (Array.isArray(nextBlacklist) ? nextBlacklist : [])
-    .map((entry) => buildBlacklistViewModel(entry));
-  window.dispatchEvent(
-    new CustomEvent("coffee:dashboard-blacklist-updated", {
-      detail: { blacklist: viewBlacklist },
-    }),
-  );
-}
-
-function renderBlacklist() {
-  const tbody = document.getElementById("blacklist-table");
-  if (!tbody) return;
-  if (isVueManagedBlacklistTable(tbody)) {
-    emitDashboardBlacklistUpdated(blacklist);
-    return;
-  }
-  if (!blacklist.length) {
-    tbody.innerHTML =
-      '<tr><td colspan="3" class="text-center py-8 ui-text-subtle">目前沒有封鎖名單</td></tr>';
-    return;
-  }
-  tbody.innerHTML = blacklist.map((b) => {
-    const dt = b.blockedAt
-      ? new Date(b.blockedAt).toLocaleString("zh-TW")
-      : "無紀錄";
-    return `
-        <tr class="border-b" style="border-color:#E2DCC8;">
-            <td class="p-3">
-                <div class="font-medium">${esc(b.displayName)}</div>
-                <div class="text-xs ui-text-muted font-mono">${
-      esc(b.lineUserId)
-    }</div>
-            </td>
-            <td class="p-3">
-                <div class="text-sm">${dt}</div>
-                <div class="text-xs ui-text-danger mt-1">${
-      esc(b.reason) || "(無原因)"
-    }</div>
-            </td>
-            <td class="p-3 text-right">
-                <button data-action="toggle-user-blacklist" data-user-id="${
-      esc(b.lineUserId)
-    }" data-blocked="false" class="ui-text-success hover:text-green-800 text-sm font-medium">解除封鎖</button>
-            </td>
-        </tr>`;
-  }).join("");
-}
-
-// ============ Icon 上傳 ============
-function previewIcon(input) {
-  if (!(input instanceof HTMLInputElement)) return;
-  const file = input.files?.[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const dataUrl = String(e?.target?.result || "");
-    if (!dataUrl) return;
-
-    if (input.classList.contains("do-icon-file")) {
-      const row = input.closest(".delivery-option-row");
-      const preview = row?.querySelector(".do-icon-preview");
-      if (preview instanceof HTMLImageElement) {
-        setPreviewImageSource(preview, dataUrl, getRowFallbackIconUrl(row));
-      }
-      return;
-    }
-
-    const previewId = input.dataset.previewTarget;
-    if (previewId) {
-      updateIconPreview({
-        previewId,
-        rawUrl: dataUrl,
-        fallbackUrl: getDefaultIconUrl(input.dataset.fallbackKey || ""),
-      });
-    }
-  };
-  reader.readAsDataURL(file);
-}
-
-function getRowFallbackIconUrl(row) {
-  const key = row?.dataset?.defaultIconKey || "delivery";
-  return getDefaultIconUrl(key);
-}
-
-const ICON_PREVIEW_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="7" y="7" width="50" height="50" rx="12" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="3"/><path d="M20 41l9-10 7 7 8-10 7 13H20z" fill="#94A3B8"/><circle cx="25" cy="24" r="4" fill="#94A3B8"/></svg>',
-)}`;
-
-function pushPreviewCandidate(candidates, seen, value) {
-  const normalized = String(value || "").trim();
-  if (!normalized || seen.has(normalized)) return;
-  seen.add(normalized);
-  candidates.push(normalized);
-}
-
-function buildPreviewSrcCandidates(rawUrl, fallbackUrl = "") {
-  const candidates = [];
-  const seen = new Set();
-  const rawValues = [rawUrl, fallbackUrl];
-
-  rawValues.forEach((value) => {
-    const normalizedValue = normalizeIconPath(value || "");
-    const resolved = resolveAssetUrl(normalizedValue);
-    if (!resolved) return;
-
-    pushPreviewCandidate(candidates, seen, resolved);
-
-    if (
-      typeof window !== "undefined" &&
-      /^\/(?:sc\/)?icons\//.test(resolved)
-    ) {
-      pushPreviewCandidate(candidates, seen, `${window.location.origin}${resolved}`);
-    }
-
-    if (/^(?:https?:|data:|blob:|\/\/)/i.test(resolved)) {
-      if (/^(?:data:|blob:|\/\/)/i.test(resolved)) return;
-      try {
-        const parsed = new URL(resolved);
-        const normalizedPath = parsed.pathname || "";
-        if (normalizedPath.startsWith("/sc/icons/")) {
-          const rootPath =
-            `/icons/${normalizedPath.slice("/sc/icons/".length)}`;
-          pushPreviewCandidate(
-            candidates,
-            seen,
-            rootPath,
-          );
-          pushPreviewCandidate(
-            candidates,
-            seen,
-            `${parsed.origin}${rootPath}`,
-          );
-        } else if (normalizedPath.startsWith("/icons/")) {
-          const scPath = `/sc${normalizedPath}`;
-          pushPreviewCandidate(candidates, seen, scPath);
-          pushPreviewCandidate(candidates, seen, `${parsed.origin}${scPath}`);
-        }
-      } catch {
-      }
-      return;
-    }
-
-    if (resolved.startsWith("/sc/")) {
-      const rootPath = resolved.replace(/^\/sc\//, "/");
-      pushPreviewCandidate(candidates, seen, rootPath);
-      if (typeof window !== "undefined") {
-        pushPreviewCandidate(candidates, seen, `${window.location.origin}${rootPath}`);
-      }
-      return;
-    }
-
-    if (resolved.startsWith("/icons/")) {
-      const scPath = `/sc${resolved}`;
-      pushPreviewCandidate(candidates, seen, scPath);
-      if (typeof window !== "undefined") {
-        pushPreviewCandidate(candidates, seen, `${window.location.origin}${scPath}`);
-      }
-    }
-  });
-
-  return candidates;
-}
-
-function setPreviewImageSource(preview, rawUrl, fallbackUrl = "") {
-  if (!(preview instanceof HTMLImageElement)) return "";
-  const candidates = buildPreviewSrcCandidates(rawUrl, fallbackUrl);
-  const applyPlaceholder = () => {
-    preview.onerror = null;
-    preview.src = ICON_PREVIEW_PLACEHOLDER;
-    preview.classList.add("is-placeholder");
-    preview.classList.remove("hidden");
-  };
-  if (!candidates.length) {
-    applyPlaceholder();
-    return "";
-  }
-
-  let candidateIndex = 0;
-  const applyCandidate = () => {
-    preview.classList.remove("is-placeholder");
-    preview.src = candidates[candidateIndex];
-    preview.classList.remove("hidden");
-  };
-
-  preview.onerror = () => {
-    candidateIndex += 1;
-    if (candidateIndex < candidates.length) {
-      applyCandidate();
-      return;
-    }
-    applyPlaceholder();
-  };
-
-  applyCandidate();
-  return candidates[0];
-}
-
-function updateIconPreview({ previewId, rawUrl, fallbackUrl = "" }) {
-  const preview = document.getElementById(previewId);
-  if (!(preview instanceof HTMLImageElement)) return "";
-  return setPreviewImageSource(preview, rawUrl, fallbackUrl);
-}
-
-function validateIconFile(file) {
-  if (!file) {
-    Swal.fire("提示", "請先選擇圖片檔案", "info");
-    return false;
-  }
-  if (!String(file.type || "").startsWith("image/")) {
-    Swal.fire("錯誤", "請選擇圖片檔案 (PNG/JPG/WebP)", "error");
-    return false;
-  }
-  return true;
-}
-
-async function fileToBase64(file) {
-  return await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const value = String(reader.result || "");
-      resolve(value.split(",")[1] || "");
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-
-
-function setIconUrlToField({
-  inputId,
-  displayId,
-  previewId,
-  url,
-  fallbackKey = "",
-}) {
-  const normalizedUrl = normalizeIconPath(url);
-  const finalUrl = normalizedUrl || String(url || "").trim();
-  const input = document.getElementById(inputId);
-  if (input) input.value = finalUrl;
-  const display = document.getElementById(displayId);
-  if (display) {
-    const resolvedDisplayUrl = resolveAssetUrl(finalUrl) || finalUrl;
-    display.textContent = resolvedDisplayUrl;
-  }
-  if (previewId) {
-    updateIconPreview({
-      previewId,
-      rawUrl: finalUrl,
-      fallbackUrl: getDefaultIconUrl(fallbackKey),
-    });
-  }
-
-  const paymentInputMatch = /^po-(cod|linepay|jkopay|transfer)-icon-url$/.exec(
-    String(inputId || ""),
-  );
-  if (paymentInputMatch) {
-    updateDeliveryRoutingPaymentHeaderIcon(paymentInputMatch[1], finalUrl);
-  }
-
-}
-
-function applyIconFromLibrary(button) {
-  const targetSelect = document.getElementById("icon-library-target");
-  const targetKey = String(targetSelect?.value || "site").trim();
-  const target = ICON_LIBRARY_TARGET_MAP[targetKey];
-  if (!target) {
-    Swal.fire("錯誤", "請先選擇有效的套用目標", "error");
-    return;
-  }
-
-  const iconKey = String(button?.dataset?.iconKey || "").trim();
-  const rawUrl = String(button?.dataset?.iconUrl || "").trim();
-  const iconUrl = rawUrl || getDefaultIconUrl(iconKey);
-  if (!iconUrl) {
-    Swal.fire("錯誤", "找不到要套用的 icon 路徑", "error");
-    return;
-  }
-
-  setIconUrlToField({
-    inputId: target.inputId,
-    displayId: target.displayId,
-    previewId: target.previewId,
-    url: iconUrl,
-    fallbackKey: target.fallbackKey,
-  });
-  Toast.fire({
-    icon: "success",
-    title: `已套用到${target.label}`,
-  });
-}
-
-
-async function uploadAssetFile(file, settingKey = "") {
-  const base64 = await fileToBase64(file);
-  const r = await authFetch(`${API_URL}?action=uploadAsset`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      userId: getAuthUserId(),
-      fileData: base64,
-      fileName: file.name,
-      contentType: file.type,
-      settingKey,
-    }),
-  });
-  return await r.json();
-}
-
-async function uploadSiteIcon() {
-  const fileInput = document.getElementById("s-site-icon-upload");
-  const file = fileInput?.files?.[0];
-  if (!validateIconFile(file)) return;
-
-  Swal.fire({
-    title: "上傳中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-
-  try {
-    const d = await uploadAssetFile(file, "site_icon_url");
-    if (d.success) {
-      document.getElementById("s-site-icon-url").value = d.url;
-      updateIconPreview({
-        previewId: "s-icon-preview",
-        rawUrl: d.url,
-        fallbackUrl: getDefaultIconUrl("brand"),
-      });
-      document.getElementById("s-icon-url-display").textContent = "自訂 Logo (儲存後生效)";
-      Toast.fire({ icon: "success", title: "品牌 Logo 已上傳！請記得點擊儲存設定。" });
-    } else {
-      Swal.fire("錯誤", d.error, "error");
-    }
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  } finally {
-    if (fileInput) fileInput.value = "";
-  }
-}
-
-async function resetSiteIcon() {
-  document.getElementById("s-site-icon-url").value = "";
-  updateIconPreview({
-    previewId: "s-icon-preview",
-    rawUrl: getDefaultIconUrl("brand"),
-    fallbackUrl: getDefaultIconUrl("brand"),
-  });
-  document.getElementById("s-icon-url-display").textContent = "未設定 (預設)";
-  Toast.fire({ icon: "success", title: "已恢復預設 Logo！請記得點擊儲存設定。" });
-}
-
-async function uploadSectionIcon(button) {
-  const section = button?.dataset?.section;
-  if (!section) return;
-
-  const fileInput = document.getElementById(`s-${section}-icon-file`);
-  const file = fileInput?.files?.[0];
-  if (!validateIconFile(file)) return;
-
-  Swal.fire({
-    title: "上傳中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-
-  try {
-    const settingKey = sectionIconSettingKey(section);
-    const d = await uploadAssetFile(file, settingKey);
-    if (d.success) {
-      const fallbackKey = section === "products"
-        ? "products"
-        : section === "delivery"
-        ? "delivery"
-        : "notes";
-      setIconUrlToField({
-        inputId: `s-${section}-icon-url`,
-        displayId: `s-${section}-icon-url-display`,
-        previewId: `s-${section}-icon-preview`,
-        url: d.url,
-        fallbackKey,
-      });
-      Toast.fire({ icon: "success", title: "區塊圖示已更新" });
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function uploadPaymentIcon(button) {
-  const method = button?.dataset?.method;
-  if (!method) return;
-
-  const fileInput = document.getElementById(`po-${method}-icon-file`);
-  const file = fileInput?.files?.[0];
-  if (!validateIconFile(file)) return;
-
-  Swal.fire({
-    title: "上傳中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-
-  try {
-    const d = await uploadAssetFile(file, "");
-    if (d.success) {
-      setIconUrlToField({
-        inputId: `po-${method}-icon-url`,
-        displayId: `po-${method}-icon-url-display`,
-        previewId: `po-${method}-icon-preview`,
-        url: d.url,
-        fallbackKey: paymentIconFallbackKey(method),
-      });
-      Toast.fire({ icon: "success", title: "付款圖示已更新" });
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-async function uploadDeliveryRowIcon(button) {
-  const row = button?.closest?.(".delivery-option-row");
-  if (!row) return;
-  const fileInput = row.querySelector(".do-icon-file");
-  const file = fileInput?.files?.[0];
-  if (!validateIconFile(file)) return;
-
-  Swal.fire({
-    title: "上傳中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-
-  try {
-    const d = await uploadAssetFile(file, "");
-    if (d.success) {
-      const normalizedUrl = normalizeIconPath(d.url);
-      const finalUrl = normalizedUrl || String(d.url || "").trim();
-      const urlInput = row.querySelector(".do-icon-url");
-      const urlDisplay = row.querySelector(".do-icon-url-display");
-      const preview = row.querySelector(".do-icon-preview");
-      if (urlInput) urlInput.value = finalUrl;
-      if (urlDisplay) {
-        const resolvedDisplayUrl = resolveAssetUrl(finalUrl) || finalUrl;
-        urlDisplay.textContent = resolvedDisplayUrl;
-      }
-      if (preview instanceof HTMLImageElement) {
-        setPreviewImageSource(preview, finalUrl, getRowFallbackIconUrl(row));
-      }
-      Toast.fire({ icon: "success", title: "物流圖示已更新" });
-    } else Swal.fire("錯誤", d.error, "error");
   } catch (e) {
     Swal.fire("錯誤", e.message, "error");
   }
