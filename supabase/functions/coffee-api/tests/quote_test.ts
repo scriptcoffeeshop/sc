@@ -1,4 +1,4 @@
-import { assertEquals } from "std/testing/asserts";
+import { assertEquals } from "@std/assert";
 import { computeOrderQuote } from "../api/quote.ts";
 
 const MOCK_DELIVERY_CONFIG = [

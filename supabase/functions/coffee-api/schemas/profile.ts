@@ -25,11 +25,11 @@ export const updateUserProfileSchema = z.object({
   ]).optional(),
   defaultCustomFields: z.union([
     z.string(),
-    z.record(z.unknown()),
+    z.record(z.string(), z.unknown()),
   ]).optional(),
   defaultReceiptInfo: z.union([
     z.string(),
-    z.record(z.unknown()),
+    z.record(z.string(), z.unknown()),
   ]).optional(),
 }).refine((data: Record<string, unknown>) => Object.keys(data).length > 0, {
   message: "沒有提供要更新的欄位",

@@ -31,6 +31,7 @@ export const categorySchema = z.object({
 });
 
 export const settingSchema = z.record(
+  z.string(),
   z.union([z.string(), z.number(), z.boolean(), z.null()]).transform((
     v: unknown,
   ) => v === null ? "" : String(v)),
@@ -61,7 +62,7 @@ export const reorderIdsSchema = z.object({
 export const reorderProductSchema = z.object({
   id: positiveIdSchema,
   direction: z.enum(["top", "bottom", "up", "down"], {
-    errorMap: () => ({ message: "direction 無效" }),
+    error: "direction 無效",
   }),
 });
 

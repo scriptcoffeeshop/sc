@@ -25,7 +25,7 @@ const boolLikeOptionalSchema = z.union([z.boolean(), z.string(), z.number()])
 const lineFlexMessageSchema = z.object({
   type: z.literal("flex"),
   altText: z.string().trim().min(1, "Flex altText 不能為空"),
-  contents: z.record(z.unknown()),
+  contents: z.record(z.string(), z.unknown()),
 });
 
 const paymentStatusValues = [
