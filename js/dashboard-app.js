@@ -17,22 +17,18 @@ import {
   createOrdersTabLoaders,
 } from "./dashboard/modules/orders.js";
 import {
-  formatOrderDateTimeText,
   orderMethodLabel,
   orderPayMethodLabel,
   orderPayStatusLabel,
   orderStatusLabel,
-  orderStatusOptions,
   normalizeReceiptInfo,
   normalizeTrackingUrl,
 } from "./dashboard/modules/order-shared.js";
-import { createOrdersController } from "./dashboard/modules/orders-controller.js";
 import { createOrderStatusController } from "./dashboard/modules/order-status-controller.js";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
-import { createProductsController } from "./dashboard/modules/products-controller.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
 import { createPromotionsController } from "./dashboard/modules/promotions.js";
 import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
@@ -63,13 +59,20 @@ import {
   createUsersTabLoaders,
 } from "./dashboard/modules/users.js";
 import { createDashboardEvents } from "./dashboard/events.js";
+import {
+  configureDashboardOrdersServices,
+  dashboardOrdersActions,
+  getDashboardOrders,
+} from "../frontend/src/features/dashboard/useDashboardOrders.js";
+import {
+  configureDashboardProductsServices,
+  dashboardProductsActions,
+  getDashboardProducts,
+} from "../frontend/src/features/dashboard/useDashboardProducts.js";
 
 // ============ 共享狀態 ============
 let currentUser = null;
-let products = [];
 let categories = [];
-let orders = [];
-let selectedOrderIds = new Set();
 let dashboardSettings = {};
 let dashboardTabLoaders = {};
 let loadInitialDashboardData = async () => {};
@@ -127,7 +130,7 @@ const promotionsController = createPromotionsController({
   Swal: globalThis.Swal,
   esc,
   Sortable: globalThis.Sortable,
-  getProducts: () => products,
+  getProducts: getDashboardProducts,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
 const formFieldsController = createFormFieldsController({
@@ -196,7 +199,7 @@ const orderNotificationsController = createOrderNotificationsController({
   API_URL,
   authFetch,
   getAuthUserId: sessionController.getAuthUserId,
-  getOrders: () => orders,
+  getOrders: getDashboardOrders,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -205,40 +208,14 @@ const orderNotificationsController = createOrderNotificationsController({
   orderPayMethodLabel,
   orderPayStatusLabel,
   normalizeReceiptInfo,
-  normalizeTrackingUrl,
-});
-const ordersController = createOrdersController({
-  API_URL,
-  authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
-  getOrders: () => orders,
-  setOrders: (nextOrders) => {
-    orders = Array.isArray(nextOrders) ? nextOrders : [];
-  },
-  getSelectedOrderIdsState: () => selectedOrderIds,
-  setSelectedOrderIdsState: (nextSelectedOrderIds) => {
-    selectedOrderIds = nextSelectedOrderIds instanceof Set
-      ? nextSelectedOrderIds
-      : new Set(nextSelectedOrderIds || []);
-  },
-  Toast,
-  Swal: globalThis.Swal,
-  esc,
-  orderStatusLabel,
-  orderMethodLabel,
-  orderPayMethodLabel,
-  orderPayStatusLabel,
-  orderStatusOptions,
-  normalizeReceiptInfo,
-  formatOrderDateTimeText,
   normalizeTrackingUrl,
 });
 const orderStatusController = createOrderStatusController({
   API_URL,
   authFetch,
   getAuthUserId: sessionController.getAuthUserId,
-  getOrders: () => orders,
-  loadOrders: ordersController.loadOrders,
+  getOrders: getDashboardOrders,
+  loadOrders: dashboardOrdersActions.loadOrders,
   previewOrderStatusNotification:
     orderNotificationsController.previewOrderStatusNotification,
   Toast,
@@ -246,21 +223,13 @@ const orderStatusController = createOrderStatusController({
   esc,
   orderStatusLabel,
 });
-const productsController = createProductsController({
+configureDashboardOrdersServices({
   API_URL,
   authFetch,
   getAuthUserId: sessionController.getAuthUserId,
-  getProducts: () => products,
-  setProducts: (nextProducts) => {
-    products = Array.isArray(nextProducts) ? nextProducts : [];
-  },
-  getCategories: () => categories,
-  ensureCategoriesLoaded: () => categoriesController.loadCategories(),
   Toast,
   Swal: globalThis.Swal,
-  esc,
-  Sortable: globalThis.Sortable,
-  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
+  changeOrderStatus: orderStatusController.changeOrderStatus,
 });
 const categoriesController = createCategoriesController({
   API_URL,
@@ -270,48 +239,60 @@ const categoriesController = createCategoriesController({
   setCategories: (nextCategories) => {
     categories = Array.isArray(nextCategories) ? nextCategories : [];
   },
-  loadProducts: productsController.loadProducts,
+  loadProducts: dashboardProductsActions.loadProducts,
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
   esc,
 });
+configureDashboardProductsServices({
+  API_URL,
+  authFetch,
+  getAuthUserId: sessionController.getAuthUserId,
+  getCategories: () => categories,
+  ensureCategoriesLoaded: () => categoriesController.loadCategories(),
+  Toast,
+  Swal: globalThis.Swal,
+  Sortable: globalThis.Sortable,
+});
 
 const dashboardActionHandlers = {
   "login-with-line": triggerDashboardLogin,
   "logout": sessionController.logout,
   ...createOrdersActionHandlers({
-    loadOrders: ordersController.loadOrders,
-    changeOrderStatus: orderStatusController.changeOrderStatus,
+    loadOrders: dashboardOrdersActions.loadOrders,
     sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
     sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
-    deleteOrderById: ordersController.deleteOrderById,
+    deleteOrderById: dashboardOrdersActions.deleteOrderById,
     refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
     confirmTransferPayment: orderStatusController.confirmTransferPayment,
-    toggleOrderSelection: ordersController.toggleOrderSelection,
-    toggleSelectAllOrders: ordersController.toggleSelectAllOrders,
-    batchUpdateOrders: ordersController.batchUpdateOrders,
-    batchDeleteOrders: ordersController.batchDeleteOrders,
-    exportFilteredOrdersCsv: ordersController.exportFilteredOrdersCsv,
-    exportSelectedOrdersCsv: ordersController.exportSelectedOrdersCsv,
+    toggleOrderSelection: dashboardOrdersActions.toggleOrderSelection,
+    toggleSelectAllOrders: dashboardOrdersActions.toggleSelectAllOrders,
+    batchUpdateOrders: dashboardOrdersActions.batchUpdateOrders,
+    batchDeleteOrders: dashboardOrdersActions.batchDeleteOrders,
+    exportFilteredOrdersCsv: dashboardOrdersActions.exportFilteredOrdersCsv,
+    exportSelectedOrdersCsv: dashboardOrdersActions.exportSelectedOrdersCsv,
+    setPendingOrderStatus: dashboardOrdersActions.setPendingOrderStatus,
+    confirmOrderStatus: dashboardOrdersActions.confirmOrderStatus,
     showFlexHistory: orderNotificationsController.showFlexHistory,
     Toast,
   }),
   ...createProductsActionHandlers({
-    showProductModal: productsController.showProductModal,
+    showProductModal: dashboardProductsActions.showProductModal,
     addCategory: categoriesController.addCategory,
     showPromotionModal: promotionsController.showPromotionModal,
-    editProduct: productsController.editProduct,
-    delProduct: productsController.delProduct,
-    toggleProductEnabled: productsController.toggleProductEnabled,
+    editProduct: dashboardProductsActions.editProduct,
+    delProduct: dashboardProductsActions.delProduct,
+    toggleProductEnabled: dashboardProductsActions.toggleProductEnabled,
     editCategory: categoriesController.editCategory,
     delCategory: categoriesController.delCategory,
     editPromotion: promotionsController.editPromotion,
     delPromotion: promotionsController.delPromotion,
     togglePromotionEnabled: promotionsController.togglePromotionEnabled,
-    addSpecRow: productsController.addSpecRow,
-    closeProductModal: productsController.closeProductModal,
+    addSpecRow: dashboardProductsActions.addSpecRow,
+    removeSpecRow: dashboardProductsActions.removeSpecRow,
+    closeProductModal: dashboardProductsActions.closeProductModal,
     closePromotionModal: promotionsController.closePromotionModal,
     renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
@@ -345,7 +326,7 @@ const dashboardActionHandlers = {
 };
 
 dashboardTabLoaders = {
-  ...createOrdersTabLoaders({ loadOrders: ordersController.loadOrders }),
+  ...createOrdersTabLoaders({ loadOrders: dashboardOrdersActions.loadOrders }),
   ...createProductsTabLoaders({
     renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
@@ -362,27 +343,27 @@ dashboardTabLoaders = {
 
 loadInitialDashboardData = () => Promise.all([
   categoriesController.loadCategories(),
-  productsController.loadProducts(),
+  dashboardProductsActions.loadProducts(),
   settingsController.loadSettings(),
-  ordersController.loadOrders(),
+  dashboardOrdersActions.loadOrders(),
 ]);
 
 registerDashboardGlobals({
   loginWithLine: triggerDashboardLogin,
   logout: sessionController.logout,
   showTab: sessionController.showTab,
-  loadOrders: ordersController.loadOrders,
-  renderOrders: ordersController.renderOrders,
+  loadOrders: dashboardOrdersActions.loadOrders,
+  renderOrders: dashboardOrdersActions.renderOrders,
   changeOrderStatus: orderStatusController.changeOrderStatus,
   sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
-  deleteOrderById: ordersController.deleteOrderById,
-  showProductModal: productsController.showProductModal,
-  editProduct: productsController.editProduct,
-  closeProductModal: productsController.closeProductModal,
-  saveProduct: productsController.saveProduct,
-  delProduct: productsController.delProduct,
-  moveProduct: productsController.moveProduct,
-  addSpecRow: productsController.addSpecRow,
+  deleteOrderById: dashboardOrdersActions.deleteOrderById,
+  showProductModal: dashboardProductsActions.showProductModal,
+  editProduct: dashboardProductsActions.editProduct,
+  closeProductModal: dashboardProductsActions.closeProductModal,
+  saveProduct: dashboardProductsActions.saveProduct,
+  delProduct: dashboardProductsActions.delProduct,
+  moveProduct: dashboardProductsActions.moveProduct,
+  addSpecRow: dashboardProductsActions.addSpecRow,
   addCategory: categoriesController.addCategory,
   editCategory: categoriesController.editCategory,
   delCategory: categoriesController.delCategory,
@@ -436,10 +417,10 @@ export function initDashboardApp() {
     sessionController.showTab,
     usersController.loadUsers,
     iconAssetsController.previewIcon,
-    productsController.saveProduct,
+    dashboardProductsActions.saveProduct,
     promotionsController.savePromotion,
     orderStatusController.changeOrderStatus,
-    ordersController.renderOrders,
+    dashboardOrdersActions.renderOrders,
   );
   initializeDashboardEventDelegation();
   brandingController.loadPublicDashboardBranding();

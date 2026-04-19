@@ -1,24 +1,3 @@
-const ORDER_STATUS_ALIASES = {
-  pending: "pending",
-  processing: "processing",
-  shipped: "shipped",
-  completed: "completed",
-  cancelled: "cancelled",
-  "待處理": "pending",
-  "處理中": "processing",
-  "已出貨": "shipped",
-  "已完成": "completed",
-  "已取消": "cancelled",
-};
-
-function normalizeOrderStatus(value) {
-  const rawValue = String(value || "").trim();
-  if (!rawValue) return "";
-  const lowered = rawValue.toLowerCase();
-  return ORDER_STATUS_ALIASES[rawValue] || ORDER_STATUS_ALIASES[lowered] ||
-    lowered;
-}
-
 export function createDashboardEvents(
   actionHandlers,
   tabLoaders,
@@ -75,26 +54,10 @@ export function createDashboardEvents(
         previewIcon(target);
         return;
       }
-      if (
-        target instanceof HTMLSelectElement &&
-        target.dataset.action === "change-order-status"
-      ) {
-        const orderId = target.dataset.orderId;
-        if (!orderId) return;
-        const currentStatus = normalizeOrderStatus(
-          target.dataset.currentStatus,
-        );
-        const nextStatus = normalizeOrderStatus(target.value);
-        // 找到對應的確認按鈕並顯示/隱藏
-        const confirmBtn = target.parentElement?.querySelector(
-          '[data-action="confirm-order-status"]',
-        );
-        if (confirmBtn) {
-          if (!nextStatus || currentStatus === nextStatus) {
-            confirmBtn.classList.add("hidden");
-          } else {
-            confirmBtn.classList.remove("hidden");
-          }
+      if (target instanceof HTMLSelectElement && target.dataset.action) {
+        const handler = actionHandlers[target.dataset.action];
+        if (handler) {
+          handler(target, event);
         }
         return;
       }

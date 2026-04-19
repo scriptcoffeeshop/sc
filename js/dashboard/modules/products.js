@@ -26,7 +26,9 @@ export function createProductsActionHandlers(deps) {
       deps.toggleProductEnabled(id, parseBool(el.dataset.enabled));
     },
     "remove-spec-row": (el) => {
-      el.closest(".spec-row")?.remove();
+      const index = parseId(el.dataset.specIndex);
+      if (index === null || !deps.removeSpecRow) return;
+      deps.removeSpecRow(index);
     },
     "edit-category": (el) => {
       const id = parseId(el.dataset.categoryId);

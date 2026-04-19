@@ -25,7 +25,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
         <select
           id="order-filter"
-          data-order-filter
+          v-model="filters.status"
           class="input-field text-sm py-2"
         >
           <option value="all">訂單狀態：全部</option>
@@ -37,7 +37,7 @@
         </select>
         <select
           id="order-payment-filter"
-          data-order-filter
+          v-model="filters.paymentMethod"
           class="input-field text-sm py-2"
         >
           <option value="all">付款方式：全部</option>
@@ -48,7 +48,7 @@
         </select>
         <select
           id="order-payment-status-filter"
-          data-order-filter
+          v-model="filters.paymentStatus"
           class="input-field text-sm py-2"
         >
           <option value="all">付款狀態：全部</option>
@@ -63,7 +63,7 @@
         </select>
         <select
           id="order-delivery-filter"
-          data-order-filter
+          v-model="filters.deliveryMethod"
           class="input-field text-sm py-2"
         >
           <option value="all">配送方式：全部</option>
@@ -75,21 +75,21 @@
         </select>
         <input
           id="order-date-from"
-          data-order-filter
+          v-model="filters.dateFrom"
           type="date"
           class="input-field text-sm py-2"
           placeholder="起始日期"
         >
         <input
           id="order-date-to"
-          data-order-filter
+          v-model="filters.dateTo"
           type="date"
           class="input-field text-sm py-2"
           placeholder="結束日期"
         >
         <input
           id="order-amount-min"
-          data-order-filter
+          v-model="filters.minAmount"
           type="number"
           min="0"
           class="input-field text-sm py-2"
@@ -97,7 +97,7 @@
         >
         <input
           id="order-amount-max"
-          data-order-filter
+          v-model="filters.maxAmount"
           type="number"
           min="0"
           class="input-field text-sm py-2"
@@ -108,16 +108,19 @@
       <div class="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-white border">
         <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
           <input
+            ref="selectAllCheckbox"
             type="checkbox"
             id="orders-select-all"
             data-action="toggle-select-all-orders"
             class="w-4 h-4"
+            :checked="allFilteredSelected"
           >
           全選目前篩選結果
         </label>
-        <span id="orders-selected-count" class="text-sm ui-text-strong">已選 0 筆</span>
+        <span id="orders-selected-count" class="text-sm ui-text-strong">{{ selectedCountText }}</span>
         <select
           id="batch-order-status"
+          v-model="batchForm.status"
           class="input-field text-sm py-1"
           style="width: auto"
         >
@@ -130,6 +133,7 @@
         </select>
         <select
           id="batch-payment-status"
+          v-model="batchForm.paymentStatus"
           class="input-field text-sm py-1"
           style="width: auto"
         >
@@ -169,8 +173,8 @@
         </button>
       </div>
     </div>
-    <div id="orders-summary" class="text-sm ui-text-strong mb-3"></div>
-    <div id="orders-list" data-vue-managed="true">
+    <div id="orders-summary" class="text-sm ui-text-strong mb-3">{{ summaryText }}</div>
+    <div id="orders-list">
       <p v-if="ordersView.length === 0" class="text-center ui-text-subtle py-8">
         沒有符合的訂單
       </p>
@@ -349,7 +353,7 @@
                 :data-order-id="order.orderId"
                 :data-current-status="order.status"
                 class="text-xs border rounded px-2 py-1"
-                :value="order.status"
+                :value="order.selectedStatus"
               >
                 <option
                   v-for="status in ordersStatusOptions"
@@ -360,9 +364,10 @@
                 </option>
               </select>
               <button
+                v-if="order.showConfirmStatusButton"
                 data-action="confirm-order-status"
                 :data-order-id="order.orderId"
-                class="confirm-status-btn hidden text-xs px-2 py-1 rounded font-medium"
+                class="confirm-status-btn text-xs px-2 py-1 rounded font-medium"
                 style="background:#6F4E37; color:#fff;"
               >
                 確認
@@ -383,18 +388,26 @@
 </template>
 
 <script setup>
-defineProps({
-  ordersView: {
-    type: Array,
-    default: () => [],
-  },
-  ordersStatusOptions: {
-    type: Array,
-    default: () => [],
-  },
-  orderStatusText: {
-    type: Function,
-    required: true,
-  },
+import { ref, watchEffect } from "vue";
+import { useDashboardOrders } from "./useDashboardOrders.js";
+
+const {
+  filters,
+  batchForm,
+  ordersView,
+  ordersStatusOptions,
+  summaryText,
+  selectedCountText,
+  allFilteredSelected,
+  selectAllIndeterminate,
+  orderStatusText,
+} = useDashboardOrders();
+
+const selectAllCheckbox = ref(null);
+
+watchEffect(() => {
+  if (selectAllCheckbox.value) {
+    selectAllCheckbox.value.indeterminate = selectAllIndeterminate.value;
+  }
 });
 </script>

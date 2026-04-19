@@ -3,6 +3,13 @@ export function createOrdersActionHandlers(deps) {
     return el instanceof HTMLInputElement ? el.checked : false;
   }
 
+  function getValueFromElement(el) {
+    if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement) {
+      return String(el.value || "");
+    }
+    return "";
+  }
+
   return {
     "reload-orders": () => deps.loadOrders(),
     "refund-linepay-order": (el) => {
@@ -21,18 +28,15 @@ export function createOrdersActionHandlers(deps) {
     "confirm-transfer-payment": (el) => {
       if (el.dataset.orderId) deps.confirmTransferPayment(el.dataset.orderId);
     },
-    "change-order-status": () => {
-      // 下拉選單 change 事件由 events.js 處理（僅顯示/隱藏確認按鈕）
-      // 不在此直接觸發狀態更新
+    "change-order-status": (el) => {
+      if (el.dataset.orderId && deps.setPendingOrderStatus) {
+        deps.setPendingOrderStatus(el.dataset.orderId, getValueFromElement(el));
+      }
     },
     "confirm-order-status": (el) => {
-      const orderId = el.dataset.orderId;
-      if (!orderId) return;
-      const select = el.parentElement?.querySelector(
-        '[data-action="change-order-status"]',
-      );
-      if (!select) return;
-      deps.changeOrderStatus(orderId, select.value);
+      if (el.dataset.orderId && deps.confirmOrderStatus) {
+        deps.confirmOrderStatus(el.dataset.orderId);
+      }
     },
     "show-flex-history": () => {
       if (deps.showFlexHistory) deps.showFlexHistory();

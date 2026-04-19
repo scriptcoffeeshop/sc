@@ -30,6 +30,17 @@
 
 ## 3) 最近更新（人工摘要）
 
+### 2026-04-19
+
+- 自動佈署鏈補齊：
+  - `.github/workflows/ci.yml` 新增 `Deploy Frontend` 與 `Deploy Supabase` jobs。
+  - `main/master` push 且 CI 通過後，會自動部署 GitHub Pages、執行 `supabase db push`，並部署 `coffee-api` Edge Function。
+  - GitHub Actions 需設定 secrets：`SUPABASE_ACCESS_TOKEN`、`SUPABASE_DB_PASSWORD`。
+- 靜態部署產物補齊：
+  - 新增 `scripts/prepare_static_deploy.sh`，建置後會同步把 `CNAME`、`copy-tracking.html`、`google6cb7aa3783369937.html` 與 `icons/` 複製進 `dist/`，避免切成 Pages artifact 後遺漏根目錄靜態檔。
+- Supabase CI 相容：
+  - `scripts/supabase_deploy.sh`、`scripts/supabase_db_push.sh` 改為在有 `SUPABASE_ACCESS_TOKEN` 時直接走 env-based auth，不再強依賴本機 `--profile`。
+
 ### 2026-04-18
 
 - 街口支付訂單狀態流補齊（可供正式串接）：

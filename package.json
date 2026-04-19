@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --config frontend/vite.config.js",
-    "build": "vite build --config frontend/vite.config.js",
+    "build": "vite build --config frontend/vite.config.js && bash scripts/prepare_static_deploy.sh",
     "preview": "vite preview --config frontend/vite.config.js",
     "fmt": "cd supabase/functions/coffee-api && deno fmt .",
     "fmt:check": "cd supabase/functions/coffee-api && deno fmt --check .",

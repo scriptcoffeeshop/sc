@@ -1,15 +1,31 @@
 <template>
-  <div id="product-modal" class="modal-overlay hidden">
+  <div
+    id="product-modal"
+    class="modal-overlay"
+    :class="{ hidden: !isProductModalOpen }"
+  >
     <div class="modal-content">
       <h3 id="pm-title" class="text-xl font-bold mb-5 ui-text-highlight">
-        新增商品
+        {{ productModalTitle }}
       </h3>
       <form id="product-form" class="space-y-4">
-        <input type="hidden" id="pm-id">
+        <input type="hidden" id="pm-id" :value="productForm.id">
         <div>
           <label class="block text-sm ui-text-strong mb-1">分類 *</label>
-          <UiSelect id="pm-category" required>
+          <UiSelect
+            id="pm-category"
+            required
+            :value="productForm.category"
+            @change="updateProductField('category', $event.target.value)"
+          >
             <option value="">選擇分類</option>
+            <option
+              v-for="category in categoryOptions"
+              :key="`product-category-${category.id || category.name}`"
+              :value="category.name"
+            >
+              {{ category.name }}
+            </option>
           </UiSelect>
         </div>
         <div>
@@ -18,6 +34,8 @@
             type="text"
             id="pm-name"
             required
+            :value="productForm.name"
+            @input="updateProductField('name', $event.target.value)"
           />
         </div>
         <div>
@@ -26,6 +44,8 @@
             type="text"
             id="pm-desc"
             placeholder="風味描述"
+            :value="productForm.description"
+            @input="updateProductField('description', $event.target.value)"
           />
         </div>
         <div>
@@ -34,12 +54,56 @@
             type="text"
             id="pm-roast"
             placeholder="例：中淺焙"
+            :value="productForm.roastLevel"
+            @input="updateProductField('roastLevel', $event.target.value)"
           />
         </div>
 
         <div class="ui-card-section">
           <label class="block text-sm ui-text-strong mb-2 font-semibold">規格與價格</label>
-          <div id="specs-container" class="space-y-2 mb-2"></div>
+          <div id="specs-container" class="space-y-2 mb-2">
+            <div
+              v-for="(spec, specIndex) in productForm.specs"
+              :key="`product-spec-${spec.key || specIndex}-${specIndex}`"
+              class="spec-row flex items-center gap-2 p-2 rounded-lg border"
+              style="border-color:#E2DCC8;"
+            >
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  class="spec-enabled w-4 h-4"
+                  :checked="spec.enabled"
+                  @change="updateProductSpec(specIndex, 'enabled', $event.target.checked)"
+                >
+              </label>
+              <input
+                type="text"
+                class="spec-label input-field text-sm py-1"
+                :value="spec.label"
+                placeholder="規格名稱"
+                style="width:90px"
+                @input="updateProductSpec(specIndex, 'label', $event.target.value)"
+              >
+              <span class="ui-text-subtle text-sm">$</span>
+              <input
+                type="number"
+                class="spec-price input-field text-sm py-1"
+                :value="spec.price"
+                placeholder="價格"
+                min="0"
+                style="width:80px"
+                @input="updateProductSpec(specIndex, 'price', $event.target.value)"
+              >
+              <button
+                type="button"
+                data-action="remove-spec-row"
+                :data-spec-index="specIndex"
+                class="text-red-400 hover:ui-text-danger text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+          </div>
           <UiButton
             type="button"
             size="sm"
@@ -56,8 +120,9 @@
             <input
               type="checkbox"
               id="pm-enabled"
-              checked
               class="w-4 h-4"
+              :checked="productForm.enabled"
+              @change="updateProductField('enabled', $event.target.checked)"
             >
             啟用販售
           </label>
@@ -82,4 +147,14 @@
 import UiButton from "../../components/ui/button/Button.vue";
 import UiInput from "../../components/ui/input/Input.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
+import { useDashboardProducts } from "./useDashboardProducts.js";
+
+const {
+  isProductModalOpen,
+  productModalTitle,
+  productForm,
+  categoryOptions,
+  updateProductField,
+  updateProductSpec,
+} = useDashboardProducts();
 </script>

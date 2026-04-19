@@ -9,7 +9,7 @@
       </button>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full" id="products-main-table" data-vue-managed="true">
+      <table ref="productsTable" class="w-full" id="products-main-table">
         <thead>
           <tr class="border-b-2 ui-border">
             <th class="p-3 text-left w-10 ui-text-highlight">
@@ -110,10 +110,19 @@
 </template>
 
 <script setup>
-defineProps({
-  productsGroupsView: {
-    type: Array,
-    default: () => [],
-  },
-});
+import { onMounted, ref, watch } from "vue";
+import {
+  dashboardProductsActions,
+  useDashboardProducts,
+} from "./useDashboardProducts.js";
+
+const { productsGroupsView } = useDashboardProducts();
+const productsTable = ref(null);
+
+function syncProductsTable() {
+  dashboardProductsActions.registerProductsTableElement(productsTable.value);
+}
+
+onMounted(syncProductsTable);
+watch(productsGroupsView, syncProductsTable, { deep: true });
 </script>

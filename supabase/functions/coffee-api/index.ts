@@ -6,7 +6,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
-import { extractAuth, type AuthResult } from "./utils/auth.ts";
+import { type AuthResult, extractAuth } from "./utils/auth.ts";
 
 // ============ API 模組 ============
 import {
@@ -371,7 +371,8 @@ const actionMap: Record<string, ActionConfig> = {
   getFormFields: publicAction(async () => await getFormFields(false)),
   getBankAccounts: publicAction(async () => await getBankAccounts()),
   getLineLoginUrl: publicAction((data) =>
-    Promise.resolve(getLineLoginUrl(data.redirectUri as string))),
+    Promise.resolve(getLineLoginUrl(data.redirectUri as string))
+  ),
   customerLineLogin: publicAction(async (data) => {
     const v = await validate(lineLoginSchema, data);
     return await customerLineLogin(v.code, v.redirectUri);
@@ -381,17 +382,22 @@ const actionMap: Record<string, ActionConfig> = {
     return await handleAdminLogin(v.code, v.redirectUri);
   }, { methods: POST_ONLY, rateLimit: AUTH_ACTION_RATE_LIMIT }),
   getStoreList: publicAction(async (data) =>
-    await getStoreList(data.cvsType as string)),
-  createStoreMapSession: publicAction(async (data) =>
-    await createStoreMapSession(
-      (data.deliveryMethod as string) || "",
-      (data.clientUrl as string) || "",
-    ),
-  { methods: POST_ONLY }),
+    await getStoreList(data.cvsType as string)
+  ),
+  createStoreMapSession: publicAction(
+    async (data) =>
+      await createStoreMapSession(
+        (data.deliveryMethod as string) || "",
+        (data.clientUrl as string) || "",
+      ),
+    { methods: POST_ONLY },
+  ),
   getStoreSelection: publicAction(async (data) =>
-    await getStoreSelection(data.token as string)),
+    await getStoreSelection(data.token as string)
+  ),
   storeMapCallback: publicAction(async (data) =>
-    await handleStoreMapCallback(data)),
+    await handleStoreMapCallback(data)
+  ),
   quoteOrder: publicAction(async (data) => {
     const v = await validate(quoteOrderSchema, data);
     return await quoteOrder(v);
@@ -399,27 +405,37 @@ const actionMap: Record<string, ActionConfig> = {
   createPcscMapSession: publicAction(async (data) =>
     await createPcscMapSession(
       (data.clientUrl as string) || "",
-    ),
-  { methods: POST_ONLY }),
-  pcscMapCallback: publicAction(async (data) => await handlePcscMapCallback(data)),
+    ), { methods: POST_ONLY }),
+  pcscMapCallback: publicAction(async (data) =>
+    await handlePcscMapCallback(data)
+  ),
   linePayConfirm: publicAction(async (data) => await linePayConfirm(data), {
     rateLimit: PAYMENT_ACTION_RATE_LIMIT,
   }),
-  linePayCancel: publicAction(async (data, req) => await linePayCancel(data, req), {
-    rateLimit: PAYMENT_ACTION_RATE_LIMIT,
-  }),
-  jkoPayResult: publicAction(async (data, req) => await jkoPayResult(data, req), {
-    rateLimit: PAYMENT_ACTION_RATE_LIMIT,
-  }),
+  linePayCancel: publicAction(
+    async (data, req) => await linePayCancel(data, req),
+    {
+      rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+    },
+  ),
+  jkoPayResult: publicAction(
+    async (data, req) => await jkoPayResult(data, req),
+    {
+      rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+    },
+  ),
 
   // ====== 需登入 ======
   submitOrder: authenticatedAction(async (data, req) => {
     const v = await validate(submitOrderSchema, data);
     return await submitOrder(v, req);
   }, { methods: POST_ONLY, rateLimit: SUBMIT_ORDER_RATE_LIMIT }),
-  getMyOrders: authenticatedAction(async (_data, req) => await getMyOrders(req)),
+  getMyOrders: authenticatedAction(async (_data, req) =>
+    await getMyOrders(req)
+  ),
   getUserProfile: authenticatedAction(async (data, req) =>
-    await getUserProfile(data, req)),
+    await getUserProfile(data, req)
+  ),
   updateUserProfile: authenticatedAction(async (data, req) => {
     const v = await validate(updateUserProfileSchema, data);
     return await updateUserProfile(v, req);
@@ -428,8 +444,10 @@ const actionMap: Record<string, ActionConfig> = {
     const v = await validate(transferInfoSchema, data);
     return await updateTransferInfo(v, req);
   }, { methods: POST_ONLY, rateLimit: PAYMENT_ACTION_RATE_LIMIT }),
-  jkoPayInquiry: authenticatedAction(async (data, req) =>
-    await jkoPayInquiry(data, req), { rateLimit: PAYMENT_ACTION_RATE_LIMIT }),
+  jkoPayInquiry: authenticatedAction(
+    async (data, req) => await jkoPayInquiry(data, req),
+    { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
+  ),
   verifyAdmin: authenticatedAction(async (_data, req) => {
     const a = await extractAuth(req);
     return a
@@ -439,7 +457,8 @@ const actionMap: Record<string, ActionConfig> = {
 
   // ====== 需管理員 ======
   getFormFieldsAdmin: adminAction(async (_data, req) =>
-    await getFormFieldsAdmin(req)),
+    await getFormFieldsAdmin(req)
+  ),
   getOrders: adminAction(async (_data, req) => await getOrders(req)),
   addPromotion: adminAction(async (data, req) => {
     const v = await validate(promotionSchema, data);
@@ -557,14 +576,20 @@ const actionMap: Record<string, ActionConfig> = {
   uploadAsset: adminAction(async (data, req) => await uploadAsset(data, req), {
     methods: POST_ONLY,
   }),
-  linePayRefund: adminAction(async (data, req) => await linePayRefund(data, req), {
-    methods: POST_ONLY,
-    rateLimit: PAYMENT_ACTION_RATE_LIMIT,
-  }),
-  jkoPayRefund: adminAction(async (data, req) => await jkoPayRefund(data, req), {
-    methods: POST_ONLY,
-    rateLimit: PAYMENT_ACTION_RATE_LIMIT,
-  }),
+  linePayRefund: adminAction(
+    async (data, req) => await linePayRefund(data, req),
+    {
+      methods: POST_ONLY,
+      rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+    },
+  ),
+  jkoPayRefund: adminAction(
+    async (data, req) => await jkoPayRefund(data, req),
+    {
+      methods: POST_ONLY,
+      rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+    },
+  ),
   addBankAccount: adminAction(async (data, req) => {
     const v = await validate(addBankAccountSchema, data);
     return await addBankAccount(v, req);

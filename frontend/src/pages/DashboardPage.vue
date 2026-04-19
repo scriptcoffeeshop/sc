@@ -47,12 +47,8 @@
     </div>
 
     <DashboardTabs />
-    <DashboardOrdersSection
-      :orders-view="ordersView"
-      :orders-status-options="ordersStatusOptions"
-      :order-status-text="orderStatusText"
-    />
-    <DashboardProductsSection :products-groups-view="productsGroupsView" />
+    <DashboardOrdersSection />
+    <DashboardProductsSection />
     <DashboardCategoriesSection :categories-view="categoriesView" />
     <DashboardPromotionsSection :promotions-view="promotionsView" />
     <DashboardSettingsSection />
@@ -93,17 +89,11 @@ import DashboardTabs from "../features/dashboard/DashboardTabs.vue";
 import DashboardUsersSection from "../features/dashboard/DashboardUsersSection.vue";
 import { ICON_CATALOG, getDefaultIconUrl } from "../../../js/icons.js";
 import { initDashboardApp } from "../../../js/dashboard-app.js";
-import {
-  orderStatusLabel,
-  orderStatusOptions as defaultOrderStatusOptions,
-} from "../../../js/dashboard/modules/order-shared.js";
 
 const brandIconUrl = getDefaultIconUrl("brand");
 const originalBodyClass = document.body.className;
 const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
 
-const ordersView = ref([]);
-const productsGroupsView = ref([]);
 const promotionsView = ref([]);
 const formFieldsView = ref([]);
 const categoriesView = ref([]);
@@ -111,11 +101,6 @@ const usersView = ref([]);
 const blacklistView = ref([]);
 const iconLibraryCategory = ref("all");
 const iconLibraryKeyword = ref("");
-const ordersStatusOptions = ref([...defaultOrderStatusOptions]);
-
-function orderStatusText(status) {
-  return orderStatusLabel[status] || status;
-}
 
 const iconLibraryCategories = computed(() => {
   const values = new Set(ICON_CATALOG.map((item) => item.category));
@@ -155,19 +140,6 @@ function buildDashboardBodyClass() {
   return Array.from(classSet).join(" ");
 }
 
-function handleDashboardOrdersUpdated(event) {
-  const detail = event?.detail || {};
-  ordersView.value = Array.isArray(detail.orders) ? detail.orders : [];
-  if (Array.isArray(detail.statusOptions) && detail.statusOptions.length > 0) {
-    ordersStatusOptions.value = detail.statusOptions;
-  }
-}
-
-function handleDashboardProductsUpdated(event) {
-  const detail = event?.detail || {};
-  productsGroupsView.value = Array.isArray(detail.groups) ? detail.groups : [];
-}
-
 function handleDashboardPromotionsUpdated(event) {
   const detail = event?.detail || {};
   promotionsView.value = Array.isArray(detail.promotions)
@@ -196,8 +168,6 @@ function handleDashboardBlacklistUpdated(event) {
 }
 
 const dashboardEventListeners = [
-  ["coffee:dashboard-orders-updated", handleDashboardOrdersUpdated],
-  ["coffee:dashboard-products-updated", handleDashboardProductsUpdated],
   ["coffee:dashboard-promotions-updated", handleDashboardPromotionsUpdated],
   ["coffee:dashboard-formfields-updated", handleDashboardFormFieldsUpdated],
   ["coffee:dashboard-categories-updated", handleDashboardCategoriesUpdated],

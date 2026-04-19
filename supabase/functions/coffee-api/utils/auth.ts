@@ -94,7 +94,9 @@ export async function extractAuth(req: Request): Promise<AuthResult | null> {
       return { userId, role: "SUPER_ADMIN", isAdmin: true };
     }
     try {
-      const { data } = await supabase.from("coffee_users").select("role, status")
+      const { data } = await supabase.from("coffee_users").select(
+        "role, status",
+      )
         .eq("line_user_id", userId).single();
       if (data?.status === "BLACKLISTED") return null;
       const role = data?.role || "USER";

@@ -675,4 +675,79 @@ test.describe("smoke", () => {
     await expect(page.locator("#product-modal")).toBeVisible();
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
   });
+
+  test("dashboard orders work without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardOrdersEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-orders-updated") {
+          (window as any).__blockedDashboardOrdersEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#admin-page")).toBeVisible();
+    await expect(page.locator("#orders-list")).toContainText("#ORD001");
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardOrdersEventCount)
+    ).toBe(0);
+  });
+
+  test("dashboard products work without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardProductsEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-products-updated") {
+          (window as any).__blockedDashboardProductsEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-products").click();
+
+    await expect(page.locator("#products-main-table")).toContainText(
+      "後台測試商品",
+    );
+    await page.locator('button[data-action="edit-product"]').first().click();
+    await expect(page.locator("#product-modal")).toBeVisible();
+    await expect(page.locator("#pm-title")).toHaveText("編輯商品");
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardProductsEventCount)
+    ).toBe(0);
+  });
 });
