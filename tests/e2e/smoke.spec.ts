@@ -1,4 +1,10 @@
-import { expect, type Page, type Route, test } from "@playwright/test";
+import {
+  expect,
+  type Page,
+  type Request as PlaywrightRequest,
+  type Route,
+  test,
+} from "@playwright/test";
 
 const API_URL =
   "https://avnvsjyyeofivgmrchte.supabase.co/functions/v1/coffee-api";
@@ -80,6 +86,7 @@ type MainRouteOptions = {
     linepay: boolean;
     transfer: boolean;
   };
+  onCustomerLineLogin?: (request: PlaywrightRequest) => void;
 };
 
 async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
@@ -218,11 +225,32 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
       return;
     }
 
+    if (action === "customerLineLogin") {
+      options.onCustomerLineLogin?.(request);
+      await fulfillJson(route, {
+        success: true,
+        user: {
+          userId: "customer-line-1",
+          displayName: "LINE 測試客戶",
+          pictureUrl: "",
+        },
+        token: "mock-customer-token",
+      });
+      return;
+    }
+
     await fulfillJson(route, { success: true });
   });
 }
 
-async function installDashboardRoutes(page: Page) {
+type DashboardRouteOptions = {
+  onAdminLineLogin?: (request: PlaywrightRequest) => void;
+};
+
+async function installDashboardRoutes(
+  page: Page,
+  options: DashboardRouteOptions = {},
+) {
   await page.route(`${API_URL}**`, async (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") {
@@ -232,6 +260,21 @@ async function installDashboardRoutes(page: Page) {
 
     const url = new URL(request.url());
     const action = url.searchParams.get("action");
+
+    if (action === "lineLogin") {
+      options.onAdminLineLogin?.(request);
+      await fulfillJson(route, {
+        success: true,
+        isAdmin: true,
+        user: {
+          userId: "admin-line-1",
+          displayName: "LINE 測試管理員",
+          pictureUrl: "",
+        },
+        token: "mock-admin-token",
+      });
+      return;
+    }
 
     if (action === "getCategories") {
       await fulfillJson(route, {
@@ -292,6 +335,39 @@ async function installDashboardRoutes(page: Page) {
 }
 
 test.describe("smoke", () => {
+  test("storefront LINE login callback uses POST", async ({ page }) => {
+    await installGlobalStubs(page);
+
+    let loginRequest:
+      | { method: string; url: string; body: Record<string, unknown> }
+      | null = null;
+    await installMainRoutes(page, {
+      onCustomerLineLogin: (request) => {
+        loginRequest = {
+          method: request.method(),
+          url: request.url(),
+          body: request.postDataJSON() as Record<string, unknown>,
+        };
+      },
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem("coffee_line_state", "customer-state");
+    });
+
+    await page.goto("/main.html?code=customer-code&state=customer-state");
+
+    await expect.poll(() => loginRequest?.method).toBe("POST");
+    expect(new URL(loginRequest!.url).searchParams.get("code")).toBeNull();
+    expect(loginRequest!.body).toMatchObject({
+      code: "customer-code",
+      redirectUri: expect.stringContaining("/main.html"),
+    });
+    await expect.poll(() =>
+      page.evaluate(() => localStorage.getItem("coffee_jwt"))
+    ).toBe("mock-customer-token");
+  });
+
   test("storefront path works with event delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
@@ -674,6 +750,37 @@ test.describe("smoke", () => {
     await page.locator('button[data-action="edit-product"]').first().click();
     await expect(page.locator("#product-modal")).toBeVisible();
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
+  });
+
+  test("dashboard LINE login callback uses POST", async ({ page }) => {
+    await installGlobalStubs(page);
+
+    let loginRequest:
+      | { method: string; url: string; body: Record<string, unknown> }
+      | null = null;
+    await installDashboardRoutes(page, {
+      onAdminLineLogin: (request) => {
+        loginRequest = {
+          method: request.method(),
+          url: request.url(),
+          body: request.postDataJSON() as Record<string, unknown>,
+        };
+      },
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem("coffee_admin_state", "admin-state");
+    });
+
+    await page.goto("/dashboard.html?code=admin-code&state=admin-state");
+
+    await expect.poll(() => loginRequest?.method).toBe("POST");
+    expect(new URL(loginRequest!.url).searchParams.get("code")).toBeNull();
+    expect(loginRequest!.body).toMatchObject({
+      code: "admin-code",
+      redirectUri: expect.stringContaining("/dashboard.html"),
+    });
+    await expect(page.locator("#admin-page")).toBeVisible();
   });
 
   test("dashboard orders work without custom-event bridge", async ({ page }) => {

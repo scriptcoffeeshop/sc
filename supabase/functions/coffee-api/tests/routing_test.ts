@@ -47,6 +47,24 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Routing Guards - LINE login callbacks require POST",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    for (const action of ["customerLineLogin", "lineLogin"]) {
+      const response = await app.fetch(
+        buildActionRequest(action, { method: "GET" }),
+      );
+      const payload = await response.json();
+
+      assertEquals(response.status, 405);
+      assertEquals(response.headers.get("Allow"), "POST");
+      assertEquals(payload.success, false);
+    }
+  },
+});
+
+Deno.test({
   name: "Routing Guards - admin actions require authentication",
   sanitizeOps: false,
   sanitizeResources: false,

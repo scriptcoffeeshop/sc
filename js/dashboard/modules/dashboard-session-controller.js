@@ -58,9 +58,14 @@ export function createDashboardSessionController(deps) {
 
     try {
       const response = await deps.authFetch(
-        `${deps.API_URL}?action=lineLogin&code=${
-          encodeURIComponent(code)
-        }&redirectUri=${encodeURIComponent(deps.lineRedirect)}`,
+        `${deps.API_URL}?action=lineLogin`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            code,
+            redirectUri: deps.lineRedirect,
+          }),
+        },
       );
       const result = await response.json();
       window.history.replaceState({}, "", "dashboard.html");

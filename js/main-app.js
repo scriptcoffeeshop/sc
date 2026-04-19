@@ -213,9 +213,15 @@ async function handleLineCallback(code, stateParam) {
   });
   try {
     const res = await fetch(
-      `${API_URL}?action=customerLineLogin&code=${
-        encodeURIComponent(code)
-      }&redirectUri=${encodeURIComponent(LINE_REDIRECT.main)}`,
+      `${API_URL}?action=customerLineLogin`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          redirectUri: LINE_REDIRECT.main,
+        }),
+      },
     );
     const result = await res.json();
     window.history.replaceState({}, "", "main.html");
