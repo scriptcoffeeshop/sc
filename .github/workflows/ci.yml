@@ -89,10 +89,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build frontend artifact
         run: npm run build
@@ -122,24 +121,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Verify deploy secrets
+        id: deploy_secrets
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::warning::Missing SUPABASE_ACCESS_TOKEN secret; skipping Supabase deployment."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
+            echo "::warning::Missing SUPABASE_DB_PASSWORD secret; skipping Supabase deployment."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
       - name: Setup Supabase CLI
+        if: steps.deploy_secrets.outputs.ready == 'true'
         uses: supabase/setup-cli@v1
         with:
           version: latest
 
-      - name: Verify deploy secrets
-        run: |
-          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::Missing SUPABASE_ACCESS_TOKEN secret."
-            exit 1
-          fi
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-            echo "::error::Missing SUPABASE_DB_PASSWORD secret."
-            exit 1
-          fi
-
       - name: Push database migrations
+        if: steps.deploy_secrets.outputs.ready == 'true'
         run: bash scripts/supabase_db_push.sh
 
       - name: Deploy Edge Function
+        if: steps.deploy_secrets.outputs.ready == 'true'
         run: bash scripts/supabase_deploy.sh

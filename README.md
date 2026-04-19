@@ -16,6 +16,7 @@
   - GitHub Actions 需預先設定 secrets：
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
+  - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
 - **檔案版號與快取**：**不可輕忽的手機 Cache**。只要修改了任何 `.js` 檔案，必須同步修改引用該檔案之 `.html` 或 Vue 元件中的 `v=X` 版號（例如 `?v=52` 提升至 `?v=53`）。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 

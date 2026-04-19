@@ -40,6 +40,9 @@
   - 新增 `scripts/prepare_static_deploy.sh`，建置後會同步把 `CNAME`、`copy-tracking.html`、`google6cb7aa3783369937.html` 與 `icons/` 複製進 `dist/`，避免切成 Pages artifact 後遺漏根目錄靜態檔。
 - Supabase CI 相容：
   - `scripts/supabase_deploy.sh`、`scripts/supabase_db_push.sh` 改為在有 `SUPABASE_ACCESS_TOKEN` 時直接走 env-based auth，不再強依賴本機 `--profile`。
+- CI 部署修正：
+  - repo 目前忽略 `package-lock.json`，因此 Pages deploy job 不使用 `setup-node` 的 npm cache，也改用 `npm install`。
+  - `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` 未設定時，Supabase deploy job 會 warning 並跳過，不再讓整條 CI 失敗。
 
 ### 2026-04-18
 
