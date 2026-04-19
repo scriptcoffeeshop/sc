@@ -376,6 +376,9 @@ async function showProfileModal() {
     confirmButtonText: "儲存",
     cancelButtonText: "取消",
     confirmButtonColor: "#3C2415",
+    customClass: {
+      popup: "storefront-profile-popup",
+    },
     preConfirm: () => {
       const emailEl = document.getElementById("profile-email");
       const email = emailEl ? emailEl.value.trim() : "";

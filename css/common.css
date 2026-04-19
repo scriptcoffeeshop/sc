@@ -243,6 +243,10 @@ select.input-field {
   animation: fadeIn 0.24s ease;
 }
 
+.swal2-popup.storefront-profile-popup {
+  border-radius: 16px;
+}
+
 @media (max-width: 639px) {
   body {
     padding: 8px !important;

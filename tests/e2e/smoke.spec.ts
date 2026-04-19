@@ -500,6 +500,51 @@ test.describe("smoke", () => {
     ).toBe("AB123456789");
   });
 
+  test("storefront profile modal matches my orders corner radius", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+
+    await page.evaluate(() => {
+      (window as any).Swal.fire = async (options: any) => {
+        const existing = document.querySelector(".swal2-popup");
+        existing?.remove();
+
+        const popup = document.createElement("div");
+        popup.className = `swal2-popup ${options?.customClass?.popup || ""}`.trim();
+        popup.textContent = String(options?.title || "");
+        document.body.appendChild(popup);
+
+        return { isConfirmed: false };
+      };
+    });
+
+    await page.locator('[data-action="show-profile"]').click();
+    await expect(page.locator(".swal2-popup")).toBeVisible();
+
+    const ordersRadius = await page.locator("#my-orders-modal > div").evaluate(
+      (element) => getComputedStyle(element).borderRadius,
+    );
+    const profileRadius = await page.locator(".swal2-popup").evaluate(
+      (element) => getComputedStyle(element).borderRadius,
+    );
+
+    expect(profileRadius).toBe(ordersRadius);
+  });
+
   test("storefront submit order happy path works", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);

@@ -41,6 +41,13 @@
   - 前端版本已升級至 `v=99`（`main.html`、`dashboard.html`）。
 - 回歸測試：
   - `tests/e2e/smoke.spec.ts` 新增 storefront 檢查，鎖住備註欄不得再出現 `<slot />`，並確認關鍵暖色樣式仍存在。
+- 會員資料彈窗導角對齊：
+  - `js/main-app.js` 的 SweetAlert2 會員資料彈窗改掛 `storefront-profile-popup` class。
+  - `css/common.css` 將該 popup 導角設為 `16px`，與「我的訂單」彈窗一致。
+- 快取版號再次更新：
+  - 前端版本已升級至 `v=100`，並補上 `main.html` 對 `css/common.css` / `css/main.css` 的版號參數，避免樣式快取延續舊版。
+- 額外 smoke：
+  - `tests/e2e/smoke.spec.ts` 新增會員資料彈窗導角檢查，確保它與「我的訂單」維持一致。
 
 ### 2026-04-19
 
