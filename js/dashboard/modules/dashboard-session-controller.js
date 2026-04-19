@@ -12,14 +12,13 @@ export function createDashboardSessionController(deps) {
       const section = document.getElementById(`${tabId}-section`);
       if (tabBtn) {
         tabBtn.classList.remove("tab-active");
-        tabBtn.classList.add("bg-white", "ui-text-strong");
+        tabBtn.classList.add("ui-text-strong");
       }
       if (section) section.classList.add("hidden");
     });
 
     document.getElementById(`tab-${tab}`)?.classList.add("tab-active");
     document.getElementById(`tab-${tab}`)?.classList.remove(
-      "bg-white",
       "ui-text-strong",
     );
     document.getElementById(`${tab}-section`)?.classList.remove("hidden");

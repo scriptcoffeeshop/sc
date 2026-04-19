@@ -48,6 +48,13 @@
   - 前端版本已升級至 `v=100`，並補上 `main.html` 對 `css/common.css` / `css/main.css` 的版號參數，避免樣式快取延續舊版。
 - 額外 smoke：
   - `tests/e2e/smoke.spec.ts` 新增會員資料彈窗導角檢查，確保它與「我的訂單」維持一致。
+- 後台手機版頁籤修正：
+  - `frontend/src/features/dashboard/DashboardTabs.vue` 重新掛回 `#sidebar`，讓 Vue 版後台沿用既有 dashboard sidebar skin。
+  - `js/dashboard/modules/dashboard-session-controller.js` 移除 inactive tab 的 `bg-white` 切換，避免手機版頁籤退回白色 pill。
+- 快取版號再次更新：
+  - 前端版本已升級至 `v=101`，確保後台頁籤樣式修正不被舊快取覆蓋。
+- Dashboard smoke：
+  - `tests/e2e/smoke.spec.ts` 新增手機版後台頁籤檢查，鎖住 sidebar 背景與 inactive tab 透明底樣式。
 
 ### 2026-04-19
 

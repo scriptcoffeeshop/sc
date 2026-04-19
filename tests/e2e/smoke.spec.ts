@@ -818,6 +818,40 @@ test.describe("smoke", () => {
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
   });
 
+  test("dashboard mobile tab strip keeps sidebar styling", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#sidebar")).toBeVisible();
+    await expect(page.locator("#sidebar")).toHaveCSS(
+      "background-color",
+      "rgb(238, 232, 213)",
+    );
+    await expect(page.locator("#tab-orders")).toHaveCSS(
+      "background-color",
+      "rgb(253, 246, 227)",
+    );
+    await expect(page.locator("#tab-products")).toHaveCSS(
+      "background-color",
+      "rgba(0, 0, 0, 0)",
+    );
+  });
+
   test("dashboard LINE login callback uses POST", async ({ page }) => {
     await installGlobalStubs(page);
 
