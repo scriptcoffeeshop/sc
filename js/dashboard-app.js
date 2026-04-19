@@ -45,6 +45,13 @@ import {
   createSettingsTabLoaders,
 } from "./dashboard/modules/settings.js";
 import {
+  createDashboardBrandingController,
+  parseBooleanSetting,
+  readInputValue,
+} from "./dashboard/modules/dashboard-branding.js";
+import { registerDashboardGlobals } from "./dashboard/modules/dashboard-globals.js";
+import { createDashboardSessionController } from "./dashboard/modules/dashboard-session-controller.js";
+import {
   DEFAULT_DELIVERY_OPTIONS,
   normalizeDeliveryOption,
   normalizePaymentOption,
@@ -64,18 +71,49 @@ let categories = [];
 let orders = [];
 let selectedOrderIds = new Set();
 let dashboardSettings = {};
+let dashboardTabLoaders = {};
+let loadInitialDashboardData = async () => {};
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
 const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
-
-function getAuthUserId() {
-  if (!currentUser?.userId) throw new Error("請先登入");
-  return currentUser.userId;
-}
+const dashboardTabs = [
+  "orders",
+  "products",
+  "categories",
+  "promotions",
+  "settings",
+  "icon-library",
+  "users",
+  "blacklist",
+  "formfields",
+];
+const triggerDashboardLogin = () =>
+  loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
+const brandingController = createDashboardBrandingController({
+  API_URL,
+  cacheKey: DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
+  getDefaultIconUrl,
+  resolveAssetUrl,
+  fetch: globalThis.fetch?.bind(globalThis),
+});
+const sessionController = createDashboardSessionController({
+  API_URL,
+  authFetch,
+  lineRedirect: LINE_REDIRECT.dashboard,
+  getCurrentUser: () => currentUser,
+  setCurrentUser: (nextCurrentUser) => {
+    currentUser = nextCurrentUser;
+  },
+  getDashboardTabLoaders: () => dashboardTabLoaders,
+  loadInitialData: () => loadInitialDashboardData(),
+  defaultTab: "orders",
+  tabs: dashboardTabs,
+  Swal: globalThis.Swal,
+});
 
 const bankAccountsController = createBankAccountsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -84,7 +122,7 @@ const bankAccountsController = createBankAccountsController({
 const promotionsController = createPromotionsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -95,7 +133,7 @@ const promotionsController = createPromotionsController({
 const formFieldsController = createFormFieldsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -106,7 +144,7 @@ const formFieldsController = createFormFieldsController({
 const iconAssetsController = createIconAssetsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   normalizeIconPath,
@@ -118,11 +156,11 @@ const iconAssetsController = createIconAssetsController({
 const settingsController = createSettingsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
-  applyDashboardBranding,
+  applyDashboardBranding: brandingController.applyDashboardBranding,
   parseBooleanSetting,
   getDefaultIconUrl,
   getDeliveryIconFallbackKey,
@@ -148,7 +186,7 @@ const settingsController = createSettingsController({
 const usersController = createUsersController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   getCurrentUser: () => currentUser,
   Toast,
   Swal: globalThis.Swal,
@@ -157,7 +195,7 @@ const usersController = createUsersController({
 const orderNotificationsController = createOrderNotificationsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   getOrders: () => orders,
   Toast,
   Swal: globalThis.Swal,
@@ -172,7 +210,7 @@ const orderNotificationsController = createOrderNotificationsController({
 const ordersController = createOrdersController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   getOrders: () => orders,
   setOrders: (nextOrders) => {
     orders = Array.isArray(nextOrders) ? nextOrders : [];
@@ -198,7 +236,7 @@ const ordersController = createOrdersController({
 const orderStatusController = createOrderStatusController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   getOrders: () => orders,
   loadOrders: ordersController.loadOrders,
   previewOrderStatusNotification:
@@ -211,7 +249,7 @@ const orderStatusController = createOrderStatusController({
 const productsController = createProductsController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   getProducts: () => products,
   setProducts: (nextProducts) => {
     products = Array.isArray(nextProducts) ? nextProducts : [];
@@ -227,7 +265,7 @@ const productsController = createProductsController({
 const categoriesController = createCategoriesController({
   API_URL,
   authFetch,
-  getAuthUserId,
+  getAuthUserId: sessionController.getAuthUserId,
   getCategories: () => categories,
   setCategories: (nextCategories) => {
     categories = Array.isArray(nextCategories) ? nextCategories : [];
@@ -240,148 +278,9 @@ const categoriesController = createCategoriesController({
   esc,
 });
 
-function parseBooleanSetting(value, defaultValue = true) {
-  if (value === undefined || value === null || value === "") {
-    return defaultValue;
-  }
-  const normalized = String(value).trim().toLowerCase();
-  return !["false", "0", "off", "no"].includes(normalized);
-}
-
-function cacheDashboardPublicBranding(settings = {}, resolvedLogoUrl = "") {
-  if (typeof window === "undefined" || !window.localStorage) return;
-
-  try {
-    const payload = {
-      site_title: String(settings.site_title || "").trim(),
-      resolved_logo_url: String(resolvedLogoUrl || "").trim(),
-    };
-    window.localStorage.setItem(
-      DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
-      JSON.stringify(payload),
-    );
-  } catch {
-  }
-}
-
-function applyDashboardBranding(settings = {}) {
-  const siteIconUrl = String(settings.site_icon_url || "").trim();
-  const resolvedLogoUrl = siteIconUrl
-    ? resolveAssetUrl(siteIconUrl)
-    : getDefaultIconUrl("brand");
-  const logoIds = [
-    "dashboard-login-logo",
-    "dashboard-header-logo",
-    "settings-brand-logo",
-  ];
-  logoIds.forEach((id) => {
-    const logoEl = document.getElementById(id);
-    if (!(logoEl instanceof HTMLImageElement) || !resolvedLogoUrl) return;
-    logoEl.src = resolvedLogoUrl;
-  });
-
-  const faviconEl = document.getElementById("dynamic-favicon");
-  if (faviconEl instanceof HTMLLinkElement && resolvedLogoUrl) {
-    faviconEl.href = resolvedLogoUrl;
-  }
-
-  const siteTitle = String(settings.site_title || "").trim();
-  document.title = siteTitle
-    ? `管理後台 | ${siteTitle}`
-    : "管理後台 | Script Coffee";
-
-  const loginTitleEl = document.querySelector("#login-page h1");
-  if (loginTitleEl instanceof HTMLElement) {
-    loginTitleEl.textContent = "後台登入";
-    loginTitleEl.classList.remove("ui-text-highlight");
-    loginTitleEl.classList.add("text-slate-800");
-  }
-
-  const loginSubtitleEl = document.querySelector("#login-page p");
-  if (loginSubtitleEl instanceof HTMLElement) {
-    loginSubtitleEl.classList.remove("ui-text-subtle");
-    loginSubtitleEl.classList.add("text-slate-600");
-  }
-
-  cacheDashboardPublicBranding(settings, resolvedLogoUrl);
-}
-
-async function loadPublicDashboardBranding() {
-  try {
-    const response = await fetch(`${API_URL}?action=getSettings&_=${Date.now()}`);
-    if (!response.ok) return;
-    const result = await response.json();
-    if (!result?.success || !result?.settings) return;
-    applyDashboardBranding(result.settings);
-  } catch {
-    // ignore branding prefetch failures on login page
-  }
-}
-
-function readInputValue(id, fallback = "") {
-  const el = document.getElementById(id);
-  if (el && typeof el.value !== "undefined") {
-    return String(el.value || "").trim();
-  }
-  return fallback;
-}
-
-// ============ 全域函式掛載（保留舊快取相容性） ============
-window.loginWithLine = () =>
-  loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
-window.logout = logout;
-window.showTab = showTab;
-window.loadOrders = ordersController.loadOrders;
-window.renderOrders = ordersController.renderOrders;
-window.changeOrderStatus = orderStatusController.changeOrderStatus;
-window.sendOrderEmailByOrderId = orderNotificationsController.sendOrderEmailByOrderId;
-window.deleteOrderById = ordersController.deleteOrderById;
-window.showProductModal = productsController.showProductModal;
-window.editProduct = productsController.editProduct;
-window.closeProductModal = productsController.closeProductModal;
-window.saveProduct = productsController.saveProduct;
-window.delProduct = productsController.delProduct;
-window.moveProduct = productsController.moveProduct;
-window.addSpecRow = productsController.addSpecRow;
-window.addCategory = categoriesController.addCategory;
-window.editCategory = categoriesController.editCategory;
-window.delCategory = categoriesController.delCategory;
-window.updateCategoryOrders = categoriesController.updateCategoryOrders;
-window.saveSettings = settingsController.saveSettings;
-window.loadUsers = usersController.loadUsers;
-window.toggleUserRole = usersController.toggleUserRole;
-window.toggleUserBlacklist = usersController.toggleUserBlacklist;
-window.loadBlacklist = usersController.loadBlacklist;
-window.esc = esc;
-window.showAddFieldModal = formFieldsController.showAddFieldModal;
-window.editFormField = formFieldsController.editFormField;
-window.deleteFormField = formFieldsController.deleteFormField;
-window.toggleFieldEnabled = formFieldsController.toggleFieldEnabled;
-window.previewIcon = iconAssetsController.previewIcon;
-
-window.uploadSiteIcon = iconAssetsController.uploadSiteIcon;
-window.resetSiteIcon = iconAssetsController.resetSiteIcon;
-window.uploadSectionIcon = iconAssetsController.uploadSectionIcon;
-window.uploadPaymentIcon = iconAssetsController.uploadPaymentIcon;
-window.uploadDeliveryRowIcon = iconAssetsController.uploadDeliveryRowIcon;
-window.applyIconFromLibrary = iconAssetsController.applyIconFromLibrary;
-window.resetSectionTitle = settingsController.resetSectionTitle;
-window.refundOnlinePayOrder = orderStatusController.refundOnlinePayOrder;
-window.linePayRefundOrder = (orderId) =>
-  orderStatusController.refundOnlinePayOrder(orderId, "linepay");
-window.confirmTransferPayment = orderStatusController.confirmTransferPayment;
-window.showAddBankAccountModal = bankAccountsController.showAddBankAccountModal;
-window.editBankAccount = bankAccountsController.editBankAccount;
-window.deleteBankAccount = bankAccountsController.deleteBankAccount;
-window.showPromotionModal = promotionsController.showPromotionModal;
-window.closePromotionModal = promotionsController.closePromotionModal;
-window.savePromotion = promotionsController.savePromotion;
-window.editPromotion = promotionsController.editPromotion;
-window.delPromotion = promotionsController.delPromotion;
-
 const dashboardActionHandlers = {
-  "login-with-line": () => window.loginWithLine(),
-  "logout": () => logout(),
+  "login-with-line": triggerDashboardLogin,
+  "logout": sessionController.logout,
   ...createOrdersActionHandlers({
     loadOrders: ordersController.loadOrders,
     changeOrderStatus: orderStatusController.changeOrderStatus,
@@ -445,7 +344,7 @@ const dashboardActionHandlers = {
   }),
 };
 
-const dashboardTabLoaders = {
+dashboardTabLoaders = {
   ...createOrdersTabLoaders({ loadOrders: ordersController.loadOrders }),
   ...createProductsTabLoaders({
     renderCategories: categoriesController.renderCategories,
@@ -460,6 +359,63 @@ const dashboardTabLoaders = {
     loadBlacklist: usersController.loadBlacklist,
   }),
 };
+
+loadInitialDashboardData = () => Promise.all([
+  categoriesController.loadCategories(),
+  productsController.loadProducts(),
+  settingsController.loadSettings(),
+  ordersController.loadOrders(),
+]);
+
+registerDashboardGlobals({
+  loginWithLine: triggerDashboardLogin,
+  logout: sessionController.logout,
+  showTab: sessionController.showTab,
+  loadOrders: ordersController.loadOrders,
+  renderOrders: ordersController.renderOrders,
+  changeOrderStatus: orderStatusController.changeOrderStatus,
+  sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
+  deleteOrderById: ordersController.deleteOrderById,
+  showProductModal: productsController.showProductModal,
+  editProduct: productsController.editProduct,
+  closeProductModal: productsController.closeProductModal,
+  saveProduct: productsController.saveProduct,
+  delProduct: productsController.delProduct,
+  moveProduct: productsController.moveProduct,
+  addSpecRow: productsController.addSpecRow,
+  addCategory: categoriesController.addCategory,
+  editCategory: categoriesController.editCategory,
+  delCategory: categoriesController.delCategory,
+  updateCategoryOrders: categoriesController.updateCategoryOrders,
+  saveSettings: settingsController.saveSettings,
+  loadUsers: usersController.loadUsers,
+  toggleUserRole: usersController.toggleUserRole,
+  toggleUserBlacklist: usersController.toggleUserBlacklist,
+  loadBlacklist: usersController.loadBlacklist,
+  esc,
+  showAddFieldModal: formFieldsController.showAddFieldModal,
+  editFormField: formFieldsController.editFormField,
+  deleteFormField: formFieldsController.deleteFormField,
+  toggleFieldEnabled: formFieldsController.toggleFieldEnabled,
+  previewIcon: iconAssetsController.previewIcon,
+  uploadSiteIcon: iconAssetsController.uploadSiteIcon,
+  resetSiteIcon: iconAssetsController.resetSiteIcon,
+  uploadSectionIcon: iconAssetsController.uploadSectionIcon,
+  uploadPaymentIcon: iconAssetsController.uploadPaymentIcon,
+  uploadDeliveryRowIcon: iconAssetsController.uploadDeliveryRowIcon,
+  applyIconFromLibrary: iconAssetsController.applyIconFromLibrary,
+  resetSectionTitle: settingsController.resetSectionTitle,
+  refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
+  confirmTransferPayment: orderStatusController.confirmTransferPayment,
+  showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
+  editBankAccount: bankAccountsController.editBankAccount,
+  deleteBankAccount: bankAccountsController.deleteBankAccount,
+  showPromotionModal: promotionsController.showPromotionModal,
+  closePromotionModal: promotionsController.closePromotionModal,
+  savePromotion: promotionsController.savePromotion,
+  editPromotion: promotionsController.editPromotion,
+  delPromotion: promotionsController.delPromotion,
+});
 
 // ============ 初始化 ============
 let dashboardInitialized = false;
@@ -477,19 +433,22 @@ export function initDashboardApp() {
   const { initializeDashboardEventDelegation } = createDashboardEvents(
     dashboardActionHandlers,
     dashboardTabLoaders,
-    showTab,
-    window.loadUsers,
-    window.previewIcon,
+    sessionController.showTab,
+    usersController.loadUsers,
+    iconAssetsController.previewIcon,
     productsController.saveProduct,
-    window.savePromotion,
+    promotionsController.savePromotion,
     orderStatusController.changeOrderStatus,
     ordersController.renderOrders,
   );
   initializeDashboardEventDelegation();
-  loadPublicDashboardBranding();
+  brandingController.loadPublicDashboardBranding();
   const p = new URLSearchParams(window.location.search);
-  if (p.get("code")) handleLineCallback(p.get("code"), p.get("state"));
-  else checkLogin();
+  if (p.get("code")) {
+    sessionController.handleLineCallback(p.get("code"), p.get("state"));
+  } else {
+    sessionController.checkLogin();
+  }
 }
 
 // 由 Vue Page 元件在 onMounted 時顯式呼叫 initDashboardApp()
@@ -510,106 +469,4 @@ if (typeof window !== "undefined") {
   } else {
     autoInitDashboardAppFallback();
   }
-}
-
-// ============ LINE Login ============
-async function handleLineCallback(code, state) {
-  const saved = localStorage.getItem("coffee_admin_state");
-  localStorage.removeItem("coffee_admin_state");
-  if (!saved || state !== saved) {
-    Swal.fire("驗證失敗", "請重新登入", "error");
-    window.history.replaceState({}, "", "dashboard.html");
-    return;
-  }
-  Swal.fire({
-    title: "登入中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-  try {
-    const r = await authFetch(
-      `${API_URL}?action=lineLogin&code=${
-        encodeURIComponent(code)
-      }&redirectUri=${encodeURIComponent(LINE_REDIRECT.dashboard)}`,
-    );
-    const d = await r.json();
-    window.history.replaceState({}, "", "dashboard.html");
-    if (d.success && d.isAdmin) {
-      currentUser = d.user;
-      localStorage.setItem("coffee_admin", JSON.stringify(currentUser));
-      if (d.token) localStorage.setItem("coffee_jwt", d.token);
-      Swal.close();
-      showAdmin();
-    } else Swal.fire("錯誤", d.error || "無管理員權限", "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-function checkLogin() {
-  const s = localStorage.getItem("coffee_admin");
-  const t = localStorage.getItem("coffee_jwt");
-  if (s && t) {
-    try {
-      currentUser = JSON.parse(s);
-      showAdmin();
-    } catch {
-      localStorage.removeItem("coffee_admin");
-      localStorage.removeItem("coffee_jwt");
-    }
-  } else {
-    localStorage.removeItem("coffee_admin");
-    localStorage.removeItem("coffee_jwt");
-  }
-}
-function logout() {
-  localStorage.removeItem("coffee_admin");
-  localStorage.removeItem("coffee_jwt");
-  currentUser = null;
-  document.getElementById("login-page").classList.remove("hidden");
-  document.getElementById("admin-page").classList.add("hidden");
-}
-
-async function showAdmin() {
-  document.getElementById("login-page").classList.add("hidden");
-  document.getElementById("admin-page").classList.remove("hidden");
-  document.getElementById("admin-name").textContent = currentUser.displayName ||
-    "管理員";
-  await Promise.all([
-    categoriesController.loadCategories(),
-    productsController.loadProducts(),
-    settingsController.loadSettings(),
-    ordersController.loadOrders(),
-  ]);
-  showTab("orders");
-}
-
-function showTab(tab) {
-  [
-    "orders",
-    "products",
-    "categories",
-    "promotions",
-    "settings",
-    "icon-library",
-    "users",
-    "blacklist",
-    "formfields",
-  ].forEach((t) => {
-    const tabBtn = document.getElementById(`tab-${t}`);
-    const section = document.getElementById(`${t}-section`);
-    if (tabBtn) {
-      tabBtn.classList.remove("tab-active");
-      tabBtn.classList.add("bg-white", "ui-text-strong");
-    }
-    if (section) section.classList.add("hidden");
-  });
-  document.getElementById(`tab-${tab}`).classList.add("tab-active");
-  document.getElementById(`tab-${tab}`).classList.remove(
-    "bg-white",
-    "ui-text-strong",
-  );
-  document.getElementById(`${tab}-section`).classList.remove("hidden");
-  const loader = dashboardTabLoaders[tab];
-  if (loader) loader();
 }
