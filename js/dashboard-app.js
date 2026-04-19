@@ -16,7 +16,18 @@ import {
   createOrdersActionHandlers,
   createOrdersTabLoaders,
 } from "./dashboard/modules/orders.js";
+import {
+  formatOrderDateTimeText,
+  orderMethodLabel,
+  orderPayMethodLabel,
+  orderPayStatusLabel,
+  orderStatusLabel,
+  orderStatusOptions,
+  normalizeReceiptInfo,
+  normalizeTrackingUrl,
+} from "./dashboard/modules/order-shared.js";
 import { createOrdersController } from "./dashboard/modules/orders-controller.js";
+import { createOrderStatusController } from "./dashboard/modules/order-status-controller.js";
 import {
   createProductsActionHandlers,
   createProductsTabLoaders,
@@ -49,42 +60,6 @@ let selectedOrderIds = new Set();
 let dashboardSettings = {};
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
 const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
-const orderStatusLabel = {
-  pending: "待處理",
-  processing: "處理中",
-  shipped: "已出貨",
-  completed: "已完成",
-  cancelled: "已取消",
-};
-const orderMethodLabel = {
-  delivery: "配送到府",
-  home_delivery: "全台宅配",
-  seven_eleven: "7-11",
-  family_mart: "全家",
-  in_store: "來店取貨",
-};
-const orderPayMethodLabel = {
-  cod: "貨到付款",
-  linepay: "LINE Pay",
-  jkopay: "街口支付",
-  transfer: "轉帳",
-};
-const orderPayStatusLabel = {
-  pending: "待付款",
-  processing: "付款確認中",
-  paid: "已付款",
-  failed: "付款失敗",
-  cancelled: "付款取消",
-  expired: "付款逾期",
-  refunded: "已退款",
-};
-const orderStatusOptions = [
-  "pending",
-  "processing",
-  "shipped",
-  "completed",
-  "cancelled",
-];
 
 const DEFAULT_DELIVERY_OPTIONS = {
   in_store: {
@@ -355,6 +330,19 @@ const ordersController = createOrdersController({
   formatOrderDateTimeText,
   normalizeTrackingUrl,
 });
+const orderStatusController = createOrderStatusController({
+  API_URL,
+  authFetch,
+  getAuthUserId,
+  getOrders: () => orders,
+  loadOrders: ordersController.loadOrders,
+  previewOrderStatusNotification:
+    orderNotificationsController.previewOrderStatusNotification,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  orderStatusLabel,
+});
 const productsController = createProductsController({
   API_URL,
   authFetch,
@@ -480,7 +468,7 @@ window.logout = logout;
 window.showTab = showTab;
 window.loadOrders = ordersController.loadOrders;
 window.renderOrders = ordersController.renderOrders;
-window.changeOrderStatus = changeOrderStatus;
+window.changeOrderStatus = orderStatusController.changeOrderStatus;
 window.sendOrderEmailByOrderId = orderNotificationsController.sendOrderEmailByOrderId;
 window.deleteOrderById = ordersController.deleteOrderById;
 window.showProductModal = productsController.showProductModal;
@@ -513,8 +501,10 @@ window.uploadPaymentIcon = iconAssetsController.uploadPaymentIcon;
 window.uploadDeliveryRowIcon = iconAssetsController.uploadDeliveryRowIcon;
 window.applyIconFromLibrary = iconAssetsController.applyIconFromLibrary;
 window.resetSectionTitle = settingsController.resetSectionTitle;
-window.refundOnlinePayOrder = refundOnlinePayOrder;
-window.linePayRefundOrder = (orderId) => refundOnlinePayOrder(orderId, "linepay");
+window.refundOnlinePayOrder = orderStatusController.refundOnlinePayOrder;
+window.linePayRefundOrder = (orderId) =>
+  orderStatusController.refundOnlinePayOrder(orderId, "linepay");
+window.confirmTransferPayment = orderStatusController.confirmTransferPayment;
 window.showAddBankAccountModal = bankAccountsController.showAddBankAccountModal;
 window.editBankAccount = bankAccountsController.editBankAccount;
 window.deleteBankAccount = bankAccountsController.deleteBankAccount;
@@ -529,12 +519,12 @@ const dashboardActionHandlers = {
   "logout": () => logout(),
   ...createOrdersActionHandlers({
     loadOrders: ordersController.loadOrders,
-    changeOrderStatus,
+    changeOrderStatus: orderStatusController.changeOrderStatus,
     sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
     sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
     deleteOrderById: ordersController.deleteOrderById,
-    refundOnlinePayOrder,
-    confirmTransferPayment: (orderId) => window.confirmTransferPayment(orderId),
+    refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
+    confirmTransferPayment: orderStatusController.confirmTransferPayment,
     toggleOrderSelection: ordersController.toggleOrderSelection,
     toggleSelectAllOrders: ordersController.toggleSelectAllOrders,
     batchUpdateOrders: ordersController.batchUpdateOrders,
@@ -627,7 +617,7 @@ export function initDashboardApp() {
     window.previewIcon,
     productsController.saveProduct,
     window.savePromotion,
-    window.changeOrderStatus,
+    orderStatusController.changeOrderStatus,
     ordersController.renderOrders,
   );
   initializeDashboardEventDelegation();
@@ -758,262 +748,3 @@ function showTab(tab) {
   const loader = dashboardTabLoaders[tab];
   if (loader) loader();
 }
-
-// ============ 訂單管理 ============
-
-function normalizeReceiptInfo(raw) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const buyer = String(raw.buyer || "").trim();
-  const taxId = String(raw.taxId || "").trim();
-  const address = String(raw.address || "").trim();
-  const needDateStamp = Boolean(raw.needDateStamp);
-  if (taxId && !/^\d{8}$/.test(taxId)) return null;
-  return { buyer, taxId, address, needDateStamp };
-}
-
-function formatOrderDateTimeText(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleString("zh-TW");
-}
-
-function normalizeTrackingUrl(url) {
-  const raw = String(url || "").trim();
-  if (!raw || !/^https?:\/\//i.test(raw)) return "";
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
-    return parsed.toString();
-  } catch {
-    return "";
-  }
-}
-
-async function changeOrderStatus(orderId, status) {
-  try {
-    const targetOrder = orders.find((order) => order.orderId === orderId) ||
-      {};
-    const currentStatus = targetOrder.status || "";
-    const newStatusLabel = orderStatusLabel[status] || status;
-
-    let trackingNumber;
-    let shippingProvider;
-    let trackingUrl;
-    let cancelReason = "";
-    if (status === "shipped") {
-      const { value: shippingInfo, isConfirmed } = await Swal.fire({
-        title: "設定已出貨",
-        html: `
-          <div class="text-left space-y-2">
-            <label class="text-sm ui-text-strong block">物流單號（可選）</label>
-            <input id="swal-tracking-number" class="swal2-input" placeholder="請輸入物流單號" value="${
-          esc(targetOrder.trackingNumber || "")
-        }">
-            <label class="text-sm ui-text-strong block">物流商（可選）</label>
-            <input id="swal-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便" value="${
-          esc(targetOrder.shippingProvider || "")
-        }">
-            <label class="text-sm ui-text-strong block">物流追蹤網址（可選）</label>
-            <input id="swal-tracking-url" class="swal2-input" placeholder="https://..." value="${
-          esc(targetOrder.trackingUrl || "")
-        }">
-          </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: "確定出貨",
-        cancelButtonText: "取消",
-        confirmButtonColor: "#268BD2",
-        focusConfirm: false,
-        preConfirm: () => {
-          const trackingNumEl = document.getElementById("swal-tracking-number");
-          const providerEl = document.getElementById("swal-shipping-provider");
-          const urlEl = document.getElementById("swal-tracking-url");
-          const trackingNumberValue = String(trackingNumEl?.value || "").trim();
-          const shippingProviderValue = String(providerEl?.value || "").trim();
-          const trackingUrlValue = String(urlEl?.value || "").trim();
-          if (
-            trackingUrlValue &&
-            !/^https?:\/\//i.test(trackingUrlValue)
-          ) {
-            Swal.showValidationMessage(
-              "物流追蹤網址需以 http:// 或 https:// 開頭",
-            );
-            return false;
-          }
-          return {
-            trackingNumber: trackingNumberValue,
-            shippingProvider: shippingProviderValue,
-            trackingUrl: trackingUrlValue,
-          };
-        },
-      });
-      if (!isConfirmed) {
-        // 如果取消，則恢復原本的選單狀態 (重新載入一次列表)
-        ordersController.loadOrders();
-        return;
-      }
-      trackingNumber = shippingInfo?.trackingNumber || "";
-      shippingProvider = shippingInfo?.shippingProvider || "";
-      trackingUrl = shippingInfo?.trackingUrl || "";
-    } else if (status === "cancelled") {
-      const { value: cancelInfo, isConfirmed } = await Swal.fire({
-        title: "設定已取消",
-        html: `
-          <div class="text-left space-y-2">
-            <label class="text-sm ui-text-strong block">取消原因（選填）</label>
-            <textarea id="swal-cancel-reason" class="swal2-textarea" placeholder="請輸入取消原因，例如：付款逾時未完成">${esc(String(targetOrder.cancelReason || "").trim())}</textarea>
-          </div>
-        `,
-        showCancelButton: true,
-        confirmButtonText: "確認取消",
-        cancelButtonText: "取消",
-        confirmButtonColor: "#DC322F",
-        focusConfirm: false,
-        preConfirm: () => {
-          const reasonEl = document.getElementById("swal-cancel-reason");
-          const reasonValue = String(reasonEl?.value || "").trim();
-          return { cancelReason: reasonValue };
-        },
-      });
-      if (!isConfirmed) {
-        ordersController.loadOrders();
-        return;
-      }
-      cancelReason = String(cancelInfo?.cancelReason || "").trim();
-    } else {
-      // 非出貨狀態：跳出確認彈窗
-      const confirm = await Swal.fire({
-        title: "確認變更訂單狀態",
-        html: `訂單 <b>#${esc(orderId)}</b><br>
-          <span class="ui-text-muted">${esc(orderStatusLabel[currentStatus] || currentStatus)}</span>
-          → <span class="ui-text-warning font-bold">${esc(newStatusLabel)}</span>`,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "確認變更",
-        cancelButtonText: "取消",
-        confirmButtonColor: "#268BD2",
-      });
-      if (!confirm.isConfirmed) {
-        ordersController.loadOrders();
-        return;
-      }
-    }
-
-    const payload = { userId: getAuthUserId(), orderId, status };
-    if (status === "shipped") {
-      payload.trackingNumber = trackingNumber;
-      payload.shippingProvider = shippingProvider;
-      payload.trackingUrl = trackingUrl;
-    } else if (status === "cancelled") {
-      payload.cancelReason = cancelReason;
-    } else {
-      payload.cancelReason = "";
-    }
-
-    const r = await authFetch(`${API_URL}?action=updateOrderStatus`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "狀態已更新" });
-
-      // 建構 LINE Flex Message（使用更新後的物流資訊）
-      const flexOrder = {
-        ...targetOrder,
-        status,
-      };
-      if (status === "shipped") {
-        flexOrder.trackingNumber = trackingNumber || "";
-        flexOrder.shippingProvider = shippingProvider || "";
-        flexOrder.trackingUrl = trackingUrl || "";
-      } else if (status === "cancelled") {
-        flexOrder.cancelReason = cancelReason;
-      } else {
-        flexOrder.cancelReason = "";
-      }
-      // 先刷新訂單列表，再顯示 Flex Message
-      await ordersController.loadOrders();
-      await orderNotificationsController.previewOrderStatusNotification(
-        flexOrder,
-        status,
-      );
-    } else throw new Error(d.error);
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-// ============ 線上支付退款（LINE Pay / 街口） ============
-async function refundOnlinePayOrder(orderId, paymentMethod = "linepay") {
-  const normalizedMethod = String(paymentMethod || "").trim().toLowerCase();
-  const isJkoPay = normalizedMethod === "jkopay";
-  const action = isJkoPay ? "jkoPayRefund" : "linePayRefund";
-  const title = isJkoPay ? "街口支付退款" : "LINE Pay 退款";
-
-  const c = await Swal.fire({
-    title,
-    text: `確定要對訂單 #${orderId} 進行退款嗎？`,
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#6C71C4",
-    confirmButtonText: "確認退款",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-
-  Swal.fire({
-    title: `${isJkoPay ? "街口" : "LINE Pay"} 退款處理中...`,
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
-  try {
-    const r = await authFetch(`${API_URL}?action=${action}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), orderId }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "退款成功" });
-      ordersController.loadOrders();
-    } else Swal.fire("退款失敗", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-}
-
-// ============ 轉帳確認收款 ============
-window.confirmTransferPayment = async function (orderId) {
-  const c = await Swal.fire({
-    title: "確認收款",
-    text: `確認已收到訂單 #${orderId} 的匯款？`,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonText: "確認已收款",
-    cancelButtonText: "取消",
-  });
-  if (!c.isConfirmed) return;
-  try {
-    const r = await authFetch(`${API_URL}?action=updateOrderStatus`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: getAuthUserId(),
-        orderId,
-        status: "processing",
-        paymentStatus: "paid",
-      }),
-    });
-    const d = await r.json();
-    if (d.success) {
-      Toast.fire({ icon: "success", title: "已確認收款" });
-      ordersController.loadOrders();
-    } else Swal.fire("錯誤", d.error, "error");
-  } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
-  }
-};
