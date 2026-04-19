@@ -627,16 +627,16 @@
           <div v-else class="text-xl font-bold">總金額: {{ totalPriceText }}</div>
         </div>
         <div class="flex gap-2">
-          <UiButton
-            variant="outline"
-            class="relative h-11 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          <button
+            type="button"
+            class="relative bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm hover:bg-amber-100 transition-colors"
             @click.prevent="toggleCartDrawer"
           >
             <span class="tab-with-icon"><img src="../../../icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span> <span
               id="cart-badge"
               class="hidden ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center"
             >0</span>
-          </UiButton>
+          </button>
           <!-- 幽靈按鈕：防止舊版快取 JS 找不到物件而引發報錯 -->
           <button id="submit-btn" style="display: none"></button>
         </div>

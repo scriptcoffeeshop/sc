@@ -20,7 +20,5 @@ const classes = computed(() =>
 </script>
 
 <template>
-  <textarea v-bind="attrs" :class="classes">
-    <slot />
-  </textarea>
+  <textarea v-bind="attrs" :class="classes"></textarea>
 </template>

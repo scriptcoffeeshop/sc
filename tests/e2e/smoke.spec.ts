@@ -335,6 +335,27 @@ async function installDashboardRoutes(
 }
 
 test.describe("smoke", () => {
+  test("storefront note textarea stays empty and keeps legacy warm palette", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.goto("/main.html");
+
+    await expect(page.locator("#login-section")).toHaveCSS(
+      "background-color",
+      "rgb(240, 250, 240)",
+    );
+    await expect(page.locator("#notes-section-title")).toHaveCSS(
+      "color",
+      "rgb(60, 36, 21)",
+    );
+    await expect(page.locator("#order-note")).toHaveValue("");
+    await expect(page.locator("#order-note")).toHaveCSS(
+      "border-top-color",
+      "rgb(229, 221, 213)",
+    );
+  });
+
   test("storefront LINE login callback uses POST", async ({ page }) => {
     await installGlobalStubs(page);
 

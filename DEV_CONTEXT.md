@@ -30,6 +30,18 @@
 
 ## 3) 最近更新（人工摘要）
 
+### 2026-04-20
+
+- 前台配色回復舊版暖色系：
+  - `css/common.css` 與 `css/main.css` 的 storefront token / 卡片 / 按鈕 / 選項卡樣式恢復為原本的暖棕與米白系，不再沿用灰藍 slate palette。
+  - `login`、配送地址、超商門市、來店取貨、轉帳資訊等分色區塊重新對回舊版底色與邊框色。
+- 修正訂單備註出現 `<slot />` 亂碼：
+  - `frontend/src/components/ui/textarea/Textarea.vue` 不再把 slot 內容渲染進原生 `<textarea>`，避免文字節點直接變成初始值。
+- 快取版號更新：
+  - 前端版本已升級至 `v=99`（`main.html`、`dashboard.html`）。
+- 回歸測試：
+  - `tests/e2e/smoke.spec.ts` 新增 storefront 檢查，鎖住備註欄不得再出現 `<slot />`，並確認關鍵暖色樣式仍存在。
+
 ### 2026-04-19
 
 - 自動佈署鏈補齊：
