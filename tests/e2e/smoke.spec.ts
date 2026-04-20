@@ -1446,6 +1446,64 @@ test.describe("smoke", () => {
     ).toBe("AB123456789");
   });
 
+  test("storefront my orders renders API content as text", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
+      await fulfillJson(route, {
+        success: true,
+        orders: [
+          {
+            orderId: '<img src=x onerror="window.__ordersXss=true">',
+            timestamp: "2026-03-02T00:00:00.000Z",
+            deliveryMethod: "home_delivery",
+            status: '<img src=x onerror="window.__ordersXss=true">',
+            lineName: "測試客戶",
+            city: '<img src=x onerror="window.__ordersXss=true">',
+            address: '<script>window.__ordersXss=true</script>',
+            items: '測試豆 x1\n<script>window.__ordersXss=true</script>',
+            total: '<img src=x onerror="window.__ordersXss=true">',
+            paymentMethod: "transfer",
+            paymentStatus: '<img src=x onerror="window.__ordersXss=true">',
+            shippingProvider: '<img src=x onerror="window.__ordersXss=true">',
+            trackingNumber: 'TRK"><img src=x onerror="window.__ordersXss=true">',
+            receiptInfo: {
+              taxId: "12345678",
+              buyer: '<img src=x onerror="window.__ordersXss=true">',
+              address: '<script>window.__ordersXss=true</script>',
+              needDateStamp: true,
+            },
+          },
+        ],
+      });
+    });
+
+    await page.addInitScript(() => {
+      (window as any).__ordersXss = false;
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+    await page.getByRole("button", { name: "我的訂單" }).click();
+
+    await expect(page.locator("#my-orders-modal")).toBeVisible();
+    await expect(page.locator("#my-orders-list")).toContainText("<script>");
+    await expect(page.locator("#my-orders-list img")).toHaveCount(0);
+    await expect(page.locator("#my-orders-list script")).toHaveCount(0);
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__ordersXss)
+    ).toBe(false);
+  });
+
   test("storefront profile modal matches my orders corner radius", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);

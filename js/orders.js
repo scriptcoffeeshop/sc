@@ -34,6 +34,39 @@ function getDefaultTrackingUrl(deliveryMethod) {
   return "";
 }
 
+const ORDER_STATUS_TEXT = {
+  pending: "待處理",
+  processing: "處理中",
+  shipped: "已出貨",
+  completed: "已完成",
+  cancelled: "已取消",
+};
+
+const DELIVERY_METHOD_TEXT = {
+  delivery: "宅配",
+  home_delivery: "全台宅配",
+  seven_eleven: "7-11 取件",
+  family_mart: "全家取件",
+  in_store: "來店取貨",
+};
+
+const PAYMENT_METHOD_TEXT = {
+  cod: "貨到付款",
+  linepay: "LINE Pay",
+  jkopay: "街口支付",
+  transfer: "線上轉帳",
+};
+
+const PAYMENT_STATUS_TEXT = {
+  pending: "待付款",
+  processing: "付款確認中",
+  paid: "已付款",
+  failed: "付款失敗",
+  cancelled: "付款取消",
+  expired: "付款逾期",
+  refunded: "已退款",
+};
+
 function formatDateTimeText(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -74,22 +107,221 @@ function parseStoredReceiptInfo(raw) {
   return normalizeReceiptInfo(raw);
 }
 
-function buildReceiptInfoHtml(receiptInfo) {
-  if (!receiptInfo) return "";
-  return `<div class="text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2">
-            <div><span class="text-gray-500">統一編號：</span>${
-    escapeHtml(receiptInfo.taxId) || "未填寫"
-  }</div>
-            <div><span class="text-gray-500">收據買受人：</span>${
-    escapeHtml(receiptInfo.buyer) || "未填寫"
-  }</div>
-            <div><span class="text-gray-500">收據地址：</span>${
-    escapeHtml(receiptInfo.address) || "未填寫"
-  }</div>
-            <div><span class="text-gray-500">壓印日期：</span>${
-    receiptInfo.needDateStamp ? "需要" : "不需要"
-  }</div>
-          </div>`;
+function createMessageElement(message, className = "text-center text-gray-500 py-8") {
+  const p = document.createElement("p");
+  p.className = className;
+  p.textContent = String(message || "");
+  return p;
+}
+
+function createReceiptInfoElement(receiptInfo) {
+  if (!receiptInfo) return null;
+  const wrapper = document.createElement("div");
+  wrapper.className = "text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2";
+
+  [
+    ["統一編號：", receiptInfo.taxId || "未填寫"],
+    ["收據買受人：", receiptInfo.buyer || "未填寫"],
+    ["收據地址：", receiptInfo.address || "未填寫"],
+    ["壓印日期：", receiptInfo.needDateStamp ? "需要" : "不需要"],
+  ].forEach(([label, value]) => {
+    const row = document.createElement("div");
+    const labelEl = document.createElement("span");
+    labelEl.className = "text-gray-500";
+    labelEl.textContent = label;
+    row.append(labelEl, String(value));
+    wrapper.appendChild(row);
+  });
+
+  return wrapper;
+}
+
+function getPaymentBadgeClass(paymentStatus) {
+  if (paymentStatus === "paid") return "bg-green-50 text-green-700";
+  if (paymentStatus === "processing") return "bg-blue-50 text-blue-700";
+  if (paymentStatus === "pending") return "bg-yellow-50 text-yellow-700";
+  if (
+    paymentStatus === "failed" || paymentStatus === "cancelled" ||
+    paymentStatus === "expired"
+  ) {
+    return "bg-red-50 text-red-700";
+  }
+  if (paymentStatus === "refunded") return "bg-purple-50 text-purple-700";
+  return "bg-gray-100 text-gray-600";
+}
+
+function createPaymentBadge(order, paymentStatus) {
+  const paymentMethod = String(order.paymentMethod || "").trim();
+  if (!paymentMethod || paymentMethod === "cod") return null;
+
+  const badge = document.createElement("span");
+  badge.className = `text-xs px-2 py-0.5 rounded-full ${
+    getPaymentBadgeClass(paymentStatus)
+  }`;
+  badge.textContent = `${PAYMENT_METHOD_TEXT[paymentMethod] || paymentMethod} ${
+    PAYMENT_STATUS_TEXT[paymentStatus] || paymentStatus
+  }`;
+  return badge;
+}
+
+function bindTrackingCopyButton(button) {
+  button.addEventListener("click", () => {
+    const trackingNumber = String(button.dataset.trackingNumber || "").trim();
+    if (!trackingNumber) return;
+    navigator.clipboard.writeText(trackingNumber)
+      .then(() => Toast.fire({ icon: "success", title: "單號已複製" }))
+      .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
+  });
+}
+
+function createShippingInfoElement(order, trackingUrl) {
+  const provider = String(order.shippingProvider || "").trim();
+  const trackingNumber = String(order.trackingNumber || "").trim();
+  if (!provider && !trackingNumber && !trackingUrl) return null;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2";
+
+  if (provider) {
+    const providerEl = document.createElement("div");
+    providerEl.textContent = `物流商：${provider}`;
+    wrapper.appendChild(providerEl);
+  }
+
+  if (trackingNumber) {
+    const trackingRow = document.createElement("div");
+    trackingRow.className = "mt-1";
+    trackingRow.append("物流單號：");
+
+    const numberEl = document.createElement("span");
+    numberEl.className = "font-mono";
+    numberEl.textContent = trackingNumber;
+
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.dataset.copyTrackingNumber = "true";
+    copyButton.dataset.trackingNumber = trackingNumber;
+    copyButton.className =
+      "ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700";
+    copyButton.title = "複製單號";
+    copyButton.textContent = "複製";
+    bindTrackingCopyButton(copyButton);
+
+    trackingRow.append(numberEl, copyButton);
+    wrapper.appendChild(trackingRow);
+  }
+
+  if (trackingUrl) {
+    const link = document.createElement("a");
+    link.href = trackingUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.className = "text-blue-600 hover:underline";
+    link.textContent = "物流追蹤頁面";
+    wrapper.appendChild(link);
+  }
+
+  return wrapper;
+}
+
+function appendPaymentMetaLine(parent, label, value, addTopMargin) {
+  if (!value) return;
+  const row = document.createElement("div");
+  if (addTopMargin) row.className = "mt-1";
+  row.textContent = `${label}${value}`;
+  parent.appendChild(row);
+}
+
+function createPaymentMetaElement(order, paymentStatus) {
+  const paymentMethod = String(order.paymentMethod || "").trim();
+  if (!paymentMethod || paymentMethod === "cod") return null;
+
+  const paymentExpiresAtText = formatDateTimeText(order.paymentExpiresAt);
+  const paymentLastCheckedAtText = formatDateTimeText(order.paymentLastCheckedAt);
+  const paymentProviderStatusCode = String(order.paymentProviderStatusCode || "")
+    .trim();
+  const showExpiresAt = paymentExpiresAtText &&
+    (paymentStatus === "pending" || paymentStatus === "processing" ||
+      paymentStatus === "expired");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "text-xs text-gray-600 bg-slate-50 p-2 rounded mb-2";
+  appendPaymentMetaLine(wrapper, "付款期限：", showExpiresAt ? paymentExpiresAtText : "", false);
+  appendPaymentMetaLine(
+    wrapper,
+    "最近同步：",
+    paymentLastCheckedAtText,
+    wrapper.childNodes.length > 0,
+  );
+  appendPaymentMetaLine(
+    wrapper,
+    "金流狀態碼：",
+    paymentProviderStatusCode,
+    wrapper.childNodes.length > 0,
+  );
+
+  return wrapper.childNodes.length > 0 ? wrapper : null;
+}
+
+function createOrderCard(order) {
+  const paymentStatus = String(order.paymentStatus || "").trim();
+  const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
+  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
+  const defaultTrackingUrl = getDefaultTrackingUrl(order.deliveryMethod);
+  const trackingUrl = customTrackingUrl || defaultTrackingUrl;
+
+  const card = document.createElement("div");
+  card.className = "border rounded-xl p-4 mb-3";
+  card.style.borderColor = "#e5ddd5";
+
+  const header = document.createElement("div");
+  header.className = "flex justify-between items-center mb-2";
+
+  const orderId = document.createElement("span");
+  orderId.className = "text-sm font-bold";
+  orderId.style.color = "var(--primary)";
+  orderId.textContent = `#${String(order.orderId || "")}`;
+
+  const status = document.createElement("span");
+  status.className = "text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700";
+  status.textContent = ORDER_STATUS_TEXT[order.status] ||
+    String(order.status || "");
+  header.append(orderId, status);
+
+  const meta = document.createElement("div");
+  meta.className = "text-xs text-gray-500 mb-2 flex flex-wrap gap-1 items-center";
+  const methodText = DELIVERY_METHOD_TEXT[order.deliveryMethod] ||
+    String(order.deliveryMethod || "");
+  const locationText = order.storeName
+    ? `・${String(order.storeName)}`
+    : order.city
+    ? `・${String(order.city)}${String(order.address || "")}`
+    : "";
+  meta.append(`${methodText} ${locationText}`);
+  const payBadge = createPaymentBadge(order, paymentStatus);
+  if (payBadge) meta.append(" ", payBadge);
+
+  const shippingInfo = createShippingInfoElement(order, trackingUrl);
+  const paymentMeta = createPaymentMetaElement(order, paymentStatus);
+
+  const items = document.createElement("div");
+  items.className = "text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2";
+  items.textContent = String(order.items || "");
+
+  const receipt = createReceiptInfoElement(receiptInfo);
+
+  const total = document.createElement("div");
+  total.className = "text-right font-bold";
+  total.style.color = "var(--primary)";
+  total.textContent = `$${String(order.total ?? 0)}`;
+
+  card.append(header, meta);
+  if (shippingInfo) card.appendChild(shippingInfo);
+  if (paymentMeta) card.appendChild(paymentMeta);
+  card.appendChild(items);
+  if (receipt) card.appendChild(receipt);
+  card.appendChild(total);
+  return card;
 }
 
 function getReceiptFormValues() {
@@ -660,171 +892,25 @@ export async function showMyOrders() {
   }
   document.getElementById("my-orders-modal").classList.remove("hidden");
   const list = document.getElementById("my-orders-list");
-  list.innerHTML = '<p class="text-center text-gray-500 py-8">載入中...</p>';
+  if (!list) return;
+  list.replaceChildren(createMessageElement("載入中..."));
   try {
     const res = await authFetch(
       `${API_URL}?action=getMyOrders&_=${Date.now()}`,
     );
     const result = await res.json();
     if (!result.success || !result.orders?.length) {
-      list.innerHTML = '<p class="text-center text-gray-500 py-8">尚無訂單</p>';
+      list.replaceChildren(createMessageElement("尚無訂單"));
       return;
     }
 
-    const statusMap = {
-      pending: "待處理",
-      processing: "處理中",
-      shipped: "已出貨",
-      completed: "已完成",
-      cancelled: "已取消",
-    };
-    const methodMap = {
-      delivery: "宅配",
-      home_delivery: "全台宅配",
-      seven_eleven: "7-11 取件",
-      family_mart: "全家取件",
-      in_store: "來店取貨",
-    };
-    const payMethodMap = {
-      cod: "貨到付款",
-      linepay: "LINE Pay",
-      jkopay: "街口支付",
-      transfer: "線上轉帳",
-    };
-    const payStatusMap = {
-      pending: "待付款",
-      processing: "付款確認中",
-      paid: "已付款",
-      failed: "付款失敗",
-      cancelled: "付款取消",
-      expired: "付款逾期",
-      refunded: "已退款",
-    };
-
-    list.innerHTML = result.orders.map((o) => {
-      const paymentStatus = String(o.paymentStatus || "").trim();
-      const receiptInfo = normalizeReceiptInfo(o.receiptInfo);
-      const customTrackingUrl = normalizeTrackingUrl(o.trackingUrl || "");
-      const defaultTrackingUrl = getDefaultTrackingUrl(o.deliveryMethod);
-      const trackingUrl = customTrackingUrl || defaultTrackingUrl;
-      const paymentExpiresAtText = formatDateTimeText(o.paymentExpiresAt);
-      const paymentLastCheckedAtText = formatDateTimeText(o.paymentLastCheckedAt);
-      const paymentProviderStatusCode = String(o.paymentProviderStatusCode || "")
-        .trim();
-      const shippingInfoHtml = (o.shippingProvider || o.trackingNumber ||
-          trackingUrl)
-        ? `<div class="text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2">
-                ${
-          o.shippingProvider
-            ? `<div>物流商：${escapeHtml(o.shippingProvider)}</div>`
-            : ""
-        }
-                ${
-          o.trackingNumber
-            ? `<div class="mt-1">物流單號：<span class="font-mono">${
-              escapeHtml(o.trackingNumber)
-            }</span>
-                    <button type="button" data-copy-tracking-number="true" data-tracking-number="${
-              escapeHtml(o.trackingNumber)
-            }" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">複製</button>
-                  </div>`
-            : ""
-        }
-                ${
-          trackingUrl
-            ? `<a href="${
-              escapeHtml(trackingUrl)
-            }" target="_blank" class="text-blue-600 hover:underline">物流追蹤頁面</a>`
-            : ""
-        }
-            </div>`
-        : "";
-      const payBadgeClass = paymentStatus === "paid"
-        ? "bg-green-50 text-green-700"
-        : paymentStatus === "processing"
-        ? "bg-blue-50 text-blue-700"
-        : paymentStatus === "pending"
-        ? "bg-yellow-50 text-yellow-700"
-        : paymentStatus === "failed" || paymentStatus === "cancelled" ||
-            paymentStatus === "expired"
-        ? "bg-red-50 text-red-700"
-        : paymentStatus === "refunded"
-        ? "bg-purple-50 text-purple-700"
-        : "bg-gray-100 text-gray-600";
-      const payBadge = o.paymentMethod && o.paymentMethod !== "cod"
-        ? `<span class="text-xs px-2 py-0.5 rounded-full ${payBadgeClass}">${
-          payMethodMap[o.paymentMethod] || ""
-        } ${
-          payStatusMap[paymentStatus] || paymentStatus
-        }</span>`
-        : "";
-      const paymentMetaHtml = o.paymentMethod && o.paymentMethod !== "cod"
-        ? `<div class="text-xs text-gray-600 bg-slate-50 p-2 rounded mb-2">
-              ${
-          paymentExpiresAtText &&
-            (paymentStatus === "pending" || paymentStatus === "processing" ||
-              paymentStatus === "expired")
-            ? `<div>付款期限：${escapeHtml(paymentExpiresAtText)}</div>`
-            : ""
-        }
-              ${
-          paymentLastCheckedAtText
-            ? `<div${
-              paymentExpiresAtText ? ' class="mt-1"' : ""
-            }>最近同步：${escapeHtml(paymentLastCheckedAtText)}</div>`
-            : ""
-        }
-              ${
-          paymentProviderStatusCode
-            ? `<div${
-              (paymentExpiresAtText || paymentLastCheckedAtText)
-                ? ' class="mt-1"'
-                : ""
-            }>金流狀態碼：${escapeHtml(paymentProviderStatusCode)}</div>`
-            : ""
-        }
-            </div>`
-        : "";
-      const receiptHtml = buildReceiptInfoHtml(receiptInfo);
-      return `
-            <div class="border rounded-xl p-4 mb-3" style="border-color:#e5ddd5;">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-bold" style="color:var(--primary)">#${o.orderId}</span>
-                    <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700">${
-        statusMap[o.status] || o.status
-      }</span>
-                </div>
-                <div class="text-xs text-gray-500 mb-2 flex flex-wrap gap-1 items-center">
-                    ${methodMap[o.deliveryMethod] || o.deliveryMethod} ${
-        o.storeName
-          ? "・" + o.storeName
-          : o.city
-          ? "・" + o.city + (o.address || "")
-          : ""
-      }
-                    ${payBadge}
-                </div>
-                ${shippingInfoHtml}
-                ${paymentMetaHtml}
-                <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">${
-        escapeHtml(o.items)
-      }</div>
-                ${receiptHtml}
-                <div class="text-right font-bold" style="color:var(--primary)">$${o.total}</div>
-            </div>
-        `;
-    }).join("");
-    list.querySelectorAll('[data-copy-tracking-number="true"]').forEach((button) => {
-      button.addEventListener("click", () => {
-        const trackingNumber = String(button.dataset.trackingNumber || "").trim();
-        if (!trackingNumber) return;
-        navigator.clipboard.writeText(trackingNumber)
-          .then(() => Toast.fire({ icon: "success", title: "單號已複製" }))
-          .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
-      });
-    });
+    list.replaceChildren(...result.orders.map((order) => createOrderCard(order)));
   } catch (e) {
-    list.innerHTML =
-      `<p class="text-center text-red-500 py-8">${e.message}</p>`;
+    list.replaceChildren(
+      createMessageElement(
+        e.message || "訂單載入失敗",
+        "text-center text-red-500 py-8",
+      ),
+    );
   }
 }

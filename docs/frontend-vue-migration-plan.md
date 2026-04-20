@@ -186,6 +186,7 @@ Initial storefront progress:
 - delivery option selection, store-search result selection, tracking-number copy, and load-failure retry no longer require body-level click delegation
 - storefront body-level click delegation has been removed from the normal runtime path
 - delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; legacy `renderDeliveryOptions()` / `renderBankAccounts()` only remain as compatibility fallbacks and skip Vue-managed containers
+- my-orders list rendering no longer uses `innerHTML` for API order payloads; `js/orders.js` now builds order cards with DOM APIs while the Vue storefront migration continues
 
 ## Dashboard Decomposition Blueprint
 
