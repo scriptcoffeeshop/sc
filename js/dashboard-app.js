@@ -42,7 +42,6 @@ import {
   readInputValue,
 } from "./dashboard/modules/dashboard-branding.js";
 import { registerDashboardGlobals } from "./dashboard/modules/dashboard-globals.js";
-import { createDashboardSessionController } from "./dashboard/modules/dashboard-session-controller.js";
 import {
   DEFAULT_DELIVERY_OPTIONS,
   normalizeDeliveryOption,
@@ -69,6 +68,11 @@ import {
   dashboardPromotionsActions,
 } from "../frontend/src/features/dashboard/useDashboardPromotions.js";
 import {
+  configureDashboardSessionServices,
+  dashboardSessionActions,
+  getDashboardCurrentUser,
+} from "../frontend/src/features/dashboard/useDashboardSession.js";
+import {
   configureDashboardUsersServices,
   dashboardUsersActions,
 } from "../frontend/src/features/dashboard/useDashboardUsers.js";
@@ -84,7 +88,6 @@ import {
 } from "../frontend/src/features/dashboard/useDashboardProducts.js";
 
 // ============ 共享狀態 ============
-let currentUser = null;
 let dashboardSettings = {};
 let dashboardTabLoaders = {};
 let loadInitialDashboardData = async () => {};
@@ -101,8 +104,7 @@ const dashboardTabs = [
   "blacklist",
   "formfields",
 ];
-const triggerDashboardLogin = () =>
-  loginWithLine(LINE_REDIRECT.dashboard, "coffee_admin_state");
+const triggerDashboardLogin = () => dashboardSessionActions.startLogin();
 const brandingController = createDashboardBrandingController({
   API_URL,
   cacheKey: DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
@@ -110,14 +112,11 @@ const brandingController = createDashboardBrandingController({
   resolveAssetUrl,
   fetch: globalThis.fetch?.bind(globalThis),
 });
-const sessionController = createDashboardSessionController({
+configureDashboardSessionServices({
   API_URL,
   authFetch,
+  loginWithLineFn: loginWithLine,
   lineRedirect: LINE_REDIRECT.dashboard,
-  getCurrentUser: () => currentUser,
-  setCurrentUser: (nextCurrentUser) => {
-    currentUser = nextCurrentUser;
-  },
   getDashboardTabLoaders: () => dashboardTabLoaders,
   loadInitialData: () => loadInitialDashboardData(),
   defaultTab: "orders",
@@ -128,7 +127,7 @@ const sessionController = createDashboardSessionController({
 const bankAccountsController = createBankAccountsController({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -137,7 +136,7 @@ const bankAccountsController = createBankAccountsController({
 const iconAssetsController = createIconAssetsController({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   normalizeIconPath,
@@ -149,7 +148,7 @@ const iconAssetsController = createIconAssetsController({
 const settingsController = createSettingsController({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
@@ -179,7 +178,7 @@ const settingsController = createSettingsController({
 const orderNotificationsController = createOrderNotificationsController({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   getOrders: getDashboardOrders,
   Toast,
   Swal: globalThis.Swal,
@@ -194,7 +193,7 @@ const orderNotificationsController = createOrderNotificationsController({
 const orderStatusController = createOrderStatusController({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   getOrders: getDashboardOrders,
   loadOrders: dashboardOrdersActions.loadOrders,
   previewOrderStatusNotification:
@@ -207,7 +206,7 @@ const orderStatusController = createOrderStatusController({
 configureDashboardOrdersServices({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   changeOrderStatus: orderStatusController.changeOrderStatus,
@@ -215,7 +214,7 @@ configureDashboardOrdersServices({
 configureDashboardCategoriesServices({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   loadProducts: dashboardProductsActions.loadProducts,
   onCategoriesChanged: () => {
     dashboardProductsActions.syncCategories();
@@ -228,7 +227,7 @@ configureDashboardCategoriesServices({
 configureDashboardPromotionsServices({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   getProducts: getDashboardProducts,
   ensureProductsLoaded: dashboardProductsActions.loadProducts,
   Toast,
@@ -238,7 +237,7 @@ configureDashboardPromotionsServices({
 configureDashboardFormFieldsServices({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -249,8 +248,8 @@ configureDashboardFormFieldsServices({
 configureDashboardUsersServices({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
-  getCurrentUser: () => currentUser,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
+  getCurrentUser: getDashboardCurrentUser,
   Toast,
   Swal: globalThis.Swal,
   esc,
@@ -258,7 +257,7 @@ configureDashboardUsersServices({
 configureDashboardProductsServices({
   API_URL,
   authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
   getCategories: getDashboardCategories,
   ensureCategoriesLoaded: () => dashboardCategoriesActions.loadCategories(),
   Toast,
@@ -268,7 +267,7 @@ configureDashboardProductsServices({
 
 const dashboardActionHandlers = {
   "login-with-line": triggerDashboardLogin,
-  "logout": sessionController.logout,
+  "logout": dashboardSessionActions.logout,
   ...createOrdersActionHandlers({
     loadOrders: dashboardOrdersActions.loadOrders,
     sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
@@ -358,8 +357,8 @@ loadInitialDashboardData = () => Promise.all([
 
 registerDashboardGlobals({
   loginWithLine: triggerDashboardLogin,
-  logout: sessionController.logout,
-  showTab: sessionController.showTab,
+  logout: dashboardSessionActions.logout,
+  showTab: dashboardSessionActions.setActiveTab,
   loadOrders: dashboardOrdersActions.loadOrders,
   renderOrders: dashboardOrdersActions.renderOrders,
   changeOrderStatus: orderStatusController.changeOrderStatus,
@@ -421,8 +420,6 @@ export function initDashboardApp() {
   dashboardInitialized = true;
   const { initializeDashboardEventDelegation } = createDashboardEvents(
     dashboardActionHandlers,
-    dashboardTabLoaders,
-    sessionController.showTab,
     dashboardUsersActions.loadUsers,
     iconAssetsController.previewIcon,
     dashboardProductsActions.saveProduct,
@@ -432,12 +429,6 @@ export function initDashboardApp() {
   );
   initializeDashboardEventDelegation();
   brandingController.loadPublicDashboardBranding();
-  const p = new URLSearchParams(window.location.search);
-  if (p.get("code")) {
-    sessionController.handleLineCallback(p.get("code"), p.get("state"));
-  } else {
-    sessionController.checkLogin();
-  }
 }
 
 // 由 Vue Page 元件在 onMounted 時顯式呼叫 initDashboardApp()

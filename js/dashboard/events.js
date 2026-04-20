@@ -1,7 +1,5 @@
 export function createDashboardEvents(
   actionHandlers,
-  tabLoaders,
-  showTab,
   loadUsers,
   previewIcon,
   saveProduct,
@@ -13,14 +11,6 @@ export function createDashboardEvents(
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!(target instanceof Element)) return;
-
-      const tabButton = target.closest("[data-tab]");
-      if (tabButton) {
-        event.preventDefault();
-        const tab = tabButton.dataset.tab;
-        if (tab) showTab(tab);
-        return;
-      }
 
       const actionButton = target.closest("[data-action]");
       if (!actionButton) return;

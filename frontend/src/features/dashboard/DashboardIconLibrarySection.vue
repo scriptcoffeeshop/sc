@@ -1,5 +1,9 @@
 <template>
-  <div id="icon-library-section" class="glass-card p-6 hidden">
+  <div
+    id="icon-library-section"
+    v-show="activeTab === 'icon-library'"
+    class="glass-card p-6"
+  >
     <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
       <div>
         <h2 class="text-lg font-bold ui-text-highlight">
@@ -93,6 +97,7 @@
 import UiButton from "../../components/ui/button/Button.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
 import { getDefaultIconUrl } from "../../../../js/icons.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 defineProps({
   categories: {
@@ -114,4 +119,5 @@ defineProps({
 });
 
 const emit = defineEmits(["update:keyword", "select-category"]);
+const { activeTab } = useDashboardSession();
 </script>

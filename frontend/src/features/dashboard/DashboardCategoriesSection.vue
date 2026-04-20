@@ -1,5 +1,5 @@
 <template>
-  <div id="categories-section" class="glass-card p-6 hidden">
+  <div id="categories-section" v-show="activeTab === 'categories'" class="glass-card p-6">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-bold ui-text-highlight">
         商品分類
@@ -66,8 +66,10 @@ import {
   dashboardCategoriesActions,
   useDashboardCategories,
 } from "./useDashboardCategories.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const { categoriesView, newCategoryName } = useDashboardCategories();
+const { activeTab } = useDashboardSession();
 const categoriesList = ref(null);
 
 function syncCategoriesList() {

@@ -1,5 +1,5 @@
 <template>
-  <div id="products-section" class="glass-card p-6 hidden">
+  <div id="products-section" v-show="activeTab === 'products'" class="glass-card p-6">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-bold ui-text-highlight">
         咖啡豆商品
@@ -115,8 +115,10 @@ import {
   dashboardProductsActions,
   useDashboardProducts,
 } from "./useDashboardProducts.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const { productsGroupsView } = useDashboardProducts();
+const { activeTab } = useDashboardSession();
 const productsTable = ref(null);
 
 function syncProductsTable() {

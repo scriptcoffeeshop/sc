@@ -1,5 +1,5 @@
 <template>
-  <div id="orders-section" class="glass-card p-6 hidden">
+  <div id="orders-section" v-show="activeTab === 'orders'" class="glass-card p-6">
     <div class="flex flex-col gap-4 mb-4">
       <div class="flex justify-between items-center gap-3 flex-wrap">
         <h2 class="text-lg font-bold ui-text-highlight">
@@ -390,6 +390,7 @@
 <script setup>
 import { ref, watchEffect } from "vue";
 import { useDashboardOrders } from "./useDashboardOrders.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const {
   filters,
@@ -402,6 +403,7 @@ const {
   selectAllIndeterminate,
   orderStatusText,
 } = useDashboardOrders();
+const { activeTab } = useDashboardSession();
 
 const selectAllCheckbox = ref(null);
 

@@ -1,5 +1,5 @@
 <template>
-  <div id="blacklist-section" class="glass-card p-6 hidden">
+  <div id="blacklist-section" v-show="activeTab === 'blacklist'" class="glass-card p-6">
     <h2 class="text-lg font-bold mb-4 ui-text-highlight">
       黑名單
     </h2>
@@ -59,6 +59,8 @@
 
 <script setup>
 import { useDashboardUsers } from "./useDashboardUsers.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const { blacklistView } = useDashboardUsers();
+const { activeTab } = useDashboardSession();
 </script>

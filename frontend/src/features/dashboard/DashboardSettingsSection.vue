@@ -1,5 +1,5 @@
 <template>
-  <div id="settings-section" class="glass-card p-6 hidden">
+  <div id="settings-section" v-show="activeTab === 'settings'" class="glass-card p-6">
     <h2 class="text-lg font-bold mb-6 ui-text-highlight">
       系統設定
     </h2>
@@ -769,4 +769,7 @@
 
 <script setup>
 import UiTextarea from "../../components/ui/textarea/Textarea.vue";
+import { useDashboardSession } from "./useDashboardSession.js";
+
+const { activeTab } = useDashboardSession();
 </script>

@@ -1,5 +1,5 @@
 <template>
-  <div id="promotions-section" class="glass-card p-6 hidden">
+  <div id="promotions-section" v-show="activeTab === 'promotions'" class="glass-card p-6">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-bold ui-text-highlight">
         促銷活動管理
@@ -103,8 +103,10 @@ import {
   dashboardPromotionsActions,
   useDashboardPromotions,
 } from "./useDashboardPromotions.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const { promotionsView } = useDashboardPromotions();
+const { activeTab } = useDashboardSession();
 const promotionsTable = ref(null);
 
 function syncPromotionsTable() {

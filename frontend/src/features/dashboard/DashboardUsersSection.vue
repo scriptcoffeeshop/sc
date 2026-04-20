@@ -1,5 +1,5 @@
 <template>
-  <div id="users-section" class="glass-card p-6 hidden">
+  <div id="users-section" v-show="activeTab === 'users'" class="glass-card p-6">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-bold ui-text-highlight">
         用戶管理
@@ -116,6 +116,8 @@
 
 <script setup>
 import { useDashboardUsers } from "./useDashboardUsers.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const { userSearch, usersView, updateUserSearch } = useDashboardUsers();
+const { activeTab } = useDashboardSession();
 </script>

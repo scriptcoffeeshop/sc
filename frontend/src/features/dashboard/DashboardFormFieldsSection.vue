@@ -1,5 +1,5 @@
 <template>
-  <div id="formfields-section" class="glass-card p-6 hidden">
+  <div id="formfields-section" v-show="activeTab === 'formfields'" class="glass-card p-6">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-bold ui-text-highlight">
         表單欄位管理
@@ -92,8 +92,10 @@ import {
   dashboardFormFieldsActions,
   useDashboardFormFields,
 } from "./useDashboardFormFields.js";
+import { useDashboardSession } from "./useDashboardSession.js";
 
 const { formFieldsView } = useDashboardFormFields();
+const { activeTab } = useDashboardSession();
 const formFieldsList = ref(null);
 
 function syncFormFieldsList() {

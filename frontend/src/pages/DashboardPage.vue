@@ -1,5 +1,9 @@
 <template>
-  <UiCard id="login-page" class="max-w-md mx-auto mt-20 p-8 text-center">
+  <UiCard
+    id="login-page"
+    v-show="!isAuthenticated"
+    class="max-w-md mx-auto mt-20 p-8 text-center"
+  >
     <img
       id="dashboard-login-logo"
       :src="brandIconUrl"
@@ -25,7 +29,7 @@
     </UiButton>
   </UiCard>
 
-  <div id="admin-page" class="hidden max-w-6xl mx-auto">
+  <div id="admin-page" v-show="isAuthenticated" class="max-w-6xl mx-auto">
     <div class="flex justify-between items-center mb-6">
       <div class="flex items-center gap-3">
         <img id="dashboard-header-logo" :src="brandIconUrl" alt="品牌圖示" class="w-9 h-9">
@@ -34,7 +38,7 @@
             咖啡訂購後台
           </h1>
           <p class="text-sm ui-text-subtle">
-            歡迎，<span id="admin-name"></span>
+            歡迎，<span id="admin-name">{{ adminDisplayName }}</span>
           </p>
         </div>
       </div>
@@ -89,10 +93,15 @@ import DashboardTabs from "../features/dashboard/DashboardTabs.vue";
 import DashboardUsersSection from "../features/dashboard/DashboardUsersSection.vue";
 import { ICON_CATALOG, getDefaultIconUrl } from "../../../js/icons.js";
 import { initDashboardApp } from "../../../js/dashboard-app.js";
+import {
+  dashboardSessionActions,
+  useDashboardSession,
+} from "../features/dashboard/useDashboardSession.js";
 
 const brandIconUrl = getDefaultIconUrl("brand");
 const originalBodyClass = document.body.className;
 const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
+const { isAuthenticated, adminDisplayName } = useDashboardSession();
 
 const iconLibraryCategory = ref("all");
 const iconLibraryKeyword = ref("");
@@ -135,9 +144,10 @@ function buildDashboardBodyClass() {
   return Array.from(classSet).join(" ");
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.body.className = buildDashboardBodyClass();
   initDashboardApp();
+  await dashboardSessionActions.bootstrapFromWindow();
 });
 
 onBeforeUnmount(() => {
