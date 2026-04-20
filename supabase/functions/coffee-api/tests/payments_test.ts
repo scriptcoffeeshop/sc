@@ -1,16 +1,20 @@
 import { assertEquals } from "@std/assert";
 import {
   isPaymentExpired,
+  jkoPayResult,
+  linePayCancel,
   normalizePaymentStatus,
   parseIsoDate,
   parseReceiptInfo,
   timingSafeEqual,
 } from "../api/payments.ts";
+import { hmacSign } from "../utils/auth.ts";
 import {
   hmacSha256Hex,
   mapJkoStatusCodeToPaymentStatus,
   parseJkoStatusCode,
 } from "../utils/jkopay.ts";
+import { withMockedSupabaseTables } from "./test-support.ts";
 
 // 由於 Supabase JS client 在 module 載入時會產生 keepalive timer，
 // 在測試 runner 中會隨機觸發 false-positive leak 偵測。
@@ -306,4 +310,122 @@ t("金流整合 - HMAC 簽章驗證完整流程", async () => {
   const forged =
     "0000000000000000000000000000000000000000000000000000000000000000";
   assertEquals(timingSafeEqual(signature, forged), false);
+});
+
+t("金流回呼簽章邊界 - linePayCancel 會拒絕偽造簽章", async () => {
+  const result = await linePayCancel(
+    {
+      orderId: "C20260420-LINE0001",
+      sig: "forged-signature",
+    },
+    new Request("https://example.com/linepay-cancel"),
+  );
+
+  assertEquals(result.success, false);
+  assertEquals(result.error, "請先登入");
+});
+
+t("金流回呼簽章邊界 - linePayCancel 允許合法簽章取消待付款訂單", async () => {
+  const orderId = "C20260420-LINE0002";
+  const sig = await hmacSign(`linepay-callback:${orderId}`);
+
+  await withMockedSupabaseTables({
+    coffee_orders: [{
+      id: orderId,
+      payment_status: "pending",
+      payment_method: "linepay",
+      line_user_id: "user-linepay",
+      status: "pending",
+      total: 220,
+      items: "測試豆 x 1",
+      note: "",
+      receipt_info: "",
+    }],
+  }, async (tables) => {
+    const result = await linePayCancel(
+      { orderId, sig },
+      new Request("https://example.com/linepay-cancel"),
+    );
+
+    assertEquals(result.success, true);
+    assertEquals(tables.coffee_orders[0].payment_status, "cancelled");
+    assertEquals(
+      typeof tables.coffee_orders[0].payment_last_checked_at,
+      "string",
+    );
+  });
+});
+
+t("金流回呼簽章邊界 - jkoPayResult 會拒絕偽造簽章", async () => {
+  const orderId = "C20260420-JKO0001";
+  const result = await jkoPayResult(
+    {
+      orderId,
+      sig: "forged-signature",
+      transaction: {
+        platform_order_id: orderId,
+        status: "0",
+        tradeNo: "TRADE-FAKE",
+      },
+    },
+    new Request("https://example.com/jkopay-result"),
+  );
+
+  assertEquals(result.valid, false);
+  assertEquals(result.success, false);
+  assertEquals(result.error, "回呼簽章驗證失敗");
+});
+
+t("金流回呼簽章邊界 - jkoPayResult 允許合法簽章同步付款成功", async () => {
+  const orderId = "C20260420-JKO0002";
+  const sig = await hmacSign(`jkopay-callback:${orderId}`);
+
+  await withMockedSupabaseTables({
+    coffee_orders: [{
+      id: orderId,
+      payment_method: "jkopay",
+      payment_status: "pending",
+      payment_id: "",
+      payment_expires_at: "",
+      payment_confirmed_at: "",
+      payment_last_checked_at: "",
+      payment_provider_status_code: "",
+      line_user_id: "user-jkopay",
+      line_payment_status_notified: "",
+      total: 220,
+      items: "測試豆 x 1",
+      delivery_method: "in_store",
+      city: "",
+      district: "",
+      address: "",
+      store_name: "門市",
+      store_address: "",
+      note: "",
+      receipt_info: "",
+      status: "pending",
+    }],
+  }, async (tables) => {
+    const result = await jkoPayResult(
+      {
+        orderId,
+        sig,
+        transaction: {
+          platform_order_id: orderId,
+          status: "0",
+          tradeNo: "TRADE-JKO-0002",
+        },
+      },
+      new Request("https://example.com/jkopay-result"),
+    );
+
+    assertEquals(result.valid, true);
+    assertEquals(result.success, true);
+    if (!("paymentStatus" in result)) {
+      throw new Error(result.error || "expected jkoPayResult to succeed");
+    }
+    assertEquals(result.paymentStatus, "paid");
+    assertEquals(tables.coffee_orders[0].payment_status, "paid");
+    assertEquals(tables.coffee_orders[0].payment_id, "TRADE-JKO-0002");
+    assertEquals(tables.coffee_orders[0].payment_provider_status_code, "0");
+  });
 });
