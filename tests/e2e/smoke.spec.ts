@@ -2443,6 +2443,42 @@ test.describe("smoke", () => {
     await expect(page.locator("#admin-page")).toBeVisible();
   });
 
+  test("dashboard no longer exposes legacy window globals", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await expect(page.locator("#admin-page")).toBeVisible();
+
+    const globals = await page.evaluate(() => ({
+      loginWithLine: typeof (window as any).loginWithLine,
+      logout: typeof (window as any).logout,
+      showTab: typeof (window as any).showTab,
+      linePayRefundOrder: typeof (window as any).linePayRefundOrder,
+      showPromotionModal: typeof (window as any).showPromotionModal,
+    }));
+
+    expect(globals).toEqual({
+      loginWithLine: "undefined",
+      logout: "undefined",
+      showTab: "undefined",
+      linePayRefundOrder: "undefined",
+      showPromotionModal: "undefined",
+    });
+  });
+
   test("dashboard orders work without custom-event bridge", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);

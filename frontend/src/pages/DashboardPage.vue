@@ -93,7 +93,7 @@ import DashboardSettingsSection from "../features/dashboard/DashboardSettingsSec
 import DashboardTabs from "../features/dashboard/DashboardTabs.vue";
 import DashboardUsersSection from "../features/dashboard/DashboardUsersSection.vue";
 import { ICON_CATALOG, getDefaultIconUrl } from "../../../js/icons.js";
-import { initDashboardApp } from "../../../js/dashboard-app.js";
+import { dashboardShellActions } from "../../../js/dashboard-app.js";
 import {
   dashboardSessionActions,
   useDashboardSession,
@@ -155,8 +155,10 @@ function buildDashboardBodyClass() {
 
 onMounted(async () => {
   document.body.className = buildDashboardBodyClass();
-  initDashboardApp();
-  await dashboardSessionActions.bootstrapFromWindow();
+  await Promise.all([
+    dashboardShellActions.loadPublicBranding(),
+    dashboardSessionActions.bootstrapFromWindow(),
+  ]);
 });
 
 onBeforeUnmount(() => {

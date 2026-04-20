@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`116`
+- 目前前端版號：`117`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -50,7 +50,7 @@
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.js`)
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
-  - dashboard feature 層已不再依賴 `js/dashboard/events.js`；剩餘的主要 legacy orchestration 集中在 dashboard bootstrap / window globals
+  - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；剩餘的主要 legacy orchestration 集中在 `js/dashboard-app.js` 的 service wiring 與 legacy 相容入口
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
@@ -122,6 +122,7 @@
 - dashboard `categories` / `users` / `blacklist` 的按鈕與搜尋已改成元件內 `@click` / `@keyup.enter`，不再經過 `createUsersActionHandlers()`、`search-users` 的 document keyup delegation，`useDashboardUsers.js` 也已改用 reactive `activeTab` 判斷黑名單頁。
 - dashboard `products` / `promotions` 的按鈕與 modal 儲存已改成元件內 `@click` / `@submit.prevent`，不再經過 `createProductsActionHandlers()` 或 `product-form` / `promotion-form` 的 imperative submit listener。
 - dashboard `orders` 的重整、Flex 歷史、勾選、批次操作、通知、退款、收款確認、狀態提交與刪除已改成元件內 `@click` / `@change`，`js/dashboard/events.js` 與 `createOrdersActionHandlers()` 已移除。
+- dashboard page 已改成由 Vue `onMounted()` 直接載入 public branding；`dashboard-globals.js`、`initDashboardApp()` fallback 與舊的 `window.*` dashboard helper 已移除。
 - `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。

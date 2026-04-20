@@ -1,5 +1,5 @@
 // ============================================
-// dashboard-app.js — 後台頁初始化入口
+// dashboard-app.js — 後台頁 service wiring
 // ============================================
 
 import { API_URL, LINE_REDIRECT } from "./config.js";
@@ -33,7 +33,6 @@ import {
   createDashboardBrandingController,
   parseBooleanSetting,
 } from "./dashboard/modules/dashboard-branding.js";
-import { registerDashboardGlobals } from "./dashboard/modules/dashboard-globals.js";
 import {
   DEFAULT_DELIVERY_OPTIONS,
   normalizeDeliveryOption,
@@ -103,7 +102,6 @@ const dashboardTabs = [
   "blacklist",
   "formfields",
 ];
-const triggerDashboardLogin = () => dashboardSessionActions.startLogin();
 const brandingController = createDashboardBrandingController({
   API_URL,
   cacheKey: DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
@@ -273,81 +271,6 @@ loadInitialDashboardData = () => Promise.all([
   dashboardOrdersActions.loadOrders(),
 ]);
 
-registerDashboardGlobals({
-  loginWithLine: triggerDashboardLogin,
-  logout: dashboardSessionActions.logout,
-  showTab: dashboardSessionActions.setActiveTab,
-  loadOrders: dashboardOrdersActions.loadOrders,
-  renderOrders: dashboardOrdersActions.renderOrders,
-  changeOrderStatus: orderStatusController.changeOrderStatus,
-  sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
-  deleteOrderById: dashboardOrdersActions.deleteOrderById,
-  showProductModal: dashboardProductsActions.showProductModal,
-  editProduct: dashboardProductsActions.editProduct,
-  closeProductModal: dashboardProductsActions.closeProductModal,
-  saveProduct: dashboardProductsActions.saveProduct,
-  delProduct: dashboardProductsActions.delProduct,
-  moveProduct: dashboardProductsActions.moveProduct,
-  addSpecRow: dashboardProductsActions.addSpecRow,
-  addCategory: dashboardCategoriesActions.addCategory,
-  editCategory: dashboardCategoriesActions.editCategory,
-  delCategory: dashboardCategoriesActions.delCategory,
-  updateCategoryOrders: dashboardCategoriesActions.updateCategoryOrders,
-  saveSettings: dashboardSettingsActions.saveSettings,
-  loadUsers: dashboardUsersActions.loadUsers,
-  toggleUserRole: dashboardUsersActions.toggleUserRole,
-  toggleUserBlacklist: dashboardUsersActions.toggleUserBlacklist,
-  loadBlacklist: dashboardUsersActions.loadBlacklist,
-  esc,
-  showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,
-  editFormField: dashboardFormFieldsActions.editFormField,
-  deleteFormField: dashboardFormFieldsActions.deleteFormField,
-  toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
-  resetSectionTitle: dashboardSettingsActions.resetSectionTitle,
-  refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
-  confirmTransferPayment: orderStatusController.confirmTransferPayment,
-  showAddBankAccountModal: dashboardBankAccountsActions.showAddBankAccountModal,
-  editBankAccount: dashboardBankAccountsActions.editBankAccount,
-  deleteBankAccount: dashboardBankAccountsActions.deleteBankAccount,
-  showPromotionModal: dashboardPromotionsActions.showPromotionModal,
-  closePromotionModal: dashboardPromotionsActions.closePromotionModal,
-  savePromotion: dashboardPromotionsActions.savePromotion,
-  editPromotion: dashboardPromotionsActions.editPromotion,
-  delPromotion: dashboardPromotionsActions.delPromotion,
-});
-
-// ============ 初始化 ============
-let dashboardInitialized = false;
-
-function canInitDashboard() {
-  return Boolean(
-    document.getElementById("login-page") &&
-      document.getElementById("admin-page"),
-  );
-}
-
-export function initDashboardApp() {
-  if (dashboardInitialized || !canInitDashboard()) return;
-  dashboardInitialized = true;
-  brandingController.loadPublicDashboardBranding();
-}
-
-// 由 Vue Page 元件在 onMounted 時顯式呼叫 initDashboardApp()
-// 同時保留 legacy HTML 直載入時的自動初始化 fallback。
-function autoInitDashboardAppFallback() {
-  try {
-    initDashboardApp();
-  } catch (error) {
-    console.error("initDashboardApp fallback failed:", error);
-  }
-}
-
-if (typeof window !== "undefined") {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", autoInitDashboardAppFallback, {
-      once: true,
-    });
-  } else {
-    autoInitDashboardAppFallback();
-  }
-}
+export const dashboardShellActions = {
+  loadPublicBranding: () => brandingController.loadPublicDashboardBranding(),
+};
