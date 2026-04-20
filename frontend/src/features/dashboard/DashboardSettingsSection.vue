@@ -418,7 +418,7 @@
                 <span class="routing-payment-header">
                   <img
                     id="dr-cod-icon-preview"
-                    src="../../../../icons/payment-cash.png"
+                    :src="getPaymentPreviewUrl('cod')"
                     alt=""
                     class="routing-payment-icon"
                   >
@@ -429,7 +429,7 @@
                 <span class="routing-payment-header">
                   <img
                     id="dr-linepay-icon-preview"
-                    src="../../../../icons/payment-linepay.png"
+                    :src="getPaymentPreviewUrl('linepay')"
                     alt=""
                     class="routing-payment-icon"
                   >
@@ -440,7 +440,7 @@
                 <span class="routing-payment-header">
                   <img
                     id="dr-jkopay-icon-preview"
-                    src="../../../../icons/payment-jkopay.png"
+                    :src="getPaymentPreviewUrl('jkopay')"
                     alt=""
                     class="routing-payment-icon"
                   >
@@ -451,7 +451,7 @@
                 <span class="routing-payment-header">
                   <img
                     id="dr-transfer-icon-preview"
-                    src="../../../../icons/payment-bank.png"
+                    :src="getPaymentPreviewUrl('transfer')"
                     alt=""
                     class="routing-payment-icon"
                   >
@@ -463,15 +463,166 @@
               </th>
             </tr>
           </thead>
-          <tbody id="delivery-routing-table" class="sortable-tbody">
-            <!-- JS 動態產生 -->
+          <tbody
+            id="delivery-routing-table"
+            :ref="registerDeliveryRoutingTableElement"
+            class="sortable-tbody"
+          >
+            <tr
+              v-for="item in deliveryOptions"
+              :key="item.id"
+              class="border-b delivery-option-row group"
+              style="border-color:#E2DCC8"
+              :data-id="item.id"
+              :data-delivery-id="item.id"
+              :data-default-icon-key="getDeliveryIconFallbackKey(item.id)"
+            >
+              <td
+                class="p-3 text-center cursor-move ui-text-muted hover:ui-text-strong transition"
+                data-label="排序"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="1em"
+                  height="1em"
+                  fill="currentColor"
+                  viewBox="0 0 256 256"
+                  class="drag-handle-icon"
+                ><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z" /></svg>
+              </td>
+              <td class="p-3" data-label="圖示與名稱 / 說明">
+                <div class="flex flex-col gap-2 min-w-[280px]">
+                  <div class="icon-upload-row">
+                    <img
+                      class="icon-upload-preview do-icon-preview"
+                      :src="getDeliveryPreviewUrl(item)"
+                      alt="配送圖示預覽"
+                    >
+                    <input v-model="item.icon_url" type="hidden" class="do-icon-url">
+                    <input
+                      type="file"
+                      class="do-icon-file text-xs icon-upload-file"
+                      accept="image/png,image/webp,image/jpeg,image/jpg"
+                    >
+                    <button
+                      type="button"
+                      data-action="upload-delivery-row-icon"
+                      class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft icon-upload-action"
+                    >
+                      上傳圖示
+                    </button>
+                  </div>
+                  <p class="text-[11px] ui-text-muted truncate do-icon-url-display">
+                    {{ getDisplayUrl(item.icon_url) }}
+                  </p>
+                  <div class="flex items-center gap-2">
+                    <input
+                      v-model.trim="item.icon"
+                      type="text"
+                      class="border rounded p-1 icon-text-fallback text-sm do-icon"
+                      placeholder="備援字元"
+                    >
+                    <input
+                      v-model.trim="item.name"
+                      type="text"
+                      class="border rounded p-1 flex-1 min-w-[120px] do-name"
+                      placeholder="物流名稱"
+                    >
+                    <input :value="item.id" type="hidden" class="do-id">
+                  </div>
+                  <input
+                    v-model.trim="item.description"
+                    type="text"
+                    class="border rounded p-1 w-full text-xs ui-text-strong do-desc"
+                    placeholder="簡短說明 (例如: 到店自取)"
+                  >
+                </div>
+              </td>
+              <td
+                class="p-3 text-center border-l ui-bg-soft/50"
+                style="border-color:#E2DCC8"
+                data-label="啟用"
+              >
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input v-model="item.enabled" type="checkbox" class="sr-only peer do-enabled">
+                  <div class="w-9 h-5 ui-bg-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                </label>
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="運費"
+              >
+                <input
+                  v-model.number="item.fee"
+                  type="number"
+                  class="border rounded p-1 w-16 text-center text-sm do-fee"
+                  min="0"
+                >
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="免運門檻"
+              >
+                <input
+                  v-model.number="item.free_threshold"
+                  type="number"
+                  class="border rounded p-1 w-20 text-center text-sm do-free-threshold"
+                  min="0"
+                >
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="貨到/取貨付款"
+              >
+                <input v-model="item.payment.cod" type="checkbox" class="w-4 h-4 do-cod">
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="LINE Pay"
+              >
+                <input v-model="item.payment.linepay" type="checkbox" class="w-4 h-4 do-linepay">
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="街口支付"
+              >
+                <input v-model="item.payment.jkopay" type="checkbox" class="w-4 h-4 do-jkopay">
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="線上轉帳"
+              >
+                <input v-model="item.payment.transfer" type="checkbox" class="w-4 h-4 do-transfer">
+              </td>
+              <td
+                class="p-3 text-center border-l"
+                style="border-color:#E2DCC8"
+                data-label="操作"
+              >
+                <button
+                  type="button"
+                  :data-delivery-id="item.id"
+                  data-action="remove-delivery-option-row"
+                  class="ui-text-danger hover:text-red-700 p-1"
+                  title="刪除此選項"
+                >
+                  刪除
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
 
       <div class="space-y-3 mt-4">
         <label class="flex items-center gap-2 cursor-pointer text-sm">
-          <input type="checkbox" id="s-linepay-sandbox" class="w-4 h-4">
+          <input v-model="linePaySandbox" type="checkbox" id="s-linepay-sandbox" class="w-4 h-4">
           <span>開發者功能：LINE Pay Sandbox 模式（測試環境）</span>
         </label>
       </div>
@@ -498,243 +649,66 @@
             </tr>
           </thead>
           <tbody id="payment-options-table">
-            <tr class="border-b">
-              <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">cod</td>
-              <td class="p-3" data-label="圖示與名稱 / 說明">
-                <div class="flex flex-col gap-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <input type="hidden" id="po-cod-icon-url">
-                    <input
-                      type="file"
-                      id="po-cod-icon-file"
-                      accept="image/*"
-                      class="text-sm icon-upload-input"
-                      data-preview-target="po-cod-icon-preview"
-                      data-fallback-key="cod"
-                    >
-                    <img
-                      id="po-cod-icon-preview"
-                      src=""
-                      alt=""
-                      class="icon-upload-preview hidden"
-                    >
-                    <button
-                      type="button"
-                      data-action="upload-payment-icon"
-                      data-method="cod"
-                      class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
-                    >
-                      上傳付款圖示
-                    </button>
-                    <span
-                      id="po-cod-icon-url-display"
-                      class="text-[11px] ui-text-muted truncate max-w-[260px]"
-                    ></span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="text"
-                      id="po-cod-icon"
-                      class="border rounded p-1 icon-text-fallback text-sm"
-                      value=""
-                      placeholder="備援字元"
-                    >
-                    <input
-                      type="text"
-                      id="po-cod-name"
-                      class="border rounded p-1 flex-1 min-w-[120px]"
-                      value="取件 / 到付"
-                      placeholder="顯示名稱"
-                    >
-                  </div>
-                  <input
-                    type="text"
-                    id="po-cod-desc"
-                    class="border rounded p-1 w-full text-xs ui-text-strong"
-                    value="取貨時付現或宅配到付"
-                    placeholder="簡短說明"
-                  >
-                </div>
-              </td>
-            </tr>
-            <tr class="border-b">
+            <tr v-for="method in paymentMethodOrder" :key="method" class="border-b">
               <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
-                linepay
+                {{ method }}
               </td>
               <td class="p-3" data-label="圖示與名稱 / 說明">
                 <div class="flex flex-col gap-2">
                   <div class="flex flex-wrap items-center gap-2">
-                    <input type="hidden" id="po-linepay-icon-url">
+                    <input
+                      v-model="paymentOptions[method].icon_url"
+                      type="hidden"
+                      :id="`po-${method}-icon-url`"
+                    >
                     <input
                       type="file"
-                      id="po-linepay-icon-file"
+                      :id="`po-${method}-icon-file`"
                       accept="image/*"
                       class="text-sm icon-upload-input"
-                      data-preview-target="po-linepay-icon-preview"
-                      data-fallback-key="linepay"
+                      :data-preview-target="`po-${method}-icon-preview`"
+                      :data-fallback-key="method"
                     >
                     <img
-                      id="po-linepay-icon-preview"
-                      src=""
+                      :id="`po-${method}-icon-preview`"
+                      :src="getPaymentPreviewUrl(method)"
                       alt=""
-                      class="icon-upload-preview hidden"
+                      class="icon-upload-preview"
                     >
                     <button
                       type="button"
                       data-action="upload-payment-icon"
-                      data-method="linepay"
+                      :data-method="method"
                       class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
                     >
                       上傳付款圖示
                     </button>
                     <span
-                      id="po-linepay-icon-url-display"
+                      :id="`po-${method}-icon-url-display`"
                       class="text-[11px] ui-text-muted truncate max-w-[260px]"
-                    ></span>
+                    >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
                   </div>
                   <div class="flex items-center gap-2">
                     <input
+                      v-model.trim="paymentOptions[method].icon"
                       type="text"
-                      id="po-linepay-icon"
+                      :id="`po-${method}-icon`"
                       class="border rounded p-1 icon-text-fallback text-sm"
-                      value=""
                       placeholder="備援字元"
                     >
                     <input
+                      v-model.trim="paymentOptions[method].name"
                       type="text"
-                      id="po-linepay-name"
+                      :id="`po-${method}-name`"
                       class="border rounded p-1 flex-1 min-w-[120px]"
-                      value="LINE Pay"
                       placeholder="顯示名稱"
                     >
                   </div>
                   <input
+                    v-model.trim="paymentOptions[method].description"
                     type="text"
-                    id="po-linepay-desc"
+                    :id="`po-${method}-desc`"
                     class="border rounded p-1 w-full text-xs ui-text-strong"
-                    value="線上安全付款"
-                    placeholder="簡短說明"
-                  >
-                </div>
-              </td>
-            </tr>
-            <tr class="border-b">
-              <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
-                jkopay
-              </td>
-              <td class="p-3" data-label="圖示與名稱 / 說明">
-                <div class="flex flex-col gap-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <input type="hidden" id="po-jkopay-icon-url">
-                    <input
-                      type="file"
-                      id="po-jkopay-icon-file"
-                      accept="image/*"
-                      class="text-sm icon-upload-input"
-                      data-preview-target="po-jkopay-icon-preview"
-                      data-fallback-key="jkopay"
-                    >
-                    <img
-                      id="po-jkopay-icon-preview"
-                      src=""
-                      alt=""
-                      class="icon-upload-preview hidden"
-                    >
-                    <button
-                      type="button"
-                      data-action="upload-payment-icon"
-                      data-method="jkopay"
-                      class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
-                    >
-                      上傳付款圖示
-                    </button>
-                    <span
-                      id="po-jkopay-icon-url-display"
-                      class="text-[11px] ui-text-muted truncate max-w-[260px]"
-                    ></span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="text"
-                      id="po-jkopay-icon"
-                      class="border rounded p-1 icon-text-fallback text-sm"
-                      value=""
-                      placeholder="備援字元"
-                    >
-                    <input
-                      type="text"
-                      id="po-jkopay-name"
-                      class="border rounded p-1 flex-1 min-w-[120px]"
-                      value="街口支付"
-                      placeholder="顯示名稱"
-                    >
-                  </div>
-                  <input
-                    type="text"
-                    id="po-jkopay-desc"
-                    class="border rounded p-1 w-full text-xs ui-text-strong"
-                    value="街口支付線上付款"
-                    placeholder="簡短說明"
-                  >
-                </div>
-              </td>
-            </tr>
-            <tr class="border-b">
-              <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
-                transfer
-              </td>
-              <td class="p-3" data-label="圖示與名稱 / 說明">
-                <div class="flex flex-col gap-2">
-                  <div class="flex flex-wrap items-center gap-2">
-                    <input type="hidden" id="po-transfer-icon-url">
-                    <input
-                      type="file"
-                      id="po-transfer-icon-file"
-                      accept="image/*"
-                      class="text-sm icon-upload-input"
-                      data-preview-target="po-transfer-icon-preview"
-                      data-fallback-key="transfer"
-                    >
-                    <img
-                      id="po-transfer-icon-preview"
-                      src=""
-                      alt=""
-                      class="icon-upload-preview hidden"
-                    >
-                    <button
-                      type="button"
-                      data-action="upload-payment-icon"
-                      data-method="transfer"
-                      class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
-                    >
-                      上傳付款圖示
-                    </button>
-                    <span
-                      id="po-transfer-icon-url-display"
-                      class="text-[11px] ui-text-muted truncate max-w-[260px]"
-                    ></span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <input
-                      type="text"
-                      id="po-transfer-icon"
-                      class="border rounded p-1 icon-text-fallback text-sm"
-                      value=""
-                      placeholder="備援字元"
-                    >
-                    <input
-                      type="text"
-                      id="po-transfer-name"
-                      class="border rounded p-1 flex-1 min-w-[120px]"
-                      value="線上轉帳"
-                      placeholder="顯示名稱"
-                    >
-                  </div>
-                  <input
-                    type="text"
-                    id="po-transfer-desc"
-                    class="border rounded p-1 w-full text-xs ui-text-strong"
-                    value="ATM / 網銀匯款"
                     placeholder="簡短說明"
                   >
                 </div>
@@ -768,8 +742,50 @@
 </template>
 
 <script setup>
+import {
+  getDefaultIconUrl,
+  getDeliveryIconFallbackKey,
+  getPaymentIconFallbackKey,
+  resolveAssetUrl,
+} from "../../../../js/icons.js";
 import UiTextarea from "../../components/ui/textarea/Textarea.vue";
+import {
+  dashboardSettingsActions,
+  useDashboardSettings,
+} from "./useDashboardSettings.js";
 import { useDashboardSession } from "./useDashboardSession.js";
 
 const { activeTab } = useDashboardSession();
+const {
+  deliveryOptions,
+  paymentOptions,
+  linePaySandbox,
+  paymentMethodOrder,
+} = useDashboardSettings();
+
+function registerDeliveryRoutingTableElement(element) {
+  dashboardSettingsActions.registerDeliveryRoutingTableElement(element);
+}
+
+function resolvePreviewUrl(rawUrl, fallbackKey) {
+  return resolveAssetUrl(rawUrl) || getDefaultIconUrl(fallbackKey);
+}
+
+function getDisplayUrl(rawUrl) {
+  return resolveAssetUrl(rawUrl) || String(rawUrl || "");
+}
+
+function getDeliveryPreviewUrl(item) {
+  return resolvePreviewUrl(
+    item?.icon_url,
+    getDeliveryIconFallbackKey(item?.id),
+  );
+}
+
+function getPaymentPreviewUrl(method) {
+  return resolvePreviewUrl(
+    paymentOptions.value?.[method]?.icon_url,
+    getPaymentIconFallbackKey(method),
+  );
+}
 </script>

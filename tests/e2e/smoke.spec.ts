@@ -1105,6 +1105,36 @@ test.describe("smoke", () => {
     await expect(page.locator("#s-icon-url-display")).toContainText("未設定");
   });
 
+  test("dashboard settings can add and remove delivery routing rows", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-settings").click();
+
+    const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
+    await expect(deliveryRows).toHaveCount(1);
+
+    await page.locator('[data-action="add-delivery-option-admin"]').click();
+    await expect(deliveryRows).toHaveCount(2);
+    await expect(deliveryRows.nth(1).locator(".do-name")).toHaveValue("新物流方式");
+
+    await deliveryRows.nth(1).locator('[data-action="remove-delivery-option-row"]').click();
+    await expect(deliveryRows).toHaveCount(1);
+  });
+
   test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);

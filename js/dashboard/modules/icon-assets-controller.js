@@ -55,6 +55,13 @@ const ICON_LIBRARY_TARGET_MAP = {
 };
 
 export function createIconAssetsController(deps) {
+  function syncInputValue(input, value) {
+    if (!(input instanceof HTMLInputElement)) return;
+    input.value = value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
   function getRowFallbackIconUrl(row) {
     const key = row?.dataset?.defaultIconKey || "delivery";
     return deps.getDefaultIconUrl(key);
@@ -232,7 +239,7 @@ export function createIconAssetsController(deps) {
     const normalizedUrl = deps.normalizeIconPath(url);
     const finalUrl = normalizedUrl || String(url || "").trim();
     const input = document.getElementById(inputId);
-    if (input) input.value = finalUrl;
+    syncInputValue(input, finalUrl);
     const display = document.getElementById(displayId);
     if (display) {
       const resolvedDisplayUrl = deps.resolveAssetUrl(finalUrl) || finalUrl;
@@ -481,7 +488,7 @@ export function createIconAssetsController(deps) {
       const urlInput = row.querySelector(".do-icon-url");
       const urlDisplay = row.querySelector(".do-icon-url-display");
       const preview = row.querySelector(".do-icon-preview");
-      if (urlInput) urlInput.value = finalUrl;
+      syncInputValue(urlInput, finalUrl);
       if (urlDisplay) {
         const resolvedDisplayUrl = deps.resolveAssetUrl(finalUrl) || finalUrl;
         urlDisplay.textContent = resolvedDisplayUrl;

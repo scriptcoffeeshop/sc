@@ -7,7 +7,6 @@ import { esc, Toast } from "./utils.js";
 import { authFetch, loginWithLine } from "./auth.js";
 import {
   getDefaultIconUrl,
-  getDeliveryIconFallbackKey,
   getPaymentIconFallbackKey,
   normalizeIconPath,
   resolveAssetUrl,
@@ -73,6 +72,10 @@ import {
   getDashboardCurrentUser,
 } from "../frontend/src/features/dashboard/useDashboardSession.js";
 import {
+  configureDashboardSettingsServices,
+  dashboardSettingsActions,
+} from "../frontend/src/features/dashboard/useDashboardSettings.js";
+import {
   configureDashboardUsersServices,
   dashboardUsersActions,
 } from "../frontend/src/features/dashboard/useDashboardUsers.js";
@@ -123,6 +126,14 @@ configureDashboardSessionServices({
   tabs: dashboardTabs,
   Swal: globalThis.Swal,
 });
+configureDashboardSettingsServices({
+  normalizeDeliveryOption,
+  normalizePaymentOption,
+  defaultDeliveryOptions: DEFAULT_DELIVERY_OPTIONS,
+  parseBooleanSetting,
+  linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
+  Sortable: globalThis.Sortable,
+});
 
 const bankAccountsController = createBankAccountsController({
   API_URL,
@@ -151,29 +162,20 @@ const settingsController = createSettingsController({
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
-  Sortable: globalThis.Sortable,
   applyDashboardBranding: brandingController.applyDashboardBranding,
   parseBooleanSetting,
   getDefaultIconUrl,
-  getDeliveryIconFallbackKey,
-  getPaymentIconFallbackKey,
-  resolveAssetUrl,
-  normalizeDeliveryOption,
-  normalizePaymentOption,
   normalizeIconPath,
   sectionIconSettingKey,
   updateIconPreview: iconAssetsController.updateIconPreview,
-  updateDeliveryRoutingPaymentHeaderIcon:
-    iconAssetsController.updateDeliveryRoutingPaymentHeaderIcon,
-  setPreviewImageSource: iconAssetsController.setPreviewImageSource,
   readInputValue,
-  defaultDeliveryOptions: DEFAULT_DELIVERY_OPTIONS,
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
   loadBankAccountsAdmin: bankAccountsController.loadBankAccountsAdmin,
   setDashboardSettings: (settings) => {
     dashboardSettings = settings;
   },
-  esc,
+  replaceSettingsConfig: dashboardSettingsActions.replaceSettingsConfig,
+  buildSettingsConfig: dashboardSettingsActions.buildSettingsConfig,
 });
 const orderNotificationsController = createOrderNotificationsController({
   API_URL,
@@ -312,7 +314,8 @@ const dashboardActionHandlers = {
     uploadDeliveryRowIcon: iconAssetsController.uploadDeliveryRowIcon,
     applyIconFromLibrary: iconAssetsController.applyIconFromLibrary,
     resetSectionTitle: settingsController.resetSectionTitle,
-    addDeliveryOptionAdmin: settingsController.addDeliveryOptionAdmin,
+    addDeliveryOption: dashboardSettingsActions.addDeliveryOption,
+    removeDeliveryOption: dashboardSettingsActions.removeDeliveryOption,
     showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
     saveSettings: settingsController.saveSettings,
     showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,

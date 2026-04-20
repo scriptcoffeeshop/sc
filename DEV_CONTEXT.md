@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`108`
+- 目前前端版號：`109`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -48,7 +48,8 @@
 - 後台是優先遷移區：
   - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.js`、`useDashboardProducts.js`、`useDashboardCategories.js`、`useDashboardPromotions.js`、`useDashboardFormFields.js`、`useDashboardUsers.js`)
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.js`)
-  - `settings` 仍是主要 legacy orchestration 相容層
+  - `settings` 的 `delivery / payment / linepay sandbox` 已改成 Vue-owned state/actions (`useDashboardSettings.js`)
+  - `settings` 剩餘的主要 legacy orchestration 集中在品牌欄位、區塊標題與匯款帳號管理
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
@@ -109,6 +110,7 @@
 - dashboard `formfields` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-formfields-updated`。
 - dashboard `users` / `blacklist` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-users-updated` / `coffee:dashboard-blacklist-updated`。
 - dashboard `session / tab` 已改成 reactive state，不再依賴 `dashboard-session-controller.js` 來切換登入頁、管理頁與 tab 顯示。
+- dashboard `settings` 的 delivery routing / payment options / sandbox 已改成 reactive state，不再由 `settings-controller.js` 直接組 HTML table。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
 - 新增 `scripts/check_migration_names.py`，未來 migration 檔名統一為 `YYYYMMDDHHmm_slug.sql`；歷史 migration 不回改。

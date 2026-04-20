@@ -12,13 +12,13 @@ export function createSettingsActionHandlers(deps) {
     "upload-delivery-row-icon": (el) => deps.uploadDeliveryRowIcon(el),
     "icon-library-apply": (el) => deps.applyIconFromLibrary(el),
     "reset-section-title": (el) => deps.resetSectionTitle(el.dataset.section),
-    "add-delivery-option-admin": () => deps.addDeliveryOptionAdmin(),
+    "add-delivery-option-admin": () => deps.addDeliveryOption(),
     "show-add-bank-account-modal": () => deps.showAddBankAccountModal(),
     "save-settings": () => deps.saveSettings(),
     "show-add-field-modal": () => deps.showAddFieldModal(),
-    "remove-delivery-option-row": (el) => {
-      el.closest(".delivery-option-row")?.remove();
-    },
+    "remove-delivery-option-row": (el) => deps.removeDeliveryOption(
+      el?.dataset?.deliveryId || el?.closest(".delivery-option-row")?.dataset?.deliveryId,
+    ),
     "toggle-field-enabled": (el) => {
       const id = parseId(el.dataset.fieldId);
       if (id !== null) {
