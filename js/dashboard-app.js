@@ -24,7 +24,6 @@ import {
 } from "./dashboard/modules/order-shared.js";
 import { createOrderStatusController } from "./dashboard/modules/order-status-controller.js";
 import {
-  createProductsActionHandlers,
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
@@ -269,21 +268,6 @@ const dashboardActionHandlers = {
     showFlexHistory: orderNotificationsController.showFlexHistory,
     Toast,
   }),
-  ...createProductsActionHandlers({
-    showProductModal: dashboardProductsActions.showProductModal,
-    showPromotionModal: dashboardPromotionsActions.showPromotionModal,
-    editProduct: dashboardProductsActions.editProduct,
-    delProduct: dashboardProductsActions.delProduct,
-    toggleProductEnabled: dashboardProductsActions.toggleProductEnabled,
-    editPromotion: dashboardPromotionsActions.editPromotion,
-    delPromotion: dashboardPromotionsActions.delPromotion,
-    togglePromotionEnabled: dashboardPromotionsActions.togglePromotionEnabled,
-    addSpecRow: dashboardProductsActions.addSpecRow,
-    removeSpecRow: dashboardProductsActions.removeSpecRow,
-    closeProductModal: dashboardProductsActions.closeProductModal,
-    closePromotionModal: dashboardPromotionsActions.closePromotionModal,
-    loadPromotions: dashboardPromotionsActions.loadPromotions,
-  }),
 };
 
 dashboardTabLoaders = {
@@ -367,8 +351,6 @@ export function initDashboardApp() {
   dashboardInitialized = true;
   const { initializeDashboardEventDelegation } = createDashboardEvents(
     dashboardActionHandlers,
-    dashboardProductsActions.saveProduct,
-    dashboardPromotionsActions.savePromotion,
     orderStatusController.changeOrderStatus,
     dashboardOrdersActions.renderOrders,
   );

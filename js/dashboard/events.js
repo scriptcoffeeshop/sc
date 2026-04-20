@@ -1,7 +1,5 @@
 export function createDashboardEvents(
   actionHandlers,
-  saveProduct,
-  savePromotion,
   _changeOrderStatus,
   renderOrders,
 ) {
@@ -56,16 +54,6 @@ export function createDashboardEvents(
         el.addEventListener("input", renderOrders);
       }
     });
-
-    const productForm = document.getElementById("product-form");
-    if (productForm) {
-      productForm.addEventListener("submit", saveProduct);
-    }
-
-    const promotionForm = document.getElementById("promotion-form");
-    if (promotionForm) {
-      promotionForm.addEventListener("submit", savePromotion);
-    }
   }
 
   return { initializeDashboardEventDelegation };

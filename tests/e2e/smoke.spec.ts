@@ -273,6 +273,30 @@ type DashboardRouteOptions = {
     id: number;
     name: string;
   }>;
+  products?: Array<{
+    id: number;
+    category: string;
+    name: string;
+    description?: string;
+    price?: number;
+    roastLevel?: string;
+    specs?: string;
+    enabled?: boolean;
+  }>;
+  promotions?: Array<{
+    id: number;
+    name: string;
+    type: string;
+    targetProductIds?: number[];
+    targetItems?: Array<{ productId: number; specKey?: string }>;
+    minQuantity: number;
+    discountType: string;
+    discountValue: number;
+    enabled?: boolean;
+    startTime?: string | null;
+    endTime?: string | null;
+    sortOrder?: number;
+  }>;
   users?: Array<{
     userId: string;
     displayName: string;
@@ -322,6 +346,43 @@ async function installDashboardRoutes(
   let categoriesState = Array.isArray(options.categories)
     ? options.categories.map((category) => ({ ...category }))
     : [{ id: 1, name: "測試分類" }];
+  let productsState = Array.isArray(options.products)
+    ? options.products.map((product) => ({ ...product }))
+    : [
+      {
+        id: 201,
+        category: "測試分類",
+        name: "後台測試商品",
+        description: "admin smoke",
+        price: 180,
+        roastLevel: "中焙",
+        specs: JSON.stringify([{
+          key: "single",
+          label: "單包",
+          price: 180,
+          enabled: true,
+        }]),
+        enabled: true,
+      },
+    ];
+  let promotionsState = Array.isArray(options.promotions)
+    ? options.promotions.map((promotion) => ({ ...promotion }))
+    : [
+      {
+        id: 301,
+        name: "任選 2 件 9 折",
+        type: "bundle",
+        targetProductIds: [],
+        targetItems: [{ productId: 201, specKey: "single" }],
+        minQuantity: 2,
+        discountType: "percent",
+        discountValue: 90,
+        enabled: true,
+        startTime: null,
+        endTime: null,
+        sortOrder: 0,
+      },
+    ];
   let usersState = Array.isArray(options.users)
     ? options.users.map((user) => ({ ...user }))
     : [
@@ -416,23 +477,7 @@ async function installDashboardRoutes(
     if (action === "getProducts") {
       await fulfillJson(route, {
         success: true,
-        products: [
-          {
-            id: 201,
-            category: "測試分類",
-            name: "後台測試商品",
-            description: "admin smoke",
-            price: 180,
-            roastLevel: "中焙",
-            specs: JSON.stringify([{
-              key: "single",
-              label: "單包",
-              price: 180,
-              enabled: true,
-            }]),
-            enabled: true,
-          },
-        ],
+        products: productsState,
       });
       return;
     }
@@ -440,22 +485,7 @@ async function installDashboardRoutes(
     if (action === "getPromotions") {
       await fulfillJson(route, {
         success: true,
-        promotions: [
-          {
-            id: 301,
-            name: "任選 2 件 9 折",
-            type: "bundle",
-            targetProductIds: [],
-            targetItems: [{ productId: 201, specKey: "single" }],
-            minQuantity: 2,
-            discountType: "percent",
-            discountValue: 90,
-            enabled: true,
-            startTime: null,
-            endTime: null,
-            sortOrder: 0,
-          },
-        ],
+        promotions: promotionsState,
       });
       return;
     }
@@ -607,6 +637,124 @@ async function installDashboardRoutes(
       const body = request.postDataJSON() as any;
       categoriesState = categoriesState.filter((category) =>
         Number(category.id) !== Number(body?.id)
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "addProduct") {
+      const body = request.postDataJSON() as any;
+      productsState.push({
+        id: Date.now(),
+        category: String(body?.category || ""),
+        name: String(body?.name || ""),
+        description: String(body?.description || ""),
+        price: Number(body?.price) || 0,
+        roastLevel: String(body?.roastLevel || ""),
+        specs: String(body?.specs || "[]"),
+        enabled: Boolean(body?.enabled),
+      });
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updateProduct") {
+      const body = request.postDataJSON() as any;
+      productsState = productsState.map((product) =>
+        Number(product.id) === Number(body?.id)
+          ? {
+            ...product,
+            category: body?.category !== undefined
+              ? String(body.category)
+              : product.category,
+            name: body?.name !== undefined ? String(body.name) : product.name,
+            description: body?.description !== undefined
+              ? String(body.description)
+              : product.description,
+            price: body?.price !== undefined ? Number(body.price) || 0 : product.price,
+            roastLevel: body?.roastLevel !== undefined
+              ? String(body.roastLevel)
+              : product.roastLevel,
+            specs: body?.specs !== undefined ? String(body.specs) : product.specs,
+            enabled: body?.enabled !== undefined
+              ? Boolean(body.enabled)
+              : product.enabled,
+          }
+          : product
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "deleteProduct") {
+      const body = request.postDataJSON() as any;
+      productsState = productsState.filter((product) =>
+        Number(product.id) !== Number(body?.id)
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "addPromotion") {
+      const body = request.postDataJSON() as any;
+      promotionsState.push({
+        id: Date.now(),
+        name: String(body?.name || ""),
+        type: String(body?.type || "bundle"),
+        targetProductIds: [],
+        targetItems: Array.isArray(body?.targetItems) ? body.targetItems : [],
+        minQuantity: Number(body?.minQuantity) || 1,
+        discountType: String(body?.discountType || "percent"),
+        discountValue: Number(body?.discountValue) || 0,
+        enabled: Boolean(body?.enabled),
+        startTime: null,
+        endTime: null,
+        sortOrder: promotionsState.length,
+      });
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updatePromotion") {
+      const body = request.postDataJSON() as any;
+      promotionsState = promotionsState.map((promotion) =>
+        Number(promotion.id) === Number(body?.id)
+          ? {
+            ...promotion,
+            name: body?.name !== undefined ? String(body.name) : promotion.name,
+            type: body?.type !== undefined ? String(body.type) : promotion.type,
+            targetItems: Array.isArray(body?.targetItems)
+              ? body.targetItems.map((item: any) => ({
+                productId: Number(item?.productId) || 0,
+                specKey: String(item?.specKey || ""),
+              }))
+              : promotion.targetItems,
+            targetProductIds: Array.isArray(body?.targetProductIds)
+              ? body.targetProductIds.map((value: any) => Number(value) || 0)
+              : promotion.targetProductIds,
+            minQuantity: body?.minQuantity !== undefined
+              ? Number(body.minQuantity) || 1
+              : promotion.minQuantity,
+            discountType: body?.discountType !== undefined
+              ? String(body.discountType)
+              : promotion.discountType,
+            discountValue: body?.discountValue !== undefined
+              ? Number(body.discountValue) || 0
+              : promotion.discountValue,
+            enabled: body?.enabled !== undefined
+              ? Boolean(body.enabled)
+              : promotion.enabled,
+          }
+          : promotion
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "deletePromotion") {
+      const body = request.postDataJSON() as any;
+      promotionsState = promotionsState.filter((promotion) =>
+        Number(promotion.id) !== Number(body?.id)
       );
       await fulfillJson(route, { success: true });
       return;
@@ -1321,7 +1469,11 @@ test.describe("smoke", () => {
     await expect.poll(() => updateStatusCalls).toBeGreaterThan(0);
 
     await page.locator("#tab-products").click();
-    await page.locator('button[data-action="edit-product"]').first().click();
+    await page
+      .locator("#products-main-table tbody.sortable-tbody tr")
+      .filter({ hasText: "後台測試商品" })
+      .getByRole("button", { name: "編輯" })
+      .click();
     await expect(page.locator("#product-modal")).toBeVisible();
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
   });
@@ -1643,6 +1795,78 @@ test.describe("smoke", () => {
     await expect(rows).toHaveCount(1);
   });
 
+  test("dashboard products controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "刪除商品？") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-products").click();
+
+    const rows = page.locator("#products-main-table tbody.sortable-tbody tr[data-id]");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("後台測試商品");
+
+    await page.getByRole("button", { name: "+ 新增商品" }).click();
+    await expect(page.locator("#product-modal")).toBeVisible();
+    await page.locator("#pm-category").selectOption("測試分類");
+    await page.locator("#pm-name").fill("新品豆");
+    await page.locator("#pm-desc").fill("花香調");
+    await page.locator("#pm-roast").fill("淺焙");
+    await page.locator(".spec-price").nth(0).fill("220");
+    await page.locator(".spec-price").nth(1).fill("420");
+    await page.locator(".spec-price").nth(2).fill("60");
+    await page.getByRole("button", { name: "儲存" }).click();
+
+    await expect(rows).toHaveCount(2);
+    await expect(page.locator("#products-main-table")).toContainText("新品豆");
+
+    await rows.filter({ hasText: "新品豆" }).getByRole("button", { name: "編輯" }).click();
+    await page.locator("#pm-name").fill("新版豆");
+    await page.getByRole("button", { name: "儲存" }).click();
+
+    const updatedRow = rows.filter({ hasText: "新版豆" });
+    await expect(updatedRow).toHaveCount(1);
+    await updatedRow.getByRole("button", { name: "啟用" }).click();
+    await expect(updatedRow.getByRole("button", { name: "未啟用" })).toBeVisible();
+
+    await updatedRow.getByRole("button", { name: "刪除" }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(page.locator("#products-main-table")).not.toContainText("新版豆");
+  });
+
   test("dashboard categories controls work without document event delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
@@ -1781,6 +2005,74 @@ test.describe("smoke", () => {
       .getByRole("button", { name: "解除封鎖" })
       .click();
     await expect(blacklistTable).not.toContainText("測試會員");
+  });
+
+  test("dashboard promotions controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "刪除活動？") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-promotions").click();
+
+    const rows = page.locator("#promotions-table tr[data-id]");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("任選 2 件 9 折");
+
+    await page.getByRole("button", { name: "+ 新增活動" }).click();
+    await expect(page.locator("#promotion-modal")).toBeVisible();
+    await page.locator("#prm-name").fill("新品活動");
+    await page.locator(".promo-product-cb").first().check();
+    await page.locator("#prm-discount-value").fill("88");
+    await page.getByRole("button", { name: "儲存" }).click();
+
+    await expect(rows).toHaveCount(2);
+    await expect(page.locator("#promotions-table")).toContainText("新品活動");
+
+    await rows.filter({ hasText: "新品活動" }).getByRole("button", { name: "編輯" }).click();
+    await page.locator("#prm-name").fill("新版活動");
+    await page.getByRole("button", { name: "儲存" }).click();
+
+    const updatedRow = rows.filter({ hasText: "新版活動" });
+    await expect(updatedRow).toHaveCount(1);
+    await updatedRow.getByRole("button", { name: "啟用" }).click();
+    await expect(updatedRow.getByRole("button", { name: "未啟用" })).toBeVisible();
+
+    await updatedRow.getByRole("button", { name: "刪除" }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(page.locator("#promotions-table")).not.toContainText("新版活動");
   });
 
   test("dashboard settings icon controls work without document event delegation", async ({ page }) => {
@@ -1989,7 +2281,11 @@ test.describe("smoke", () => {
     await expect(page.locator("#products-main-table")).toContainText(
       "後台測試商品",
     );
-    await page.locator('button[data-action="edit-product"]').first().click();
+    await page
+      .locator("#products-main-table tbody.sortable-tbody tr")
+      .filter({ hasText: "後台測試商品" })
+      .getByRole("button", { name: "編輯" })
+      .click();
     await expect(page.locator("#product-modal")).toBeVisible();
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
     await expect.poll(() =>
@@ -2062,7 +2358,11 @@ test.describe("smoke", () => {
     await page.locator("#tab-promotions").click();
 
     await expect(page.locator("#promotions-table")).toContainText("任選 2 件 9 折");
-    await page.locator('button[data-action="edit-promotion"]').first().click();
+    await page
+      .locator("#promotions-table tr")
+      .filter({ hasText: "任選 2 件 9 折" })
+      .getByRole("button", { name: "編輯" })
+      .click();
     await expect(page.locator("#promotion-modal")).toBeVisible();
     await expect(page.locator("#prm-title")).toHaveText("編輯活動");
     await expect(page.locator("#prm-products-list")).toContainText("後台測試商品");

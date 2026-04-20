@@ -8,7 +8,7 @@
       <h3 id="pm-title" class="text-xl font-bold mb-5 ui-text-highlight">
         {{ productModalTitle }}
       </h3>
-      <form id="product-form" class="space-y-4">
+      <form class="space-y-4" @submit.prevent="handleSaveProduct">
         <input type="hidden" id="pm-id" :value="productForm.id">
         <div>
           <label class="block text-sm ui-text-strong mb-1">分類 *</label>
@@ -96,8 +96,7 @@
               >
               <button
                 type="button"
-                data-action="remove-spec-row"
-                :data-spec-index="specIndex"
+                @click="handleRemoveSpecRow(specIndex)"
                 class="text-red-400 hover:ui-text-danger text-lg font-bold"
               >
                 &times;
@@ -108,7 +107,7 @@
             type="button"
             size="sm"
             variant="outline"
-            data-action="add-spec-row"
+            @click="handleAddSpecRow"
             class="text-slate-700"
           >
             + 新增規格
@@ -132,7 +131,7 @@
           <UiButton
             type="button"
             variant="secondary"
-            data-action="close-product-modal"
+            @click="handleCloseProductModal"
             class="flex-1"
           >
             取消
@@ -147,7 +146,10 @@
 import UiButton from "../../components/ui/button/Button.vue";
 import UiInput from "../../components/ui/input/Input.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
-import { useDashboardProducts } from "./useDashboardProducts.js";
+import {
+  dashboardProductsActions,
+  useDashboardProducts,
+} from "./useDashboardProducts.js";
 
 const {
   isProductModalOpen,
@@ -157,4 +159,20 @@ const {
   updateProductField,
   updateProductSpec,
 } = useDashboardProducts();
+
+function handleAddSpecRow() {
+  dashboardProductsActions.addSpecRow();
+}
+
+function handleRemoveSpecRow(index) {
+  dashboardProductsActions.removeSpecRow(index);
+}
+
+function handleCloseProductModal() {
+  dashboardProductsActions.closeProductModal();
+}
+
+function handleSaveProduct() {
+  dashboardProductsActions.saveProduct();
+}
 </script>

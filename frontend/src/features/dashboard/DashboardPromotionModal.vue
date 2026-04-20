@@ -12,7 +12,7 @@
         id="prm-title"
         class="text-xl font-bold mb-6 ui-text-highlight"
       >{{ promotionModalTitle }}</h3>
-      <form id="promotion-form" class="space-y-4">
+      <form class="space-y-4" @submit.prevent="handleSavePromotion">
         <input type="hidden" id="prm-id" :value="promotionForm.id">
 
         <div>
@@ -162,7 +162,7 @@
           <UiButton
             type="button"
             variant="secondary"
-            data-action="close-promotion-modal"
+            @click="handleClosePromotionModal"
             class="flex-1"
           >
             取消
@@ -177,7 +177,10 @@
 import UiButton from "../../components/ui/button/Button.vue";
 import UiInput from "../../components/ui/input/Input.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
-import { useDashboardPromotions } from "./useDashboardPromotions.js";
+import {
+  dashboardPromotionsActions,
+  useDashboardPromotions,
+} from "./useDashboardPromotions.js";
 
 const {
   isPromotionModalOpen,
@@ -188,4 +191,12 @@ const {
   isPromotionTargetSelected,
   togglePromotionTarget,
 } = useDashboardPromotions();
+
+function handleClosePromotionModal() {
+  dashboardPromotionsActions.closePromotionModal();
+}
+
+function handleSavePromotion() {
+  dashboardPromotionsActions.savePromotion();
+}
 </script>

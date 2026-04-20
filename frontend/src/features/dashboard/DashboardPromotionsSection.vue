@@ -5,7 +5,8 @@
         促銷活動管理
       </h2>
       <button
-        data-action="show-promotion-modal"
+        type="button"
+        @click="handleShowPromotionModal"
         class="btn-primary text-sm"
       >
         + 新增活動
@@ -63,9 +64,8 @@
               </td>
               <td class="p-3 text-center">
                 <button
-                  data-action="toggle-promotion-enabled"
-                  :data-promotion-id="promotion.id"
-                  :data-enabled="String(!promotion.enabled)"
+                  type="button"
+                  @click="handleTogglePromotionEnabled(promotion.id, !promotion.enabled)"
                   class="text-sm font-medium hover:underline"
                   :class="promotion.statusClass"
                 >
@@ -74,16 +74,16 @@
               </td>
               <td class="p-3 text-right">
                 <button
-                  data-action="edit-promotion"
-                  :data-promotion-id="promotion.id"
+                  type="button"
+                  @click="handleEditPromotion(promotion.id)"
                   class="text-sm mr-2"
                   style="color:var(--primary)"
                 >
                   編輯
                 </button>
                 <button
-                  data-action="delete-promotion"
-                  :data-promotion-id="promotion.id"
+                  type="button"
+                  @click="handleDeletePromotion(promotion.id)"
                   class="text-sm ui-text-danger"
                 >
                   刪除
@@ -113,6 +113,22 @@ function syncPromotionsTable() {
   dashboardPromotionsActions.registerPromotionsTableElement(
     promotionsTable.value,
   );
+}
+
+function handleShowPromotionModal() {
+  dashboardPromotionsActions.showPromotionModal();
+}
+
+function handleTogglePromotionEnabled(id, enabled) {
+  dashboardPromotionsActions.togglePromotionEnabled(id, enabled);
+}
+
+function handleEditPromotion(id) {
+  dashboardPromotionsActions.editPromotion(id);
+}
+
+function handleDeletePromotion(id) {
+  dashboardPromotionsActions.delPromotion(id);
 }
 
 onMounted(syncPromotionsTable);

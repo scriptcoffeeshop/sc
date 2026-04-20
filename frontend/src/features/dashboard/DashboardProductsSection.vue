@@ -4,7 +4,7 @@
       <h2 class="text-lg font-bold ui-text-highlight">
         咖啡豆商品
       </h2>
-      <button data-action="show-product-modal" class="btn-primary text-sm">
+      <button type="button" @click="handleShowProductModal" class="btn-primary text-sm">
         + 新增商品
       </button>
     </div>
@@ -75,9 +75,8 @@
               </td>
               <td class="p-3 text-center">
                 <button
-                  data-action="toggle-product-enabled"
-                  :data-product-id="product.id"
-                  :data-enabled="String(!product.enabled)"
+                  type="button"
+                  @click="handleToggleProductEnabled(product.id, !product.enabled)"
                   class="text-sm font-medium hover:underline"
                   :class="product.statusClass"
                 >
@@ -86,16 +85,16 @@
               </td>
               <td class="p-3 text-center">
                 <button
-                  data-action="edit-product"
-                  :data-product-id="product.id"
+                  type="button"
+                  @click="handleEditProduct(product.id)"
                   class="text-sm mr-2"
                   style="color:var(--primary)"
                 >
                   編輯
                 </button>
                 <button
-                  data-action="delete-product"
-                  :data-product-id="product.id"
+                  type="button"
+                  @click="handleDeleteProduct(product.id)"
                   class="text-sm ui-text-danger"
                 >
                   刪除
@@ -123,6 +122,22 @@ const productsTable = ref(null);
 
 function syncProductsTable() {
   dashboardProductsActions.registerProductsTableElement(productsTable.value);
+}
+
+function handleShowProductModal() {
+  dashboardProductsActions.showProductModal();
+}
+
+function handleToggleProductEnabled(id, enabled) {
+  dashboardProductsActions.toggleProductEnabled(id, enabled);
+}
+
+function handleEditProduct(id) {
+  dashboardProductsActions.editProduct(id);
+}
+
+function handleDeleteProduct(id) {
+  dashboardProductsActions.delProduct(id);
 }
 
 onMounted(syncProductsTable);
