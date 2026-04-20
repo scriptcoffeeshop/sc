@@ -40,8 +40,8 @@ As of 2026-04-20:
   - orders
   - products
   - categories
-- Bridge-backed sections still pending:
   - promotions
+- Bridge-backed sections still pending:
   - form fields
   - users
   - blacklist
@@ -116,7 +116,7 @@ For a feature to be considered migrated:
   - orders: done
   - products: done
   - categories: done
-  - promotions: pending
+  - promotions: done
   - form fields: pending
 
 #### 2026-06-01 to 2026-06-14
@@ -305,5 +305,5 @@ Dashboard migration is complete when all of the following are true:
 
 1. Create the `frontend/src/features/dashboard/` directory structure.
 2. Keep `DashboardPage.vue` as shell-only wiring and avoid new section logic there.
-3. Replace the promotions custom-event bridge with Vue-owned state/actions.
+3. Replace the form fields custom-event bridge with Vue-owned state/actions.
 4. Repeat section by section until `DashboardPage.vue` becomes composition-only.

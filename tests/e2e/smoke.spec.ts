@@ -329,6 +329,29 @@ async function installDashboardRoutes(
       return;
     }
 
+    if (action === "getPromotions") {
+      await fulfillJson(route, {
+        success: true,
+        promotions: [
+          {
+            id: 301,
+            name: "任選 2 件 9 折",
+            type: "bundle",
+            targetProductIds: [],
+            targetItems: [{ productId: 201, specKey: "single" }],
+            minQuantity: 2,
+            discountType: "percent",
+            discountValue: 90,
+            enabled: true,
+            startTime: null,
+            endTime: null,
+            sortOrder: 0,
+          },
+        ],
+      });
+      return;
+    }
+
     if (action === "getOrders") {
       await fulfillJson(route, {
         success: true,
@@ -1194,6 +1217,45 @@ test.describe("smoke", () => {
     await expect(page.locator("#categories-list")).toContainText("測試分類");
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedDashboardCategoriesEventCount)
+    ).toBe(0);
+  });
+
+  test("dashboard promotions work without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardPromotionsEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-promotions-updated") {
+          (window as any).__blockedDashboardPromotionsEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-promotions").click();
+
+    await expect(page.locator("#promotions-table")).toContainText("任選 2 件 9 折");
+    await page.locator('button[data-action="edit-promotion"]').first().click();
+    await expect(page.locator("#promotion-modal")).toBeVisible();
+    await expect(page.locator("#prm-title")).toHaveText("編輯活動");
+    await expect(page.locator("#prm-products-list")).toContainText("後台測試商品");
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardPromotionsEventCount)
     ).toBe(0);
   });
 });

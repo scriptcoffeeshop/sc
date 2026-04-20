@@ -33,9 +33,9 @@
           </tr>
         </thead>
         <tbody
+          ref="promotionsTable"
           id="promotions-table"
           class="sortable-tbody"
-          data-vue-managed="true"
         >
           <tr v-if="promotionsView.length === 0">
             <td colspan="5" class="text-center py-8 ui-text-subtle">
@@ -98,10 +98,21 @@
 </template>
 
 <script setup>
-defineProps({
-  promotionsView: {
-    type: Array,
-    default: () => [],
-  },
-});
+import { onMounted, ref, watch } from "vue";
+import {
+  dashboardPromotionsActions,
+  useDashboardPromotions,
+} from "./useDashboardPromotions.js";
+
+const { promotionsView } = useDashboardPromotions();
+const promotionsTable = ref(null);
+
+function syncPromotionsTable() {
+  dashboardPromotionsActions.registerPromotionsTableElement(
+    promotionsTable.value,
+  );
+}
+
+onMounted(syncPromotionsTable);
+watch(promotionsView, syncPromotionsTable, { deep: true });
 </script>

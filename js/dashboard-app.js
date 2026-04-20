@@ -30,7 +30,6 @@ import {
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
-import { createPromotionsController } from "./dashboard/modules/promotions.js";
 import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
 import { createUsersController } from "./dashboard/modules/users-controller.js";
@@ -63,6 +62,10 @@ import {
   dashboardCategoriesActions,
   getDashboardCategories,
 } from "../frontend/src/features/dashboard/useDashboardCategories.js";
+import {
+  configureDashboardPromotionsServices,
+  dashboardPromotionsActions,
+} from "../frontend/src/features/dashboard/useDashboardPromotions.js";
 import {
   configureDashboardOrdersServices,
   dashboardOrdersActions,
@@ -124,17 +127,6 @@ const bankAccountsController = createBankAccountsController({
   Swal: globalThis.Swal,
   esc,
   Sortable: globalThis.Sortable,
-});
-const promotionsController = createPromotionsController({
-  API_URL,
-  authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
-  Toast,
-  Swal: globalThis.Swal,
-  esc,
-  Sortable: globalThis.Sortable,
-  getProducts: getDashboardProducts,
-  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
 const formFieldsController = createFormFieldsController({
   API_URL,
@@ -247,6 +239,16 @@ configureDashboardCategoriesServices({
   Sortable: globalThis.Sortable,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
+configureDashboardPromotionsServices({
+  API_URL,
+  authFetch,
+  getAuthUserId: sessionController.getAuthUserId,
+  getProducts: getDashboardProducts,
+  ensureProductsLoaded: dashboardProductsActions.loadProducts,
+  Toast,
+  Swal: globalThis.Swal,
+  Sortable: globalThis.Sortable,
+});
 configureDashboardProductsServices({
   API_URL,
   authFetch,
@@ -282,20 +284,20 @@ const dashboardActionHandlers = {
   ...createProductsActionHandlers({
     showProductModal: dashboardProductsActions.showProductModal,
     addCategory: dashboardCategoriesActions.addCategory,
-    showPromotionModal: promotionsController.showPromotionModal,
+    showPromotionModal: dashboardPromotionsActions.showPromotionModal,
     editProduct: dashboardProductsActions.editProduct,
     delProduct: dashboardProductsActions.delProduct,
     toggleProductEnabled: dashboardProductsActions.toggleProductEnabled,
     editCategory: dashboardCategoriesActions.editCategory,
     delCategory: dashboardCategoriesActions.delCategory,
-    editPromotion: promotionsController.editPromotion,
-    delPromotion: promotionsController.delPromotion,
-    togglePromotionEnabled: promotionsController.togglePromotionEnabled,
+    editPromotion: dashboardPromotionsActions.editPromotion,
+    delPromotion: dashboardPromotionsActions.delPromotion,
+    togglePromotionEnabled: dashboardPromotionsActions.togglePromotionEnabled,
     addSpecRow: dashboardProductsActions.addSpecRow,
     removeSpecRow: dashboardProductsActions.removeSpecRow,
     closeProductModal: dashboardProductsActions.closeProductModal,
-    closePromotionModal: promotionsController.closePromotionModal,
-    loadPromotions: promotionsController.loadPromotions,
+    closePromotionModal: dashboardPromotionsActions.closePromotionModal,
+    loadPromotions: dashboardPromotionsActions.loadPromotions,
   }),
   ...createSettingsActionHandlers({
     uploadSiteIcon: iconAssetsController.uploadSiteIcon,
@@ -329,7 +331,7 @@ dashboardTabLoaders = {
   ...createOrdersTabLoaders({ loadOrders: dashboardOrdersActions.loadOrders }),
   ...createProductsTabLoaders({
     renderCategories: dashboardCategoriesActions.loadCategories,
-    loadPromotions: promotionsController.loadPromotions,
+    loadPromotions: dashboardPromotionsActions.loadPromotions,
   }),
   ...createSettingsTabLoaders({
     loadSettings: settingsController.loadSettings,
@@ -391,11 +393,11 @@ registerDashboardGlobals({
   showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
   editBankAccount: bankAccountsController.editBankAccount,
   deleteBankAccount: bankAccountsController.deleteBankAccount,
-  showPromotionModal: promotionsController.showPromotionModal,
-  closePromotionModal: promotionsController.closePromotionModal,
-  savePromotion: promotionsController.savePromotion,
-  editPromotion: promotionsController.editPromotion,
-  delPromotion: promotionsController.delPromotion,
+  showPromotionModal: dashboardPromotionsActions.showPromotionModal,
+  closePromotionModal: dashboardPromotionsActions.closePromotionModal,
+  savePromotion: dashboardPromotionsActions.savePromotion,
+  editPromotion: dashboardPromotionsActions.editPromotion,
+  delPromotion: dashboardPromotionsActions.delPromotion,
 });
 
 // ============ 初始化 ============
@@ -418,7 +420,7 @@ export function initDashboardApp() {
     usersController.loadUsers,
     iconAssetsController.previewIcon,
     dashboardProductsActions.saveProduct,
-    promotionsController.savePromotion,
+    dashboardPromotionsActions.savePromotion,
     orderStatusController.changeOrderStatus,
     dashboardOrdersActions.renderOrders,
   );
