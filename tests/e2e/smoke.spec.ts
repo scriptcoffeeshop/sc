@@ -1161,4 +1161,39 @@ test.describe("smoke", () => {
       page.evaluate(() => (window as any).__blockedDashboardProductsEventCount)
     ).toBe(0);
   });
+
+  test("dashboard categories work without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardCategoriesEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-categories-updated") {
+          (window as any).__blockedDashboardCategoriesEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-categories").click();
+
+    await expect(page.locator("#categories-list")).toContainText("測試分類");
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardCategoriesEventCount)
+    ).toBe(0);
+  });
 });

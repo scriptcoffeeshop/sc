@@ -1,6 +1,6 @@
 # Frontend Vue Migration Plan
 
-Last updated: 2026-04-19
+Last updated: 2026-04-20
 
 ## Decision
 
@@ -31,6 +31,23 @@ This creates three concrete problems:
 3. `frontend/src/pages/DashboardPage.vue` has grown to 2,345 lines and is beyond a healthy single-component size.
 
 The current Vue dashboard is also not yet truly independent. It still boots through `initDashboardApp()` and receives data through `data-vue-managed="true"` containers plus `coffee:dashboard-*` custom events. That means the Vue page is currently a Vue shell over legacy orchestration, not the final architecture.
+
+## Current Progress Snapshot
+
+As of 2026-04-20:
+
+- Vue-owned dashboard sections completed:
+  - orders
+  - products
+  - categories
+- Bridge-backed sections still pending:
+  - promotions
+  - form fields
+  - users
+  - blacklist
+  - settings / session
+- New regression policy in place:
+  - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
 ## Target Architecture
 
@@ -95,6 +112,12 @@ For a feature to be considered migrated:
   - categories
   - promotions
   - form fields
+- Status on 2026-04-20:
+  - orders: done
+  - products: done
+  - categories: done
+  - promotions: pending
+  - form fields: pending
 
 #### 2026-06-01 to 2026-06-14
 
@@ -281,6 +304,6 @@ Dashboard migration is complete when all of the following are true:
 ## Immediate Next Actions
 
 1. Create the `frontend/src/features/dashboard/` directory structure.
-2. Split `DashboardPage.vue` into shell + `OrdersSection.vue` first.
-3. Replace the orders custom-event bridge with Vue-owned state/actions.
+2. Keep `DashboardPage.vue` as shell-only wiring and avoid new section logic there.
+3. Replace the promotions custom-event bridge with Vue-owned state/actions.
 4. Repeat section by section until `DashboardPage.vue` becomes composition-only.

@@ -9,6 +9,7 @@ const defaultSpecs = [
 const products = ref([]);
 const categoryOptions = ref([]);
 const isProductModalOpen = ref(false);
+const categoriesVersion = ref(0);
 
 const productForm = reactive({
   id: "",
@@ -87,6 +88,7 @@ function buildProductViewModel(product) {
 }
 
 const productsGroupsView = computed(() => {
+  categoriesVersion.value;
   const grouped = {};
   products.value.forEach((product) => {
     const category = product?.category || "";
@@ -202,6 +204,12 @@ function registerProductsTableElement(element) {
   if (productsTableElement) {
     queueProductTableSync();
   }
+}
+
+function syncCategories() {
+  categoriesVersion.value++;
+  refreshCategoryOptions();
+  queueProductTableSync();
 }
 
 async function loadProducts() {
@@ -440,6 +448,7 @@ export function useDashboardProducts() {
 
 export const dashboardProductsActions = {
   registerProductsTableElement,
+  syncCategories,
   loadProducts,
   renderProducts,
   moveProduct,

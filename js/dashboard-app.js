@@ -35,7 +35,6 @@ import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
 import { createUsersController } from "./dashboard/modules/users-controller.js";
 import { createIconAssetsController } from "./dashboard/modules/icon-assets-controller.js";
-import { createCategoriesController } from "./dashboard/modules/categories-controller.js";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
@@ -60,6 +59,11 @@ import {
 } from "./dashboard/modules/users.js";
 import { createDashboardEvents } from "./dashboard/events.js";
 import {
+  configureDashboardCategoriesServices,
+  dashboardCategoriesActions,
+  getDashboardCategories,
+} from "../frontend/src/features/dashboard/useDashboardCategories.js";
+import {
   configureDashboardOrdersServices,
   dashboardOrdersActions,
   getDashboardOrders,
@@ -72,7 +76,6 @@ import {
 
 // ============ 共享狀態 ============
 let currentUser = null;
-let categories = [];
 let dashboardSettings = {};
 let dashboardTabLoaders = {};
 let loadInitialDashboardData = async () => {};
@@ -231,27 +234,25 @@ configureDashboardOrdersServices({
   Swal: globalThis.Swal,
   changeOrderStatus: orderStatusController.changeOrderStatus,
 });
-const categoriesController = createCategoriesController({
+configureDashboardCategoriesServices({
   API_URL,
   authFetch,
   getAuthUserId: sessionController.getAuthUserId,
-  getCategories: () => categories,
-  setCategories: (nextCategories) => {
-    categories = Array.isArray(nextCategories) ? nextCategories : [];
-  },
   loadProducts: dashboardProductsActions.loadProducts,
+  onCategoriesChanged: () => {
+    dashboardProductsActions.syncCategories();
+  },
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
-  esc,
 });
 configureDashboardProductsServices({
   API_URL,
   authFetch,
   getAuthUserId: sessionController.getAuthUserId,
-  getCategories: () => categories,
-  ensureCategoriesLoaded: () => categoriesController.loadCategories(),
+  getCategories: getDashboardCategories,
+  ensureCategoriesLoaded: () => dashboardCategoriesActions.loadCategories(),
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
@@ -280,13 +281,13 @@ const dashboardActionHandlers = {
   }),
   ...createProductsActionHandlers({
     showProductModal: dashboardProductsActions.showProductModal,
-    addCategory: categoriesController.addCategory,
+    addCategory: dashboardCategoriesActions.addCategory,
     showPromotionModal: promotionsController.showPromotionModal,
     editProduct: dashboardProductsActions.editProduct,
     delProduct: dashboardProductsActions.delProduct,
     toggleProductEnabled: dashboardProductsActions.toggleProductEnabled,
-    editCategory: categoriesController.editCategory,
-    delCategory: categoriesController.delCategory,
+    editCategory: dashboardCategoriesActions.editCategory,
+    delCategory: dashboardCategoriesActions.delCategory,
     editPromotion: promotionsController.editPromotion,
     delPromotion: promotionsController.delPromotion,
     togglePromotionEnabled: promotionsController.togglePromotionEnabled,
@@ -294,7 +295,6 @@ const dashboardActionHandlers = {
     removeSpecRow: dashboardProductsActions.removeSpecRow,
     closeProductModal: dashboardProductsActions.closeProductModal,
     closePromotionModal: promotionsController.closePromotionModal,
-    renderCategories: categoriesController.renderCategories,
     loadPromotions: promotionsController.loadPromotions,
   }),
   ...createSettingsActionHandlers({
@@ -328,7 +328,7 @@ const dashboardActionHandlers = {
 dashboardTabLoaders = {
   ...createOrdersTabLoaders({ loadOrders: dashboardOrdersActions.loadOrders }),
   ...createProductsTabLoaders({
-    renderCategories: categoriesController.renderCategories,
+    renderCategories: dashboardCategoriesActions.loadCategories,
     loadPromotions: promotionsController.loadPromotions,
   }),
   ...createSettingsTabLoaders({
@@ -342,7 +342,7 @@ dashboardTabLoaders = {
 };
 
 loadInitialDashboardData = () => Promise.all([
-  categoriesController.loadCategories(),
+  dashboardCategoriesActions.loadCategories(),
   dashboardProductsActions.loadProducts(),
   settingsController.loadSettings(),
   dashboardOrdersActions.loadOrders(),
@@ -364,10 +364,10 @@ registerDashboardGlobals({
   delProduct: dashboardProductsActions.delProduct,
   moveProduct: dashboardProductsActions.moveProduct,
   addSpecRow: dashboardProductsActions.addSpecRow,
-  addCategory: categoriesController.addCategory,
-  editCategory: categoriesController.editCategory,
-  delCategory: categoriesController.delCategory,
-  updateCategoryOrders: categoriesController.updateCategoryOrders,
+  addCategory: dashboardCategoriesActions.addCategory,
+  editCategory: dashboardCategoriesActions.editCategory,
+  delCategory: dashboardCategoriesActions.delCategory,
+  updateCategoryOrders: dashboardCategoriesActions.updateCategoryOrders,
   saveSettings: settingsController.saveSettings,
   loadUsers: usersController.loadUsers,
   toggleUserRole: usersController.toggleUserRole,

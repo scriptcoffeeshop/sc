@@ -4,9 +4,19 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
+import {
+  ALLOWED_REDIRECT_ORIGINS,
+  UPSTASH_REDIS_REST_TOKEN,
+  UPSTASH_REDIS_REST_URL,
+} from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
 import { type AuthResult, extractAuth } from "./utils/auth.ts";
+import {
+  createMemoryRateLimitStore,
+  createUpstashRateLimitStore,
+  type RateLimitConfig,
+  type RateLimitStore,
+} from "./utils/rate-limit.ts";
 
 // ============ API 模組 ============
 import {
@@ -157,26 +167,9 @@ app.use(
   }),
 );
 
-interface RateLimitBucket {
-  count: number;
-  resetTime: number;
-}
-
-interface RateLimitConfig {
-  maxRequests: number;
-  windowMs: number;
-}
-
-interface RateLimitStore {
-  buckets: Map<string, RateLimitBucket>;
-  lastCleanupAt: number;
-  maxBuckets: number;
-}
-
 // ============ 簡易 IP Rate Limiter ============
 const RATE_LIMIT_WINDOW_MS = 60000;
 const RATE_LIMIT_MAX_REQ = 100;
-const RATE_LIMIT_CLEANUP_INTERVAL_MS = 10000;
 const RATE_LIMIT_MAX_BUCKETS = 5000;
 const ACTION_RATE_LIMIT_MAX_BUCKETS = 5000;
 const DEFAULT_RATE_LIMIT: RateLimitConfig = {
@@ -195,16 +188,28 @@ const AUTH_ACTION_RATE_LIMIT: RateLimitConfig = {
   maxRequests: 20,
   windowMs: 5 * 60 * 1000,
 };
-const globalRateLimitStore: RateLimitStore = {
-  buckets: new Map(),
-  lastCleanupAt: 0,
+const memoryGlobalRateLimitStore = createMemoryRateLimitStore({
   maxBuckets: RATE_LIMIT_MAX_BUCKETS,
-};
-const actionRateLimitStore: RateLimitStore = {
-  buckets: new Map(),
-  lastCleanupAt: 0,
+});
+const memoryActionRateLimitStore = createMemoryRateLimitStore({
   maxBuckets: ACTION_RATE_LIMIT_MAX_BUCKETS,
-};
+});
+const globalRateLimitStore: RateLimitStore =
+  UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN
+    ? createUpstashRateLimitStore({
+      url: UPSTASH_REDIS_REST_URL,
+      token: UPSTASH_REDIS_REST_TOKEN,
+      fallbackStore: memoryGlobalRateLimitStore,
+    })
+    : memoryGlobalRateLimitStore;
+const actionRateLimitStore: RateLimitStore =
+  UPSTASH_REDIS_REST_URL && UPSTASH_REDIS_REST_TOKEN
+    ? createUpstashRateLimitStore({
+      url: UPSTASH_REDIS_REST_URL,
+      token: UPSTASH_REDIS_REST_TOKEN,
+      fallbackStore: memoryActionRateLimitStore,
+    })
+    : memoryActionRateLimitStore;
 
 function getClientIp(req: Request): string {
   const cfConnectingIp = req.headers.get("cf-connecting-ip")?.trim();
@@ -220,53 +225,13 @@ function getClientIp(req: Request): string {
   return "unknown";
 }
 
-function cleanupRateLimitBuckets(
-  buckets: Map<string, RateLimitBucket>,
-  now: number,
-  maxBuckets: number,
-) {
-  for (const [key, value] of buckets.entries()) {
-    if (now > value.resetTime) buckets.delete(key);
-  }
-
-  if (buckets.size <= maxBuckets) return;
-
-  const overflow = buckets.size - maxBuckets;
-  let removed = 0;
-  for (const key of buckets.keys()) {
-    buckets.delete(key);
-    removed++;
-    if (removed >= overflow) break;
-  }
-}
-
-function consumeRateLimit(
+async function consumeRateLimit(
   store: RateLimitStore,
   key: string,
   config: RateLimitConfig,
   now: number,
-): number | null {
-  if (
-    now - store.lastCleanupAt >= RATE_LIMIT_CLEANUP_INTERVAL_MS ||
-    store.buckets.size > store.maxBuckets
-  ) {
-    cleanupRateLimitBuckets(store.buckets, now, store.maxBuckets);
-    store.lastCleanupAt = now;
-  }
-
-  const record = store.buckets.get(key);
-  if (!record || now > record.resetTime) {
-    store.buckets.set(key, {
-      count: 1,
-      resetTime: now + config.windowMs,
-    });
-    return null;
-  }
-
-  record.count++;
-  if (record.count <= config.maxRequests) return null;
-
-  return Math.max(1, Math.ceil((record.resetTime - now) / 1000));
+): Promise<number | null> {
+  return await store.consume(key, config, now);
 }
 
 app.use("*", async (c, next) => {
@@ -274,9 +239,9 @@ app.use("*", async (c, next) => {
 
   const now = Date.now();
   const ip = getClientIp(c.req.raw);
-  const retryAfterSec = consumeRateLimit(
+  const retryAfterSec = await consumeRateLimit(
     globalRateLimitStore,
-    ip,
+    `global:${ip}`,
     DEFAULT_RATE_LIMIT,
     now,
   );
@@ -654,7 +619,7 @@ function enforceActionAccess(
   }
 }
 
-function enforceActionRateLimit(
+async function enforceActionRateLimit(
   action: string,
   actionConfig: ActionConfig,
   req: Request,
@@ -663,9 +628,9 @@ function enforceActionRateLimit(
   if (!actionConfig.rateLimit) return;
 
   const scope = auth?.userId || getClientIp(req);
-  const retryAfterSec = consumeRateLimit(
+  const retryAfterSec = await consumeRateLimit(
     actionRateLimitStore,
-    `${action}:${scope}`,
+    `action:${action}:${scope}`,
     actionConfig.rateLimit,
     Date.now(),
   );
@@ -763,7 +728,7 @@ function wrapHandler(
 
       enforceActionMethod(action, actionConfig, req);
       auth = await resolveActionAuth(actionConfig, req);
-      enforceActionRateLimit(action, actionConfig, req, auth);
+      await enforceActionRateLimit(action, actionConfig, req, auth);
       enforceActionAccess(actionConfig, auth);
 
       const result = await handler(data, req, { action, actionConfig, auth });

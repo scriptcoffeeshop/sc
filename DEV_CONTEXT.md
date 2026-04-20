@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`102`
+- 目前前端版號：`104`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -46,10 +46,15 @@
 
 - 最終目標已確定為 `Vue 3 + Vite SFC`。
 - 後台是優先遷移區：
-  - `orders`、`products` 已有 Vue composable (`useDashboardOrders.js`、`useDashboardProducts.js`)
-  - `categories`、`promotions`、`formfields`、`users`、`blacklist` 仍可看到 `data-vue-managed` 過渡掛點
+  - `orders`、`products`、`categories` 已改成 Vue-owned state/actions (`useDashboardOrders.js`、`useDashboardProducts.js`、`useDashboardCategories.js`)
+  - `promotions`、`formfields`、`users`、`blacklist` 仍可看到 `data-vue-managed` / bridge event 過渡掛點
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
+
+### 後端演進
+
+- `orders.ts`、`payments.ts` 已拆成較小模組，路由匯入點維持不變。
+- rate limiter 已抽成共用 store；預設仍走記憶體 backend，但若設定 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`，可切到 Upstash Redis REST 作為分散式配額儲存。
 
 ### 視覺與互動
 
@@ -66,6 +71,7 @@
   - 會員資料彈窗導角
   - 後台手機版頁籤
   - 前後台固定 icon 樣式
+  - dashboard `orders` / `products` / `categories` 不得退回 `coffee:dashboard-*` custom-event bridge
 
 ---
 
@@ -97,9 +103,11 @@
 - 對齊會員資料彈窗導角。
 - 修正後台手機版頁籤顯示。
 - 統一前後台固定 icon 的尺寸、顏色與對齊，legacy 入口也已換成向量 icon。
+- dashboard `categories` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-categories-updated`。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
 - 新增 `scripts/check_migration_names.py`，未來 migration 檔名統一為 `YYYYMMDDHHmm_slug.sql`；歷史 migration 不回改。
+- rate limiter 已抽離成可替換 store，支援可選的 Upstash Redis REST backend，未設 env 時會自動回退到既有記憶體策略。
 - 新增 repo hygiene 防線：
   - `scripts/repo_hygiene_check.py`
   - `.env.staging.example`

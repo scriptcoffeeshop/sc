@@ -11,12 +11,13 @@
         id="new-cat-name"
         class="input-field flex-grow"
         placeholder="新分類名稱"
+        v-model="newCategoryName"
       >
       <button data-action="add-category" class="btn-primary text-sm">
         新增
       </button>
     </div>
-    <div id="categories-list" data-vue-managed="true">
+    <div id="categories-list" ref="categoriesList">
       <p v-if="categoriesView.length === 0" class="text-center ui-text-subtle py-4">
         尚無分類
       </p>
@@ -60,10 +61,19 @@
 </template>
 
 <script setup>
-defineProps({
-  categoriesView: {
-    type: Array,
-    default: () => [],
-  },
-});
+import { onMounted, ref, watch } from "vue";
+import {
+  dashboardCategoriesActions,
+  useDashboardCategories,
+} from "./useDashboardCategories.js";
+
+const { categoriesView, newCategoryName } = useDashboardCategories();
+const categoriesList = ref(null);
+
+function syncCategoriesList() {
+  dashboardCategoriesActions.registerCategoriesListElement(categoriesList.value);
+}
+
+onMounted(syncCategoriesList);
+watch(categoriesView, syncCategoriesList, { deep: true });
 </script>

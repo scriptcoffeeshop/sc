@@ -20,6 +20,8 @@ const OPTIONAL_VARS = [
   "ECPAY_MERCHANT_ID",
   "SMTP_USER",
   "SMTP_PASS",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
 ] as const;
 
 /** 啟動時執行，缺少必要變數直接 throw 阻止函式啟動 */

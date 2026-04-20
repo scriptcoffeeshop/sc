@@ -44,6 +44,10 @@ export const LINE_MESSAGING_API_BASE_URL =
 
 export const FRONTEND_URL = Deno.env.get("FRONTEND_URL") ||
   "https://scriptcoffeeshop.github.io/sc";
+export const UPSTASH_REDIS_REST_URL = Deno.env.get("UPSTASH_REDIS_REST_URL") ||
+  "";
+export const UPSTASH_REDIS_REST_TOKEN =
+  Deno.env.get("UPSTASH_REDIS_REST_TOKEN") || "";
 
 export const ALLOWED_REDIRECT_ORIGINS = [
   "https://scriptcoffeeshop.github.io",
