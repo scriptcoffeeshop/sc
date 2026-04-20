@@ -101,6 +101,24 @@ async function installGlobalStubs(page: Page) {
   });
 }
 
+async function blockStorefrontBodyClickDelegation(page: Page) {
+  await page.addInitScript(() => {
+    const originalAddEventListener = EventTarget.prototype.addEventListener;
+    (window as any).__blockedStorefrontBodyClickDelegation = 0;
+    EventTarget.prototype.addEventListener = function (
+      type: string,
+      listener: EventListenerOrEventListenerObject | null,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (this === document.body && type === "click") {
+        (window as any).__blockedStorefrontBodyClickDelegation += 1;
+        return;
+      }
+      return originalAddEventListener.call(this, type, listener, options);
+    };
+  });
+}
+
 type MainRouteOptions = {
   payment?: {
     cod: boolean;
@@ -1138,27 +1156,37 @@ test.describe("smoke", () => {
     expectColorsClose(cartIconColor, cartButtonColor);
   });
 
-  test("storefront path works with event delegation", async ({ page }) => {
+  test("storefront payment controls work without body click delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
+    await blockStorefrontBodyClickDelegation(page);
 
     await page.goto("/main.html");
 
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
+    ).toBeGreaterThan(0);
+
     await expect(page.locator("#products-container")).toContainText("測試豆");
-    await page.locator(
-      '[data-action="select-delivery"][data-method="delivery"]',
-    ).click();
     await expect(page.locator("#delivery-address-section")).toBeVisible();
+
+    await page.evaluate(() => {
+      const banner = document.getElementById("announcement-banner");
+      const text = document.getElementById("announcement-text");
+      if (text) text.textContent = "測試公告";
+      banner?.classList.remove("hidden");
+    });
+    await page.getByRole("button", { name: "關閉公告" }).click();
+    await expect(page.locator("#announcement-banner")).toHaveClass(/hidden/);
 
     await page.selectOption("#delivery-city", "新竹市");
     await expect(page.locator("#delivery-district option")).toHaveCount(4);
 
-    await page.locator('[data-action="select-payment"][data-method="transfer"]')
-      .click();
+    await page.locator("#transfer-option").click();
     await expect(page.locator("#transfer-info-section")).toBeVisible();
 
     const accountCards = page.locator(
-      '#bank-accounts-list [data-action="select-bank-account"]',
+      '#bank-accounts-list [data-bank-card="true"]',
     );
     const accountRadios = page.locator(
       '#bank-accounts-list input[name="bank_account_selection"]',
@@ -1176,17 +1204,15 @@ test.describe("smoke", () => {
 
     // 複製按鈕不可改變目前選取
     await page.locator(
-      '#bank-accounts-list [data-action="copy-transfer-account"]',
+      '#bank-accounts-list [data-copy-account="true"]',
     ).nth(1).click();
     await expect(accountCards.nth(1)).toHaveClass(/ring-2/);
     await expect(accountRadios.nth(1)).toBeChecked();
 
     // 切換付款方式再切回轉帳，帳號選取需保留（避免藍框/選取狀態回歸）
-    await page.locator('[data-action="select-payment"][data-method="cod"]')
-      .click();
+    await page.locator("#cod-option").click();
     await expect(page.locator("#transfer-info-section")).toBeHidden();
-    await page.locator('[data-action="select-payment"][data-method="transfer"]')
-      .click();
+    await page.locator("#transfer-option").click();
     await expect(page.locator("#transfer-info-section")).toBeVisible();
     await expect(accountCards.nth(1)).toHaveClass(/ring-2/);
     await expect(accountRadios.nth(1)).toBeChecked();
@@ -1297,6 +1323,7 @@ test.describe("smoke", () => {
   test("storefront user controls work without body click delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
+    await blockStorefrontBodyClickDelegation(page);
 
     await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
       await fulfillJson(route, {
@@ -1320,20 +1347,6 @@ test.describe("smoke", () => {
     });
 
     await page.addInitScript(() => {
-      const originalAddEventListener = EventTarget.prototype.addEventListener;
-      (window as any).__blockedStorefrontBodyClickDelegation = 0;
-      EventTarget.prototype.addEventListener = function (
-        type: string,
-        listener: EventListenerOrEventListenerObject | null,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (this === document.body && type === "click") {
-          (window as any).__blockedStorefrontBodyClickDelegation += 1;
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
       const swalCalls: string[] = [];
       (window as any).__storefrontSwalCalls = swalCalls;
       (window as any).Swal.fire = async (options: any) => {
@@ -1365,9 +1378,8 @@ test.describe("smoke", () => {
 
     await page.getByRole("button", { name: "我的訂單" }).click();
     await expect(page.locator("#my-orders-modal")).toBeVisible();
-    await page.locator("#my-orders-modal").evaluate((element) => {
-      element.classList.add("hidden");
-    });
+    await page.getByRole("button", { name: "關閉我的訂單" }).click();
+    await expect(page.locator("#my-orders-modal")).toBeHidden();
 
     await page.getByRole("button", { name: "登出" }).click();
     await expect(page.locator("#login-prompt")).toBeVisible();
@@ -1510,8 +1522,7 @@ test.describe("smoke", () => {
         }
       })
     ).toBeGreaterThan(0);
-    await page.locator('[data-action="select-payment"][data-method="transfer"]')
-      .click();
+    await page.locator("#transfer-option").click();
     await expect(page.locator("#transfer-info-section")).toBeVisible();
     await page.locator(
       '#bank-accounts-list input[name="bank_account_selection"]',
@@ -1583,8 +1594,7 @@ test.describe("smoke", () => {
       })
     ).toBeGreaterThan(0);
 
-    await page.locator('[data-action="select-payment"][data-method="linepay"]')
-      .click();
+    await page.locator("#linepay-option").click();
     await expect(page.locator("#transfer-info-section")).toBeHidden();
     await page.check("#policy-agree");
 

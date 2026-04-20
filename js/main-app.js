@@ -19,10 +19,7 @@ import {
 import { renderProducts } from "./products.js";
 import {
   checkStoreToken,
-  clearSelectedStore,
   loadDeliveryPrefs,
-  openStoreMap,
-  openStoreSearchModal,
   selectDelivery,
   selectStoreFromList,
   updateDistricts,
@@ -30,7 +27,6 @@ import {
 import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
-  showMyOrders,
   submitOrder,
 } from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
@@ -40,9 +36,8 @@ import {
   getPaymentIconFallbackKey,
   setIconElement,
 } from "./icons.js";
-// ============ 事件代理 (Event Delegation) ============
-// 透過 data-action 屬性在 document.body 統一監聯 click 事件，
-// 取代原本散落在 HTML 各處的內嵌事件掛載方式。
+// ============ legacy 事件代理 (Event Delegation) ============
+// 目前只保留給仍由 imperative DOM 動態插入的區塊使用。
 const actionHandlers = {
   "add-to-cart": (el) => addToCart(+el.dataset.pid, el.dataset.spec),
   "cart-qty-change": (el) =>
@@ -56,9 +51,6 @@ const actionHandlers = {
   "remove-cart-item": (el) => removeCartItem(+el.dataset.idx),
   "toggle-cart": () => toggleCart(),
   "select-delivery": (el) => selectDelivery(el.dataset.method),
-  "select-payment": (el) => selectPayment(el.dataset.method),
-  "open-store-map": () => openStoreMap(),
-  "clear-selected-store": () => clearSelectedStore(),
   "select-store": (el) => {
     selectStoreFromList(el);
     Swal.close();
@@ -67,20 +59,7 @@ const actionHandlers = {
     toggleCart();
     submitOrder();
   },
-  "show-my-orders": () => showMyOrders(),
-  "show-profile": () => showProfileModal(),
-  "login-with-line": () => startMainLogin(),
-  "logout": () => logoutCurrentUser(),
-  "close-announcement": () =>
-    document.getElementById("announcement-banner").classList.add("hidden"),
-  "close-orders-modal": () =>
-    document.getElementById("my-orders-modal").classList.add("hidden"),
   "reload-page": () => window.location.reload(),
-  "select-bank-account": (el) => selectBankAccount(el.dataset.bankId),
-  "copy-transfer-account": (el, event) => {
-    event.stopPropagation();
-    copyTransferAccount(el, el.dataset.account || "");
-  },
   "copy-tracking-number": (el) => {
     const trackingNumber = String(el.dataset.trackingNumber || "").trim();
     if (!trackingNumber) return;
@@ -111,8 +90,6 @@ function initEventDelegation() {
 // ============ 保留必要的 window 掛載 ============
 // 以下函式保留掛載，避免舊快取版本或外部調用造成功能中斷。
 window.selectPayment = selectPayment;
-window.copyTransferAccount = copyTransferAccount;
-window.selectBankAccount = selectBankAccount;
 window.updateCartUI = updateCartUI;
 window.updateFormState = updateFormState;
 window.rerenderFormFields = function () {
@@ -813,8 +790,6 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
   }
 };
 
-window.selectPayment = selectPayment;
-
 function updateFormState() {
   const loggedIn = !!state.currentUser;
   const open = state.isStoreOpen;
@@ -838,7 +813,7 @@ function updateFormState() {
 }
 
 // ============ 付款方式選擇 ============
-function selectPayment(method, options = {}) {
+export function selectPayment(method, options = {}) {
   state.selectedPayment = method;
   document.querySelectorAll(".payment-option").forEach((el) =>
     el.classList.remove("active")
@@ -904,7 +879,7 @@ function renderBankAccounts() {
       ? "border-primary ring-2 ring-primary bg-orange-50"
       : "border-[#d1dce5] bg-white";
     return `
-        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" data-action="select-bank-account" data-bank-id="${b.id}">
+        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" data-bank-card="true" data-bank-id="${b.id}">
             <div class="flex items-center gap-3 mb-1">
                 <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${
       isSelected ? "checked" : ""
@@ -917,7 +892,7 @@ function renderBankAccounts() {
                 <span class="text-lg font-mono font-medium" style="color:var(--primary)">${
       escapeHtml(b.accountNumber)
     }</span>
-                <button type="button" data-action="copy-transfer-account" data-account="${
+                <button type="button" data-copy-account="true" data-account="${
       escapeHtml(b.accountNumber)
     }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
                     複製
@@ -933,6 +908,28 @@ function renderBankAccounts() {
         </div>
         `;
   }).join("");
+
+  container.querySelectorAll("[data-bank-card]").forEach((card) => {
+    card.addEventListener("click", () => {
+      selectBankAccount(card.dataset.bankId);
+    });
+  });
+
+  container.querySelectorAll('input[name="bank_account_selection"]').forEach(
+    (radio) => {
+      radio.addEventListener("click", (event) => {
+        event.stopPropagation();
+        selectBankAccount(radio.value);
+      });
+    },
+  );
+
+  container.querySelectorAll("[data-copy-account]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      copyTransferAccount(button, button.dataset.account || "");
+    });
+  });
 }
 
 function copyTransferAccount(btn, account) {

@@ -5,8 +5,10 @@
       class="hidden max-w-3xl mx-auto mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 relative"
     >
       <button
-        data-action="close-announcement"
+        type="button"
+        aria-label="關閉公告"
         class="absolute top-2 right-3 text-amber-500 hover:text-amber-700 text-xl"
+        @click="handleCloseAnnouncement"
       >
         &times;
       </button>
@@ -299,7 +301,7 @@
             <span class="tab-with-icon"><img src="../../../icons/store-front.png" alt="" class="ui-icon-inline">取貨門市資訊</span>
           </h3>
           <div class="mb-3 text-center">
-            <UiButton data-action="open-store-map" class="store-select-btn">
+            <UiButton @click="handleOpenStoreMap" class="store-select-btn">
               <span class="tab-with-icon"><img src="../../../icons/map-route.png" alt="" class="ui-icon-inline">選擇門市</span>
             </UiButton>
             <p class="text-xs text-gray-500 mt-1">
@@ -315,10 +317,10 @@
                 <p class="text-xs text-gray-400" id="selected-store-id"></p>
               </div>
               <UiButton
-                data-action="clear-selected-store"
                 variant="ghost"
                 size="sm"
                 class="text-red-600 hover:text-red-700"
+                @click="handleClearSelectedStore"
               >
                 清除
               </UiButton>
@@ -384,8 +386,8 @@
           <div
             class="payment-option active"
             id="cod-option"
-            data-action="select-payment"
             data-method="cod"
+            @click="handleSelectPayment('cod')"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-cod-icon-display"><img src="../../../icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img"></div>
@@ -399,8 +401,8 @@
           <div
             class="payment-option hidden"
             id="linepay-option"
-            data-action="select-payment"
             data-method="linepay"
+            @click="handleSelectPayment('linepay')"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-linepay-icon-display"><img src="../../../icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img"></div>
@@ -420,8 +422,8 @@
           <div
             class="payment-option hidden"
             id="jkopay-option"
-            data-action="select-payment"
             data-method="jkopay"
+            @click="handleSelectPayment('jkopay')"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-jkopay-icon-display"><img src="../../../icons/payment-jkopay.png" alt="街口支付圖示" class="ui-icon-img"></div>
@@ -441,8 +443,8 @@
           <div
             class="payment-option hidden"
             id="transfer-option"
-            data-action="select-payment"
             data-method="transfer"
+            @click="handleSelectPayment('transfer')"
           >
             <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
             <div class="option-icon" id="po-transfer-icon-display"><img src="../../../icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img"></div>
@@ -807,8 +809,10 @@
             <span class="tab-with-icon"><ListOrdered class="ui-action-icon" aria-hidden="true" />我的訂單</span>
           </h3>
           <button
-            data-action="close-orders-modal"
+            type="button"
+            aria-label="關閉我的訂單"
             class="text-gray-500 hover:text-gray-700 text-2xl"
+            @click="handleCloseOrdersModal"
           >
             &times;
           </button>
@@ -826,6 +830,10 @@ import UiButton from "../components/ui/button/Button.vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import {
+  clearSelectedStore,
+  openStoreMap,
+} from "../../../js/delivery.js";
+import {
   addToCart,
   getCartSnapshot,
   removeCartItem,
@@ -837,6 +845,7 @@ import { getDefaultIconUrl } from "../../../js/icons.js";
 import {
   initMainApp,
   logoutCurrentUser,
+  selectPayment,
   showProfileModal,
   startMainLogin,
 } from "../../../js/main-app.js";
@@ -979,6 +988,10 @@ function submitOrderFromCart() {
   void submitOrder();
 }
 
+function handleCloseAnnouncement() {
+  document.getElementById("announcement-banner")?.classList.add("hidden");
+}
+
 function handleStorefrontLogin() {
   void startMainLogin();
 }
@@ -993,6 +1006,22 @@ function handleShowProfile() {
 
 function handleShowMyOrders() {
   void showMyOrders();
+}
+
+function handleCloseOrdersModal() {
+  document.getElementById("my-orders-modal")?.classList.add("hidden");
+}
+
+function handleSelectPayment(method) {
+  selectPayment(method);
+}
+
+function handleOpenStoreMap() {
+  void openStoreMap();
+}
+
+function handleClearSelectedStore() {
+  clearSelectedStore();
 }
 
 function handleProductsUpdated(event) {

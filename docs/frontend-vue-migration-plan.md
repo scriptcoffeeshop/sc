@@ -182,6 +182,7 @@ Initial storefront progress:
 
 - login / profile / my orders / logout entry controls already moved to Vue component event handlers
 - body-level click delegation is no longer required for those member-entry controls
+- payment selection, announcement close, my orders modal close, and transfer bank-account interactions no longer require body-level click delegation either
 
 ## Dashboard Decomposition Blueprint
 
