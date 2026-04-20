@@ -40,14 +40,45 @@
           >
         </div>
         <div>
-          <label class="block text-sm ui-text-strong mb-1">品牌 Icon（使用本地 icons/logo.png）</label>
-          <div class="flex gap-2 items-center">
+          <label class="block text-sm ui-text-strong mb-1">品牌自訂 Logo</label>
+          <div class="flex gap-3 items-center">
             <img
+              id="s-icon-preview"
               src="../../../../icons/logo.png"
               alt="品牌圖示"
-              class="icon-upload-preview"
+              class="w-10 h-10 rounded object-cover border shadow-sm"
             >
-            <span class="text-xs ui-text-muted">icons/logo.png</span>
+            <div class="flex flex-col gap-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <label
+                  for="s-site-icon-upload"
+                  class="btn-primary text-xs font-medium px-3 py-1.5 rounded transition shadow-sm cursor-pointer"
+                >
+                  點擊上傳新 Logo
+                </label>
+                <button
+                  type="button"
+                  data-action="reset-site-icon"
+                  class="text-xs ui-text-danger hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded transition"
+                >
+                  移除自訂
+                </button>
+              </div>
+              <div
+                id="s-icon-url-display"
+                class="text-xs ui-text-muted truncate max-w-[240px]"
+              >
+                未設定 (預設)
+              </div>
+            </div>
+            <input
+              type="file"
+              id="s-site-icon-upload"
+              class="hidden"
+              accept="image/png,image/jpeg,image/webp"
+              data-action="upload-site-icon"
+            >
+            <input type="hidden" id="s-site-icon-url">
           </div>
         </div>
       </div>

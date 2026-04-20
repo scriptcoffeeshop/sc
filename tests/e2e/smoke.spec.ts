@@ -330,6 +330,68 @@ async function installDashboardRoutes(
       return;
     }
 
+    if (action === "getSettings") {
+      await fulfillJson(route, {
+        success: true,
+        settings: {
+          site_title: "Script Coffee",
+          site_subtitle: "咖啡豆｜耳掛",
+          site_icon_emoji: "☕",
+          site_icon_url: "",
+          announcement_enabled: "false",
+          announcement: "",
+          order_confirmation_auto_email_enabled: "true",
+          is_open: "true",
+          products_section_title: "咖啡豆選購",
+          products_section_color: "#268BD2",
+          products_section_size: "text-lg",
+          products_section_bold: "true",
+          delivery_section_title: "配送方式",
+          delivery_section_color: "#268BD2",
+          delivery_section_size: "text-lg",
+          delivery_section_bold: "true",
+          notes_section_title: "訂單備註",
+          notes_section_color: "#268BD2",
+          notes_section_size: "text-base",
+          notes_section_bold: "true",
+          linepay_sandbox: "true",
+          delivery_options_config: JSON.stringify([
+            {
+              id: "delivery",
+              icon: "",
+              icon_url: "/icons/delivery_method.png",
+              name: "配送到府",
+              description: "新竹配送",
+              enabled: true,
+              fee: 60,
+              free_threshold: 999,
+              payment: {
+                cod: true,
+                linepay: true,
+                jkopay: true,
+                transfer: true,
+              },
+            },
+          ]),
+          payment_options_config: JSON.stringify({
+            cod: { icon: "", icon_url: "", name: "貨到/取貨付款", description: "到付" },
+            linepay: { icon: "", icon_url: "", name: "LINE Pay", description: "線上安全付款" },
+            jkopay: { icon: "", icon_url: "", name: "街口支付", description: "街口支付線上付款" },
+            transfer: { icon: "", icon_url: "", name: "線上轉帳", description: "ATM / 網銀匯款" },
+          }),
+        },
+      });
+      return;
+    }
+
+    if (action === "getBankAccounts") {
+      await fulfillJson(route, {
+        success: true,
+        accounts: [],
+      });
+      return;
+    }
+
     await fulfillJson(route, { success: true });
   });
 }
@@ -901,6 +963,31 @@ test.describe("smoke", () => {
       "background-color",
       "rgba(0, 0, 0, 0)",
     );
+  });
+
+  test("dashboard settings keeps delivery routing rows visible", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-settings").click();
+
+    const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
+    await expect(deliveryRows).toHaveCount(1);
+    await expect(deliveryRows.first().locator(".do-name")).toHaveValue("配送到府");
+    await expect(page.locator("#s-icon-url-display")).toContainText("未設定");
   });
 
   test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {

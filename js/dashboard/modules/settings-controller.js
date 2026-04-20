@@ -310,8 +310,10 @@ export function createSettingsController(deps) {
         settings.site_subtitle || "";
       document.getElementById("s-site-emoji").value =
         settings.site_icon_emoji || "";
-      document.getElementById("s-site-icon-url").value =
-        settings.site_icon_url || "";
+      const siteIconUrlInput = document.getElementById("s-site-icon-url");
+      if (siteIconUrlInput instanceof HTMLInputElement) {
+        siteIconUrlInput.value = settings.site_icon_url || "";
+      }
 
       const siteLogoFallbackUrl = deps.getDefaultIconUrl("brand");
       if (settings.site_icon_url) {
@@ -320,15 +322,18 @@ export function createSettingsController(deps) {
           rawUrl: settings.site_icon_url,
           fallbackUrl: siteLogoFallbackUrl,
         });
-        document.getElementById("s-icon-url-display").textContent = "自訂 Logo";
+        const iconUrlDisplay = document.getElementById("s-icon-url-display");
+        if (iconUrlDisplay) iconUrlDisplay.textContent = "自訂 Logo";
       } else {
         deps.updateIconPreview({
           previewId: "s-icon-preview",
           rawUrl: siteLogoFallbackUrl,
           fallbackUrl: siteLogoFallbackUrl,
         });
-        document.getElementById("s-icon-url-display").textContent =
-          "未設定 (預設)";
+        const iconUrlDisplay = document.getElementById("s-icon-url-display");
+        if (iconUrlDisplay) {
+          iconUrlDisplay.textContent = "未設定 (預設)";
+        }
       }
 
       document.getElementById("s-products-title").value =
@@ -480,7 +485,7 @@ export function createSettingsController(deps) {
             .trim(),
           site_icon_emoji: document.getElementById("s-site-emoji").value.trim(),
           site_icon_url: deps.normalizeIconPath(
-            document.getElementById("s-site-icon-url").value.trim(),
+            deps.readInputValue("s-site-icon-url"),
           ),
 
           products_section_title:
