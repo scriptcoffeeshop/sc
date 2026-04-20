@@ -1105,8 +1105,8 @@ test.describe("smoke", () => {
 
     await page.goto("/main.html");
 
-    const ordersButton = page.locator('[data-action="show-my-orders"]');
-    const profileButton = page.locator('[data-action="show-profile"]');
+    const ordersButton = page.getByRole("button", { name: "我的訂單" });
+    const profileButton = page.getByRole("button", { name: "會員資料" });
     const cartButton = page.locator('.bottom-bar > div:last-child > div button[type="button"]').first();
 
     const ordersIcon = ordersButton.locator("svg").first();
@@ -1232,7 +1232,7 @@ test.describe("smoke", () => {
     });
 
     await page.goto("/main.html");
-    await page.locator('[data-action="show-my-orders"]').click();
+    await page.getByRole("button", { name: "我的訂單" }).click();
     await expect(page.locator("#my-orders-modal")).toBeVisible();
 
     const copyButton = page.locator(
@@ -1281,7 +1281,7 @@ test.describe("smoke", () => {
       };
     });
 
-    await page.locator('[data-action="show-profile"]').click();
+    await page.getByRole("button", { name: "會員資料" }).click();
     await expect(page.locator(".swal2-popup")).toBeVisible();
 
     const ordersRadius = await page.locator("#my-orders-modal > div").evaluate(
@@ -1292,6 +1292,86 @@ test.describe("smoke", () => {
     );
 
     expect(profileRadius).toBe(ordersRadius);
+  });
+
+  test("storefront user controls work without body click delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
+      await fulfillJson(route, {
+        success: true,
+        orders: [
+          {
+            orderId: "MY002",
+            timestamp: "2026-03-02T00:00:00.000Z",
+            deliveryMethod: "home_delivery",
+            status: "processing",
+            lineName: "測試客戶",
+            city: "新竹市",
+            address: "測試路 2 號",
+            items: "測試豆 x2",
+            total: 440,
+            paymentMethod: "cod",
+            paymentStatus: "",
+          },
+        ],
+      });
+    });
+
+    await page.addInitScript(() => {
+      const originalAddEventListener = EventTarget.prototype.addEventListener;
+      (window as any).__blockedStorefrontBodyClickDelegation = 0;
+      EventTarget.prototype.addEventListener = function (
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document.body && type === "click") {
+          (window as any).__blockedStorefrontBodyClickDelegation += 1;
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const swalCalls: string[] = [];
+      (window as any).__storefrontSwalCalls = swalCalls;
+      (window as any).Swal.fire = async (options: any) => {
+        swalCalls.push(String(options?.title || options || ""));
+        return { isConfirmed: false, value: null };
+      };
+
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
+    ).toBeGreaterThan(0);
+
+    await page.getByRole("button", { name: "會員資料" }).click();
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__storefrontSwalCalls || [])
+    ).toContain("會員資料");
+
+    await page.getByRole("button", { name: "我的訂單" }).click();
+    await expect(page.locator("#my-orders-modal")).toBeVisible();
+    await page.locator("#my-orders-modal").evaluate((element) => {
+      element.classList.add("hidden");
+    });
+
+    await page.getByRole("button", { name: "登出" }).click();
+    await expect(page.locator("#login-prompt")).toBeVisible();
+    await expect(page.locator("#user-info")).toHaveClass(/hidden/);
   });
 
   test("storefront submit order happy path works", async ({ page }) => {

@@ -36,7 +36,7 @@
         <div id="login-prompt" class="text-center">
           <p class="text-gray-600 mb-3">請先使用 LINE 帳號登入以進行訂購</p>
           <UiButton
-            data-action="login-with-line"
+            @click="handleStorefrontLogin"
             class="h-11 px-6 bg-[#06c755] hover:bg-[#05b84e]"
           >
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -59,21 +59,21 @@
             <p id="user-display-name" class="font-semibold text-gray-700"></p>
           </div>
           <button
-            data-action="show-my-orders"
+            @click="handleShowMyOrders"
             class="inline-flex items-center text-sm font-medium leading-none"
             style="color: var(--primary)"
           >
             <span class="tab-with-icon"><ListOrdered class="ui-action-icon" aria-hidden="true" />我的訂單</span>
           </button>
           <button
-            data-action="show-profile"
+            @click="handleShowProfile"
             class="inline-flex items-center text-sm font-medium leading-none"
             style="color: var(--primary)"
           >
             <span class="tab-with-icon"><UserRound class="ui-action-icon" aria-hidden="true" />會員資料</span>
           </button>
           <button
-            data-action="logout"
+            @click="handleStorefrontLogout"
             class="text-sm text-gray-500 hover:text-red-500"
           >
             登出
@@ -834,8 +834,13 @@ import {
   updateCartItemQtyByKeys,
 } from "../../../js/cart.js";
 import { getDefaultIconUrl } from "../../../js/icons.js";
-import { initMainApp } from "../../../js/main-app.js";
-import { submitOrder } from "../../../js/orders.js";
+import {
+  initMainApp,
+  logoutCurrentUser,
+  showProfileModal,
+  startMainLogin,
+} from "../../../js/main-app.js";
+import { showMyOrders, submitOrder } from "../../../js/orders.js";
 import { getProductsViewModel } from "../../../js/products.js";
 
 const originalBodyClass = document.body.className;
@@ -972,6 +977,22 @@ function toggleCartDrawer() {
 function submitOrderFromCart() {
   toggleCart();
   void submitOrder();
+}
+
+function handleStorefrontLogin() {
+  void startMainLogin();
+}
+
+function handleStorefrontLogout() {
+  logoutCurrentUser();
+}
+
+function handleShowProfile() {
+  void showProfileModal();
+}
+
+function handleShowMyOrders() {
+  void showMyOrders();
 }
 
 function handleProductsUpdated(event) {

@@ -69,9 +69,8 @@ const actionHandlers = {
   },
   "show-my-orders": () => showMyOrders(),
   "show-profile": () => showProfileModal(),
-  "login-with-line": () =>
-    loginWithLine(LINE_REDIRECT.main, "coffee_line_state"),
-  "logout": () => window.logout(),
+  "login-with-line": () => startMainLogin(),
+  "logout": () => logoutCurrentUser(),
   "close-announcement": () =>
     document.getElementById("announcement-banner").classList.add("hidden"),
   "close-orders-modal": () =>
@@ -300,7 +299,7 @@ function prefillUserFields() {
 }
 
 /** 顯示會員資料編輯彈窗 */
-async function showProfileModal() {
+export async function showProfileModal() {
   if (!state.currentUser) return;
   const u = state.currentUser;
 
@@ -432,7 +431,7 @@ async function showProfileModal() {
   }
 }
 
-window.logout = function () {
+export function logoutCurrentUser() {
   state.currentUser = null;
   localStorage.removeItem("coffee_user");
   localStorage.removeItem("coffee_jwt");
@@ -445,7 +444,11 @@ window.logout = function () {
   if (phoneEl) phoneEl.value = "";
   if (emailEl) emailEl.value = "";
   updateFormState();
-};
+}
+
+export function startMainLogin() {
+  return loginWithLine(LINE_REDIRECT.main, "coffee_line_state");
+}
 
 let quoteRefreshTimer = null;
 let latestQuoteRequestId = 0;

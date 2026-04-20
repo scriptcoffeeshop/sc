@@ -178,6 +178,11 @@ After dashboard stabilizes, apply the same policy to:
 
 The dashboard migration should establish the repeatable pattern for storefront migration.
 
+Initial storefront progress:
+
+- login / profile / my orders / logout entry controls already moved to Vue component event handlers
+- body-level click delegation is no longer required for those member-entry controls
+
 ## Dashboard Decomposition Blueprint
 
 Create a feature-oriented structure under `frontend/src/features/dashboard/`.

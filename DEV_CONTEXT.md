@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`118`
+- 目前前端版號：`119`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -51,7 +51,7 @@
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.js`，`js/dashboard-app.js` 現在只剩薄相容殼
-- 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分。
+- 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分；其中登入／我的訂單／會員資料／登出入口已先改成 Vue 元件事件直連，不再必須依賴 body-level click delegation。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
 ### 後端演進
