@@ -6,6 +6,7 @@ import {
   createLinePayCallbackSignature,
   getEmailBranding,
   isOrderConfirmationAutoEmailEnabled,
+  normalizeCustomFields,
   normalizeReceiptInfo,
   type OrderCreatedLineNotifyParams,
   persistOrderCreatedLineNotifyResult,
@@ -77,6 +78,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     return { success: false, error: "電話格式不正確" };
   }
   const receiptInfo = normalizeReceiptInfo(data.receiptInfo);
+  const customFields = normalizeCustomFields(data.customFields);
 
   const now = new Date();
   const idempotencyKey = String(data.idempotencyKey || "").trim();
@@ -96,6 +98,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     phone,
     email: String(data.email || "").trim(),
     items: ordersText,
+    items_json: quote.items,
     total,
     delivery_method: deliveryMethod,
     city: data.city || "",
@@ -111,8 +114,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     store_address: data.storeAddress || "",
     status: "pending",
     note: data.note || "",
-    custom_fields: data.customFields || "",
-    receipt_info: receiptInfo ? JSON.stringify(receiptInfo) : "",
+    custom_fields: customFields,
     payment_method: paymentMethod,
     payment_status: paymentMethod === "cod" ? "" : "pending",
     transfer_account_last5: paymentMethod === "transfer"
@@ -122,6 +124,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       ? String(data.transferTargetAccount || "")
       : "",
   };
+  if (receiptInfo) insertPayload.receipt_info = receiptInfo;
   if (idempotencyKey) insertPayload.idempotency_key = idempotencyKey;
 
   const { error } = await supabase.from("coffee_orders").insert(insertPayload);
@@ -148,7 +151,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         storeId: String(data.storeId || ""),
         storeName: String(data.storeName || ""),
         storeAddress: String(data.storeAddress || ""),
-        defaultCustomFields: String(data.customFields || "").trim() || "{}",
+        defaultCustomFields: customFields,
         paymentMethod,
         transferAccountLast5: paymentMethod === "transfer"
           ? String(data.transferAccountLast5 || "")

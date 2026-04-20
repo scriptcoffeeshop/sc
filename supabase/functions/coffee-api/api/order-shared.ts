@@ -17,6 +17,8 @@ export interface ReceiptInfo {
   needDateStamp: boolean;
 }
 
+export type CustomFields = Record<string, string>;
+
 interface EmailBranding {
   siteTitle: string;
   siteLogoUrl: string;
@@ -73,6 +75,60 @@ export function parseReceiptInfo(raw: unknown): ReceiptInfo | null {
   return normalizeReceiptInfo(raw);
 }
 
+function normalizeCustomFieldValue(value: unknown): string {
+  if (value === undefined || value === null) return "";
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeCustomFieldValue(item))
+      .filter(Boolean)
+      .join(", ");
+  }
+  if (typeof value === "object") {
+    const json = JSON.stringify(value);
+    return json === "{}" ? "" : json;
+  }
+  return String(value).trim();
+}
+
+export function parseCustomFieldsRecord(
+  raw: unknown,
+): CustomFields | null {
+  if (raw === null || raw === undefined) return {};
+
+  let parsed = raw;
+  if (typeof raw === "string") {
+    const str = raw.trim();
+    if (!str) return {};
+    try {
+      parsed = JSON.parse(str);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+
+  const normalized: CustomFields = {};
+  for (
+    const [key, value] of Object.entries(parsed as Record<string, unknown>)
+  ) {
+    const normalizedKey = String(key || "").trim();
+    if (!normalizedKey) continue;
+    const normalizedValue = normalizeCustomFieldValue(value);
+    if (!normalizedValue) continue;
+    normalized[normalizedKey] = normalizedValue;
+  }
+
+  return normalized;
+}
+
+export function normalizeCustomFields(raw: unknown): CustomFields {
+  return parseCustomFieldsRecord(raw) ?? {};
+}
+
 export function buildReceiptHtml(receiptInfo: ReceiptInfo | null): string {
   if (!receiptInfo) return "";
   return `<p style="margin: 0 0 10px 0;"><strong>收據資訊：</strong><br>
@@ -107,21 +163,12 @@ export function stripLegacyReceiptBlock(
 export async function buildCustomFieldsHtml(
   rawCustomFields: unknown,
 ): Promise<string> {
-  const raw = rawCustomFields === undefined || rawCustomFields === null
-    ? ""
-    : String(rawCustomFields).trim();
-  if (!raw) return "";
-
-  let parsedFields: Record<string, unknown> = {};
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
-        sanitize(raw)
-      }</p>`;
-    }
-    parsedFields = { ...(parsed as Record<string, unknown>) };
-  } catch {
+  const parsedFields = parseCustomFieldsRecord(rawCustomFields);
+  if (parsedFields === null) {
+    const raw = typeof rawCustomFields === "string"
+      ? rawCustomFields.trim()
+      : "";
+    if (!raw) return "";
     return `<p style="margin: 0 0 10px 0;"><strong>其他資訊：</strong> ${
       sanitize(raw)
     }</p>`;

@@ -11,7 +11,7 @@
     "check": "cd supabase/functions/coffee-api && deno check index.ts",
     "test": "cd supabase/functions/coffee-api && JWT_SECRET=mock SUPABASE_URL=https://mock.supabase.co SUPABASE_SERVICE_ROLE_KEY=mock deno test --allow-env --allow-net --allow-read tests/",
     "e2e": "npx playwright test tests/e2e/smoke.spec.ts --config=playwright.config.ts",
-    "guardrails": "python3 scripts/repo_hygiene_check.py && python3 scripts/check_dashboard_event_delegation.py && python3 scripts/check_main_event_delegation.py && python3 scripts/sync_frontend_version.py --check",
+    "guardrails": "python3 scripts/repo_hygiene_check.py && python3 scripts/check_migration_names.py && python3 scripts/check_dashboard_event_delegation.py && python3 scripts/check_main_event_delegation.py && python3 scripts/sync_frontend_version.py --check",
     "ci-local": "npm run guardrails && npm run fmt:check && npm run lint && npm run check && npm run test",
     "deploy": "bash scripts/supabase_deploy.sh",
     "supabase:deploy": "bash scripts/supabase_deploy.sh",

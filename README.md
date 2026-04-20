@@ -40,6 +40,10 @@
   - 業務邏輯放入 `api/`，工具函數放入 `utils/`，並在 `index.ts` 集中分派。
   - 所有寫入操作 (Mutation) 必須透過 **Zod Schema** 進行驗證。
   - API 必須支援分頁 (`limit`/`offset`) 與搜尋下推至資料庫層級。
+- **Migration 命名**：
+  - 新增 `supabase/migrations/*.sql` 時，檔名統一使用 `YYYYMMDDHHmm_slug.sql`。
+  - 已上線或已套用的歷史 migration **不可為了統一命名而回改檔名**。
+  - 可透過 `npm run guardrails` 檢查命名是否符合規範。
 
 ## 4. 維護流程
 

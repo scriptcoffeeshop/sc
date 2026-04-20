@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   line_user_id TEXT DEFAULT '',
   line_name TEXT NOT NULL,
   phone TEXT NOT NULL,
-  items TEXT NOT NULL,
+  items TEXT NOT NULL,                  -- 人類可讀的訂單摘要
+  items_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   total INT NOT NULL DEFAULT 0,
   delivery_method TEXT NOT NULL DEFAULT 'delivery',
   -- 配送相關
@@ -49,8 +50,8 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   note TEXT DEFAULT '',
   cancel_reason TEXT DEFAULT '',
   email TEXT DEFAULT '',
-  custom_fields TEXT DEFAULT '',
-  receipt_info TEXT DEFAULT '',
+  custom_fields JSONB DEFAULT '{}'::jsonb,
+  receipt_info JSONB DEFAULT 'null'::jsonb,
   payment_status TEXT DEFAULT '',
   payment_id TEXT DEFAULT '',
   payment_expires_at TIMESTAMPTZ,

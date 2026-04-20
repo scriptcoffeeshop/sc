@@ -99,6 +99,9 @@
 - 對齊會員資料彈窗導角。
 - 修正後台手機版頁籤顯示。
 - 統一前後台固定 icon 的尺寸、顏色與對齊，legacy 入口也已換成向量 icon。
+- `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
+- `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
+- 新增 `scripts/check_migration_names.py`，未來 migration 檔名統一為 `YYYYMMDDHHmm_slug.sql`；歷史 migration 不回改。
 - 新增 repo hygiene 防線：
   - `scripts/repo_hygiene_check.py`
   - `.env.staging.example`

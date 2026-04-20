@@ -1,5 +1,6 @@
 import { assertEquals, assertStringIncludes } from "@std/assert";
 import app from "../index.ts";
+import { buildCustomFieldsHtml } from "../api/order-shared.ts";
 import { signJwt } from "../utils/auth.ts";
 import { withMockedSupabaseTables } from "./test-support.ts";
 
@@ -181,6 +182,16 @@ Deno.test({
             deliveryMethod: "in_store",
             paymentMethod: "cod",
             note: "少冰",
+            customFields: JSON.stringify({
+              grind: "手沖研磨",
+              roast: "中焙",
+            }),
+            receiptInfo: {
+              buyer: "測試公司",
+              taxId: "12345678",
+              address: "新竹市東區測試路 1 號",
+              needDateStamp: true,
+            },
           },
         }),
       );
@@ -197,9 +208,28 @@ Deno.test({
       assertEquals(order.payment_method, "cod");
       assertEquals(order.total, 220 * 2);
       assertEquals(order.status, "pending");
+      assertEquals(order.items_json, [{
+        productId: 101,
+        productName: "測試配方豆",
+        specKey: "",
+        specLabel: "",
+        qty: 2,
+        unitPrice: 220,
+        lineTotal: 440,
+      }]);
       assertStringIncludes(String(order.items || ""), "測試配方豆 x 2");
       assertStringIncludes(String(order.items || ""), "運費: $0");
       assertEquals(String(order.note || ""), "少冰");
+      assertEquals(order.custom_fields, {
+        grind: "手沖研磨",
+        roast: "中焙",
+      });
+      assertEquals(order.receipt_info, {
+        buyer: "測試公司",
+        taxId: "12345678",
+        address: "新竹市東區測試路 1 號",
+        needDateStamp: true,
+      });
       assertEquals(String(order.id || ""), String(payload.orderId));
 
       const updatedUser = tables.coffee_users.find((row) =>
@@ -209,6 +239,48 @@ Deno.test({
       assertEquals(updatedUser?.phone, "0912345678");
       assertEquals(updatedUser?.default_payment_method, "cod");
       assertEquals(updatedUser?.default_delivery_method, "in_store");
+      assertEquals(
+        updatedUser?.default_custom_fields,
+        JSON.stringify({
+          grind: "手沖研磨",
+          roast: "中焙",
+        }),
+      );
+      assertEquals(
+        updatedUser?.default_receipt_info,
+        JSON.stringify({
+          buyer: "測試公司",
+          taxId: "12345678",
+          address: "新竹市東區測試路 1 號",
+          needDateStamp: true,
+        }),
+      );
+    });
+  },
+});
+
+Deno.test({
+  name: "Order Shared - buildCustomFieldsHtml accepts JSONB objects",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_form_fields: [{
+        field_key: "grind",
+        label: "研磨方式",
+        enabled: true,
+        sort_order: 1,
+      }],
+    }, async () => {
+      const html = await buildCustomFieldsHtml({
+        grind: "手沖研磨",
+        roast: "中焙",
+      });
+
+      assertStringIncludes(html, "研磨方式");
+      assertStringIncludes(html, "手沖研磨");
+      assertStringIncludes(html, "roast");
+      assertStringIncludes(html, "中焙");
     });
   },
 });
