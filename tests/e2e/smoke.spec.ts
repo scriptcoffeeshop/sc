@@ -299,6 +299,8 @@ type DashboardRouteOptions = {
   onAdminLineLogin?: (request: PlaywrightRequest) => void;
   onUpdateSettings?: (request: PlaywrightRequest) => void;
   onUploadAsset?: (request: PlaywrightRequest) => void;
+  onSendLineFlexMessage?: (request: PlaywrightRequest) => void;
+  onSendOrderEmail?: (request: PlaywrightRequest) => void;
   uploadAssetUrl?: string;
   categories?: Array<{
     id: number;
@@ -713,6 +715,21 @@ async function installDashboardRoutes(
           : order
       );
       await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "sendLineFlexMessage") {
+      options.onSendLineFlexMessage?.(request);
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "sendOrderEmail") {
+      options.onSendOrderEmail?.(request);
+      await fulfillJson(route, {
+        success: true,
+        message: "信件已發送",
+      });
       return;
     }
 
@@ -1881,6 +1898,54 @@ test.describe("smoke", () => {
       .click();
     await expect(page.locator("#product-modal")).toBeVisible();
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
+  });
+
+  test("dashboard order notification actions still work after controller split", async ({ page }) => {
+    await installGlobalStubs(page);
+
+    let lineFlexCalls = 0;
+    let emailCalls = 0;
+    let lineFlexPayload: Record<string, any> | null = null;
+    let emailPayload: Record<string, any> | null = null;
+
+    await installDashboardRoutes(page, {
+      onSendLineFlexMessage: (request) => {
+        lineFlexCalls += 1;
+        lineFlexPayload = request.postDataJSON() as Record<string, any>;
+      },
+      onSendOrderEmail: (request) => {
+        emailCalls += 1;
+        emailPayload = request.postDataJSON() as Record<string, any>;
+      },
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+
+    const orderRow = page.locator("#orders-list > div").filter({ hasText: "#ORD001" });
+    await orderRow.getByRole("button", { name: "LINE通知" }).click();
+    await expect.poll(() => lineFlexCalls).toBe(1);
+    expect(lineFlexPayload?.orderId).toBe("ORD001");
+    expect(lineFlexPayload?.to).toBe("customer-line-1");
+    expect(String(lineFlexPayload?.flexMessage?.altText || "")).toContain(
+      "[Script Coffee] 訂單 #ORD001 待處理",
+    );
+
+    await orderRow.getByRole("button", { name: "發送信件" }).click();
+    await expect.poll(() => emailCalls).toBe(1);
+    expect(emailPayload?.userId).toBe("admin-1");
+    expect(emailPayload?.orderId).toBe("ORD001");
   });
 
   test("dashboard mobile tab strip keeps sidebar styling", async ({ page }) => {

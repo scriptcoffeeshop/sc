@@ -30,7 +30,7 @@ This creates three concrete problems:
 2. Payment, order, and admin flows can drift out of sync.
 3. Remaining large dashboard sections can still become difficult to review if they are allowed to grow back into monoliths.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, and `DashboardOrdersSection.vue` is now only a 31-line shell; both large sections are split into focused child components.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and `order-notifications-controller.js` is now only a 29-line orchestrator backed by smaller notification modules.
 
 ## Current Progress Snapshot
 
@@ -53,6 +53,7 @@ As of 2026-04-21:
   - `DashboardOrdersSection.vue`: 31 lines
   - settings cards: branding, section titles, storefront status, delivery/payment routing, payment options, bank accounts
   - orders subcomponents: toolbar, order card
+  - notification modules: flex payload builder, flex controller, email controller
 - Remaining legacy-heavy areas:
   - maintenance-only legacy `dashboard.html` / root entrypoint
   - compatibility wrapper `js/dashboard-app.js`

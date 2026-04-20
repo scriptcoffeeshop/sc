@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`125`
+- 目前前端版號：`126`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -112,7 +112,9 @@
 
 - `DashboardSettingsSection.vue` 已由 979 行巨型單檔拆成 39 行組裝層，並新增六個設定卡片元件：branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts。
 - `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
-- 前端快取版號更新為 `125`。
+- `js/dashboard/modules/order-notifications-controller.js` 已縮成 29 行協調層，Flex payload、Flex 歷史與 Email 發送拆到獨立模組，站名來源也改走 dashboard settings state，不再直接讀 `#s-site-title` DOM。
+- E2E 新增通知 smoke，驗證後台訂單卡的 `LINE通知` / `發送信件` 仍會打到正確 API。
+- 前端快取版號更新為 `126`。
 
 ### 2026-04-20
 
