@@ -60,17 +60,17 @@
           </div>
           <button
             data-action="show-my-orders"
-            class="text-sm font-medium"
+            class="inline-flex items-center text-sm font-medium leading-none"
             style="color: var(--primary)"
           >
-            <span class="tab-with-icon"><img src="../../../icons/orders-list.png" alt="" class="ui-icon-inline">我的訂單</span>
+            <span class="tab-with-icon"><ListOrdered class="ui-action-icon" aria-hidden="true" />我的訂單</span>
           </button>
           <button
             data-action="show-profile"
-            class="text-sm font-medium"
+            class="inline-flex items-center text-sm font-medium leading-none"
             style="color: var(--primary)"
           >
-            <span class="tab-with-icon"><img src="../../../icons/profile-user.png" alt="" class="ui-icon-inline">會員資料</span>
+            <span class="tab-with-icon"><UserRound class="ui-action-icon" aria-hidden="true" />會員資料</span>
           </button>
           <button
             data-action="logout"
@@ -629,10 +629,10 @@
         <div class="flex gap-2">
           <button
             type="button"
-            class="relative bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm hover:bg-amber-100 transition-colors"
+            class="relative inline-flex items-center bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm leading-none hover:bg-amber-100 transition-colors"
             @click.prevent="toggleCartDrawer"
           >
-            <span class="tab-with-icon"><img src="../../../icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span> <span
+            <span class="tab-with-icon"><ShoppingCart class="ui-action-icon" aria-hidden="true" />購物車</span> <span
               id="cart-badge"
               class="hidden ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center"
             >0</span>
@@ -659,7 +659,7 @@
         style="border-color: #f0e6db"
       >
         <h3 class="text-lg font-bold" style="color: var(--primary)">
-          <span class="tab-with-icon"><img src="../../../icons/cart-bag.png" alt="" class="ui-icon-inline">購物車</span>
+          <span class="tab-with-icon"><ShoppingCart class="ui-action-icon" aria-hidden="true" />購物車</span>
         </h3>
         <button
           class="text-gray-500 hover:text-gray-700 text-2xl"
@@ -804,7 +804,7 @@
       >
         <div class="p-4 border-b flex justify-between items-center">
           <h3 class="text-lg font-bold" style="color: var(--primary)">
-            <span class="tab-with-icon"><img src="../../../icons/orders-list.png" alt="" class="ui-icon-inline">我的訂單</span>
+            <span class="tab-with-icon"><ListOrdered class="ui-action-icon" aria-hidden="true" />我的訂單</span>
           </h3>
           <button
             data-action="close-orders-modal"
@@ -821,6 +821,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { ListOrdered, ShoppingCart, UserRound } from "lucide-vue-next";
 import UiButton from "../components/ui/button/Button.vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";

@@ -389,6 +389,57 @@ test.describe("smoke", () => {
     ).toBe("mock-customer-token");
   });
 
+  test("storefront action icons use vector sizing and currentColor", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+
+    const ordersButton = page.locator('[data-action="show-my-orders"]');
+    const profileButton = page.locator('[data-action="show-profile"]');
+    const cartButton = page.locator('.bottom-bar > div:last-child > div button[type="button"]').first();
+
+    const ordersIcon = ordersButton.locator("svg").first();
+    const profileIcon = profileButton.locator("svg").first();
+    const cartIcon = cartButton.locator("svg").first();
+
+    await expect(ordersIcon).toBeVisible();
+    await expect(profileIcon).toBeVisible();
+    await expect(cartIcon).toBeVisible();
+
+    await expect(ordersIcon).toHaveCSS("width", "20px");
+    await expect(profileIcon).toHaveCSS("width", "20px");
+    await expect(cartIcon).toHaveCSS("width", "20px");
+
+    const ordersButtonColor = await ordersButton.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+    const ordersIconColor = await ordersIcon.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+    const cartButtonColor = await cartButton.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+    const cartIconColor = await cartIcon.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+
+    expect(ordersIconColor).toBe(ordersButtonColor);
+    expect(cartIconColor).toBe(cartButtonColor);
+  });
+
   test("storefront path works with event delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
@@ -850,6 +901,51 @@ test.describe("smoke", () => {
       "background-color",
       "rgba(0, 0, 0, 0)",
     );
+  });
+
+  test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+
+    const activeTab = page.locator("#tab-orders");
+    const inactiveTab = page.locator("#tab-products");
+    const activeIcon = activeTab.locator("svg").first();
+    const inactiveIcon = inactiveTab.locator("svg").first();
+
+    await expect(activeIcon).toBeVisible();
+    await expect(inactiveIcon).toBeVisible();
+    await expect(activeIcon).toHaveCSS("width", "18px");
+    await expect(inactiveIcon).toHaveCSS("width", "18px");
+
+    const activeTabColor = await activeTab.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+    const activeIconColor = await activeIcon.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+    const inactiveTabColor = await inactiveTab.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+    const inactiveIconColor = await inactiveIcon.evaluate((element) =>
+      getComputedStyle(element).color
+    );
+
+    expect(activeIconColor).toBe(activeTabColor);
+    expect(inactiveIconColor).toBe(inactiveTabColor);
   });
 
   test("dashboard LINE login callback uses POST", async ({ page }) => {

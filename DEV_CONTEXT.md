@@ -55,6 +55,14 @@
   - 前端版本已升級至 `v=101`，確保後台頁籤樣式修正不被舊快取覆蓋。
 - Dashboard smoke：
   - `tests/e2e/smoke.spec.ts` 新增手機版後台頁籤檢查，鎖住 sidebar 背景與 inactive tab 透明底樣式。
+- 全站 icon 對齊與色彩一致化：
+  - `css/common.css` 調整共用 icon 規則，將 `tab-with-icon` 與 icon 元素分離，避免圖片 icon 被當成 `inline-flex` 容器造成 baseline / 尺寸怪異。
+  - 新增 `ui-action-icon` / `ui-tab-icon`，統一固定操作 icon 的尺寸、線寬與 `currentColor` 行為。
+  - 前台固定操作 icon（會員資料、我的訂單、購物車）與後台頁籤 icon 改用 Lucide 向量 icon；可客製的區塊 / 品牌 / 金流 icon 保持圖片型態，避免影響設定功能。
+- 快取版號再次更新：
+  - 前端版本已升級至 `v=102`，確保 icon 系統修正能確實覆蓋舊快取。
+- Icon smoke：
+  - `tests/e2e/smoke.spec.ts` 新增前台與後台的向量 icon 檢查，鎖住固定操作 icon 的尺寸與 `currentColor` 對齊。
 
 ### 2026-04-19
 

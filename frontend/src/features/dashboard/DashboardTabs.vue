@@ -7,7 +7,7 @@
           data-tab="orders"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('orders')" alt="" class="ui-icon-inline">訂單管理</span>
+          <span class="tab-with-icon"><ListOrdered class="ui-tab-icon" aria-hidden="true" />訂單管理</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="products" as-child>
@@ -16,7 +16,7 @@
           data-tab="products"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('products')" alt="" class="ui-icon-inline">商品管理</span>
+          <span class="tab-with-icon"><Package class="ui-tab-icon" aria-hidden="true" />商品管理</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="categories" as-child>
@@ -25,7 +25,7 @@
           data-tab="categories"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('categories')" alt="" class="ui-icon-inline">分類管理</span>
+          <span class="tab-with-icon"><FolderOpen class="ui-tab-icon" aria-hidden="true" />分類管理</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="promotions" as-child>
@@ -34,7 +34,7 @@
           data-tab="promotions"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('promotions')" alt="" class="ui-icon-inline">促銷活動</span>
+          <span class="tab-with-icon"><Gift class="ui-tab-icon" aria-hidden="true" />促銷活動</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="settings" as-child>
@@ -43,7 +43,7 @@
           data-tab="settings"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('settings')" alt="" class="ui-icon-inline">系統設定</span>
+          <span class="tab-with-icon"><Settings class="ui-tab-icon" aria-hidden="true" />系統設定</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="icon-library" as-child>
@@ -52,7 +52,7 @@
           data-tab="icon-library"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('section')" alt="" class="ui-icon-inline">Icon 素材庫</span>
+          <span class="tab-with-icon"><Images class="ui-tab-icon" aria-hidden="true" />Icon 素材庫</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="formfields" as-child>
@@ -61,7 +61,7 @@
           data-tab="formfields"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('form')" alt="" class="ui-icon-inline">表單管理</span>
+          <span class="tab-with-icon"><FileText class="ui-tab-icon" aria-hidden="true" />表單管理</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="users" as-child>
@@ -70,7 +70,7 @@
           data-tab="users"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('users')" alt="" class="ui-icon-inline">用戶管理</span>
+          <span class="tab-with-icon"><Users class="ui-tab-icon" aria-hidden="true" />用戶管理</span>
         </button>
       </TabsTrigger>
       <TabsTrigger value="blacklist" as-child>
@@ -79,7 +79,7 @@
           data-tab="blacklist"
           class="px-4 py-2 rounded-lg text-sm font-medium ui-text-strong whitespace-nowrap"
         >
-          <span class="tab-with-icon"><img :src="getDefaultIconUrl('blacklist')" alt="" class="ui-icon-inline">黑名單</span>
+          <span class="tab-with-icon"><ShieldAlert class="ui-tab-icon" aria-hidden="true" />黑名單</span>
         </button>
       </TabsTrigger>
     </TabsList>
@@ -87,6 +87,16 @@
 </template>
 
 <script setup>
+import {
+  FileText,
+  FolderOpen,
+  Gift,
+  Images,
+  ListOrdered,
+  Package,
+  Settings,
+  ShieldAlert,
+  Users,
+} from "lucide-vue-next";
 import { TabsList, TabsRoot, TabsTrigger } from "reka-ui";
-import { getDefaultIconUrl } from "../../../../js/icons.js";
 </script>
