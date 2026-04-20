@@ -73,10 +73,8 @@
 
 ### Repo hygiene / 金鑰風險
 
-- `.env.staging` 雖已從目前追蹤移除，但 git 歷史仍可在以下 commit 看到：
-  - `2a6515f`
-  - `5032df5`
-- 代表當時出現過的真實金鑰必須視為已外洩，應先完成輪替，再做歷史清理。
+- `.env.staging` 的 git 歷史清理已完成，舊 commit SHA 已不再是目前可達歷史的一部分。
+- 但當時出現過的真實金鑰仍必須視為已外洩；剩餘的 P0 是「完成各平台金鑰輪替」，不是再次做 history rewrite。
 - 清理流程請看 `docs/repo-hygiene.md`。
 
 ### 自動部署限制

@@ -8,18 +8,18 @@
 
 ## 本專案已知風險
 
-- `.env.staging` 雖已從目前追蹤移除，但 git 歷史仍可在 `2a6515f`、`5032df5` 看到該檔案。
-- 這代表當時寫入 `.env.staging` 的所有真實金鑰，都必須視為已外洩並完成輪替。
+- `.env.staging` 已於 2026-04-20 完成 git 歷史清理，不再存在於目前可達 commit history。
+- 但曾經出現在 `.env.staging` 的真實金鑰仍必須視為已外洩，必須完成輪替；歷史清理不等於金鑰自動恢復安全。
 
 ## 建議處理順序
 
 1. 先輪替 `.env.staging` 中曾出現的所有金鑰與密碼。
 2. 確認 GitHub Secrets、Supabase Secrets、第三方平台憑證都已更新。
-3. 再進行 git 歷史清理。
+3. 若要驗證歷史清理狀態，可執行 `git rev-list --all -- .env.staging`，正常情況應無輸出。
 
-## 歷史清理建議
+## 歷史清理狀態
 
-以下操作會改寫 commit history，必須通知所有協作者，並在執行後使用 `force-with-lease` 推送：
+- 歷史清理已完成，執行方式為：
 
 ```bash
 python3 -m git_filter_repo --path .env.staging --invert-paths
@@ -27,7 +27,8 @@ git push --force-with-lease origin main
 git push --force-with-lease --tags
 ```
 
-如果本機尚未安裝 `git-filter-repo`，可先安裝：
+- 後續不應再重做一次同樣的歷史清理，除非又有新的敏感檔進入版本庫。
+- 若本機尚未安裝 `git-filter-repo`，可先安裝：
 
 ```bash
 python3 -m pip install git-filter-repo
