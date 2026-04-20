@@ -32,6 +32,11 @@
 
 ### 2026-04-20
 
+- Repo hygiene 補強：
+  - 新增 `scripts/repo_hygiene_check.py`，guardrails 會阻擋 `.env*` 敏感檔與 `supabase/.temp/` 暫存檔被追蹤。
+  - 新增 `.env.staging.example`、`.env.supabase.local.example`，把本機敏感 env 使用方式改成「範本進 git、真值只留本機」。
+  - `supabase/.temp/` 已加入 `.gitignore`，並從 git 追蹤中移除。
+  - 新增 `docs/repo-hygiene.md`，記錄 `.env.staging` 歷史風險、金鑰輪替與 `git filter-repo` 清理流程。
 - 前台配色回復舊版暖色系：
   - `css/common.css` 與 `css/main.css` 的 storefront token / 卡片 / 按鈕 / 選項卡樣式恢復為原本的暖棕與米白系，不再沿用灰藍 slate palette。
   - `login`、配送地址、超商門市、來店取貨、轉帳資訊等分色區塊重新對回舊版底色與邊框色。

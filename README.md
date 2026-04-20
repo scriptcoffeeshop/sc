@@ -27,6 +27,11 @@
   - 新增互動時，請在 `actionHandlers` (前台) 或 `initializeDashboardEventDelegation` (後台) 的 `switch` 中註冊新動作。
 - **SRI 與 E2E 測試相容性**：HTML 使用了 SRI (`integrity`)。在進行 Playwright 測試時，若需 mock 腳本，必須透過 `installGlobalStubs` 動態移除 `integrity` 屬性，避免瀏覽器阻擋載入。
 - **Vite 整合**：雖然專案包含 legacy 資源，但打包與啟動流程已由 Vite 接管。請透過 `npm run dev` 或 `npm run build` 進行開發與建構。
+- **Repo 衛生規則**：
+  - `supabase/.temp/` 屬於 Supabase CLI 本機暫存資料，現在由 `.gitignore` 忽略，不應提交。
+  - `.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；請使用 `.env.staging.example`、`.env.supabase.local.example` 作為範本。
+  - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
+  - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
 
 ## 3. 後端與資料庫規範 (Deno & Supabase)
 
