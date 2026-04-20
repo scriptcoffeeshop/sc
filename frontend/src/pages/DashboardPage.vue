@@ -60,7 +60,7 @@
       @update:keyword="iconLibraryKeyword = $event"
       @select-category="selectIconLibraryCategory"
     />
-    <DashboardFormFieldsSection :form-fields-view="formFieldsView" />
+    <DashboardFormFieldsSection />
     <DashboardUsersSection :users-view="usersView" />
     <DashboardBlacklistSection :blacklist-view="blacklistView" />
 
@@ -94,7 +94,6 @@ const brandIconUrl = getDefaultIconUrl("brand");
 const originalBodyClass = document.body.className;
 const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
 
-const formFieldsView = ref([]);
 const usersView = ref([]);
 const blacklistView = ref([]);
 const iconLibraryCategory = ref("all");
@@ -138,11 +137,6 @@ function buildDashboardBodyClass() {
   return Array.from(classSet).join(" ");
 }
 
-function handleDashboardFormFieldsUpdated(event) {
-  const detail = event?.detail || {};
-  formFieldsView.value = Array.isArray(detail.fields) ? detail.fields : [];
-}
-
 function handleDashboardUsersUpdated(event) {
   const detail = event?.detail || {};
   usersView.value = Array.isArray(detail.users) ? detail.users : [];
@@ -154,7 +148,6 @@ function handleDashboardBlacklistUpdated(event) {
 }
 
 const dashboardEventListeners = [
-  ["coffee:dashboard-formfields-updated", handleDashboardFormFieldsUpdated],
   ["coffee:dashboard-users-updated", handleDashboardUsersUpdated],
   ["coffee:dashboard-blacklist-updated", handleDashboardBlacklistUpdated],
 ];

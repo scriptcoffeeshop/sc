@@ -14,11 +14,11 @@
     <p class="text-sm ui-text-subtle mb-4">
       管理前台訂購表單的自訂欄位（如聯絡電話、電子郵件、開立收據等）。可拖拽排序、設定必填、啟用/停用。
     </p>
-    <div id="formfields-list" data-vue-managed="true">
+    <div id="formfields-list">
       <p v-if="formFieldsView.length === 0" class="text-center ui-text-subtle py-8">
         尚無自訂欄位
       </p>
-      <div v-else class="space-y-2" id="formfields-sortable">
+      <div v-else ref="formFieldsList" class="space-y-2" id="formfields-sortable">
         <div
           v-for="field in formFieldsView"
           :key="`field-${field.id}`"
@@ -87,10 +87,19 @@
 </template>
 
 <script setup>
-defineProps({
-  formFieldsView: {
-    type: Array,
-    default: () => [],
-  },
-});
+import { onMounted, ref, watch } from "vue";
+import {
+  dashboardFormFieldsActions,
+  useDashboardFormFields,
+} from "./useDashboardFormFields.js";
+
+const { formFieldsView } = useDashboardFormFields();
+const formFieldsList = ref(null);
+
+function syncFormFieldsList() {
+  dashboardFormFieldsActions.registerFormFieldsListElement(formFieldsList.value);
+}
+
+onMounted(syncFormFieldsList);
+watch(formFieldsView, syncFormFieldsList, { deep: true });
 </script>

@@ -352,6 +352,26 @@ async function installDashboardRoutes(
       return;
     }
 
+    if (action === "getFormFieldsAdmin") {
+      await fulfillJson(route, {
+        success: true,
+        fields: [
+          {
+            id: 401,
+            field_key: "receipt_type",
+            label: "收據類型",
+            field_type: "select",
+            placeholder: "請選擇",
+            options: JSON.stringify(["二聯式", "三聯式"]),
+            required: true,
+            enabled: true,
+            delivery_visibility: JSON.stringify({ delivery: true }),
+          },
+        ],
+      });
+      return;
+    }
+
     if (action === "getOrders") {
       await fulfillJson(route, {
         success: true,
@@ -1256,6 +1276,42 @@ test.describe("smoke", () => {
     await expect(page.locator("#prm-products-list")).toContainText("後台測試商品");
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedDashboardPromotionsEventCount)
+    ).toBe(0);
+  });
+
+  test("dashboard form fields work without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardFormFieldsEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-formfields-updated") {
+          (window as any).__blockedDashboardFormFieldsEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-formfields").click();
+
+    await expect(page.locator("#formfields-list")).toContainText("收據類型");
+    await expect(page.locator("#formfields-list")).toContainText("receipt_type");
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardFormFieldsEventCount)
     ).toBe(0);
   });
 });

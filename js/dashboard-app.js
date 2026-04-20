@@ -30,7 +30,6 @@ import {
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
-import { createFormFieldsController } from "./dashboard/modules/form-fields.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
 import { createUsersController } from "./dashboard/modules/users-controller.js";
 import { createIconAssetsController } from "./dashboard/modules/icon-assets-controller.js";
@@ -62,6 +61,10 @@ import {
   dashboardCategoriesActions,
   getDashboardCategories,
 } from "../frontend/src/features/dashboard/useDashboardCategories.js";
+import {
+  configureDashboardFormFieldsServices,
+  dashboardFormFieldsActions,
+} from "../frontend/src/features/dashboard/useDashboardFormFields.js";
 import {
   configureDashboardPromotionsServices,
   dashboardPromotionsActions,
@@ -127,17 +130,6 @@ const bankAccountsController = createBankAccountsController({
   Swal: globalThis.Swal,
   esc,
   Sortable: globalThis.Sortable,
-});
-const formFieldsController = createFormFieldsController({
-  API_URL,
-  authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
-  Toast,
-  Swal: globalThis.Swal,
-  esc,
-  Sortable: globalThis.Sortable,
-  getDashboardSettings: () => dashboardSettings,
-  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
 const iconAssetsController = createIconAssetsController({
   API_URL,
@@ -249,6 +241,17 @@ configureDashboardPromotionsServices({
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
 });
+configureDashboardFormFieldsServices({
+  API_URL,
+  authFetch,
+  getAuthUserId: sessionController.getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
+  Sortable: globalThis.Sortable,
+  getDashboardSettings: () => dashboardSettings,
+  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
+});
 configureDashboardProductsServices({
   API_URL,
   authFetch,
@@ -310,14 +313,14 @@ const dashboardActionHandlers = {
     addDeliveryOptionAdmin: settingsController.addDeliveryOptionAdmin,
     showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
     saveSettings: settingsController.saveSettings,
-    showAddFieldModal: formFieldsController.showAddFieldModal,
-    toggleFieldEnabled: formFieldsController.toggleFieldEnabled,
-    editFormField: formFieldsController.editFormField,
-    deleteFormField: formFieldsController.deleteFormField,
+    showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,
+    toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
+    editFormField: dashboardFormFieldsActions.editFormField,
+    deleteFormField: dashboardFormFieldsActions.deleteFormField,
     editBankAccount: bankAccountsController.editBankAccount,
     deleteBankAccount: bankAccountsController.deleteBankAccount,
     loadSettings: settingsController.loadSettings,
-    loadFormFields: formFieldsController.loadFormFields,
+    loadFormFields: dashboardFormFieldsActions.loadFormFields,
   }),
   ...createUsersActionHandlers({
     loadUsers: usersController.loadUsers,
@@ -335,7 +338,7 @@ dashboardTabLoaders = {
   }),
   ...createSettingsTabLoaders({
     loadSettings: settingsController.loadSettings,
-    loadFormFields: formFieldsController.loadFormFields,
+    loadFormFields: dashboardFormFieldsActions.loadFormFields,
   }),
   ...createUsersTabLoaders({
     loadUsers: usersController.loadUsers,
@@ -376,10 +379,10 @@ registerDashboardGlobals({
   toggleUserBlacklist: usersController.toggleUserBlacklist,
   loadBlacklist: usersController.loadBlacklist,
   esc,
-  showAddFieldModal: formFieldsController.showAddFieldModal,
-  editFormField: formFieldsController.editFormField,
-  deleteFormField: formFieldsController.deleteFormField,
-  toggleFieldEnabled: formFieldsController.toggleFieldEnabled,
+  showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,
+  editFormField: dashboardFormFieldsActions.editFormField,
+  deleteFormField: dashboardFormFieldsActions.deleteFormField,
+  toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
   previewIcon: iconAssetsController.previewIcon,
   uploadSiteIcon: iconAssetsController.uploadSiteIcon,
   resetSiteIcon: iconAssetsController.resetSiteIcon,
