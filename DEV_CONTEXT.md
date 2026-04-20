@@ -59,6 +59,9 @@
   - `css/common.css` 調整共用 icon 規則，將 `tab-with-icon` 與 icon 元素分離，避免圖片 icon 被當成 `inline-flex` 容器造成 baseline / 尺寸怪異。
   - 新增 `ui-action-icon` / `ui-tab-icon`，統一固定操作 icon 的尺寸、線寬與 `currentColor` 行為。
   - 前台固定操作 icon（會員資料、我的訂單、購物車）與後台頁籤 icon 改用 Lucide 向量 icon；可客製的區塊 / 品牌 / 金流 icon 保持圖片型態，避免影響設定功能。
+- Legacy 入口補齊：
+  - 根目錄 `main.html` 新增 SVG sprite，將「我的訂單 / 會員資料 / 購物車」從 emoji 改為向量 icon，避免快取回退或 legacy 入口仍顯示表情符號。
+  - 根目錄 `dashboard.html` 同步改為向量 tab icon，並移除靜態 `bg-white` tab class，讓 legacy 後台入口和 Vue 入口保持一致。
 - 快取版號再次更新：
   - 前端版本已升級至 `v=102`，確保 icon 系統修正能確實覆蓋舊快取。
 - Icon smoke：

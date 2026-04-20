@@ -45,6 +45,28 @@
   </head>
 
   <body class="p-4 md:p-6">
+    <svg
+      aria-hidden="true"
+      style="position:absolute;width:0;height:0;overflow:hidden"
+    >
+      <symbol id="icon-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 5h10"></path>
+        <path d="M11 12h10"></path>
+        <path d="M11 19h10"></path>
+        <path d="M4 4h1v5"></path>
+        <path d="M4 9h2"></path>
+        <path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"></path>
+      </symbol>
+      <symbol id="icon-user-round" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="8" r="5"></circle>
+        <path d="M20 21a8 8 0 0 0-16 0"></path>
+      </symbol>
+      <symbol id="icon-shopping-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="8" cy="21" r="1"></circle>
+        <circle cx="19" cy="21" r="1"></circle>
+        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+      </symbol>
+    </svg>
     <!-- 公告 -->
     <div
       id="announcement-banner"
@@ -130,17 +152,17 @@
           </div>
           <button
             data-action="show-my-orders"
-            class="text-sm font-medium"
+            class="inline-flex items-center text-sm font-medium leading-none"
             style="color: var(--primary)"
           >
-            📋 我的訂單
+            <span class="tab-with-icon"><svg class="ui-action-icon" aria-hidden="true"><use href="#icon-list-ordered"></use></svg>我的訂單</span>
           </button>
           <button
             data-action="show-profile"
-            class="text-sm font-medium"
+            class="inline-flex items-center text-sm font-medium leading-none"
             style="color: var(--primary)"
           >
-            👤 會員資料
+            <span class="tab-with-icon"><svg class="ui-action-icon" aria-hidden="true"><use href="#icon-user-round"></use></svg>會員資料</span>
           </button>
           <button
             data-action="logout"
@@ -620,9 +642,9 @@
         <div class="flex gap-2">
           <button
             data-action="toggle-cart"
-            class="relative bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm hover:bg-amber-100 transition-colors"
+            class="relative inline-flex items-center bg-amber-50 border-2 border-amber-200 text-amber-800 px-4 py-3 rounded-xl font-semibold text-sm leading-none hover:bg-amber-100 transition-colors"
           >
-            🛒 購物車 <span
+            <span class="tab-with-icon"><svg class="ui-action-icon" aria-hidden="true"><use href="#icon-shopping-cart"></use></svg>購物車</span> <span
               id="cart-badge"
               class="hidden ml-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 inline-flex items-center justify-center"
             >0</span>
@@ -649,7 +671,7 @@
         style="border-color: #f0e6db"
       >
         <h3 class="text-lg font-bold" style="color: var(--primary)">
-          🛒 購物車
+          <span class="tab-with-icon"><svg class="ui-action-icon" aria-hidden="true"><use href="#icon-shopping-cart"></use></svg>購物車</span>
         </h3>
         <button
           data-action="toggle-cart"
@@ -699,7 +721,7 @@
       >
         <div class="p-4 border-b flex justify-between items-center">
           <h3 class="text-lg font-bold" style="color: var(--primary)">
-            📋 我的訂單
+            <span class="tab-with-icon"><svg class="ui-action-icon" aria-hidden="true"><use href="#icon-list-ordered"></use></svg>我的訂單</span>
           </h3>
           <button
             data-action="close-orders-modal"
