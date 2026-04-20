@@ -11,7 +11,7 @@
 1. 所有工作區命令一律用 `rtk <cmd>`。
 2. 只要變更前端 `JS / CSS / HTML`，必須同步更新前端快取版號：
    `python3 scripts/sync_frontend_version.py <version>`。
-3. 前後台互動統一使用 `data-action` + 事件代理，禁止新增 inline `onclick/onchange`。
+3. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
 4. 專案溝通、註解、commit message 以繁體中文為主。
 5. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
 6. E2E 若攔截 CDN 腳本，需留意 `integrity/crossorigin` 的 SRI 驗證衝突。
@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`111`
+- 目前前端版號：`112`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -48,8 +48,8 @@
 - 後台是優先遷移區：
   - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.js`、`useDashboardProducts.js`、`useDashboardCategories.js`、`useDashboardPromotions.js`、`useDashboardFormFields.js`、`useDashboardUsers.js`)
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.js`)
-  - `settings` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`）
-  - 剩餘的主要 legacy orchestration 集中在 dashboard bootstrap / event delegation 與 icon asset helper wiring
+  - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
+  - 剩餘的主要 legacy orchestration 集中在 dashboard bootstrap / event delegation / window globals
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
@@ -73,6 +73,7 @@
   - 會員資料彈窗導角
   - 後台手機版頁籤
   - 前後台固定 icon 樣式
+  - dashboard settings icon controls 不得退回 document-level event delegation
   - dashboard `orders` / `products` / `categories` / `promotions` / `formfields` / `users` / `blacklist` 不得退回 `coffee:dashboard-*` custom-event bridge
 
 ---
@@ -113,6 +114,7 @@
 - dashboard `settings` 的 delivery routing / payment options / sandbox 已改成 reactive state，不再由 `settings-controller.js` 直接組 HTML table。
 - dashboard `settings` 的 branding / section titles / announcement / store status 已改成 reactive state，並由 `useDashboardSettings.js` 統一提交 payload。
 - dashboard `settings` 的 bank accounts 已改成 reactive state，不再依賴 `bank-accounts.js` 的 imperative `innerHTML` renderer。
+- dashboard `settings` / `icon library` 的 icon upload、預覽與 quick apply 已改成 Vue 直連 reactive state，不再依賴 `icon-assets-controller.js` 或 document-level change/click delegation。
 - `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。

@@ -46,8 +46,9 @@ As of 2026-04-20:
   - blacklist
   - session / login flow
   - settings
+  - settings icon controls / icon library quick apply
 - Remaining legacy-heavy areas:
-  - dashboard bootstrap / event delegation / helper wiring
+  - dashboard bootstrap / event delegation / window globals
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
@@ -128,7 +129,7 @@ For a feature to be considered migrated:
 - Migrate settings, icon library, users, blacklist, and session/login flow.
 - Status on 2026-04-20:
   - settings: done early
-  - icon library: Vue shell + legacy settings source
+  - icon library: Vue shell + reactive quick apply wiring done
   - users: done early
   - blacklist: done early
   - session/login flow: done early

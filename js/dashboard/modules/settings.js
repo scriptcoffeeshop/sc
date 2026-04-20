@@ -5,12 +5,6 @@ function parseId(value) {
 
 export function createSettingsActionHandlers(deps) {
   return {
-    "upload-site-icon": () => deps.uploadSiteIcon(),
-    "reset-site-icon": () => deps.resetSiteIcon(),
-    "upload-section-icon": (el) => deps.uploadSectionIcon(el),
-    "upload-payment-icon": (el) => deps.uploadPaymentIcon(el),
-    "upload-delivery-row-icon": (el) => deps.uploadDeliveryRowIcon(el),
-    "icon-library-apply": (el) => deps.applyIconFromLibrary(el),
     "reset-section-title": (el) => deps.resetSectionTitle(el.dataset.section),
     "add-delivery-option-admin": () => deps.addDeliveryOption(),
     "show-add-bank-account-modal": () => deps.showAddBankAccountModal(),

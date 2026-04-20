@@ -28,7 +28,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
         <div>
           <label class="block text-xs ui-text-subtle mb-1">快速套用目標</label>
-          <UiSelect id="icon-library-target">
+          <UiSelect id="icon-library-target" v-model="selectedTarget">
             <option value="site">品牌 Icon</option>
             <option value="products">商品區塊 Icon</option>
             <option value="delivery">配送區塊 Icon</option>
@@ -78,9 +78,7 @@
           <UiButton
             size="sm"
             variant="secondary"
-            data-action="icon-library-apply"
-            :data-icon-key="icon.key"
-            :data-icon-url="icon.path"
+            @click.prevent="applyIcon(icon)"
           >
             快速套用
           </UiButton>
@@ -94,9 +92,11 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
 import { getDefaultIconUrl } from "../../../../js/icons.js";
+import { dashboardSettingsIconActions } from "./useDashboardSettingsIcons.js";
 import { useDashboardSession } from "./useDashboardSession.js";
 
 defineProps({
@@ -120,4 +120,13 @@ defineProps({
 
 const emit = defineEmits(["update:keyword", "select-category"]);
 const { activeTab } = useDashboardSession();
+const selectedTarget = ref("site");
+
+function applyIcon(icon) {
+  dashboardSettingsIconActions.applyIconFromLibrary(
+    selectedTarget.value,
+    icon?.key,
+    icon?.path,
+  );
+}
 </script>

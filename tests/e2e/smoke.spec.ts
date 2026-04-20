@@ -267,6 +267,8 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
 type DashboardRouteOptions = {
   onAdminLineLogin?: (request: PlaywrightRequest) => void;
   onUpdateSettings?: (request: PlaywrightRequest) => void;
+  onUploadAsset?: (request: PlaywrightRequest) => void;
+  uploadAssetUrl?: string;
   bankAccounts?: Array<{
     id: number;
     bankCode: string;
@@ -522,6 +524,15 @@ async function installDashboardRoutes(
     if (action === "updateSettings") {
       options.onUpdateSettings?.(request);
       await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "uploadAsset") {
+      options.onUploadAsset?.(request);
+      await fulfillJson(route, {
+        success: true,
+        url: options.uploadAssetUrl || "icons/uploaded-brand.png",
+      });
       return;
     }
 
@@ -1324,6 +1335,69 @@ test.describe("smoke", () => {
     await page.locator('[data-action="delete-bank-account"][data-bank-account-id="1"]').click();
     await expect(page.locator("[data-bank-account-row]")).toHaveCount(1);
     await expect(page.locator("[data-bank-account-row]").first()).toContainText("台新銀行");
+  });
+
+  test("dashboard settings icon controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page, {
+      uploadAssetUrl: "icons/uploaded-brand.png",
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (
+          this === document &&
+          (type === "click" || type === "change")
+        ) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-settings").click();
+
+    await page.locator("#s-site-icon-upload").setInputFiles({
+      name: "brand.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+y3c8AAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+
+    await expect(page.locator("#s-site-icon-url")).toHaveValue(
+      "icons/uploaded-brand.png",
+    );
+
+    await page.locator("#tab-icon-library").click();
+    await page.locator("#icon-library-target").selectOption("delivery");
+    await page
+      .locator("#icon-library-grid > div")
+      .filter({ hasText: "icons/delivery-truck.png" })
+      .getByRole("button", { name: "快速套用" })
+      .click();
+
+    await page.locator("#tab-settings").click();
+    await expect(page.locator("#s-delivery-icon-url")).toHaveValue(
+      "icons/delivery-truck.png",
+    );
   });
 
   test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {

@@ -61,7 +61,7 @@
                 </label>
                 <button
                   type="button"
-                  data-action="reset-site-icon"
+                  @click="handleResetSiteIcon"
                   class="text-xs ui-text-danger hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1.5 rounded transition"
                 >
                   移除自訂
@@ -75,11 +75,12 @@
               </div>
             </div>
             <input
+              ref="siteIconInput"
               type="file"
               id="s-site-icon-upload"
               class="hidden"
               accept="image/png,image/jpeg,image/webp"
-              data-action="upload-site-icon"
+              @change="handleSiteIconSelection"
             >
             <input v-model="brandingSettings.siteIconUrl" type="hidden" id="s-site-icon-url">
           </div>
@@ -111,9 +112,9 @@
             type="file"
             id="s-products-icon-file"
             accept="image/*"
-            class="text-sm icon-upload-input"
-            data-preview-target="s-products-icon-preview"
-            data-fallback-key="products"
+            :ref="(element) => registerSectionIconInput('products', element)"
+            class="text-sm"
+            @change="handleSectionIconPreview('products', $event)"
           >
           <img
             id="s-products-icon-preview"
@@ -123,8 +124,7 @@
           >
           <button
             type="button"
-            data-action="upload-section-icon"
-            data-section="products"
+            @click="handleSectionIconUpload('products')"
             class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
           >
             上傳區塊圖示
@@ -189,9 +189,9 @@
             type="file"
             id="s-delivery-icon-file"
             accept="image/*"
-            class="text-sm icon-upload-input"
-            data-preview-target="s-delivery-icon-preview"
-            data-fallback-key="delivery"
+            :ref="(element) => registerSectionIconInput('delivery', element)"
+            class="text-sm"
+            @change="handleSectionIconPreview('delivery', $event)"
           >
           <img
             id="s-delivery-icon-preview"
@@ -201,8 +201,7 @@
           >
           <button
             type="button"
-            data-action="upload-section-icon"
-            data-section="delivery"
+            @click="handleSectionIconUpload('delivery')"
             class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
           >
             上傳區塊圖示
@@ -267,9 +266,9 @@
             type="file"
             id="s-notes-icon-file"
             accept="image/*"
-            class="text-sm icon-upload-input"
-            data-preview-target="s-notes-icon-preview"
-            data-fallback-key="notes"
+            :ref="(element) => registerSectionIconInput('notes', element)"
+            class="text-sm"
+            @change="handleSectionIconPreview('notes', $event)"
           >
           <img
             id="s-notes-icon-preview"
@@ -279,8 +278,7 @@
           >
           <button
             type="button"
-            data-action="upload-section-icon"
-            data-section="notes"
+            @click="handleSectionIconUpload('notes')"
             class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
           >
             上傳區塊圖示
@@ -491,7 +489,6 @@
               style="border-color:#E2DCC8"
               :data-id="item.id"
               :data-delivery-id="item.id"
-              :data-default-icon-key="getDeliveryIconFallbackKey(item.id)"
             >
               <td
                 class="p-3 text-center cursor-move ui-text-muted hover:ui-text-strong transition"
@@ -517,12 +514,14 @@
                     <input v-model="item.icon_url" type="hidden" class="do-icon-url">
                     <input
                       type="file"
-                      class="do-icon-file text-xs icon-upload-file"
+                      :ref="(element) => registerDeliveryIconInput(item.id, element)"
+                      class="text-xs icon-upload-file"
                       accept="image/png,image/webp,image/jpeg,image/jpg"
+                      @change="handleDeliveryIconPreview(item.id, $event)"
                     >
                     <button
                       type="button"
-                      data-action="upload-delivery-row-icon"
+                      @click="handleDeliveryIconUpload(item.id)"
                       class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft icon-upload-action"
                     >
                       上傳圖示
@@ -681,9 +680,9 @@
                       type="file"
                       :id="`po-${method}-icon-file`"
                       accept="image/*"
-                      class="text-sm icon-upload-input"
-                      :data-preview-target="`po-${method}-icon-preview`"
-                      :data-fallback-key="method"
+                      :ref="(element) => registerPaymentIconInput(method, element)"
+                      class="text-sm"
+                      @change="handlePaymentIconPreview(method, $event)"
                     >
                     <img
                       :id="`po-${method}-icon-preview`"
@@ -693,8 +692,7 @@
                     >
                     <button
                       type="button"
-                      data-action="upload-payment-icon"
-                      :data-method="method"
+                      @click="handlePaymentIconUpload(method)"
                       class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
                     >
                       上傳付款圖示
@@ -816,17 +814,16 @@
 </template>
 
 <script setup>
-import {
-  getDefaultIconUrl,
-  getDeliveryIconFallbackKey,
-  getPaymentIconFallbackKey,
-  resolveAssetUrl,
-} from "../../../../js/icons.js";
+import { ref } from "vue";
 import UiTextarea from "../../components/ui/textarea/Textarea.vue";
 import {
   dashboardBankAccountsActions,
   useDashboardBankAccounts,
 } from "./useDashboardBankAccounts.js";
+import {
+  dashboardSettingsIconActions,
+  useDashboardSettingsIcons,
+} from "./useDashboardSettingsIcons.js";
 import {
   dashboardSettingsActions,
   useDashboardSettings,
@@ -844,6 +841,18 @@ const {
   paymentMethodOrder,
 } = useDashboardSettings();
 const { bankAccounts } = useDashboardBankAccounts();
+const {
+  getDisplayUrl,
+  getSiteIconPreviewUrl,
+  getSectionIconPreviewUrl,
+  getPaymentPreviewUrl,
+  getDeliveryPreviewUrl,
+} = useDashboardSettingsIcons();
+
+const siteIconInput = ref(null);
+const sectionIconInputs = new Map();
+const paymentIconInputs = new Map();
+const deliveryIconInputs = new Map();
 
 function registerDeliveryRoutingTableElement(element) {
   dashboardSettingsActions.registerDeliveryRoutingTableElement(element);
@@ -853,40 +862,96 @@ function registerBankAccountsListElement(element) {
   dashboardBankAccountsActions.registerBankAccountsListElement(element);
 }
 
-function resolvePreviewUrl(rawUrl, fallbackKey) {
-  return resolveAssetUrl(rawUrl) || getDefaultIconUrl(fallbackKey);
+function registerSectionIconInput(section, element) {
+  const key = String(section || "").trim();
+  if (!key) return;
+  if (element) {
+    sectionIconInputs.set(key, element);
+    return;
+  }
+  sectionIconInputs.delete(key);
 }
 
-function getDisplayUrl(rawUrl) {
-  return resolveAssetUrl(rawUrl) || String(rawUrl || "");
+function registerPaymentIconInput(method, element) {
+  const key = String(method || "").trim();
+  if (!key) return;
+  if (element) {
+    paymentIconInputs.set(key, element);
+    return;
+  }
+  paymentIconInputs.delete(key);
 }
 
-function getSiteIconPreviewUrl() {
-  return resolvePreviewUrl(brandingSettings.value.siteIconUrl, "brand");
+function registerDeliveryIconInput(deliveryId, element) {
+  const key = String(deliveryId || "").trim();
+  if (!key) return;
+  if (element) {
+    deliveryIconInputs.set(key, element);
+    return;
+  }
+  deliveryIconInputs.delete(key);
+}
+
+async function handleSiteIconSelection(event) {
+  const input = event?.target;
+  const file = input?.files?.[0] || null;
+  await dashboardSettingsIconActions.handleSiteIconSelection(file);
+  if (input) input.value = "";
+}
+
+function handleResetSiteIcon() {
+  dashboardSettingsIconActions.resetSiteIcon();
 }
 
 function getSiteIconDisplayText() {
   return brandingSettings.value.siteIconUrl ? "自訂 Logo" : "未設定 (預設)";
 }
 
-function getSectionIconPreviewUrl(section) {
-  return resolvePreviewUrl(
-    sectionTitleSettings.value?.[section]?.iconUrl,
+function handleSectionIconPreview(section, event) {
+  dashboardSettingsIconActions.previewSectionIconFile(
     section,
+    event?.target?.files?.[0] || null,
   );
 }
 
-function getDeliveryPreviewUrl(item) {
-  return resolvePreviewUrl(
-    item?.icon_url,
-    getDeliveryIconFallbackKey(item?.id),
+async function handleSectionIconUpload(section) {
+  const input = sectionIconInputs.get(String(section || "").trim());
+  await dashboardSettingsIconActions.uploadSectionIconFile(
+    section,
+    input?.files?.[0] || null,
+  );
+  if (input) input.value = "";
+}
+
+function handlePaymentIconPreview(method, event) {
+  dashboardSettingsIconActions.previewPaymentIconFile(
+    method,
+    event?.target?.files?.[0] || null,
   );
 }
 
-function getPaymentPreviewUrl(method) {
-  return resolvePreviewUrl(
-    paymentOptions.value?.[method]?.icon_url,
-    getPaymentIconFallbackKey(method),
+async function handlePaymentIconUpload(method) {
+  const input = paymentIconInputs.get(String(method || "").trim());
+  await dashboardSettingsIconActions.uploadPaymentIconFile(
+    method,
+    input?.files?.[0] || null,
   );
+  if (input) input.value = "";
+}
+
+function handleDeliveryIconPreview(deliveryId, event) {
+  dashboardSettingsIconActions.previewDeliveryIconFile(
+    deliveryId,
+    event?.target?.files?.[0] || null,
+  );
+}
+
+async function handleDeliveryIconUpload(deliveryId) {
+  const input = deliveryIconInputs.get(String(deliveryId || "").trim());
+  await dashboardSettingsIconActions.uploadDeliveryIconFile(
+    deliveryId,
+    input?.files?.[0] || null,
+  );
+  if (input) input.value = "";
 }
 </script>

@@ -7,7 +7,6 @@ import { esc, Toast } from "./utils.js";
 import { authFetch, loginWithLine } from "./auth.js";
 import {
   getDefaultIconUrl,
-  getPaymentIconFallbackKey,
   normalizeIconPath,
   resolveAssetUrl,
 } from "./icons.js";
@@ -30,7 +29,6 @@ import {
 } from "./dashboard/modules/products.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
-import { createIconAssetsController } from "./dashboard/modules/icon-assets-controller.js";
 import {
   createSettingsActionHandlers,
   createSettingsTabLoaders,
@@ -78,6 +76,9 @@ import {
   configureDashboardSettingsServices,
   dashboardSettingsActions,
 } from "../frontend/src/features/dashboard/useDashboardSettings.js";
+import {
+  configureDashboardSettingsIconServices,
+} from "../frontend/src/features/dashboard/useDashboardSettingsIcons.js";
 import {
   configureDashboardUsersServices,
   dashboardUsersActions,
@@ -140,6 +141,13 @@ configureDashboardSettingsServices({
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
   Sortable: globalThis.Sortable,
 });
+configureDashboardSettingsIconServices({
+  API_URL,
+  authFetch,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+});
 configureDashboardBankAccountsServices({
   API_URL,
   authFetch,
@@ -147,18 +155,6 @@ configureDashboardBankAccountsServices({
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
-});
-const iconAssetsController = createIconAssetsController({
-  API_URL,
-  authFetch,
-  getAuthUserId: dashboardSessionActions.getAuthUserId,
-  Toast,
-  Swal: globalThis.Swal,
-  normalizeIconPath,
-  resolveAssetUrl,
-  getDefaultIconUrl,
-  getPaymentIconFallbackKey,
-  sectionIconSettingKey,
 });
 const settingsController = createSettingsController({
   API_URL,
@@ -171,7 +167,6 @@ const settingsController = createSettingsController({
   getDefaultIconUrl,
   normalizeIconPath,
   sectionIconSettingKey,
-  updateIconPreview: iconAssetsController.updateIconPreview,
   readInputValue,
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
   loadBankAccounts: dashboardBankAccountsActions.loadBankAccounts,
@@ -312,12 +307,6 @@ const dashboardActionHandlers = {
     loadPromotions: dashboardPromotionsActions.loadPromotions,
   }),
   ...createSettingsActionHandlers({
-    uploadSiteIcon: iconAssetsController.uploadSiteIcon,
-    resetSiteIcon: iconAssetsController.resetSiteIcon,
-    uploadSectionIcon: iconAssetsController.uploadSectionIcon,
-    uploadPaymentIcon: iconAssetsController.uploadPaymentIcon,
-    uploadDeliveryRowIcon: iconAssetsController.uploadDeliveryRowIcon,
-    applyIconFromLibrary: iconAssetsController.applyIconFromLibrary,
     resetSectionTitle: settingsController.resetSectionTitle,
     addDeliveryOption: dashboardSettingsActions.addDeliveryOption,
     removeDeliveryOption: dashboardSettingsActions.removeDeliveryOption,
@@ -393,13 +382,6 @@ registerDashboardGlobals({
   editFormField: dashboardFormFieldsActions.editFormField,
   deleteFormField: dashboardFormFieldsActions.deleteFormField,
   toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
-  previewIcon: iconAssetsController.previewIcon,
-  uploadSiteIcon: iconAssetsController.uploadSiteIcon,
-  resetSiteIcon: iconAssetsController.resetSiteIcon,
-  uploadSectionIcon: iconAssetsController.uploadSectionIcon,
-  uploadPaymentIcon: iconAssetsController.uploadPaymentIcon,
-  uploadDeliveryRowIcon: iconAssetsController.uploadDeliveryRowIcon,
-  applyIconFromLibrary: iconAssetsController.applyIconFromLibrary,
   resetSectionTitle: settingsController.resetSectionTitle,
   refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
   confirmTransferPayment: orderStatusController.confirmTransferPayment,
@@ -429,7 +411,6 @@ export function initDashboardApp() {
   const { initializeDashboardEventDelegation } = createDashboardEvents(
     dashboardActionHandlers,
     dashboardUsersActions.loadUsers,
-    iconAssetsController.previewIcon,
     dashboardProductsActions.saveProduct,
     dashboardPromotionsActions.savePromotion,
     orderStatusController.changeOrderStatus,

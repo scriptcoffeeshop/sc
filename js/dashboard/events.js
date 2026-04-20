@@ -1,7 +1,6 @@
 export function createDashboardEvents(
   actionHandlers,
   loadUsers,
-  previewIcon,
   saveProduct,
   savePromotion,
   _changeOrderStatus,
@@ -33,17 +32,6 @@ export function createDashboardEvents(
 
     document.addEventListener("change", (event) => {
       const target = event.target;
-      if (
-        target instanceof HTMLInputElement &&
-        target.type === "file" &&
-        (
-          target.classList.contains("icon-upload-input") ||
-          target.classList.contains("do-icon-file")
-        )
-      ) {
-        previewIcon(target);
-        return;
-      }
       if (target instanceof HTMLSelectElement && target.dataset.action) {
         const handler = actionHandlers[target.dataset.action];
         if (handler) {
