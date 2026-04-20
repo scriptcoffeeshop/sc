@@ -1,6 +1,5 @@
 export function createDashboardEvents(
   actionHandlers,
-  loadUsers,
   saveProduct,
   savePromotion,
   _changeOrderStatus,
@@ -57,13 +56,6 @@ export function createDashboardEvents(
         el.addEventListener("input", renderOrders);
       }
     });
-
-    const userSearchInput = document.getElementById("user-search");
-    if (userSearchInput) {
-      userSearchInput.addEventListener("keyup", (event) => {
-        if (event.key === "Enter") loadUsers();
-      });
-    }
 
     const productForm = document.getElementById("product-form");
     if (productForm) {

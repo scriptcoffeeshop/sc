@@ -41,9 +41,8 @@
               </td>
               <td class="p-3 text-right">
                 <button
-                  data-action="toggle-user-blacklist"
-                  :data-user-id="blacklistEntry.lineUserId"
-                  data-blocked="false"
+                  type="button"
+                  @click="handleToggleUserBlacklist(blacklistEntry.lineUserId, false)"
                   class="ui-text-success hover:text-green-800 text-sm font-medium"
                 >
                   解除封鎖
@@ -58,9 +57,16 @@
 </template>
 
 <script setup>
-import { useDashboardUsers } from "./useDashboardUsers.js";
+import {
+  dashboardUsersActions,
+  useDashboardUsers,
+} from "./useDashboardUsers.js";
 import { useDashboardSession } from "./useDashboardSession.js";
 
 const { blacklistView } = useDashboardUsers();
 const { activeTab } = useDashboardSession();
+
+function handleToggleUserBlacklist(userId, isBlocked) {
+  dashboardUsersActions.toggleUserBlacklist(userId, isBlocked);
+}
 </script>

@@ -12,9 +12,11 @@
           placeholder="搜尋名稱/手機/Email"
           :value="userSearch"
           @input="updateUserSearch($event.target.value)"
+          @keyup.enter="handleSearchUsers"
         >
         <button
-          data-action="search-users"
+          type="button"
+          @click="handleSearchUsers"
           class="btn-primary text-sm py-1 px-4"
         >
           搜尋
@@ -87,9 +89,8 @@
               </td>
               <td class="p-3 text-right">
                 <button
-                  data-action="toggle-user-blacklist"
-                  :data-user-id="user.userId"
-                  :data-blocked="user.blacklistActionBlockedValue"
+                  type="button"
+                  @click="handleToggleUserBlacklist(user.userId, user.blacklistActionBlocksUser)"
                   class="text-sm font-medium mr-3"
                   :class="user.blacklistActionClass"
                 >
@@ -97,9 +98,8 @@
                 </button>
                 <button
                   v-if="user.roleAction"
-                  data-action="toggle-user-role"
-                  :data-user-id="user.userId"
-                  :data-new-role="user.roleAction.newRole"
+                  type="button"
+                  @click="handleToggleUserRole(user.userId, user.roleAction.newRole)"
                   class="text-sm font-medium"
                   :class="user.roleAction.className"
                 >
@@ -115,9 +115,24 @@
 </template>
 
 <script setup>
-import { useDashboardUsers } from "./useDashboardUsers.js";
+import {
+  dashboardUsersActions,
+  useDashboardUsers,
+} from "./useDashboardUsers.js";
 import { useDashboardSession } from "./useDashboardSession.js";
 
 const { userSearch, usersView, updateUserSearch } = useDashboardUsers();
 const { activeTab } = useDashboardSession();
+
+function handleSearchUsers() {
+  dashboardUsersActions.loadUsers();
+}
+
+function handleToggleUserBlacklist(userId, isBlocked) {
+  dashboardUsersActions.toggleUserBlacklist(userId, isBlocked);
+}
+
+function handleToggleUserRole(userId, newRole) {
+  dashboardUsersActions.toggleUserRole(userId, newRole);
+}
 </script>

@@ -10,7 +10,6 @@ function parseBool(value) {
 export function createProductsActionHandlers(deps) {
   return {
     "show-product-modal": () => deps.showProductModal(),
-    "add-category": () => deps.addCategory(),
     "show-promotion-modal": () => deps.showPromotionModal(),
     "edit-product": (el) => {
       const id = parseId(el.dataset.productId);
@@ -29,14 +28,6 @@ export function createProductsActionHandlers(deps) {
       const index = parseId(el.dataset.specIndex);
       if (index === null || !deps.removeSpecRow) return;
       deps.removeSpecRow(index);
-    },
-    "edit-category": (el) => {
-      const id = parseId(el.dataset.categoryId);
-      if (id !== null) deps.editCategory(id);
-    },
-    "delete-category": (el) => {
-      const id = parseId(el.dataset.categoryId);
-      if (id !== null) deps.delCategory(id);
     },
     "edit-promotion": (el) => {
       const id = parseId(el.dataset.promotionId);

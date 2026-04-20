@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import { getDashboardActiveTab } from "./useDashboardSession.js";
 
 const users = ref([]);
 const blacklist = ref([]);
@@ -62,7 +63,7 @@ function buildUserViewModel(user, isSuperAdmin) {
     lastLoginText: user.lastLogin
       ? new Date(user.lastLogin).toLocaleString("zh-TW")
       : "無紀錄",
-    blacklistActionBlockedValue: String(!isBlocked),
+    blacklistActionBlocksUser: !isBlocked,
     blacklistActionLabel: isBlocked ? "解除封鎖" : "封鎖",
     blacklistActionClass: isBlocked
       ? "ui-text-success hover:text-green-800"
@@ -96,9 +97,7 @@ function updateUserSearch(value) {
 }
 
 function isBlacklistTabActive() {
-  return document.getElementById("tab-blacklist")?.classList.contains(
-    "tab-active",
-  );
+  return getDashboardActiveTab() === "blacklist";
 }
 
 async function loadUsers() {

@@ -13,7 +13,7 @@
         placeholder="新分類名稱"
         v-model="newCategoryName"
       >
-      <button data-action="add-category" class="btn-primary text-sm">
+      <button type="button" @click="handleAddCategory" class="btn-primary text-sm">
         新增
       </button>
     </div>
@@ -39,16 +39,16 @@
           </div>
           <div class="flex gap-2">
             <button
-              data-action="edit-category"
-              :data-category-id="category.id"
+              type="button"
+              @click="handleEditCategory(category.id)"
               class="text-sm"
               style="color:var(--primary)"
             >
               編輯
             </button>
             <button
-              data-action="delete-category"
-              :data-category-id="category.id"
+              type="button"
+              @click="handleDeleteCategory(category.id)"
               class="text-sm ui-text-danger"
             >
               刪除
@@ -74,6 +74,18 @@ const categoriesList = ref(null);
 
 function syncCategoriesList() {
   dashboardCategoriesActions.registerCategoriesListElement(categoriesList.value);
+}
+
+function handleAddCategory() {
+  dashboardCategoriesActions.addCategory();
+}
+
+function handleEditCategory(id) {
+  dashboardCategoriesActions.editCategory(id);
+}
+
+function handleDeleteCategory(id) {
+  dashboardCategoriesActions.delCategory(id);
 }
 
 onMounted(syncCategoriesList);

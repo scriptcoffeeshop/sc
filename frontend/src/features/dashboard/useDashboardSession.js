@@ -191,6 +191,10 @@ export function getDashboardCurrentUser() {
   return currentUser.value;
 }
 
+export function getDashboardActiveTab() {
+  return activeTab.value;
+}
+
 export function useDashboardSession() {
   return {
     currentUser,

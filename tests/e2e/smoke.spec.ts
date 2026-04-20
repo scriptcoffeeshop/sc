@@ -269,6 +269,32 @@ type DashboardRouteOptions = {
   onUpdateSettings?: (request: PlaywrightRequest) => void;
   onUploadAsset?: (request: PlaywrightRequest) => void;
   uploadAssetUrl?: string;
+  categories?: Array<{
+    id: number;
+    name: string;
+  }>;
+  users?: Array<{
+    userId: string;
+    displayName: string;
+    pictureUrl?: string;
+    email?: string;
+    phone?: string;
+    defaultDeliveryMethod?: string;
+    defaultCity?: string;
+    defaultDistrict?: string;
+    defaultAddress?: string;
+    defaultStoreName?: string;
+    defaultStoreId?: string;
+    lastLogin?: string;
+    role?: string;
+    status?: string;
+  }>;
+  blacklist?: Array<{
+    lineUserId: string;
+    displayName: string;
+    blockedAt?: string;
+    reason?: string;
+  }>;
   formFields?: Array<{
     id: number;
     field_key: string;
@@ -293,6 +319,50 @@ async function installDashboardRoutes(
   page: Page,
   options: DashboardRouteOptions = {},
 ) {
+  let categoriesState = Array.isArray(options.categories)
+    ? options.categories.map((category) => ({ ...category }))
+    : [{ id: 1, name: "測試分類" }];
+  let usersState = Array.isArray(options.users)
+    ? options.users.map((user) => ({ ...user }))
+    : [
+      {
+        userId: "user-001",
+        displayName: "測試會員",
+        pictureUrl: "",
+        email: "user@example.com",
+        phone: "0912000000",
+        defaultDeliveryMethod: "delivery",
+        defaultCity: "新竹市",
+        defaultDistrict: "東區",
+        defaultAddress: "測試路 1 號",
+        lastLogin: "2026-04-20T10:00:00.000Z",
+        role: "USER",
+        status: "ACTIVE",
+      },
+      {
+        userId: "admin-002",
+        displayName: "管理測試員",
+        pictureUrl: "",
+        email: "admin@example.com",
+        phone: "",
+        defaultDeliveryMethod: "in_store",
+        defaultStoreName: "",
+        defaultStoreId: "",
+        lastLogin: "2026-04-19T09:30:00.000Z",
+        role: "ADMIN",
+        status: "BLACKLISTED",
+      },
+    ];
+  let blacklistState = Array.isArray(options.blacklist)
+    ? options.blacklist.map((entry) => ({ ...entry }))
+    : [
+      {
+        lineUserId: "admin-002",
+        displayName: "管理測試員",
+        blockedAt: "2026-04-20T08:00:00.000Z",
+        reason: "惡意測試",
+      },
+    ];
   let bankAccountsState = Array.isArray(options.bankAccounts)
     ? options.bankAccounts.map((account) => ({ ...account }))
     : [];
@@ -338,7 +408,7 @@ async function installDashboardRoutes(
     if (action === "getCategories") {
       await fulfillJson(route, {
         success: true,
-        categories: [{ id: 1, name: "測試分類" }],
+        categories: categoriesState,
       });
       return;
     }
@@ -399,37 +469,17 @@ async function installDashboardRoutes(
     }
 
     if (action === "getUsers") {
+      const search = String(url.searchParams.get("search") || "").trim().toLowerCase();
+      const filteredUsers = search
+        ? usersState.filter((user) =>
+          [user.displayName, user.phone, user.email].some((value) =>
+            String(value || "").toLowerCase().includes(search)
+          )
+        )
+        : usersState;
       await fulfillJson(route, {
         success: true,
-        users: [
-          {
-            userId: "user-001",
-            displayName: "測試會員",
-            pictureUrl: "",
-            email: "user@example.com",
-            phone: "0912000000",
-            defaultDeliveryMethod: "delivery",
-            defaultCity: "新竹市",
-            defaultDistrict: "東區",
-            defaultAddress: "測試路 1 號",
-            lastLogin: "2026-04-20T10:00:00.000Z",
-            role: "USER",
-            status: "ACTIVE",
-          },
-          {
-            userId: "admin-002",
-            displayName: "管理測試員",
-            pictureUrl: "",
-            email: "admin@example.com",
-            phone: "",
-            defaultDeliveryMethod: "in_store",
-            defaultStoreName: "",
-            defaultStoreId: "",
-            lastLogin: "2026-04-19T09:30:00.000Z",
-            role: "ADMIN",
-            status: "BLACKLISTED",
-          },
-        ],
+        users: filteredUsers,
       });
       return;
     }
@@ -437,14 +487,7 @@ async function installDashboardRoutes(
     if (action === "getBlacklist") {
       await fulfillJson(route, {
         success: true,
-        blacklist: [
-          {
-            lineUserId: "admin-002",
-            displayName: "管理測試員",
-            blockedAt: "2026-04-20T08:00:00.000Z",
-            reason: "惡意測試",
-          },
-        ],
+        blacklist: blacklistState,
       });
       return;
     }
@@ -535,6 +578,93 @@ async function installDashboardRoutes(
 
     if (action === "updateSettings") {
       options.onUpdateSettings?.(request);
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "addCategory") {
+      const body = request.postDataJSON() as any;
+      categoriesState.push({
+        id: Date.now(),
+        name: String(body?.name || ""),
+      });
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updateCategory") {
+      const body = request.postDataJSON() as any;
+      categoriesState = categoriesState.map((category) =>
+        Number(category.id) === Number(body?.id)
+          ? { ...category, name: String(body?.name || category.name) }
+          : category
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "deleteCategory") {
+      const body = request.postDataJSON() as any;
+      categoriesState = categoriesState.filter((category) =>
+        Number(category.id) !== Number(body?.id)
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updateUserRole") {
+      const body = request.postDataJSON() as any;
+      usersState = usersState.map((user) =>
+        user.userId === String(body?.targetUserId || "")
+          ? { ...user, role: String(body?.newRole || user.role || "USER") }
+          : user
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "addToBlacklist") {
+      const body = request.postDataJSON() as any;
+      const targetUserId = String(body?.targetUserId || "");
+      const reason = String(body?.reason || "");
+      usersState = usersState.map((user) =>
+        user.userId === targetUserId
+          ? { ...user, status: "BLACKLISTED" }
+          : user
+      );
+      const existingEntry = blacklistState.find((entry) => entry.lineUserId === targetUserId);
+      if (existingEntry) {
+        blacklistState = blacklistState.map((entry) =>
+          entry.lineUserId === targetUserId
+            ? {
+              ...entry,
+              reason,
+              blockedAt: "2026-04-21T01:00:00.000Z",
+            }
+            : entry
+        );
+      } else {
+        const targetUser = usersState.find((user) => user.userId === targetUserId);
+        blacklistState.push({
+          lineUserId: targetUserId,
+          displayName: String(targetUser?.displayName || ""),
+          blockedAt: "2026-04-21T01:00:00.000Z",
+          reason,
+        });
+      }
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "removeFromBlacklist") {
+      const body = request.postDataJSON() as any;
+      const targetUserId = String(body?.targetUserId || "");
+      usersState = usersState.map((user) =>
+        user.userId === targetUserId
+          ? { ...user, status: "ACTIVE" }
+          : user
+      );
+      blacklistState = blacklistState.filter((entry) => entry.lineUserId !== targetUserId);
       await fulfillJson(route, { success: true });
       return;
     }
@@ -1513,6 +1643,146 @@ test.describe("smoke", () => {
     await expect(rows).toHaveCount(1);
   });
 
+  test("dashboard categories controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "修改分類") {
+          return { value: "精品分類" };
+        }
+        if (title === "刪除分類？") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-categories").click();
+
+    const rows = page.locator("#categories-list > div[data-id]");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("測試分類");
+
+    await page.locator("#new-cat-name").fill("新品分類");
+    await page.getByRole("button", { name: "新增" }).click();
+    await expect(rows).toHaveCount(2);
+    await expect(page.locator("#categories-list")).toContainText("新品分類");
+
+    await rows.filter({ hasText: "測試分類" }).getByRole("button", { name: "編輯" }).click();
+    await expect(page.locator("#categories-list")).toContainText("精品分類");
+
+    await rows.filter({ hasText: "精品分類" }).getByRole("button", { name: "刪除" }).click();
+    await expect(rows).toHaveCount(1);
+    await expect(page.locator("#categories-list")).not.toContainText("精品分類");
+  });
+
+  test("dashboard users and blacklist controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (
+          this === document &&
+          (type === "click" || type === "change" || type === "keyup")
+        ) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "設為 管理員？") {
+          return { isConfirmed: true };
+        }
+        if (title === "封鎖用戶") {
+          return { value: "惡意棄單" };
+        }
+        if (title === "解除封鎖？") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-users").click();
+
+    const usersTable = page.locator("#users-table");
+    await expect(usersTable).toContainText("測試會員");
+    await expect(usersTable).toContainText("管理測試員");
+
+    await page.locator("#user-search").fill("測試會員");
+    await page.locator("#user-search").press("Enter");
+    await expect(usersTable).toContainText("測試會員");
+    await expect(usersTable).not.toContainText("管理測試員");
+
+    const userRow = usersTable.locator("tr").filter({ hasText: "測試會員" });
+    await userRow.getByRole("button", { name: "設為管理員" }).click();
+    await expect(userRow).toContainText("管理員");
+    await expect(userRow.getByRole("button", { name: "移除管理員" })).toBeVisible();
+
+    await userRow.getByRole("button", { name: "封鎖" }).click();
+    await expect(userRow).toContainText("黑名單");
+    await expect(userRow.getByRole("button", { name: "解除封鎖" })).toBeVisible();
+
+    await page.locator("#tab-blacklist").click();
+    const blacklistTable = page.locator("#blacklist-table");
+    await expect(blacklistTable).toContainText("測試會員");
+    await expect(blacklistTable).toContainText("惡意棄單");
+
+    await blacklistTable
+      .locator("tr")
+      .filter({ hasText: "測試會員" })
+      .getByRole("button", { name: "解除封鎖" })
+      .click();
+    await expect(blacklistTable).not.toContainText("測試會員");
+  });
+
   test("dashboard settings icon controls work without document event delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page, {
@@ -1868,7 +2138,7 @@ test.describe("smoke", () => {
 
     await expect(page.locator("#users-table")).toContainText("測試會員");
     await expect(page.locator("#users-table")).toContainText("管理測試員");
-    await expect(page.locator('button[data-action="toggle-user-role"]').first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "設為管理員" }).first()).toBeVisible();
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedDashboardUsersEventCount)
     ).toBe(0);

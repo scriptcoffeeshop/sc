@@ -43,7 +43,6 @@ import {
   sectionIconSettingKey,
 } from "./dashboard/modules/settings-shared.js";
 import {
-  createUsersActionHandlers,
   createUsersTabLoaders,
 } from "./dashboard/modules/users.js";
 import { createDashboardEvents } from "./dashboard/events.js";
@@ -272,13 +271,10 @@ const dashboardActionHandlers = {
   }),
   ...createProductsActionHandlers({
     showProductModal: dashboardProductsActions.showProductModal,
-    addCategory: dashboardCategoriesActions.addCategory,
     showPromotionModal: dashboardPromotionsActions.showPromotionModal,
     editProduct: dashboardProductsActions.editProduct,
     delProduct: dashboardProductsActions.delProduct,
     toggleProductEnabled: dashboardProductsActions.toggleProductEnabled,
-    editCategory: dashboardCategoriesActions.editCategory,
-    delCategory: dashboardCategoriesActions.delCategory,
     editPromotion: dashboardPromotionsActions.editPromotion,
     delPromotion: dashboardPromotionsActions.delPromotion,
     togglePromotionEnabled: dashboardPromotionsActions.togglePromotionEnabled,
@@ -287,12 +283,6 @@ const dashboardActionHandlers = {
     closeProductModal: dashboardProductsActions.closeProductModal,
     closePromotionModal: dashboardPromotionsActions.closePromotionModal,
     loadPromotions: dashboardPromotionsActions.loadPromotions,
-  }),
-  ...createUsersActionHandlers({
-    loadUsers: dashboardUsersActions.loadUsers,
-    toggleUserBlacklist: dashboardUsersActions.toggleUserBlacklist,
-    toggleUserRole: dashboardUsersActions.toggleUserRole,
-    loadBlacklist: dashboardUsersActions.loadBlacklist,
   }),
 };
 
@@ -377,7 +367,6 @@ export function initDashboardApp() {
   dashboardInitialized = true;
   const { initializeDashboardEventDelegation } = createDashboardEvents(
     dashboardActionHandlers,
-    dashboardUsersActions.loadUsers,
     dashboardProductsActions.saveProduct,
     dashboardPromotionsActions.savePromotion,
     orderStatusController.changeOrderStatus,

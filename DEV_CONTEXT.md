@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`113`
+- 目前前端版號：`114`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -49,8 +49,8 @@
   - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.js`、`useDashboardProducts.js`、`useDashboardCategories.js`、`useDashboardPromotions.js`、`useDashboardFormFields.js`、`useDashboardUsers.js`)
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.js`)
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
-  - `settings` / `formfields` 的按鈕互動已改成元件事件直連，不再依賴 `createSettingsActionHandlers()` 或 `settings-controller.js`
-  - 剩餘的主要 legacy orchestration 集中在 dashboard bootstrap / window globals，以及仍未移除的 document-level delegation
+  - `settings` / `formfields` / `categories` / `users` / `blacklist` 的按鈕互動已改成元件事件直連，不再依賴 `createSettingsActionHandlers()`、`createUsersActionHandlers()` 或 `search-users` / `toggle-user-*` / `add-category` 類 document delegation
+  - 剩餘的主要 legacy orchestration 集中在 dashboard bootstrap / window globals，以及 `orders` / `products` / `promotions` 等尚未移除的 document-level delegation
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
@@ -119,6 +119,7 @@
 - dashboard `settings` / `icon library` 的 icon upload、預覽與 quick apply 已改成 Vue 直連 reactive state，不再依賴 `icon-assets-controller.js` 或 document-level change/click delegation。
 - dashboard `settings` 的 load/save 已併入 `useDashboardSettings.js`，`settings-controller.js` 已移除。
 - dashboard `settings` / `formfields` 的按鈕互動已改成元件內 `@click`，不再經過 `createSettingsActionHandlers()`。
+- dashboard `categories` / `users` / `blacklist` 的按鈕與搜尋已改成元件內 `@click` / `@keyup.enter`，不再經過 `createUsersActionHandlers()`、`search-users` 的 document keyup delegation，`useDashboardUsers.js` 也已改用 reactive `activeTab` 判斷黑名單頁。
 - `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
