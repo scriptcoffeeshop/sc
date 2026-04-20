@@ -315,12 +315,6 @@ async function loadOrders() {
   }
 }
 
-function renderOrders() {
-  syncSelectedOrderIds();
-  syncPendingStatuses();
-  return filteredOrders.value;
-}
-
 async function deleteOrderById(orderId) {
   const { API_URL, Swal, Toast, authFetch, getAuthUserId } = getServices();
   const confirmation = await Swal.fire({
@@ -704,7 +698,6 @@ export function useDashboardOrders() {
 
 export const dashboardOrdersActions = {
   loadOrders,
-  renderOrders,
   deleteOrderById,
   toggleOrderSelection,
   toggleSelectAllOrders,

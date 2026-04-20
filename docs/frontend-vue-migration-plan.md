@@ -30,7 +30,7 @@ This creates three concrete problems:
 2. Payment, order, and admin flows can drift out of sync.
 3. `frontend/src/pages/DashboardPage.vue` has grown to 2,345 lines and is beyond a healthy single-component size.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. What remains is mainly compatibility-oriented service wiring in `js/dashboard-app.js`, not feature rendering logic.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint.
 
 ## Current Progress Snapshot
 
@@ -48,8 +48,8 @@ As of 2026-04-20:
   - settings
   - settings icon controls / icon library quick apply
 - Remaining legacy-heavy areas:
-  - dashboard compatibility shell in `js/dashboard-app.js`
   - maintenance-only legacy `dashboard.html` / root entrypoint
+  - compatibility wrapper `js/dashboard-app.js`
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
