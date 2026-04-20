@@ -30,7 +30,7 @@ This creates three concrete problems:
 2. Payment, order, and admin flows can drift out of sync.
 3. Remaining large dashboard sections can still become difficult to review if they are allowed to grow back into monoliths.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell; settings UI is split into focused card components.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, and `DashboardOrdersSection.vue` is now only a 31-line shell; both large sections are split into focused child components.
 
 ## Current Progress Snapshot
 
@@ -50,7 +50,9 @@ As of 2026-04-21:
 - Recent decomposition:
   - `DashboardPage.vue`: 167 lines
   - `DashboardSettingsSection.vue`: 39 lines
+  - `DashboardOrdersSection.vue`: 31 lines
   - settings cards: branding, section titles, storefront status, delivery/payment routing, payment options, bank accounts
+  - orders subcomponents: toolbar, order card
 - Remaining legacy-heavy areas:
   - maintenance-only legacy `dashboard.html` / root entrypoint
   - compatibility wrapper `js/dashboard-app.js`
@@ -205,13 +207,10 @@ Create a feature-oriented structure under `frontend/src/features/dashboard/`.
 
 ### Orders
 
-- `frontend/src/features/dashboard/orders/OrdersSection.vue`
-- `frontend/src/features/dashboard/orders/OrdersFilters.vue`
-- `frontend/src/features/dashboard/orders/OrdersBulkActions.vue`
-- `frontend/src/features/dashboard/orders/OrdersSummary.vue`
-- `frontend/src/features/dashboard/orders/OrderCardList.vue`
-- `frontend/src/features/dashboard/orders/OrderCard.vue`
-- `frontend/src/features/dashboard/orders/useOrdersSection.js`
+- `frontend/src/features/dashboard/DashboardOrdersSection.vue`
+- `frontend/src/features/dashboard/DashboardOrdersToolbar.vue`
+- `frontend/src/features/dashboard/DashboardOrderCard.vue`
+- `frontend/src/features/dashboard/useDashboardOrders.js`
 
 ### Products
 
