@@ -297,6 +297,7 @@ type DashboardRouteOptions = {
     endTime?: string | null;
     sortOrder?: number;
   }>;
+  orders?: Array<Record<string, any>>;
   users?: Array<{
     userId: string;
     displayName: string;
@@ -381,6 +382,24 @@ async function installDashboardRoutes(
         startTime: null,
         endTime: null,
         sortOrder: 0,
+      },
+    ];
+  let ordersState = Array.isArray(options.orders)
+    ? options.orders.map((order) => ({ ...order }))
+    : [
+      {
+        orderId: "ORD001",
+        timestamp: "2026-03-02T00:00:00.000Z",
+        deliveryMethod: "in_store",
+        status: "pending",
+        lineUserId: "customer-line-1",
+        lineName: "測試客戶",
+        phone: "0900000000",
+        email: "customer@example.com",
+        items: "後台測試商品 x1",
+        total: 180,
+        paymentMethod: "cod",
+        paymentStatus: "",
       },
     ];
   let usersState = Array.isArray(options.users)
@@ -525,21 +544,7 @@ async function installDashboardRoutes(
     if (action === "getOrders") {
       await fulfillJson(route, {
         success: true,
-        orders: [
-          {
-            orderId: "ORD001",
-            timestamp: "2026-03-02T00:00:00.000Z",
-            deliveryMethod: "in_store",
-            status: "pending",
-            lineName: "測試客戶",
-            phone: "0900000000",
-            email: "",
-            items: "後台測試商品 x1",
-            total: 180,
-            paymentMethod: "cod",
-            paymentStatus: "",
-          },
-        ],
+        orders: ordersState,
       });
       return;
     }
@@ -637,6 +642,94 @@ async function installDashboardRoutes(
       const body = request.postDataJSON() as any;
       categoriesState = categoriesState.filter((category) =>
         Number(category.id) !== Number(body?.id)
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "deleteOrder") {
+      const body = request.postDataJSON() as any;
+      ordersState = ordersState.filter((order) =>
+        String(order.orderId) !== String(body?.orderId || "")
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updateOrderStatus") {
+      const body = request.postDataJSON() as any;
+      ordersState = ordersState.map((order) =>
+        String(order.orderId) === String(body?.orderId || "")
+          ? {
+            ...order,
+            status: body?.status !== undefined ? String(body.status) : order.status,
+            paymentStatus: body?.paymentStatus !== undefined
+              ? String(body.paymentStatus)
+              : order.paymentStatus,
+            trackingNumber: body?.trackingNumber !== undefined
+              ? String(body.trackingNumber)
+              : order.trackingNumber,
+            shippingProvider: body?.shippingProvider !== undefined
+              ? String(body.shippingProvider)
+              : order.shippingProvider,
+            trackingUrl: body?.trackingUrl !== undefined
+              ? String(body.trackingUrl)
+              : order.trackingUrl,
+            cancelReason: body?.cancelReason !== undefined
+              ? String(body.cancelReason)
+              : order.cancelReason,
+          }
+          : order
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "batchUpdateOrderStatus") {
+      const body = request.postDataJSON() as any;
+      const targetIds = new Set(
+        Array.isArray(body?.orderIds) ? body.orderIds.map((value: any) => String(value)) : [],
+      );
+      ordersState = ordersState.map((order) =>
+        targetIds.has(String(order.orderId))
+          ? {
+            ...order,
+            status: body?.status !== undefined ? String(body.status) : order.status,
+            paymentStatus: body?.paymentStatus !== undefined
+              ? String(body.paymentStatus)
+              : order.paymentStatus,
+            trackingNumber: body?.trackingNumber !== undefined
+              ? String(body.trackingNumber)
+              : order.trackingNumber,
+            shippingProvider: body?.shippingProvider !== undefined
+              ? String(body.shippingProvider)
+              : order.shippingProvider,
+            trackingUrl: body?.trackingUrl !== undefined
+              ? String(body.trackingUrl)
+              : order.trackingUrl,
+          }
+          : order
+      );
+      await fulfillJson(route, { success: true, message: "批次更新完成" });
+      return;
+    }
+
+    if (action === "batchDeleteOrders") {
+      const body = request.postDataJSON() as any;
+      const targetIds = new Set(
+        Array.isArray(body?.orderIds) ? body.orderIds.map((value: any) => String(value)) : [],
+      );
+      ordersState = ordersState.filter((order) => !targetIds.has(String(order.orderId)));
+      await fulfillJson(route, { success: true, message: "批次刪除完成" });
+      return;
+    }
+
+    if (action === "linePayRefund" || action === "jkoPayRefund") {
+      const body = request.postDataJSON() as any;
+      ordersState = ordersState.map((order) =>
+        String(order.orderId) === String(body?.orderId || "")
+          ? { ...order, paymentStatus: "refunded" }
+          : order
       );
       await fulfillJson(route, { success: true });
       return;
@@ -1424,7 +1517,7 @@ test.describe("smoke", () => {
     await expect(page).toHaveURL(/linepay_redirect=1/);
   });
 
-  test("dashboard path works with event delegation", async ({ page }) => {
+  test("dashboard order status flow works", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
@@ -1451,9 +1544,8 @@ test.describe("smoke", () => {
     await expect(page.locator("#admin-page")).toBeVisible();
     await expect(page.locator("#orders-list")).toContainText("#ORD001");
 
-    const statusSelect = page.locator(
-      'select[data-action="change-order-status"][data-order-id="ORD001"]',
-    );
+    const orderRow = page.locator("#orders-list > div").filter({ hasText: "#ORD001" });
+    const statusSelect = orderRow.locator("select");
     await statusSelect.click();
     await page.waitForTimeout(250);
     expect(updateStatusCalls).toBe(0);
@@ -1465,7 +1557,7 @@ test.describe("smoke", () => {
     expect(updateStatusCalls).toBe(0);
 
     await statusSelect.selectOption("processing");
-    await page.locator('button[data-action="confirm-order-status"][data-order-id="ORD001"]').click();
+    await orderRow.getByRole("button", { name: "確認" }).click();
     await expect.poll(() => updateStatusCalls).toBeGreaterThan(0);
 
     await page.locator("#tab-products").click();
@@ -1793,6 +1885,143 @@ test.describe("smoke", () => {
 
     await rows.filter({ hasText: "統一編號" }).getByRole("button", { name: "刪除" }).click();
     await expect(rows).toHaveCount(1);
+  });
+
+  test("dashboard orders controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page, {
+      orders: [
+        {
+          orderId: "ORD001",
+          timestamp: "2026-03-02T00:00:00.000Z",
+          deliveryMethod: "in_store",
+          status: "pending",
+          lineUserId: "customer-line-1",
+          lineName: "測試客戶",
+          phone: "0900000000",
+          email: "customer@example.com",
+          items: "後台測試商品 x1",
+          total: 180,
+          paymentMethod: "cod",
+          paymentStatus: "",
+        },
+        {
+          orderId: "ORD002",
+          timestamp: "2026-03-03T00:00:00.000Z",
+          deliveryMethod: "delivery",
+          status: "pending",
+          lineUserId: "customer-line-2",
+          lineName: "轉帳客戶",
+          phone: "0911000000",
+          email: "transfer@example.com",
+          city: "新竹市",
+          district: "東區",
+          address: "測試路 2 號",
+          items: "後台測試商品 x2",
+          total: 360,
+          paymentMethod: "transfer",
+          paymentStatus: "pending",
+          transferAccountLast5: "12345",
+          paymentId: "acc-001",
+          trackingNumber: "TRK-002",
+          shippingProvider: "黑貓宅急便",
+          trackingUrl: "https://example.com/tracking/TRK-002",
+        },
+        {
+          orderId: "ORD003",
+          timestamp: "2026-03-04T00:00:00.000Z",
+          deliveryMethod: "home_delivery",
+          status: "processing",
+          lineUserId: "customer-line-3",
+          lineName: "LINE Pay 客戶",
+          phone: "0922000000",
+          email: "linepay@example.com",
+          city: "台北市",
+          district: "中山區",
+          address: "測試路 3 號",
+          items: "後台測試商品 x3",
+          total: 540,
+          paymentMethod: "linepay",
+          paymentStatus: "paid",
+        },
+      ],
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "確認變更訂單狀態") {
+          return { isConfirmed: true };
+        }
+        if (title === "確認收款") {
+          return { isConfirmed: true };
+        }
+        if (title === "LINE Pay 退款") {
+          return { isConfirmed: true };
+        }
+        if (title === "刪除訂單？") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+
+    const selectedCount = page.locator("#orders-selected-count");
+    const selectAllCheckbox = page.locator("#orders-select-all");
+    await expect(page.locator("#orders-list")).toContainText("#ORD001");
+    await expect(page.locator("#orders-list")).toContainText("#ORD002");
+    await expect(page.locator("#orders-list")).toContainText("#ORD003");
+
+    await selectAllCheckbox.check();
+    await expect(selectedCount).toHaveText("已選 3 筆");
+
+    const order1 = page.locator("#orders-list > div").filter({ hasText: "#ORD001" });
+    await order1.locator("select").selectOption("processing");
+    await order1.getByRole("button", { name: "確認" }).click();
+    await expect(order1).toContainText("處理中");
+
+    const order2 = page.locator("#orders-list > div").filter({ hasText: "#ORD002" });
+    await order2.getByRole("button", { name: "複製" }).click();
+    await expect.poll(() =>
+      page.evaluate(() => {
+        const writes = (window as any).__clipboardWrites || [];
+        return writes[writes.length - 1] || null;
+      })
+    ).toBe("TRK-002");
+    await order2.getByRole("button", { name: "確認已收款" }).click();
+    await expect(order2).toContainText("已付款");
+
+    const order3 = page.locator("#orders-list > div").filter({ hasText: "#ORD003" });
+    await order3.getByRole("button", { name: /退款/ }).click();
+    await expect(order3).toContainText("已退款");
+
+    await order1.getByRole("button", { name: "刪除" }).click();
+    await expect(page.locator("#orders-list")).not.toContainText("#ORD001");
   });
 
   test("dashboard products controls work without document event delegation", async ({ page }) => {

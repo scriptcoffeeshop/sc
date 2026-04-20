@@ -11,7 +11,6 @@ import {
   resolveAssetUrl,
 } from "./icons.js";
 import {
-  createOrdersActionHandlers,
   createOrdersTabLoaders,
 } from "./dashboard/modules/orders.js";
 import {
@@ -44,7 +43,6 @@ import {
 import {
   createUsersTabLoaders,
 } from "./dashboard/modules/users.js";
-import { createDashboardEvents } from "./dashboard/events.js";
 import {
   configureDashboardCategoriesServices,
   dashboardCategoriesActions,
@@ -192,6 +190,11 @@ configureDashboardOrdersServices({
   Toast,
   Swal: globalThis.Swal,
   changeOrderStatus: orderStatusController.changeOrderStatus,
+  showFlexHistory: orderNotificationsController.showFlexHistory,
+  sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
+  sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
+  refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
+  confirmTransferPayment: orderStatusController.confirmTransferPayment,
 });
 configureDashboardCategoriesServices({
   API_URL,
@@ -246,29 +249,6 @@ configureDashboardProductsServices({
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
 });
-
-const dashboardActionHandlers = {
-  "login-with-line": triggerDashboardLogin,
-  "logout": dashboardSessionActions.logout,
-  ...createOrdersActionHandlers({
-    loadOrders: dashboardOrdersActions.loadOrders,
-    sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
-    sendOrderEmailByOrderId: orderNotificationsController.sendOrderEmailByOrderId,
-    deleteOrderById: dashboardOrdersActions.deleteOrderById,
-    refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
-    confirmTransferPayment: orderStatusController.confirmTransferPayment,
-    toggleOrderSelection: dashboardOrdersActions.toggleOrderSelection,
-    toggleSelectAllOrders: dashboardOrdersActions.toggleSelectAllOrders,
-    batchUpdateOrders: dashboardOrdersActions.batchUpdateOrders,
-    batchDeleteOrders: dashboardOrdersActions.batchDeleteOrders,
-    exportFilteredOrdersCsv: dashboardOrdersActions.exportFilteredOrdersCsv,
-    exportSelectedOrdersCsv: dashboardOrdersActions.exportSelectedOrdersCsv,
-    setPendingOrderStatus: dashboardOrdersActions.setPendingOrderStatus,
-    confirmOrderStatus: dashboardOrdersActions.confirmOrderStatus,
-    showFlexHistory: orderNotificationsController.showFlexHistory,
-    Toast,
-  }),
-};
 
 dashboardTabLoaders = {
   ...createOrdersTabLoaders({ loadOrders: dashboardOrdersActions.loadOrders }),
@@ -349,12 +329,6 @@ function canInitDashboard() {
 export function initDashboardApp() {
   if (dashboardInitialized || !canInitDashboard()) return;
   dashboardInitialized = true;
-  const { initializeDashboardEventDelegation } = createDashboardEvents(
-    dashboardActionHandlers,
-    orderStatusController.changeOrderStatus,
-    dashboardOrdersActions.renderOrders,
-  );
-  initializeDashboardEventDelegation();
   brandingController.loadPublicDashboardBranding();
 }
 

@@ -647,6 +647,36 @@ function exportSelectedOrdersCsv() {
   });
 }
 
+function copyTrackingNumber(trackingNumber) {
+  const { Swal, Toast } = getServices();
+  const normalizedTrackingNumber = String(trackingNumber || "").trim();
+  if (!normalizedTrackingNumber) return;
+
+  navigator.clipboard.writeText(normalizedTrackingNumber)
+    .then(() => Toast.fire({ icon: "success", title: "單號已複製" }))
+    .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
+}
+
+function showFlexHistory() {
+  getServices().showFlexHistory?.();
+}
+
+function sendOrderFlexByOrderId(orderId) {
+  return getServices().sendOrderFlexByOrderId?.(orderId);
+}
+
+function sendOrderEmailByOrderId(orderId) {
+  return getServices().sendOrderEmailByOrderId?.(orderId);
+}
+
+function refundOnlinePayOrder(orderId, paymentMethod) {
+  return getServices().refundOnlinePayOrder?.(orderId, paymentMethod);
+}
+
+function confirmTransferPayment(orderId) {
+  return getServices().confirmTransferPayment?.(orderId);
+}
+
 export function configureDashboardOrdersServices(nextServices) {
   services = {
     ...services,
@@ -684,4 +714,10 @@ export const dashboardOrdersActions = {
   exportSelectedOrdersCsv,
   setPendingOrderStatus,
   confirmOrderStatus,
+  copyTrackingNumber,
+  showFlexHistory,
+  sendOrderFlexByOrderId,
+  sendOrderEmailByOrderId,
+  refundOnlinePayOrder,
+  confirmTransferPayment,
 };

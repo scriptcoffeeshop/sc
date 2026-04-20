@@ -49,7 +49,6 @@ As of 2026-04-20:
   - settings icon controls / icon library quick apply
 - Remaining legacy-heavy areas:
   - dashboard bootstrap / window globals
-  - residual document-level delegation still serving orders legacy action paths
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
@@ -133,6 +132,7 @@ For a feature to be considered migrated:
   - icon library: Vue shell + reactive quick apply wiring done
   - settings local actions: done early
   - form fields local actions: done early
+  - orders local actions: done early
   - categories local actions: done early
   - products local actions + modal submit: done early
   - promotions local actions + modal submit: done early

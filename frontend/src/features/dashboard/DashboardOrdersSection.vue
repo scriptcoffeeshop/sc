@@ -7,14 +7,16 @@
         </h2>
         <div class="flex gap-2 items-center">
           <button
-            data-action="show-flex-history"
+            type="button"
+            @click="handleShowFlexHistory"
             class="text-sm px-3 py-1 rounded-lg border"
             title="LINE Flex Message 歷史紀錄"
           >
             📋 Flex 歷史
           </button>
           <button
-            data-action="reload-orders"
+            type="button"
+            @click="handleReloadOrders"
             class="text-sm ui-text-highlight"
           >
             <span class="tab-with-icon"><img src="../../../../icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
@@ -111,9 +113,9 @@
             ref="selectAllCheckbox"
             type="checkbox"
             id="orders-select-all"
-            data-action="toggle-select-all-orders"
             class="w-4 h-4"
             :checked="allFilteredSelected"
+            @change="handleToggleSelectAllOrders($event.target.checked)"
           >
           全選目前篩選結果
         </label>
@@ -148,25 +150,29 @@
           <option value="">清空付款狀態</option>
         </select>
         <button
-          data-action="batch-update-orders"
+          type="button"
+          @click="handleBatchUpdateOrders"
           class="btn-primary text-sm py-2 px-4"
         >
           批次更新
         </button>
         <button
-          data-action="batch-delete-orders"
+          type="button"
+          @click="handleBatchDeleteOrders"
           class="text-sm px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
         >
           批次刪除
         </button>
         <button
-          data-action="export-orders-csv"
+          type="button"
+          @click="handleExportFilteredOrdersCsv"
           class="text-sm px-4 py-2 rounded-lg border ui-border text-blue-700 hover:ui-primary-soft"
         >
           匯出篩選 CSV
         </button>
         <button
-          data-action="export-selected-orders-csv"
+          type="button"
+          @click="handleExportSelectedOrdersCsv"
           class="text-sm px-4 py-2 rounded-lg border ui-border text-blue-700 hover:ui-primary-soft"
         >
           匯出勾選 CSV
@@ -189,10 +195,9 @@
               <label class="inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  data-action="toggle-order-selection"
-                  :data-order-id="order.orderId"
                   class="w-4 h-4"
                   :checked="order.isSelected"
+                  @change="handleToggleOrderSelection(order.orderId, $event.target.checked)"
                 >
               </label>
               <span class="font-bold text-sm" style="color:var(--primary)">#{{ order.orderId }}</span>
@@ -264,8 +269,7 @@
               <span class="font-mono font-bold">{{ order.trackingNumber }}</span>
               <button
                 type="button"
-                data-action="copy-tracking-number"
-                :data-tracking-number="order.trackingNumber"
+                @click="handleCopyTrackingNumber(order.trackingNumber)"
                 class="ml-2 px-2 py-0.5 bg-gray-200 hover:bg-gray-300 rounded ui-text-strong"
                 title="複製單號"
               >
@@ -317,43 +321,40 @@
             <div class="flex gap-2">
               <button
                 v-if="order.showSendLineButton"
-                data-action="send-order-flex"
-                :data-order-id="order.orderId"
+                type="button"
+                @click="handleSendOrderFlex(order.orderId)"
                 class="text-xs text-emerald-700 hover:text-emerald-900"
               >
                 LINE通知
               </button>
               <button
                 v-if="order.showSendEmailButton"
-                data-action="send-order-email"
-                :data-order-id="order.orderId"
+                type="button"
+                @click="handleSendOrderEmail(order.orderId)"
                 class="text-xs ui-text-strong hover:opacity-80"
               >
                 發送信件
               </button>
               <button
                 v-if="order.showRefundButton"
-                data-action="refund-onlinepay-order"
-                :data-order-id="order.orderId"
-                :data-payment-method="order.paymentMethod"
+                type="button"
+                @click="handleRefundOrder(order.orderId, order.paymentMethod)"
                 class="text-xs text-purple-600 hover:text-purple-800 tab-with-icon"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-15-6l-3 2" /></svg>{{ order.refundButtonText || "退款" }}
               </button>
               <button
                 v-if="order.showConfirmTransferButton"
-                data-action="confirm-transfer-payment"
-                :data-order-id="order.orderId"
+                type="button"
+                @click="handleConfirmTransferPayment(order.orderId)"
                 class="text-xs ui-text-success hover:text-green-800"
               >
                 確認已收款
               </button>
               <select
-                data-action="change-order-status"
-                :data-order-id="order.orderId"
-                :data-current-status="order.status"
                 class="text-xs border rounded px-2 py-1"
                 :value="order.selectedStatus"
+                @change="handleOrderStatusChange(order.orderId, $event.target.value)"
               >
                 <option
                   v-for="status in ordersStatusOptions"
@@ -365,16 +366,16 @@
               </select>
               <button
                 v-if="order.showConfirmStatusButton"
-                data-action="confirm-order-status"
-                :data-order-id="order.orderId"
+                type="button"
+                @click="handleConfirmOrderStatus(order.orderId)"
                 class="confirm-status-btn text-xs px-2 py-1 rounded font-medium"
                 style="background:#6F4E37; color:#fff;"
               >
                 確認
               </button>
               <button
-                data-action="delete-order"
-                :data-order-id="order.orderId"
+                type="button"
+                @click="handleDeleteOrder(order.orderId)"
                 class="text-xs ui-text-danger hover:text-red-700"
               >
                 刪除
@@ -389,7 +390,10 @@
 
 <script setup>
 import { ref, watchEffect } from "vue";
-import { useDashboardOrders } from "./useDashboardOrders.js";
+import {
+  dashboardOrdersActions,
+  useDashboardOrders,
+} from "./useDashboardOrders.js";
 import { useDashboardSession } from "./useDashboardSession.js";
 
 const {
@@ -412,4 +416,68 @@ watchEffect(() => {
     selectAllCheckbox.value.indeterminate = selectAllIndeterminate.value;
   }
 });
+
+function handleShowFlexHistory() {
+  dashboardOrdersActions.showFlexHistory();
+}
+
+function handleReloadOrders() {
+  dashboardOrdersActions.loadOrders();
+}
+
+function handleToggleSelectAllOrders(checked) {
+  dashboardOrdersActions.toggleSelectAllOrders(checked);
+}
+
+function handleBatchUpdateOrders() {
+  dashboardOrdersActions.batchUpdateOrders();
+}
+
+function handleBatchDeleteOrders() {
+  dashboardOrdersActions.batchDeleteOrders();
+}
+
+function handleExportFilteredOrdersCsv() {
+  dashboardOrdersActions.exportFilteredOrdersCsv();
+}
+
+function handleExportSelectedOrdersCsv() {
+  dashboardOrdersActions.exportSelectedOrdersCsv();
+}
+
+function handleToggleOrderSelection(orderId, checked) {
+  dashboardOrdersActions.toggleOrderSelection(orderId, checked);
+}
+
+function handleCopyTrackingNumber(trackingNumber) {
+  dashboardOrdersActions.copyTrackingNumber(trackingNumber);
+}
+
+function handleSendOrderFlex(orderId) {
+  dashboardOrdersActions.sendOrderFlexByOrderId(orderId);
+}
+
+function handleSendOrderEmail(orderId) {
+  dashboardOrdersActions.sendOrderEmailByOrderId(orderId);
+}
+
+function handleRefundOrder(orderId, paymentMethod) {
+  dashboardOrdersActions.refundOnlinePayOrder(orderId, paymentMethod);
+}
+
+function handleConfirmTransferPayment(orderId) {
+  dashboardOrdersActions.confirmTransferPayment(orderId);
+}
+
+function handleOrderStatusChange(orderId, status) {
+  dashboardOrdersActions.setPendingOrderStatus(orderId, status);
+}
+
+function handleConfirmOrderStatus(orderId) {
+  dashboardOrdersActions.confirmOrderStatus(orderId);
+}
+
+function handleDeleteOrder(orderId) {
+  dashboardOrdersActions.deleteOrderById(orderId);
+}
 </script>

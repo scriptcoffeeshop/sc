@@ -17,7 +17,7 @@
       僅限管理員登入
     </p>
     <UiButton
-      data-action="login-with-line"
+      @click="handleLoginWithLine"
       class="h-11 px-6 bg-[#06c755] hover:bg-[#05b84e]"
     >
       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
@@ -43,7 +43,8 @@
         </div>
       </div>
       <button
-        data-action="logout"
+        type="button"
+        @click="handleLogout"
         class="text-sm ui-text-subtle hover:ui-text-danger"
       >
         登出
@@ -129,6 +130,14 @@ const filteredIconCatalog = computed(() => {
 
 function selectIconLibraryCategory(category) {
   iconLibraryCategory.value = category;
+}
+
+function handleLoginWithLine() {
+  dashboardSessionActions.startLogin();
+}
+
+function handleLogout() {
+  dashboardSessionActions.logout();
 }
 
 function buildDashboardBodyClass() {
