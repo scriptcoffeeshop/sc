@@ -372,6 +372,57 @@ async function installDashboardRoutes(
       return;
     }
 
+    if (action === "getUsers") {
+      await fulfillJson(route, {
+        success: true,
+        users: [
+          {
+            userId: "user-001",
+            displayName: "測試會員",
+            pictureUrl: "",
+            email: "user@example.com",
+            phone: "0912000000",
+            defaultDeliveryMethod: "delivery",
+            defaultCity: "新竹市",
+            defaultDistrict: "東區",
+            defaultAddress: "測試路 1 號",
+            lastLogin: "2026-04-20T10:00:00.000Z",
+            role: "USER",
+            status: "ACTIVE",
+          },
+          {
+            userId: "admin-002",
+            displayName: "管理測試員",
+            pictureUrl: "",
+            email: "admin@example.com",
+            phone: "",
+            defaultDeliveryMethod: "in_store",
+            defaultStoreName: "",
+            defaultStoreId: "",
+            lastLogin: "2026-04-19T09:30:00.000Z",
+            role: "ADMIN",
+            status: "BLACKLISTED",
+          },
+        ],
+      });
+      return;
+    }
+
+    if (action === "getBlacklist") {
+      await fulfillJson(route, {
+        success: true,
+        blacklist: [
+          {
+            lineUserId: "admin-002",
+            displayName: "管理測試員",
+            blockedAt: "2026-04-20T08:00:00.000Z",
+            reason: "惡意測試",
+          },
+        ],
+      });
+      return;
+    }
+
     if (action === "getOrders") {
       await fulfillJson(route, {
         success: true,
@@ -1312,6 +1363,79 @@ test.describe("smoke", () => {
     await expect(page.locator("#formfields-list")).toContainText("receipt_type");
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedDashboardFormFieldsEventCount)
+    ).toBe(0);
+  });
+
+  test("dashboard users work without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardUsersEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-users-updated") {
+          (window as any).__blockedDashboardUsersEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-users").click();
+
+    await expect(page.locator("#users-table")).toContainText("測試會員");
+    await expect(page.locator("#users-table")).toContainText("管理測試員");
+    await expect(page.locator('button[data-action="toggle-user-role"]').first()).toBeVisible();
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardUsersEventCount)
+    ).toBe(0);
+  });
+
+  test("dashboard blacklist works without custom-event bridge", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalDispatchEvent = window.dispatchEvent.bind(window);
+      (window as any).__blockedDashboardBlacklistEventCount = 0;
+      window.dispatchEvent = ((event: Event) => {
+        if (event?.type === "coffee:dashboard-blacklist-updated") {
+          (window as any).__blockedDashboardBlacklistEventCount += 1;
+          return true;
+        }
+        return originalDispatchEvent(event);
+      }) as typeof window.dispatchEvent;
+
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-blacklist").click();
+
+    await expect(page.locator("#blacklist-table")).toContainText("管理測試員");
+    await expect(page.locator("#blacklist-table")).toContainText("惡意測試");
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedDashboardBlacklistEventCount)
     ).toBe(0);
   });
 });

@@ -31,7 +31,6 @@ import {
 } from "./dashboard/modules/products.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
 import { createSettingsController } from "./dashboard/modules/settings-controller.js";
-import { createUsersController } from "./dashboard/modules/users-controller.js";
 import { createIconAssetsController } from "./dashboard/modules/icon-assets-controller.js";
 import {
   createSettingsActionHandlers,
@@ -69,6 +68,10 @@ import {
   configureDashboardPromotionsServices,
   dashboardPromotionsActions,
 } from "../frontend/src/features/dashboard/useDashboardPromotions.js";
+import {
+  configureDashboardUsersServices,
+  dashboardUsersActions,
+} from "../frontend/src/features/dashboard/useDashboardUsers.js";
 import {
   configureDashboardOrdersServices,
   dashboardOrdersActions,
@@ -173,15 +176,6 @@ const settingsController = createSettingsController({
   },
   esc,
 });
-const usersController = createUsersController({
-  API_URL,
-  authFetch,
-  getAuthUserId: sessionController.getAuthUserId,
-  getCurrentUser: () => currentUser,
-  Toast,
-  Swal: globalThis.Swal,
-  esc,
-});
 const orderNotificationsController = createOrderNotificationsController({
   API_URL,
   authFetch,
@@ -251,6 +245,15 @@ configureDashboardFormFieldsServices({
   Sortable: globalThis.Sortable,
   getDashboardSettings: () => dashboardSettings,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
+});
+configureDashboardUsersServices({
+  API_URL,
+  authFetch,
+  getAuthUserId: sessionController.getAuthUserId,
+  getCurrentUser: () => currentUser,
+  Toast,
+  Swal: globalThis.Swal,
+  esc,
 });
 configureDashboardProductsServices({
   API_URL,
@@ -323,10 +326,10 @@ const dashboardActionHandlers = {
     loadFormFields: dashboardFormFieldsActions.loadFormFields,
   }),
   ...createUsersActionHandlers({
-    loadUsers: usersController.loadUsers,
-    toggleUserBlacklist: usersController.toggleUserBlacklist,
-    toggleUserRole: usersController.toggleUserRole,
-    loadBlacklist: usersController.loadBlacklist,
+    loadUsers: dashboardUsersActions.loadUsers,
+    toggleUserBlacklist: dashboardUsersActions.toggleUserBlacklist,
+    toggleUserRole: dashboardUsersActions.toggleUserRole,
+    loadBlacklist: dashboardUsersActions.loadBlacklist,
   }),
 };
 
@@ -341,8 +344,8 @@ dashboardTabLoaders = {
     loadFormFields: dashboardFormFieldsActions.loadFormFields,
   }),
   ...createUsersTabLoaders({
-    loadUsers: usersController.loadUsers,
-    loadBlacklist: usersController.loadBlacklist,
+    loadUsers: dashboardUsersActions.loadUsers,
+    loadBlacklist: dashboardUsersActions.loadBlacklist,
   }),
 };
 
@@ -374,10 +377,10 @@ registerDashboardGlobals({
   delCategory: dashboardCategoriesActions.delCategory,
   updateCategoryOrders: dashboardCategoriesActions.updateCategoryOrders,
   saveSettings: settingsController.saveSettings,
-  loadUsers: usersController.loadUsers,
-  toggleUserRole: usersController.toggleUserRole,
-  toggleUserBlacklist: usersController.toggleUserBlacklist,
-  loadBlacklist: usersController.loadBlacklist,
+  loadUsers: dashboardUsersActions.loadUsers,
+  toggleUserRole: dashboardUsersActions.toggleUserRole,
+  toggleUserBlacklist: dashboardUsersActions.toggleUserBlacklist,
+  loadBlacklist: dashboardUsersActions.loadBlacklist,
   esc,
   showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,
   editFormField: dashboardFormFieldsActions.editFormField,
@@ -420,7 +423,7 @@ export function initDashboardApp() {
     dashboardActionHandlers,
     dashboardTabLoaders,
     sessionController.showTab,
-    usersController.loadUsers,
+    dashboardUsersActions.loadUsers,
     iconAssetsController.previewIcon,
     dashboardProductsActions.saveProduct,
     dashboardPromotionsActions.savePromotion,

@@ -42,9 +42,9 @@ As of 2026-04-20:
   - categories
   - promotions
   - form fields
-- Bridge-backed sections still pending:
   - users
   - blacklist
+- Bridge-backed sections still pending:
   - settings / session
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
@@ -118,10 +118,18 @@ For a feature to be considered migrated:
   - categories: done
   - promotions: done
   - form fields: done
+  - users: done
+  - blacklist: done
 
 #### 2026-06-01 to 2026-06-14
 
 - Migrate settings, icon library, users, blacklist, and session/login flow.
+- Status on 2026-04-20:
+  - settings: pending
+  - icon library: Vue shell + legacy settings source
+  - users: done early
+  - blacklist: done early
+  - session/login flow: pending
 - Remove dependency on dashboard-specific legacy page orchestration for normal admin usage.
 
 #### 2026-06-15 to 2026-06-21
@@ -305,5 +313,5 @@ Dashboard migration is complete when all of the following are true:
 
 1. Create the `frontend/src/features/dashboard/` directory structure.
 2. Keep `DashboardPage.vue` as shell-only wiring and avoid new section logic there.
-3. Replace the users / blacklist bridge events with Vue-owned state/actions.
+3. Replace the settings / session legacy orchestration with Vue-owned state/actions.
 4. Repeat section by section until `DashboardPage.vue` becomes composition-only.

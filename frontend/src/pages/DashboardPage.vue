@@ -61,8 +61,8 @@
       @select-category="selectIconLibraryCategory"
     />
     <DashboardFormFieldsSection />
-    <DashboardUsersSection :users-view="usersView" />
-    <DashboardBlacklistSection :blacklist-view="blacklistView" />
+    <DashboardUsersSection />
+    <DashboardBlacklistSection />
 
     <div class="content-spacer"></div>
   </div>
@@ -94,8 +94,6 @@ const brandIconUrl = getDefaultIconUrl("brand");
 const originalBodyClass = document.body.className;
 const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
 
-const usersView = ref([]);
-const blacklistView = ref([]);
 const iconLibraryCategory = ref("all");
 const iconLibraryKeyword = ref("");
 
@@ -137,33 +135,12 @@ function buildDashboardBodyClass() {
   return Array.from(classSet).join(" ");
 }
 
-function handleDashboardUsersUpdated(event) {
-  const detail = event?.detail || {};
-  usersView.value = Array.isArray(detail.users) ? detail.users : [];
-}
-
-function handleDashboardBlacklistUpdated(event) {
-  const detail = event?.detail || {};
-  blacklistView.value = Array.isArray(detail.blacklist) ? detail.blacklist : [];
-}
-
-const dashboardEventListeners = [
-  ["coffee:dashboard-users-updated", handleDashboardUsersUpdated],
-  ["coffee:dashboard-blacklist-updated", handleDashboardBlacklistUpdated],
-];
-
 onMounted(() => {
   document.body.className = buildDashboardBodyClass();
-  for (const [eventName, handler] of dashboardEventListeners) {
-    window.addEventListener(eventName, handler);
-  }
   initDashboardApp();
 });
 
 onBeforeUnmount(() => {
-  for (const [eventName, handler] of dashboardEventListeners) {
-    window.removeEventListener(eventName, handler);
-  }
   document.body.className = originalBodyClass;
 });
 </script>

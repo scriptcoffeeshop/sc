@@ -18,7 +18,7 @@
             </th>
           </tr>
         </thead>
-        <tbody id="blacklist-table" data-vue-managed="true">
+        <tbody id="blacklist-table">
           <tr v-if="blacklistView.length === 0">
             <td colspan="3" class="text-center py-8 ui-text-subtle">
               目前沒有封鎖名單
@@ -58,10 +58,7 @@
 </template>
 
 <script setup>
-defineProps({
-  blacklistView: {
-    type: Array,
-    default: () => [],
-  },
-});
+import { useDashboardUsers } from "./useDashboardUsers.js";
+
+const { blacklistView } = useDashboardUsers();
 </script>

@@ -10,6 +10,8 @@
           id="user-search"
           class="input-field text-sm py-1"
           placeholder="搜尋名稱/手機/Email"
+          :value="userSearch"
+          @input="updateUserSearch($event.target.value)"
         >
         <button
           data-action="search-users"
@@ -37,7 +39,7 @@
             </th>
           </tr>
         </thead>
-        <tbody id="users-table" data-vue-managed="true">
+        <tbody id="users-table">
           <tr v-if="usersView.length === 0">
             <td colspan="4" class="text-center py-8 ui-text-subtle">
               無符合條件的用戶
@@ -113,10 +115,7 @@
 </template>
 
 <script setup>
-defineProps({
-  usersView: {
-    type: Array,
-    default: () => [],
-  },
-});
+import { useDashboardUsers } from "./useDashboardUsers.js";
+
+const { userSearch, usersView, updateUserSearch } = useDashboardUsers();
 </script>
