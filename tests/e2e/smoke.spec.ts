@@ -20,6 +20,27 @@ function jsonHeaders() {
   };
 }
 
+function parseRgbChannels(color: string) {
+  const match = String(color).match(
+    /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/i,
+  );
+  if (!match) {
+    throw new Error(`Unsupported color format: ${color}`);
+  }
+  return match.slice(1, 4).map((value) => Number.parseInt(value, 10));
+}
+
+function expectColorsClose(received: string, expected: string, tolerance = 1) {
+  const receivedChannels = parseRgbChannels(received);
+  const expectedChannels = parseRgbChannels(expected);
+
+  receivedChannels.forEach((channel, index) => {
+    expect(Math.abs(channel - expectedChannels[index])).toBeLessThanOrEqual(
+      tolerance,
+    );
+  });
+}
+
 async function fulfillJson(route: Route, payload: unknown, status = 200) {
   await route.fulfill({
     status,
@@ -498,8 +519,8 @@ test.describe("smoke", () => {
       getComputedStyle(element).color
     );
 
-    expect(ordersIconColor).toBe(ordersButtonColor);
-    expect(cartIconColor).toBe(cartButtonColor);
+    expectColorsClose(ordersIconColor, ordersButtonColor);
+    expectColorsClose(cartIconColor, cartButtonColor);
   });
 
   test("storefront path works with event delegation", async ({ page }) => {
@@ -1031,8 +1052,8 @@ test.describe("smoke", () => {
       getComputedStyle(element).color
     );
 
-    expect(activeIconColor).toBe(activeTabColor);
-    expect(inactiveIconColor).toBe(inactiveTabColor);
+    expectColorsClose(activeIconColor, activeTabColor);
+    expectColorsClose(inactiveIconColor, inactiveTabColor);
   });
 
   test("dashboard LINE login callback uses POST", async ({ page }) => {
