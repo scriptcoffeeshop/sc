@@ -269,6 +269,17 @@ type DashboardRouteOptions = {
   onUpdateSettings?: (request: PlaywrightRequest) => void;
   onUploadAsset?: (request: PlaywrightRequest) => void;
   uploadAssetUrl?: string;
+  formFields?: Array<{
+    id: number;
+    field_key: string;
+    label: string;
+    field_type: string;
+    placeholder?: string;
+    options?: string;
+    required?: boolean;
+    enabled?: boolean;
+    delivery_visibility?: string | null;
+  }>;
   bankAccounts?: Array<{
     id: number;
     bankCode: string;
@@ -285,6 +296,19 @@ async function installDashboardRoutes(
   let bankAccountsState = Array.isArray(options.bankAccounts)
     ? options.bankAccounts.map((account) => ({ ...account }))
     : [];
+  let formFieldsState = Array.isArray(options.formFields)
+    ? options.formFields.map((field) => ({ ...field }))
+    : [{
+      id: 401,
+      field_key: "receipt_type",
+      label: "收據類型",
+      field_type: "select",
+      placeholder: "請選擇",
+      options: JSON.stringify(["二聯式", "三聯式"]),
+      required: true,
+      enabled: true,
+      delivery_visibility: JSON.stringify({ delivery: true }),
+    }];
 
   await page.route(`${API_URL}**`, async (route) => {
     const request = route.request();
@@ -369,19 +393,7 @@ async function installDashboardRoutes(
     if (action === "getFormFieldsAdmin") {
       await fulfillJson(route, {
         success: true,
-        fields: [
-          {
-            id: 401,
-            field_key: "receipt_type",
-            label: "收據類型",
-            field_type: "select",
-            placeholder: "請選擇",
-            options: JSON.stringify(["二聯式", "三聯式"]),
-            required: true,
-            enabled: true,
-            delivery_visibility: JSON.stringify({ delivery: true }),
-          },
-        ],
+        fields: formFieldsState,
       });
       return;
     }
@@ -523,6 +535,64 @@ async function installDashboardRoutes(
 
     if (action === "updateSettings") {
       options.onUpdateSettings?.(request);
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "addFormField") {
+      const body = request.postDataJSON() as any;
+      formFieldsState.push({
+        id: Date.now(),
+        field_key: String(body?.fieldKey || ""),
+        label: String(body?.label || ""),
+        field_type: String(body?.fieldType || "text"),
+        placeholder: String(body?.placeholder || ""),
+        options: String(body?.options || ""),
+        required: Boolean(body?.required),
+        enabled: true,
+        delivery_visibility: body?.deliveryVisibility || null,
+      });
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updateFormField") {
+      const body = request.postDataJSON() as any;
+      formFieldsState = formFieldsState.map((field) =>
+        Number(field.id) === Number(body?.id)
+          ? {
+            ...field,
+            label: body?.label !== undefined ? String(body.label) : field.label,
+            field_type: body?.fieldType !== undefined
+              ? String(body.fieldType)
+              : field.field_type,
+            placeholder: body?.placeholder !== undefined
+              ? String(body.placeholder)
+              : field.placeholder,
+            options: body?.options !== undefined
+              ? String(body.options)
+              : field.options,
+            required: body?.required !== undefined
+              ? Boolean(body.required)
+              : field.required,
+            enabled: body?.enabled !== undefined
+              ? Boolean(body.enabled)
+              : field.enabled,
+            delivery_visibility: body?.deliveryVisibility !== undefined
+              ? body.deliveryVisibility
+              : field.delivery_visibility,
+          }
+          : field
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "deleteFormField") {
+      const body = request.postDataJSON() as any;
+      formFieldsState = formFieldsState.filter((field) =>
+        Number(field.id) !== Number(body?.id)
+      );
       await fulfillJson(route, { success: true });
       return;
     }
@@ -1199,6 +1269,17 @@ test.describe("smoke", () => {
         }),
       );
       localStorage.setItem("coffee_jwt", "mock-token");
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
     });
 
     await page.goto("/dashboard.html");
@@ -1207,11 +1288,11 @@ test.describe("smoke", () => {
     const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
     await expect(deliveryRows).toHaveCount(1);
 
-    await page.locator('[data-action="add-delivery-option-admin"]').click();
+    await page.getByRole("button", { name: "+ 新增取貨方式" }).click();
     await expect(deliveryRows).toHaveCount(2);
     await expect(deliveryRows.nth(1).locator(".do-name")).toHaveValue("新物流方式");
 
-    await deliveryRows.nth(1).locator('[data-action="remove-delivery-option-row"]').click();
+    await deliveryRows.nth(1).getByRole("button", { name: "刪除" }).click();
     await expect(deliveryRows).toHaveCount(1);
   });
 
@@ -1235,6 +1316,17 @@ test.describe("smoke", () => {
         }),
       );
       localStorage.setItem("coffee_jwt", "mock-token");
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
     });
 
     await page.goto("/dashboard.html");
@@ -1248,7 +1340,7 @@ test.describe("smoke", () => {
     await page.locator("#s-products-title").fill("精品豆專區");
     await page.locator("#s-products-color").fill("#cb4b16");
     await page.locator("#s-linepay-sandbox").uncheck();
-    await page.locator('[data-action="save-settings"]').click();
+    await page.getByRole("button", { name: "儲存設定" }).click();
 
     await expect.poll(() => updatePayload?.settings?.site_title).toBe("新的品牌名稱");
     expect(updatePayload?.settings?.site_subtitle).toBe("新的副標題");
@@ -1302,6 +1394,18 @@ test.describe("smoke", () => {
         });
       }
 
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
       const baseFire = (window as any).Swal.fire;
       (window as any).Swal.fire = async (input: any) => {
         const title = typeof input === "string" ? input : input?.title;
@@ -1328,13 +1432,85 @@ test.describe("smoke", () => {
     await expect(page.locator("[data-bank-account-row]")).toHaveCount(1);
     await expect(page.locator("[data-bank-account-row]").first()).toContainText("國泰世華");
 
-    await page.locator('[data-action="show-add-bank-account-modal"]').click();
+    await page.getByRole("button", { name: "+ 新增匯款帳號" }).click();
     await expect(page.locator("[data-bank-account-row]")).toHaveCount(2);
     await expect(page.locator("[data-bank-account-row]").nth(1)).toContainText("台新銀行");
 
-    await page.locator('[data-action="delete-bank-account"][data-bank-account-id="1"]').click();
+    await page
+      .locator("[data-bank-account-row]")
+      .filter({ hasText: "國泰世華" })
+      .getByRole("button", { name: "刪除" })
+      .click();
     await expect(page.locator("[data-bank-account-row]")).toHaveCount(1);
     await expect(page.locator("[data-bank-account-row]").first()).toContainText("台新銀行");
+  });
+
+  test("dashboard form fields controls work without document event delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalAddEventListener = Document.prototype.addEventListener;
+      Document.prototype.addEventListener = function patchedAddEventListener(
+        type: string,
+        listener: EventListenerOrEventListenerObject,
+        options?: boolean | AddEventListenerOptions,
+      ) {
+        if (this === document && (type === "click" || type === "change")) {
+          return;
+        }
+        return originalAddEventListener.call(this, type, listener, options);
+      };
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "新增欄位") {
+          return {
+            value: {
+              fieldKey: "tax_id",
+              label: "統一編號",
+              fieldType: "text",
+              placeholder: "請輸入統一編號",
+              options: "",
+              required: false,
+              deliveryVisibility: null,
+            },
+          };
+        }
+        if (title === "確認刪除") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-formfields").click();
+
+    const rows = page.locator("#formfields-sortable > div");
+    await expect(rows).toHaveCount(1);
+
+    await page.getByRole("button", { name: "+ 新增欄位" }).click();
+    await expect(rows).toHaveCount(2);
+    await expect(rows.filter({ hasText: "統一編號" })).toHaveCount(1);
+
+    const receiptRow = rows.filter({ hasText: "收據類型" });
+    await receiptRow.getByRole("button", { name: "開" }).click();
+    await expect(receiptRow).toHaveClass(/opacity-50/);
+
+    await rows.filter({ hasText: "統一編號" }).getByRole("button", { name: "刪除" }).click();
+    await expect(rows).toHaveCount(1);
   });
 
   test("dashboard settings icon controls work without document event delegation", async ({ page }) => {

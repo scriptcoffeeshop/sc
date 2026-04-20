@@ -3,6 +3,7 @@ import { nextTick, ref } from "vue";
 const PAYMENT_METHOD_ORDER = ["cod", "linepay", "jkopay", "transfer"];
 const SECTION_TITLE_ORDER = ["products", "delivery", "notes"];
 
+const rawSettings = ref({});
 const deliveryOptions = ref([]);
 const paymentOptions = ref({
   cod: { icon: "", icon_url: "", name: "", description: "" },
@@ -32,6 +33,7 @@ const sectionTitleSettings = ref({
 let services = null;
 let deliveryRoutingTableElement = null;
 let deliverySortable = null;
+let settingsLoadToken = 0;
 
 function getServices() {
   if (!services) {
@@ -213,6 +215,7 @@ function registerDeliveryRoutingTableElement(element) {
 }
 
 function replaceSettingsConfig(settings = {}) {
+  rawSettings.value = settings;
   const {
     getDefaultIconUrl,
     sectionIconSettingKey,
@@ -374,6 +377,68 @@ function buildSettingsConfig() {
   };
 }
 
+async function loadSettings() {
+  const {
+    API_URL,
+    authFetch,
+    applyDashboardBranding,
+    loadBankAccounts,
+  } = getServices();
+  const currentLoadToken = ++settingsLoadToken;
+  try {
+    const response = await authFetch(
+      `${API_URL}?action=getSettings&_=${Date.now()}`,
+    );
+    const data = await response.json();
+    if (currentLoadToken !== settingsLoadToken) return;
+    if (!data.success) return;
+
+    const settings = data.settings || {};
+    applyDashboardBranding?.(settings);
+    replaceSettingsConfig(settings);
+
+    if (currentLoadToken !== settingsLoadToken) return;
+    await loadBankAccounts?.();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function saveSettings() {
+  const {
+    API_URL,
+    authFetch,
+    getAuthUserId,
+    Toast,
+    Swal,
+    linePaySandboxCacheKey,
+  } = getServices();
+  try {
+    const settingsConfig = buildSettingsConfig();
+    const response = await authFetch(`${API_URL}?action=updateSettings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: getAuthUserId(),
+        settings: settingsConfig.settings,
+      }),
+    });
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "設定儲存失敗");
+    }
+
+    globalThis.localStorage?.setItem(
+      linePaySandboxCacheKey,
+      String(settingsConfig.linePaySandboxChecked),
+    );
+    Toast.fire({ icon: "success", title: "設定已儲存" });
+    await loadSettings();
+  } catch (error) {
+    Swal.fire("錯誤", error.message, "error");
+  }
+}
+
 export function configureDashboardSettingsServices(nextServices) {
   services = {
     ...services,
@@ -396,6 +461,9 @@ export function useDashboardSettings() {
 export const dashboardSettingsActions = {
   registerDeliveryRoutingTableElement,
   replaceSettingsConfig,
+  getRawSettings: () => rawSettings.value,
+  loadSettings,
+  saveSettings,
   resetSectionTitle,
   addDeliveryOption,
   removeDeliveryOption,

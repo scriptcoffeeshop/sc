@@ -1,6 +1,6 @@
 # Frontend Vue Migration Plan
 
-Last updated: 2026-04-20
+Last updated: 2026-04-21
 
 ## Decision
 
@@ -48,7 +48,8 @@ As of 2026-04-20:
   - settings
   - settings icon controls / icon library quick apply
 - Remaining legacy-heavy areas:
-  - dashboard bootstrap / event delegation / window globals
+  - dashboard bootstrap / window globals
+  - residual document-level delegation still serving orders/products/users legacy action paths
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
@@ -130,6 +131,8 @@ For a feature to be considered migrated:
 - Status on 2026-04-20:
   - settings: done early
   - icon library: Vue shell + reactive quick apply wiring done
+  - settings local actions: done early
+  - form fields local actions: done early
   - users: done early
   - blacklist: done early
   - session/login flow: done early

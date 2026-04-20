@@ -28,15 +28,12 @@ import {
   createProductsTabLoaders,
 } from "./dashboard/modules/products.js";
 import { createOrderNotificationsController } from "./dashboard/modules/order-notifications-controller.js";
-import { createSettingsController } from "./dashboard/modules/settings-controller.js";
 import {
-  createSettingsActionHandlers,
   createSettingsTabLoaders,
 } from "./dashboard/modules/settings.js";
 import {
   createDashboardBrandingController,
   parseBooleanSetting,
-  readInputValue,
 } from "./dashboard/modules/dashboard-branding.js";
 import { registerDashboardGlobals } from "./dashboard/modules/dashboard-globals.js";
 import {
@@ -95,7 +92,6 @@ import {
 } from "../frontend/src/features/dashboard/useDashboardProducts.js";
 
 // ============ 共享狀態 ============
-let dashboardSettings = {};
 let dashboardTabLoaders = {};
 let loadInitialDashboardData = async () => {};
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
@@ -131,6 +127,13 @@ configureDashboardSessionServices({
   Swal: globalThis.Swal,
 });
 configureDashboardSettingsServices({
+  API_URL,
+  authFetch,
+  getAuthUserId: dashboardSessionActions.getAuthUserId,
+  Toast,
+  Swal: globalThis.Swal,
+  applyDashboardBranding: brandingController.applyDashboardBranding,
+  loadBankAccounts: dashboardBankAccountsActions.loadBankAccounts,
   getDefaultIconUrl,
   normalizeIconPath,
   normalizeDeliveryOption,
@@ -155,27 +158,6 @@ configureDashboardBankAccountsServices({
   Toast,
   Swal: globalThis.Swal,
   Sortable: globalThis.Sortable,
-});
-const settingsController = createSettingsController({
-  API_URL,
-  authFetch,
-  getAuthUserId: dashboardSessionActions.getAuthUserId,
-  Toast,
-  Swal: globalThis.Swal,
-  applyDashboardBranding: brandingController.applyDashboardBranding,
-  parseBooleanSetting,
-  getDefaultIconUrl,
-  normalizeIconPath,
-  sectionIconSettingKey,
-  readInputValue,
-  linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
-  loadBankAccounts: dashboardBankAccountsActions.loadBankAccounts,
-  setDashboardSettings: (settings) => {
-    dashboardSettings = settings;
-  },
-  replaceSettingsConfig: dashboardSettingsActions.replaceSettingsConfig,
-  resetSectionTitle: dashboardSettingsActions.resetSectionTitle,
-  buildSettingsConfig: dashboardSettingsActions.buildSettingsConfig,
 });
 const orderNotificationsController = createOrderNotificationsController({
   API_URL,
@@ -244,7 +226,7 @@ configureDashboardFormFieldsServices({
   Swal: globalThis.Swal,
   esc,
   Sortable: globalThis.Sortable,
-  getDashboardSettings: () => dashboardSettings,
+  getDashboardSettings: dashboardSettingsActions.getRawSettings,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
 configureDashboardUsersServices({
@@ -306,21 +288,6 @@ const dashboardActionHandlers = {
     closePromotionModal: dashboardPromotionsActions.closePromotionModal,
     loadPromotions: dashboardPromotionsActions.loadPromotions,
   }),
-  ...createSettingsActionHandlers({
-    resetSectionTitle: settingsController.resetSectionTitle,
-    addDeliveryOption: dashboardSettingsActions.addDeliveryOption,
-    removeDeliveryOption: dashboardSettingsActions.removeDeliveryOption,
-    showAddBankAccountModal: dashboardBankAccountsActions.showAddBankAccountModal,
-    saveSettings: settingsController.saveSettings,
-    showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,
-    toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
-    editFormField: dashboardFormFieldsActions.editFormField,
-    deleteFormField: dashboardFormFieldsActions.deleteFormField,
-    editBankAccount: dashboardBankAccountsActions.editBankAccount,
-    deleteBankAccount: dashboardBankAccountsActions.deleteBankAccount,
-    loadSettings: settingsController.loadSettings,
-    loadFormFields: dashboardFormFieldsActions.loadFormFields,
-  }),
   ...createUsersActionHandlers({
     loadUsers: dashboardUsersActions.loadUsers,
     toggleUserBlacklist: dashboardUsersActions.toggleUserBlacklist,
@@ -336,7 +303,7 @@ dashboardTabLoaders = {
     loadPromotions: dashboardPromotionsActions.loadPromotions,
   }),
   ...createSettingsTabLoaders({
-    loadSettings: settingsController.loadSettings,
+    loadSettings: dashboardSettingsActions.loadSettings,
     loadFormFields: dashboardFormFieldsActions.loadFormFields,
   }),
   ...createUsersTabLoaders({
@@ -348,7 +315,7 @@ dashboardTabLoaders = {
 loadInitialDashboardData = () => Promise.all([
   dashboardCategoriesActions.loadCategories(),
   dashboardProductsActions.loadProducts(),
-  settingsController.loadSettings(),
+  dashboardSettingsActions.loadSettings(),
   dashboardOrdersActions.loadOrders(),
 ]);
 
@@ -372,7 +339,7 @@ registerDashboardGlobals({
   editCategory: dashboardCategoriesActions.editCategory,
   delCategory: dashboardCategoriesActions.delCategory,
   updateCategoryOrders: dashboardCategoriesActions.updateCategoryOrders,
-  saveSettings: settingsController.saveSettings,
+  saveSettings: dashboardSettingsActions.saveSettings,
   loadUsers: dashboardUsersActions.loadUsers,
   toggleUserRole: dashboardUsersActions.toggleUserRole,
   toggleUserBlacklist: dashboardUsersActions.toggleUserBlacklist,
@@ -382,7 +349,7 @@ registerDashboardGlobals({
   editFormField: dashboardFormFieldsActions.editFormField,
   deleteFormField: dashboardFormFieldsActions.deleteFormField,
   toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
-  resetSectionTitle: settingsController.resetSectionTitle,
+  resetSectionTitle: dashboardSettingsActions.resetSectionTitle,
   refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
   confirmTransferPayment: orderStatusController.confirmTransferPayment,
   showAddBankAccountModal: dashboardBankAccountsActions.showAddBankAccountModal,

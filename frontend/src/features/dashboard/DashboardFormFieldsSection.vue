@@ -5,7 +5,8 @@
         表單欄位管理
       </h2>
       <button
-        data-action="show-add-field-modal"
+        type="button"
+        @click="handleShowAddFieldModal"
         class="btn-primary text-sm"
       >
         + 新增欄位
@@ -55,25 +56,24 @@
           </div>
           <div class="flex gap-1 items-center">
             <button
-              data-action="toggle-field-enabled"
-              :data-field-id="field.id"
-              :data-enabled="field.toggleEnabledValue"
+              type="button"
+              @click="handleToggleFieldEnabled(field.id, field.toggleEnabledValue)"
               class="text-sm px-2 py-1 rounded hover:bg-gray-100"
               :title="field.toggleEnabledTitle"
             >
               {{ field.toggleEnabledIcon }}
             </button>
             <button
-              data-action="edit-form-field"
-              :data-field-id="field.id"
+              type="button"
+              @click="handleEditFormField(field.id)"
               class="text-sm px-2 py-1 rounded hover:bg-gray-100"
               title="編輯"
             >
               編輯
             </button>
             <button
-              data-action="delete-form-field"
-              :data-field-id="field.id"
+              type="button"
+              @click="handleDeleteFormField(field.id)"
               class="text-sm px-2 py-1 rounded hover:bg-red-50 ui-text-danger"
               title="刪除"
             >
@@ -100,6 +100,22 @@ const formFieldsList = ref(null);
 
 function syncFormFieldsList() {
   dashboardFormFieldsActions.registerFormFieldsListElement(formFieldsList.value);
+}
+
+function handleShowAddFieldModal() {
+  dashboardFormFieldsActions.showAddFieldModal();
+}
+
+function handleToggleFieldEnabled(id, enabled) {
+  dashboardFormFieldsActions.toggleFieldEnabled(id, enabled === "true");
+}
+
+function handleEditFormField(id) {
+  dashboardFormFieldsActions.editFormField(id);
+}
+
+function handleDeleteFormField(id) {
+  dashboardFormFieldsActions.deleteFormField(id);
 }
 
 onMounted(syncFormFieldsList);

@@ -75,7 +75,6 @@
               </div>
             </div>
             <input
-              ref="siteIconInput"
               type="file"
               id="s-site-icon-upload"
               class="hidden"
@@ -99,8 +98,7 @@
           <label class="block text-sm font-medium ui-text-strong">商品區塊</label>
           <button
             type="button"
-            data-action="reset-section-title"
-            data-section="products"
+            @click="handleResetSectionTitle('products')"
             class="text-xs ui-text-highlight hover:text-blue-700"
           >
             恢復預設
@@ -176,8 +174,7 @@
           <label class="block text-sm font-medium ui-text-strong">配送區塊</label>
           <button
             type="button"
-            data-action="reset-section-title"
-            data-section="delivery"
+            @click="handleResetSectionTitle('delivery')"
             class="text-xs ui-text-highlight hover:text-blue-700"
           >
             恢復預設
@@ -253,8 +250,7 @@
           <label class="block text-sm font-medium ui-text-strong">備註區塊</label>
           <button
             type="button"
-            data-action="reset-section-title"
-            data-section="notes"
+            @click="handleResetSectionTitle('notes')"
             class="text-xs ui-text-highlight hover:text-blue-700"
           >
             恢復預設
@@ -400,7 +396,7 @@
         </h3>
         <button
           type="button"
-          data-action="add-delivery-option-admin"
+          @click="handleAddDeliveryOption"
           class="mt-2 md:mt-0 px-3 py-1 btn-primary text-white rounded transition text-sm"
         >
           + 新增取貨方式
@@ -622,8 +618,7 @@
               >
                 <button
                   type="button"
-                  :data-delivery-id="item.id"
-                  data-action="remove-delivery-option-row"
+                  @click="handleRemoveDeliveryOption(item.id)"
                   class="ui-text-danger hover:text-red-700 p-1"
                   title="刪除此選項"
                 >
@@ -780,15 +775,15 @@
             </div>
             <div class="flex gap-2 shrink-0">
               <button
-                data-action="edit-bank-account"
-                :data-bank-account-id="account.id"
+                type="button"
+                @click="handleEditBankAccount(account.id)"
                 class="text-sm ui-text-highlight"
               >
                 編輯
               </button>
               <button
-                data-action="delete-bank-account"
-                :data-bank-account-id="account.id"
+                type="button"
+                @click="handleDeleteBankAccount(account.id)"
                 class="text-sm ui-text-danger"
               >
                 刪除
@@ -798,7 +793,8 @@
         </div>
       </div>
       <button
-        data-action="show-add-bank-account-modal"
+        type="button"
+        @click="handleShowAddBankAccountModal"
         class="text-sm font-medium hover:underline ui-text-highlight"
       >
         + 新增匯款帳號
@@ -806,7 +802,7 @@
     </div>
 
     <div class="text-center">
-      <button data-action="save-settings" class="btn-primary">
+      <button type="button" @click="handleSaveSettings" class="btn-primary">
         儲存設定
       </button>
     </div>
@@ -814,7 +810,6 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
 import UiTextarea from "../../components/ui/textarea/Textarea.vue";
 import {
   dashboardBankAccountsActions,
@@ -849,7 +844,6 @@ const {
   getDeliveryPreviewUrl,
 } = useDashboardSettingsIcons();
 
-const siteIconInput = ref(null);
 const sectionIconInputs = new Map();
 const paymentIconInputs = new Map();
 const deliveryIconInputs = new Map();
@@ -860,6 +854,34 @@ function registerDeliveryRoutingTableElement(element) {
 
 function registerBankAccountsListElement(element) {
   dashboardBankAccountsActions.registerBankAccountsListElement(element);
+}
+
+function handleResetSectionTitle(section) {
+  dashboardSettingsActions.resetSectionTitle(section);
+}
+
+function handleAddDeliveryOption() {
+  dashboardSettingsActions.addDeliveryOption();
+}
+
+function handleRemoveDeliveryOption(deliveryId) {
+  dashboardSettingsActions.removeDeliveryOption(deliveryId);
+}
+
+function handleShowAddBankAccountModal() {
+  dashboardBankAccountsActions.showAddBankAccountModal();
+}
+
+function handleEditBankAccount(id) {
+  dashboardBankAccountsActions.editBankAccount(id);
+}
+
+function handleDeleteBankAccount(id) {
+  dashboardBankAccountsActions.deleteBankAccount(id);
+}
+
+function handleSaveSettings() {
+  dashboardSettingsActions.saveSettings();
 }
 
 function registerSectionIconInput(section, element) {

@@ -6,14 +6,6 @@ export function parseBooleanSetting(value, defaultValue = true) {
   return !["false", "0", "off", "no"].includes(normalized);
 }
 
-export function readInputValue(id, fallback = "") {
-  const el = document.getElementById(id);
-  if (el && typeof el.value !== "undefined") {
-    return String(el.value || "").trim();
-  }
-  return fallback;
-}
-
 function cacheDashboardPublicBranding(cacheKey, settings = {}, resolvedLogoUrl = "") {
   if (typeof window === "undefined" || !window.localStorage) return;
 
