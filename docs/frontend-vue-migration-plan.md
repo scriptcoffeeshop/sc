@@ -28,13 +28,13 @@ This creates three concrete problems:
 
 1. Every meaningful feature risks being implemented twice.
 2. Payment, order, and admin flows can drift out of sync.
-3. `frontend/src/pages/DashboardPage.vue` has grown to 2,345 lines and is beyond a healthy single-component size.
+3. Remaining large dashboard sections can still become difficult to review if they are allowed to grow back into monoliths.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell; settings UI is split into focused card components.
 
 ## Current Progress Snapshot
 
-As of 2026-04-20:
+As of 2026-04-21:
 
 - Vue-owned dashboard sections completed:
   - orders
@@ -47,6 +47,10 @@ As of 2026-04-20:
   - session / login flow
   - settings
   - settings icon controls / icon library quick apply
+- Recent decomposition:
+  - `DashboardPage.vue`: 167 lines
+  - `DashboardSettingsSection.vue`: 39 lines
+  - settings cards: branding, section titles, storefront status, delivery/payment routing, payment options, bank accounts
 - Remaining legacy-heavy areas:
   - maintenance-only legacy `dashboard.html` / root entrypoint
   - compatibility wrapper `js/dashboard-app.js`
@@ -238,16 +242,14 @@ Create a feature-oriented structure under `frontend/src/features/dashboard/`.
 
 ### Settings
 
-- `frontend/src/features/dashboard/settings/SettingsSection.vue`
-- `frontend/src/features/dashboard/settings/BrandingSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/SectionTitleSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/AnnouncementSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/OrderNotificationSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/StoreStatusSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/DeliveryRoutingSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/PaymentOptionsSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/BankAccountsSettingsCard.vue`
-- `frontend/src/features/dashboard/settings/useSettingsSection.js`
+- `frontend/src/features/dashboard/DashboardSettingsSection.vue`
+- `frontend/src/features/dashboard/DashboardBrandingSettingsCard.vue`
+- `frontend/src/features/dashboard/DashboardSectionTitlesSettingsCard.vue`
+- `frontend/src/features/dashboard/DashboardStorefrontStatusSettingsCard.vue`
+- `frontend/src/features/dashboard/DashboardDeliveryPaymentSettingsCard.vue`
+- `frontend/src/features/dashboard/DashboardPaymentOptionsSettingsCard.vue`
+- `frontend/src/features/dashboard/DashboardBankAccountsSettingsCard.vue`
+- `frontend/src/features/dashboard/useDashboardSettings.js`
 
 ### Icon Library
 
