@@ -3,17 +3,12 @@
 // ============================================
 
 import { API_URL, LINE_REDIRECT } from "./config.js";
-import { escapeHtml, isValidEmail, Toast } from "./utils.js";
+import { escapeHtml, isValidEmail } from "./utils.js";
 import { loginWithLine } from "./auth.js";
 import { state } from "./state.js";
 import {
-  addToCart,
   cart,
   loadCart,
-  removeCartItem,
-  toggleCart,
-  updateCartItemQty,
-  updateCartItemQtyByKeys,
   updateCartUI,
 } from "./cart.js";
 import { renderProducts } from "./products.js";
@@ -21,13 +16,11 @@ import {
   checkStoreToken,
   loadDeliveryPrefs,
   selectDelivery,
-  selectStoreFromList,
   updateDistricts,
 } from "./delivery.js";
 import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
-  submitOrder,
 } from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
 import { authFetch } from "./auth.js";
@@ -36,51 +29,7 @@ import {
   getPaymentIconFallbackKey,
   setIconElement,
 } from "./icons.js";
-// ============ legacy 事件代理 (Event Delegation) ============
-// 目前只保留給仍由 imperative DOM 動態插入的區塊使用。
-const actionHandlers = {
-  "add-to-cart": (el) => addToCart(+el.dataset.pid, el.dataset.spec),
-  "cart-qty-change": (el) =>
-    updateCartItemQtyByKeys(
-      +el.dataset.pid,
-      el.dataset.spec,
-      +el.dataset.delta,
-    ),
-  "cart-item-qty": (el) =>
-    updateCartItemQty(+el.dataset.idx, +el.dataset.delta),
-  "remove-cart-item": (el) => removeCartItem(+el.dataset.idx),
-  "toggle-cart": () => toggleCart(),
-  "select-delivery": (el) => selectDelivery(el.dataset.method),
-  "select-store": (el) => {
-    selectStoreFromList(el);
-    Swal.close();
-  },
-  "submit-order": () => {
-    toggleCart();
-    submitOrder();
-  },
-  "reload-page": () => window.location.reload(),
-  "copy-tracking-number": (el) => {
-    const trackingNumber = String(el.dataset.trackingNumber || "").trim();
-    if (!trackingNumber) return;
-    navigator.clipboard.writeText(trackingNumber)
-      .then(() => Toast.fire({ icon: "success", title: "單號已複製" }))
-      .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
-  },
-};
-
-function initEventDelegation() {
-  document.body.addEventListener("click", (e) => {
-    const target = e.target.closest("[data-action]");
-    if (!target) return;
-    const action = target.dataset.action;
-    const handler = actionHandlers[action];
-    if (handler) {
-      e.preventDefault();
-      handler(target, e);
-    }
-  });
-
+function initMainDomBindings() {
   const deliveryCity = document.getElementById("delivery-city");
   if (deliveryCity) {
     deliveryCity.addEventListener("change", updateDistricts);
@@ -116,7 +65,7 @@ function canInitMainApp() {
 export async function initMainApp() {
   if (mainAppInitialized || !canInitMainApp()) return;
   mainAppInitialized = true;
-  initEventDelegation(); // 啟動事件代理
+  initMainDomBindings();
   initReceiptRequestUi();
   const urlParams = new URLSearchParams(window.location.search);
   const code = urlParams.get("code");
@@ -533,7 +482,11 @@ async function loadInitData() {
     } else throw new Error(result.error);
   } catch (e) {
     document.getElementById("products-container").innerHTML =
-      `<p class="p-8 text-center text-red-600">載入資料失敗: ${e.message}<br><button type="button" data-action="reload-page" class="mt-3 btn-primary">重試</button></p>`;
+      `<p class="p-8 text-center text-red-600">載入資料失敗: ${e.message}<br><button type="button" data-reload-page="true" class="mt-3 btn-primary">重試</button></p>`;
+    document.querySelector('[data-reload-page="true"]')?.addEventListener(
+      "click",
+      () => window.location.reload(),
+    );
   }
 }
 

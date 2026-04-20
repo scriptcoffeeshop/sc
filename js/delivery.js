@@ -45,8 +45,6 @@ window.renderDeliveryOptions = function (config) {
   activeOptions.forEach((opt) => {
     const div = document.createElement("div");
     div.className = "delivery-option";
-    div.dataset.action = "select-delivery";
-    div.dataset.method = opt.id;
     div.dataset.id = opt.id;
 
     div.innerHTML = `
@@ -67,6 +65,9 @@ window.renderDeliveryOptions = function (config) {
       escapeHtml(opt.description || "")
     }</div>
         `;
+    div.addEventListener("click", () => {
+      selectDelivery(opt.id, { currentTarget: div });
+    });
     list.appendChild(div);
   });
 };
@@ -395,7 +396,7 @@ export async function openStoreSearchModal() {
           ? `顯示前 50 筆，請輸入更精確的關鍵字`
           : `找到 ${matches.length} 間門市`;
         resultsDiv.innerHTML = matches.map((s) => `
-                    <div class="store-result-item" data-action="select-store" data-id="${
+                    <div class="store-result-item" data-store-result="true" data-id="${
           escapeHtml(s.id)
         }" data-name="${escapeHtml(s.name)}" data-addr="${
           escapeHtml(s.address)
@@ -412,19 +413,19 @@ export async function openStoreSearchModal() {
         }</div>
                     </div>
                 `).join("");
+        resultsDiv.querySelectorAll('[data-store-result="true"]').forEach((item) => {
+          item.addEventListener("click", () => {
+            applyStoreSelection({
+              storeId: item.dataset.id,
+              storeName: item.dataset.name,
+              storeAddress: item.dataset.addr,
+            });
+            Swal.close();
+          });
+        });
       });
     },
   });
-}
-
-/** 從搜尋清單選擇門市 */
-export function selectStoreFromList(el) {
-  applyStoreSelection({
-    storeId: el.dataset.id,
-    storeName: el.dataset.name,
-    storeAddress: el.dataset.addr,
-  });
-  Swal.close();
 }
 
 /** 載入配送偏好 */

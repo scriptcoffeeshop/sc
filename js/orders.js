@@ -4,7 +4,7 @@
 
 import { API_URL } from "./config.js";
 import { authFetch } from "./auth.js";
-import { escapeHtml, isValidEmail } from "./utils.js";
+import { escapeHtml, isValidEmail, Toast } from "./utils.js";
 import { state } from "./state.js";
 import { cart, clearCart } from "./cart.js";
 import { collectDynamicFields } from "./form-renderer.js";
@@ -724,7 +724,7 @@ export async function showMyOrders() {
             ? `<div class="mt-1">物流單號：<span class="font-mono">${
               escapeHtml(o.trackingNumber)
             }</span>
-                    <button type="button" data-action="copy-tracking-number" data-tracking-number="${
+                    <button type="button" data-copy-tracking-number="true" data-tracking-number="${
               escapeHtml(o.trackingNumber)
             }" class="ml-2 px-2 py-0.5 bg-white border border-blue-200 hover:bg-blue-100 rounded text-gray-700" title="複製單號">複製</button>
                   </div>`
@@ -814,6 +814,15 @@ export async function showMyOrders() {
             </div>
         `;
     }).join("");
+    list.querySelectorAll('[data-copy-tracking-number="true"]').forEach((button) => {
+      button.addEventListener("click", () => {
+        const trackingNumber = String(button.dataset.trackingNumber || "").trim();
+        if (!trackingNumber) return;
+        navigator.clipboard.writeText(trackingNumber)
+          .then(() => Toast.fire({ icon: "success", title: "單號已複製" }))
+          .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
+      });
+    });
   } catch (e) {
     list.innerHTML =
       `<p class="text-center text-red-500 py-8">${e.message}</p>`;

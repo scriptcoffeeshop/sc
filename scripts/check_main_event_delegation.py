@@ -4,7 +4,7 @@ Guardrails for storefront event delegation.
 
 Checks:
 1) No inline event attributes in main storefront files.
-2) Every data-action has a corresponding actionHandlers key in main-app.js.
+2) If any legacy data-action remains, it must have a corresponding actionHandlers key in main-app.js.
 """
 
 from __future__ import annotations
@@ -47,6 +47,9 @@ def check_action_coverage() -> list[str]:
     html_text = read_text(MAIN_TEMPLATE)
     app_text = read_text(MAIN_APP)
     actions = set(DATA_ACTION_RE.findall(html_text)) | set(DATA_ACTION_RE.findall(app_text))
+
+    if not actions:
+        return []
 
     block = HANDLERS_BLOCK_RE.search(app_text)
     if not block:

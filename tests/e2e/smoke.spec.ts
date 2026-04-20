@@ -125,12 +125,34 @@ type MainRouteOptions = {
     linepay: boolean;
     transfer: boolean;
   };
+  deliveryOptions?: Array<{
+    id: string;
+    icon?: string;
+    name: string;
+    description: string;
+    enabled: boolean;
+    payment: {
+      cod: boolean;
+      linepay: boolean;
+      transfer: boolean;
+    };
+  }>;
   onCustomerLineLogin?: (request: PlaywrightRequest) => void;
 };
 
 async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
   const payment = options.payment ??
     { cod: true, linepay: false, transfer: true };
+  const deliveryOptions = options.deliveryOptions ?? [
+    {
+      id: "delivery",
+      icon: "🛵",
+      name: "配送到府",
+      description: "新竹配送",
+      enabled: true,
+      payment,
+    },
+  ];
   await page.route(`${SUPABASE_REST_PREFIX}**`, async (route) => {
     // Force storefront fallback path (getInitData) for deterministic smoke checks.
     await route.abort();
@@ -184,16 +206,7 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
         promotions: [],
         settings: {
           is_open: "true",
-          delivery_options_config: JSON.stringify([
-            {
-              id: "delivery",
-              icon: "🛵",
-              name: "配送到府",
-              description: "新竹配送",
-              enabled: true,
-              payment,
-            },
-          ]),
+          delivery_options_config: JSON.stringify(deliveryOptions),
           payment_options_config: JSON.stringify({
             cod: { icon: "💵", name: "貨到付款", description: "到付" },
             linepay: {
@@ -1158,16 +1171,38 @@ test.describe("smoke", () => {
 
   test("storefront payment controls work without body click delegation", async ({ page }) => {
     await installGlobalStubs(page);
-    await installMainRoutes(page);
+    await installMainRoutes(page, {
+      deliveryOptions: [
+        {
+          id: "delivery",
+          icon: "🛵",
+          name: "配送到府",
+          description: "新竹配送",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: true },
+        },
+        {
+          id: "seven_eleven",
+          icon: "🏪",
+          name: "7-11 取件",
+          description: "超商門市",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: false },
+        },
+      ],
+    });
     await blockStorefrontBodyClickDelegation(page);
 
     await page.goto("/main.html");
 
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
-    ).toBeGreaterThan(0);
+    ).toBe(0);
 
     await expect(page.locator("#products-container")).toContainText("測試豆");
+    await page.locator('.delivery-option[data-id="seven_eleven"]').click();
+    await expect(page.locator("#store-pickup-section")).toBeVisible();
+    await page.locator('.delivery-option[data-id="delivery"]').click();
     await expect(page.locator("#delivery-address-section")).toBeVisible();
 
     await page.evaluate(() => {
@@ -1218,9 +1253,94 @@ test.describe("smoke", () => {
     await expect(accountRadios.nth(1)).toBeChecked();
   });
 
+  test("storefront store search selection works without body click delegation", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      deliveryOptions: [
+        {
+          id: "delivery",
+          icon: "🛵",
+          name: "配送到府",
+          description: "新竹配送",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: true },
+        },
+        {
+          id: "seven_eleven",
+          icon: "🏪",
+          name: "7-11 取件",
+          description: "超商門市",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: false },
+        },
+      ],
+    });
+    await blockStorefrontBodyClickDelegation(page);
+
+    await page.route(`${API_URL}?action=createPcscMapSession**`, async (route) => {
+      await fulfillJson(route, {
+        success: false,
+        error: "地圖維護中",
+      });
+    });
+
+    await page.route(`${API_URL}?action=getStoreList**`, async (route) => {
+      await fulfillJson(route, {
+        success: true,
+        stores: [
+          {
+            id: "711001",
+            name: "竹科門市",
+            address: "新竹市東區測試路 1 號",
+          },
+        ],
+      });
+    });
+
+    await page.addInitScript(() => {
+      (window as any).Swal.close = () => {
+        document.querySelector(".swal2-popup")?.remove();
+      };
+      (window as any).Swal.fire = async (options: any = {}) => {
+        if (options?.title === "無法開啟 7-11 門市地圖") {
+          return { isConfirmed: true };
+        }
+        if (options?.title === "搜尋門市") {
+          document.querySelector(".swal2-popup")?.remove();
+          const popup = document.createElement("div");
+          popup.className = "swal2-popup";
+          popup.innerHTML = String(options?.html || "");
+          document.body.appendChild(popup);
+          options?.didOpen?.(popup);
+          return { isConfirmed: false };
+        }
+        options?.didOpen?.();
+        return { isConfirmed: false };
+      };
+    });
+
+    await page.goto("/main.html");
+
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
+    ).toBe(0);
+
+    await page.locator('.delivery-option[data-id="seven_eleven"]').click();
+    await expect(page.locator("#store-pickup-section")).toBeVisible();
+
+    await page.getByRole("button", { name: "選擇門市" }).click();
+    await page.locator("#store-search-input").fill("竹科");
+    await page.locator('.store-result-item[data-store-result="true"]').click();
+
+    await expect(page.locator("#store-selected-info")).toBeVisible();
+    await expect(page.locator("#selected-store-name")).toHaveText("竹科門市");
+    await expect(page.locator("#selected-store-id")).toContainText("711001");
+  });
+
   test("storefront my orders can copy tracking number", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
+    await blockStorefrontBodyClickDelegation(page);
 
     await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
       await fulfillJson(route, {
@@ -1258,11 +1378,15 @@ test.describe("smoke", () => {
     });
 
     await page.goto("/main.html");
+
+    await expect.poll(() =>
+      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
+    ).toBe(0);
     await page.getByRole("button", { name: "我的訂單" }).click();
     await expect(page.locator("#my-orders-modal")).toBeVisible();
 
     const copyButton = page.locator(
-      '#my-orders-list [data-action="copy-tracking-number"][data-tracking-number="AB123456789"]',
+      '#my-orders-list [data-copy-tracking-number="true"][data-tracking-number="AB123456789"]',
     );
     await expect(copyButton).toBeVisible();
     await copyButton.click();
@@ -1369,7 +1493,7 @@ test.describe("smoke", () => {
 
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
-    ).toBeGreaterThan(0);
+    ).toBe(0);
 
     await page.getByRole("button", { name: "會員資料" }).click();
     await expect.poll(() =>
@@ -1429,9 +1553,7 @@ test.describe("smoke", () => {
 
     await expect(page.locator("#products-container")).toContainText("測試豆");
 
-    await page.locator(
-      '[data-action="select-delivery"][data-method="delivery"]',
-    ).click();
+    await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
     await page.fill("#delivery-detail-address", "測試路 1 號");
 
@@ -1504,9 +1626,7 @@ test.describe("smoke", () => {
 
     await page.goto("/main.html");
 
-    await page.locator(
-      '[data-action="select-delivery"][data-method="delivery"]',
-    ).click();
+    await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
     await page.fill("#delivery-detail-address", "測試路 2 號");
 
@@ -1576,9 +1696,7 @@ test.describe("smoke", () => {
 
     await page.goto("/main.html");
 
-    await page.locator(
-      '[data-action="select-delivery"][data-method="delivery"]',
-    ).click();
+    await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
     await page.fill("#delivery-detail-address", "測試路 3 號");
     await page.locator("#products-container .spec-btn-add").first().click();
