@@ -185,6 +185,7 @@ Initial storefront progress:
 - payment selection, announcement close, my orders modal close, and transfer bank-account interactions no longer require body-level click delegation either
 - delivery option selection, store-search result selection, tracking-number copy, and load-failure retry no longer require body-level click delegation
 - storefront body-level click delegation has been removed from the normal runtime path
+- delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; legacy `renderDeliveryOptions()` / `renderBankAccounts()` only remain as compatibility fallbacks and skip Vue-managed containers
 
 ## Dashboard Decomposition Blueprint
 

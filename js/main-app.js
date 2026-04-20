@@ -29,6 +29,9 @@ import {
   getPaymentIconFallbackKey,
   setIconElement,
 } from "./icons.js";
+
+let currentDeliveryConfig = [];
+let currentPaymentOptionConfig = {};
 function initMainDomBindings() {
   const deliveryCity = document.getElementById("delivery-city");
   if (deliveryCity) {
@@ -102,6 +105,20 @@ export async function initMainApp() {
     window.history.replaceState({}, "", "main.html");
     await checkStoreToken(storeToken);
   }
+}
+
+export function getStorefrontUiSnapshot() {
+  return {
+    deliveryConfig: Array.isArray(currentDeliveryConfig)
+      ? currentDeliveryConfig.map((item) => ({ ...item }))
+      : [],
+    paymentOptionConfig: { ...currentPaymentOptionConfig },
+    selectedPayment: String(state.selectedPayment || "cod"),
+    bankAccounts: Array.isArray(state.bankAccounts)
+      ? state.bankAccounts.map((account) => ({ ...account }))
+      : [],
+    selectedBankAccountId: String(state.selectedBankAccountId || ""),
+  };
 }
 
 // 由 Vue Page 元件在 onMounted 時顯式呼叫 initMainApp()
@@ -520,27 +537,31 @@ function applySettings(s) {
       paymentOptions = JSON.parse(paymentOptionsStr);
     } catch (e) {}
   }
+  currentPaymentOptionConfig = paymentOptions;
 
-  ["cod", "linepay", "jkopay", "transfer"].forEach((method) => {
-    const option = paymentOptions[method];
-    if (!option) return;
-    const iconEl = document.getElementById(`po-${method}-icon-display`);
-    const nameEl = document.getElementById(`po-${method}-name-display`);
-    const descEl = document.getElementById(`po-${method}-desc-display`);
-    if (iconEl) {
-      setIconElement(
-        iconEl,
-        {
-          icon_url: option.icon_url || option.iconUrl,
-          icon: option.icon,
-        },
-        getPaymentIconFallbackKey(method),
-        `${method} 圖示`,
-      );
-    }
-    if (nameEl && option.name) nameEl.textContent = option.name;
-    if (descEl && option.description) descEl.textContent = option.description;
-  });
+  const paymentOptionsElement = document.getElementById("payment-options");
+  if (paymentOptionsElement?.dataset?.vueManaged !== "true") {
+    ["cod", "linepay", "jkopay", "transfer"].forEach((method) => {
+      const option = paymentOptions[method];
+      if (!option) return;
+      const iconEl = document.getElementById(`po-${method}-icon-display`);
+      const nameEl = document.getElementById(`po-${method}-name-display`);
+      const descEl = document.getElementById(`po-${method}-desc-display`);
+      if (iconEl) {
+        setIconElement(
+          iconEl,
+          {
+            icon_url: option.icon_url || option.iconUrl,
+            icon: option.icon,
+          },
+          getPaymentIconFallbackKey(method),
+          `${method} 圖示`,
+        );
+      }
+      if (nameEl && option.name) nameEl.textContent = option.name;
+      if (descEl && option.description) descEl.textContent = option.description;
+    });
+  }
 
   // 取出最新的物流選項
   const deliveryConfigStr = window.appSettings.delivery_options_config || "";
@@ -633,20 +654,20 @@ function applySettings(s) {
       },
     ];
   }
-  window.currentDeliveryConfig = deliveryConfig;
-  window.currentDeliveryConfig = window.currentDeliveryConfig.map((item) => ({
+  currentDeliveryConfig = deliveryConfig.map((item) => ({
     ...item,
     icon_url: item.icon_url || item.iconUrl || "",
     iconFallbackKey: getDeliveryIconFallbackKey(item.id),
   }));
+  window.currentDeliveryConfig = currentDeliveryConfig;
 
   // 渲染物流選項 (在 delivery.js 中定義)
   if (typeof window.renderDeliveryOptions === "function") {
-    window.renderDeliveryOptions(window.currentDeliveryConfig);
+    window.renderDeliveryOptions(currentDeliveryConfig);
   }
 
   if (typeof window.updatePaymentOptionsState === "function") {
-    window.updatePaymentOptionsState(window.currentDeliveryConfig);
+    window.updatePaymentOptionsState(currentDeliveryConfig);
   }
 }
 
@@ -793,7 +814,7 @@ export function selectPayment(method, options = {}) {
   }
 }
 
-function selectBankAccount(id) {
+export function selectBankAccount(id) {
   const hasAccounts = Array.isArray(state.bankAccounts) &&
     state.bankAccounts.length > 0;
   if (!hasAccounts) {
@@ -812,6 +833,7 @@ function selectBankAccount(id) {
 function renderBankAccounts() {
   const container = document.getElementById("bank-accounts-list");
   if (!container) return;
+  if (container.dataset?.vueManaged === "true") return;
   if (!Array.isArray(state.bankAccounts) || state.bankAccounts.length === 0) {
     state.selectedBankAccountId = "";
     container.innerHTML = "";

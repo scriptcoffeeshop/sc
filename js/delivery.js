@@ -37,6 +37,7 @@ if (document.readyState === "loading") {
 window.renderDeliveryOptions = function (config) {
   const list = document.getElementById("delivery-options-list");
   if (!list) return;
+  if (list.dataset?.vueManaged === "true") return;
   list.innerHTML = "";
 
   // 只渲染有啟用的物流方式

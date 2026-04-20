@@ -213,8 +213,37 @@
         <div
           class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"
           id="delivery-options-list"
+          data-vue-managed="true"
         >
-          <!-- 由 JS 動態產生，依據 delivery_options_config -->
+          <div
+            v-for="option in deliveryOptions"
+            :key="option.id"
+            class="delivery-option"
+            :class="{ active: selectedDelivery === option.id }"
+            :data-id="option.id"
+            @click="handleSelectDelivery(option.id)"
+          >
+            <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
+            <div class="option-icon">
+              <img
+                v-if="getDeliveryIcon(option).url"
+                :src="getDeliveryIcon(option).url"
+                :alt="`${option.name} 圖示`"
+                class="ui-icon-img"
+              >
+              <span
+                v-else-if="getDeliveryIcon(option).fallbackText"
+                class="ui-icon-fallback"
+                aria-hidden="true"
+              >{{ getDeliveryIcon(option).fallbackText }}</span>
+            </div>
+            <div class="font-semibold" style="font-size: 0.95rem;">
+              {{ option.name }}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              {{ option.description }}
+            </div>
+          </div>
         </div>
 
         <!-- 配送到府地址 (限竹北/新竹) -->
@@ -478,7 +507,54 @@
             >{{ totalPriceText }}</span>
           </div>
 
-          <div id="bank-accounts-list" class="mb-3"></div>
+          <div id="bank-accounts-list" data-vue-managed="true" class="mb-3">
+            <div
+              v-for="account in bankAccounts"
+              :key="account.id"
+              class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border"
+              :class="selectedBankAccountId === String(account.id)
+                ? 'border-primary ring-2 ring-primary bg-orange-50'
+                : 'border-[#d1dce5] bg-white'"
+              data-bank-card="true"
+              :data-bank-id="account.id"
+              @click="handleSelectBankAccount(account.id)"
+            >
+              <div class="flex items-center gap-3 mb-1">
+                <input
+                  type="radio"
+                  name="bank_account_selection"
+                  class="w-4 h-4 text-primary"
+                  :value="account.id"
+                  :checked="selectedBankAccountId === String(account.id)"
+                  @click.stop="handleSelectBankAccount(account.id)"
+                >
+                <div class="font-semibold text-gray-800">
+                  {{ account.bankName }} ({{ account.bankCode }})
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-1 pl-7">
+                <span class="text-lg font-mono font-medium" style="color:var(--primary)">
+                  {{ account.accountNumber }}
+                </span>
+                <button
+                  type="button"
+                  data-copy-account="true"
+                  :data-account="account.accountNumber"
+                  class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors"
+                  title="複製帳號"
+                  @click.stop="handleCopyTransferAccount(account.id, account.accountNumber)"
+                >
+                  {{ copiedBankAccountId === String(account.id) ? "已複製" : "複製" }}
+                </button>
+              </div>
+              <div
+                v-if="account.accountName"
+                class="text-sm text-gray-500 mt-1 pl-7"
+              >
+                戶名: {{ account.accountName }}
+              </div>
+            </div>
+          </div>
           <div class="mt-3">
             <label class="block text-sm text-gray-600 mb-1"
             >您的匯款帳號末 5 碼（供對帳用）</label>
@@ -831,8 +907,10 @@ import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import {
   clearSelectedStore,
+  selectDelivery,
   openStoreMap,
 } from "../../../js/delivery.js";
+import { Toast } from "../../../js/utils.js";
 import {
   addToCart,
   getCartSnapshot,
@@ -841,10 +919,16 @@ import {
   updateCartItemQty,
   updateCartItemQtyByKeys,
 } from "../../../js/cart.js";
-import { getDefaultIconUrl } from "../../../js/icons.js";
 import {
+  getDefaultIconUrl,
+  getDeliveryIconFallbackKey,
+  getIconUrlFromConfig,
+} from "../../../js/icons.js";
+import {
+  getStorefrontUiSnapshot,
   initMainApp,
   logoutCurrentUser,
+  selectBankAccount,
   selectPayment,
   showProfileModal,
   startMainLogin,
@@ -855,9 +939,13 @@ import { getProductsViewModel } from "../../../js/products.js";
 const originalBodyClass = document.body.className;
 const productsCategories = ref([]);
 const cartItems = ref([]);
+const deliveryOptions = ref([]);
+const bankAccounts = ref([]);
+const selectedBankAccountId = ref("");
 const selectedDelivery = ref("");
 const deliveryName = ref("該配送方式");
 const shippingConfig = ref(null);
+const copiedBankAccountId = ref("");
 const selectedCheckIconUrl = getDefaultIconUrl("selected");
 const cartSummary = ref({
   subtotal: 0,
@@ -1014,6 +1102,12 @@ function handleCloseOrdersModal() {
 
 function handleSelectPayment(method) {
   selectPayment(method);
+  syncStorefrontUiState();
+}
+
+function handleSelectDelivery(method) {
+  selectDelivery(method);
+  syncStorefrontUiState();
 }
 
 function handleOpenStoreMap() {
@@ -1022,6 +1116,47 @@ function handleOpenStoreMap() {
 
 function handleClearSelectedStore() {
   clearSelectedStore();
+}
+
+function handleSelectBankAccount(bankId) {
+  selectBankAccount(bankId);
+  syncStorefrontUiState();
+}
+
+function handleCopyTransferAccount(bankId, accountNumber) {
+  const account = String(accountNumber || "").trim();
+  if (!account) return;
+  navigator.clipboard.writeText(account)
+    .then(() => {
+      copiedBankAccountId.value = String(bankId);
+      Toast.fire({ icon: "success", title: "帳號已複製" });
+      window.setTimeout(() => {
+        if (copiedBankAccountId.value === String(bankId)) {
+          copiedBankAccountId.value = "";
+        }
+      }, 2000);
+    })
+    .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
+}
+
+function getDeliveryIcon(option) {
+  const fallbackKey = getDeliveryIconFallbackKey(option?.id);
+  const url = getIconUrlFromConfig(option, fallbackKey);
+  return {
+    url,
+    fallbackText: url ? "" : String(option?.icon || "").trim(),
+  };
+}
+
+function syncStorefrontUiState() {
+  const snapshot = getStorefrontUiSnapshot();
+  deliveryOptions.value = Array.isArray(snapshot.deliveryConfig)
+    ? snapshot.deliveryConfig.filter((item) => item && item.enabled !== false)
+    : [];
+  bankAccounts.value = Array.isArray(snapshot.bankAccounts)
+    ? snapshot.bankAccounts
+    : [];
+  selectedBankAccountId.value = String(snapshot.selectedBankAccountId || "");
 }
 
 function handleProductsUpdated(event) {
@@ -1041,6 +1176,7 @@ function handleCartUpdated(event) {
     ...cartSummary.value,
     ...(detail.summary || {}),
   };
+  syncStorefrontUiState();
 }
 
 onMounted(() => {
@@ -1060,7 +1196,9 @@ onMounted(() => {
     : [];
   cartItems.value = getCartSnapshot();
 
-  void initMainApp();
+  void initMainApp().then(() => {
+    syncStorefrontUiState();
+  });
 });
 
 onBeforeUnmount(() => {

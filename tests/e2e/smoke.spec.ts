@@ -1253,6 +1253,53 @@ test.describe("smoke", () => {
     await expect(accountRadios.nth(1)).toBeChecked();
   });
 
+  test("storefront delivery and bank account lists avoid imperative innerHTML renderers", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.addInitScript(() => {
+      const originalInnerHTML = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        "innerHTML",
+      );
+      if (originalInnerHTML?.set) {
+        Object.defineProperty(Element.prototype, "innerHTML", {
+          configurable: true,
+          get() {
+            return originalInnerHTML.get?.call(this) ?? "";
+          },
+          set(value) {
+            if (
+              this instanceof HTMLElement &&
+              (this.id === "delivery-options-list" || this.id === "bank-accounts-list")
+            ) {
+              throw new Error(`legacy renderer blocked: ${this.id}`);
+            }
+            return originalInnerHTML.set.call(this, value);
+          },
+        });
+      }
+
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+
+    await expect(page.locator('.delivery-option[data-id="delivery"]')).toBeVisible();
+    await page.locator("#transfer-option").click();
+    await expect(page.locator('#bank-accounts-list [data-bank-card="true"]')).toHaveCount(2);
+    await page.locator('#bank-accounts-list input[name="bank_account_selection"]').nth(1).click();
+    await expect(page.locator('#bank-accounts-list [data-bank-card="true"]').nth(1)).toHaveClass(/ring-2/);
+  });
+
   test("storefront store search selection works without body click delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page, {
