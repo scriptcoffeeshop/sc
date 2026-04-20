@@ -21,7 +21,7 @@ export function createSettingsController(deps) {
       deps.replaceSettingsConfig(settings);
 
       if (currentLoadToken !== settingsLoadToken) return;
-      await deps.loadBankAccountsAdmin();
+      await deps.loadBankAccounts();
     } catch (error) {
       console.error(error);
     }

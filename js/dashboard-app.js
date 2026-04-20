@@ -47,7 +47,6 @@ import {
   normalizePaymentOption,
   sectionIconSettingKey,
 } from "./dashboard/modules/settings-shared.js";
-import { createBankAccountsController } from "./dashboard/modules/bank-accounts.js";
 import {
   createUsersActionHandlers,
   createUsersTabLoaders,
@@ -62,6 +61,10 @@ import {
   configureDashboardFormFieldsServices,
   dashboardFormFieldsActions,
 } from "../frontend/src/features/dashboard/useDashboardFormFields.js";
+import {
+  configureDashboardBankAccountsServices,
+  dashboardBankAccountsActions,
+} from "../frontend/src/features/dashboard/useDashboardBankAccounts.js";
 import {
   configureDashboardPromotionsServices,
   dashboardPromotionsActions,
@@ -137,14 +140,12 @@ configureDashboardSettingsServices({
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
   Sortable: globalThis.Sortable,
 });
-
-const bankAccountsController = createBankAccountsController({
+configureDashboardBankAccountsServices({
   API_URL,
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
   Swal: globalThis.Swal,
-  esc,
   Sortable: globalThis.Sortable,
 });
 const iconAssetsController = createIconAssetsController({
@@ -173,7 +174,7 @@ const settingsController = createSettingsController({
   updateIconPreview: iconAssetsController.updateIconPreview,
   readInputValue,
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
-  loadBankAccountsAdmin: bankAccountsController.loadBankAccountsAdmin,
+  loadBankAccounts: dashboardBankAccountsActions.loadBankAccounts,
   setDashboardSettings: (settings) => {
     dashboardSettings = settings;
   },
@@ -320,14 +321,14 @@ const dashboardActionHandlers = {
     resetSectionTitle: settingsController.resetSectionTitle,
     addDeliveryOption: dashboardSettingsActions.addDeliveryOption,
     removeDeliveryOption: dashboardSettingsActions.removeDeliveryOption,
-    showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
+    showAddBankAccountModal: dashboardBankAccountsActions.showAddBankAccountModal,
     saveSettings: settingsController.saveSettings,
     showAddFieldModal: dashboardFormFieldsActions.showAddFieldModal,
     toggleFieldEnabled: dashboardFormFieldsActions.toggleFieldEnabled,
     editFormField: dashboardFormFieldsActions.editFormField,
     deleteFormField: dashboardFormFieldsActions.deleteFormField,
-    editBankAccount: bankAccountsController.editBankAccount,
-    deleteBankAccount: bankAccountsController.deleteBankAccount,
+    editBankAccount: dashboardBankAccountsActions.editBankAccount,
+    deleteBankAccount: dashboardBankAccountsActions.deleteBankAccount,
     loadSettings: settingsController.loadSettings,
     loadFormFields: dashboardFormFieldsActions.loadFormFields,
   }),
@@ -402,9 +403,9 @@ registerDashboardGlobals({
   resetSectionTitle: settingsController.resetSectionTitle,
   refundOnlinePayOrder: orderStatusController.refundOnlinePayOrder,
   confirmTransferPayment: orderStatusController.confirmTransferPayment,
-  showAddBankAccountModal: bankAccountsController.showAddBankAccountModal,
-  editBankAccount: bankAccountsController.editBankAccount,
-  deleteBankAccount: bankAccountsController.deleteBankAccount,
+  showAddBankAccountModal: dashboardBankAccountsActions.showAddBankAccountModal,
+  editBankAccount: dashboardBankAccountsActions.editBankAccount,
+  deleteBankAccount: dashboardBankAccountsActions.deleteBankAccount,
   showPromotionModal: dashboardPromotionsActions.showPromotionModal,
   closePromotionModal: dashboardPromotionsActions.closePromotionModal,
   savePromotion: dashboardPromotionsActions.savePromotion,

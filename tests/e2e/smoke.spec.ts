@@ -267,12 +267,23 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
 type DashboardRouteOptions = {
   onAdminLineLogin?: (request: PlaywrightRequest) => void;
   onUpdateSettings?: (request: PlaywrightRequest) => void;
+  bankAccounts?: Array<{
+    id: number;
+    bankCode: string;
+    bankName: string;
+    accountNumber: string;
+    accountName?: string;
+  }>;
 };
 
 async function installDashboardRoutes(
   page: Page,
   options: DashboardRouteOptions = {},
 ) {
+  let bankAccountsState = Array.isArray(options.bankAccounts)
+    ? options.bankAccounts.map((account) => ({ ...account }))
+    : [];
+
   await page.route(`${API_URL}**`, async (route) => {
     const request = route.request();
     if (request.method() === "OPTIONS") {
@@ -503,13 +514,64 @@ async function installDashboardRoutes(
     if (action === "getBankAccounts") {
       await fulfillJson(route, {
         success: true,
-        accounts: [],
+        accounts: bankAccountsState,
       });
       return;
     }
 
     if (action === "updateSettings") {
       options.onUpdateSettings?.(request);
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "addBankAccount") {
+      const body = request.postDataJSON() as any;
+      bankAccountsState.push({
+        id: Date.now(),
+        bankCode: String(body?.bankCode || ""),
+        bankName: String(body?.bankName || ""),
+        accountNumber: String(body?.accountNumber || ""),
+        accountName: String(body?.accountName || ""),
+      });
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "deleteBankAccount") {
+      const body = request.postDataJSON() as any;
+      bankAccountsState = bankAccountsState.filter((account) =>
+        Number(account.id) !== Number(body?.id)
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "updateBankAccount") {
+      const body = request.postDataJSON() as any;
+      bankAccountsState = bankAccountsState.map((account) =>
+        Number(account.id) === Number(body?.id)
+          ? {
+            ...account,
+            bankCode: String(body?.bankCode || account.bankCode),
+            bankName: String(body?.bankName || account.bankName),
+            accountNumber: String(body?.accountNumber || account.accountNumber),
+            accountName: String(body?.accountName || account.accountName || ""),
+          }
+          : account
+      );
+      await fulfillJson(route, { success: true });
+      return;
+    }
+
+    if (action === "reorderBankAccounts") {
+      const body = request.postDataJSON() as any;
+      const ids = Array.isArray(body?.ids) ? body.ids.map(Number) : [];
+      const orderMap = new Map(ids.map((id: number, index: number) => [id, index]));
+      bankAccountsState = [...bankAccountsState].sort((left, right) =>
+        (orderMap.get(Number(left.id)) ?? Number.MAX_SAFE_INTEGER) -
+        (orderMap.get(Number(right.id)) ?? Number.MAX_SAFE_INTEGER)
+      );
       await fulfillJson(route, { success: true });
       return;
     }
@@ -1185,6 +1247,83 @@ test.describe("smoke", () => {
     expect(updatePayload?.settings?.products_section_title).toBe("精品豆專區");
     expect(updatePayload?.settings?.products_section_color).toBe("#cb4b16");
     expect(updatePayload?.settings?.linepay_sandbox).toBe("false");
+  });
+
+  test("dashboard settings bank accounts work without imperative innerHTML renderer", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page, {
+      bankAccounts: [{
+        id: 1,
+        bankCode: "013",
+        bankName: "國泰世華",
+        accountNumber: "111122223333",
+        accountName: "Script Coffee",
+      }],
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+
+      const originalInnerHTML = Object.getOwnPropertyDescriptor(
+        Element.prototype,
+        "innerHTML",
+      );
+      if (originalInnerHTML?.set) {
+        Object.defineProperty(Element.prototype, "innerHTML", {
+          configurable: true,
+          get() {
+            return originalInnerHTML.get?.call(this) ?? "";
+          },
+          set(value) {
+            if (this instanceof HTMLElement && this.id === "bank-accounts-admin-list") {
+              throw new Error("legacy bank accounts renderer blocked");
+            }
+            return originalInnerHTML.set.call(this, value);
+          },
+        });
+      }
+
+      const baseFire = (window as any).Swal.fire;
+      (window as any).Swal.fire = async (input: any) => {
+        const title = typeof input === "string" ? input : input?.title;
+        if (title === "新增匯款帳號") {
+          return {
+            value: {
+              bankCode: "812",
+              bankName: "台新銀行",
+              accountNumber: "9876543210",
+              accountName: "新帳戶",
+            },
+          };
+        }
+        if (title === "刪除帳號？") {
+          return { isConfirmed: true };
+        }
+        return await baseFire(input);
+      };
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-settings").click();
+
+    await expect(page.locator("[data-bank-account-row]")).toHaveCount(1);
+    await expect(page.locator("[data-bank-account-row]").first()).toContainText("國泰世華");
+
+    await page.locator('[data-action="show-add-bank-account-modal"]').click();
+    await expect(page.locator("[data-bank-account-row]")).toHaveCount(2);
+    await expect(page.locator("[data-bank-account-row]").nth(1)).toContainText("台新銀行");
+
+    await page.locator('[data-action="delete-bank-account"][data-bank-account-id="1"]').click();
+    await expect(page.locator("[data-bank-account-row]")).toHaveCount(1);
+    await expect(page.locator("[data-bank-account-row]").first()).toContainText("台新銀行");
   });
 
   test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {

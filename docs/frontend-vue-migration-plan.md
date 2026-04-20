@@ -45,9 +45,9 @@ As of 2026-04-20:
   - users
   - blacklist
   - session / login flow
-  - settings branding / section titles / delivery / payment / sandbox
-- Bridge-backed sections still pending:
-  - settings bank accounts
+  - settings
+- Remaining legacy-heavy areas:
+  - dashboard bootstrap / event delegation / helper wiring
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
@@ -127,12 +127,12 @@ For a feature to be considered migrated:
 
 - Migrate settings, icon library, users, blacklist, and session/login flow.
 - Status on 2026-04-20:
-  - settings: partially done early
+  - settings: done early
   - icon library: Vue shell + legacy settings source
   - users: done early
   - blacklist: done early
   - session/login flow: done early
-  - settings branding / section titles / delivery / payment / sandbox: done early
+  - settings bank accounts: done early
 - Remove dependency on dashboard-specific legacy page orchestration for normal admin usage.
 
 #### 2026-06-15 to 2026-06-21
