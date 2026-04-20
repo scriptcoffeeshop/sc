@@ -98,25 +98,36 @@ Deno.test({
       const token = await signJwt({ userId: "user-non-admin" });
       const headers = { authorization: `Bearer ${token}` };
       const cases = [
-        buildActionRequest("getOrders", { method: "GET", headers }),
-        buildActionRequest("addProduct", {
-          method: "POST",
-          headers,
-          body: { category: "豆子", name: "測試豆", price: 220 },
-        }),
-        buildActionRequest("updateSettings", {
-          method: "POST",
-          headers,
-          body: { settings: { site_title: "Script Coffee" } },
-        }),
+        { action: "getOrders", method: "GET" as const },
+        { action: "getUsers", method: "GET" as const },
+        { action: "getBlacklist", method: "GET" as const },
+        { action: "getFormFieldsAdmin", method: "GET" as const },
+        { action: "addProduct", method: "POST" as const },
+        { action: "updateProduct", method: "POST" as const },
+        { action: "deleteProduct", method: "POST" as const },
+        { action: "addCategory", method: "POST" as const },
+        { action: "addPromotion", method: "POST" as const },
+        { action: "updateOrderStatus", method: "POST" as const },
+        { action: "addToBlacklist", method: "POST" as const },
+        { action: "addFormField", method: "POST" as const },
+        { action: "addBankAccount", method: "POST" as const },
+        { action: "linePayRefund", method: "POST" as const },
+        { action: "jkoPayRefund", method: "POST" as const },
+        { action: "updateSettings", method: "POST" as const },
       ];
 
-      for (const request of cases) {
-        const response = await app.fetch(request);
+      for (const testCase of cases) {
+        const response = await app.fetch(
+          buildActionRequest(testCase.action, {
+            method: testCase.method,
+            headers,
+            body: {},
+          }),
+        );
         const payload = await response.json();
         assertEquals(response.status, 401);
         assertEquals(payload.success, false);
-        assertEquals(payload.error, "權限不足");
+        assertEquals(payload.error, "權限不足", testCase.action);
       }
     });
   },
@@ -255,6 +266,116 @@ Deno.test({
           needDateStamp: true,
         }),
       );
+    });
+  },
+});
+
+Deno.test({
+  name:
+    "Routing Integration - submitOrder transfer response matches persisted order",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "user-submit-transfer",
+        role: "USER",
+        status: "ACTIVE",
+      }],
+      coffee_products: [{
+        id: 202,
+        name: "轉帳測試豆",
+        price: 350,
+        specs: "",
+        enabled: true,
+      }],
+      coffee_settings: [{
+        key: "transfer_enabled",
+        value: "true",
+      }],
+      coffee_promotions: [],
+      coffee_orders: [],
+      coffee_form_fields: [],
+    }, async (tables) => {
+      const token = await signJwt({ userId: "user-submit-transfer" });
+      const response = await app.fetch(
+        buildActionRequest("submitOrder", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}` },
+          body: {
+            lineName: "轉帳顧客",
+            phone: "0911222333",
+            items: [{ productId: 202, qty: 1 }],
+            deliveryMethod: "in_store",
+            paymentMethod: "transfer",
+            transferTargetAccount: "822-123456789",
+            transferAccountLast5: "98765",
+          },
+        }),
+      );
+      const payload = await response.json();
+
+      assertEquals(response.status, 200);
+      assertEquals(payload.success, true);
+      assertEquals(payload.message, "訂單已送出");
+      assertEquals(payload.total, 350);
+      assertEquals("paymentUrl" in payload, false);
+      assertEquals(tables.coffee_orders.length, 1);
+
+      const order = tables.coffee_orders[0];
+      assertEquals(order.id, payload.orderId);
+      assertEquals(order.payment_method, "transfer");
+      assertEquals(order.payment_status, "pending");
+      assertEquals(order.payment_id, "822-123456789");
+      assertEquals(order.transfer_account_last5, "98765");
+      assertEquals(order.items_json, [{
+        productId: 202,
+        productName: "轉帳測試豆",
+        specKey: "",
+        specLabel: "",
+        qty: 1,
+        unitPrice: 350,
+        lineTotal: 350,
+      }]);
+    });
+  },
+});
+
+Deno.test({
+  name: "Routing Integration - submitOrder quote errors do not create orders",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "user-submit-invalid-product",
+        role: "USER",
+        status: "ACTIVE",
+      }],
+      coffee_products: [],
+      coffee_settings: [],
+      coffee_promotions: [],
+      coffee_orders: [],
+    }, async (tables) => {
+      const token = await signJwt({ userId: "user-submit-invalid-product" });
+      const response = await app.fetch(
+        buildActionRequest("submitOrder", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}` },
+          body: {
+            lineName: "錯誤商品顧客",
+            items: [{ productId: 999, qty: 1 }],
+            deliveryMethod: "in_store",
+            paymentMethod: "cod",
+          },
+        }),
+      );
+      const payload = await response.json();
+
+      assertEquals(response.status, 200);
+      assertEquals(payload.success, false);
+      assertStringIncludes(payload.error, "商品 ID 999 不存在");
+      assertEquals(tables.coffee_orders.length, 0);
     });
   },
 });

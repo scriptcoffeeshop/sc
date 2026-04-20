@@ -91,7 +91,13 @@ export async function linePayCancel(
     data,
   );
   if (!auth && !signatureVerified) {
-    return { success: false, error: "請先登入" };
+    const hasSignature = Boolean(
+      String(data.sig || data.signature || "").trim(),
+    );
+    return {
+      success: false,
+      error: hasSignature ? "回呼簽章驗證失敗" : "請先登入",
+    };
   }
 
   const { data: order, error: orderErr } = await supabase.from("coffee_orders")

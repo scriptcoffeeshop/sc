@@ -313,16 +313,26 @@ t("金流整合 - HMAC 簽章驗證完整流程", async () => {
 });
 
 t("金流回呼簽章邊界 - linePayCancel 會拒絕偽造簽章", async () => {
-  const result = await linePayCancel(
-    {
-      orderId: "C20260420-LINE0001",
-      sig: "forged-signature",
-    },
-    new Request("https://example.com/linepay-cancel"),
-  );
+  await withMockedSupabaseTables({
+    coffee_orders: [{
+      id: "C20260420-LINE0001",
+      payment_status: "pending",
+      payment_method: "linepay",
+      line_user_id: "user-linepay-forged",
+    }],
+  }, async (tables) => {
+    const result = await linePayCancel(
+      {
+        orderId: "C20260420-LINE0001",
+        sig: "forged-signature",
+      },
+      new Request("https://example.com/linepay-cancel"),
+    );
 
-  assertEquals(result.success, false);
-  assertEquals(result.error, "請先登入");
+    assertEquals(result.success, false);
+    assertEquals(result.error, "回呼簽章驗證失敗");
+    assertEquals(tables.coffee_orders[0].payment_status, "pending");
+  });
 });
 
 t("金流回呼簽章邊界 - linePayCancel 允許合法簽章取消待付款訂單", async () => {
@@ -358,22 +368,69 @@ t("金流回呼簽章邊界 - linePayCancel 允許合法簽章取消待付款訂
 
 t("金流回呼簽章邊界 - jkoPayResult 會拒絕偽造簽章", async () => {
   const orderId = "C20260420-JKO0001";
-  const result = await jkoPayResult(
-    {
-      orderId,
-      sig: "forged-signature",
-      transaction: {
-        platform_order_id: orderId,
-        status: "0",
-        tradeNo: "TRADE-FAKE",
+  await withMockedSupabaseTables({
+    coffee_orders: [{
+      id: orderId,
+      payment_method: "jkopay",
+      payment_status: "pending",
+      payment_id: "",
+      payment_provider_status_code: "",
+    }],
+  }, async (tables) => {
+    const result = await jkoPayResult(
+      {
+        orderId,
+        sig: "forged-signature",
+        transaction: {
+          platform_order_id: orderId,
+          status: "0",
+          tradeNo: "TRADE-FAKE",
+        },
       },
-    },
-    new Request("https://example.com/jkopay-result"),
-  );
+      new Request("https://example.com/jkopay-result"),
+    );
 
-  assertEquals(result.valid, false);
-  assertEquals(result.success, false);
-  assertEquals(result.error, "回呼簽章驗證失敗");
+    assertEquals(result.valid, false);
+    assertEquals(result.success, false);
+    assertEquals(result.error, "回呼簽章驗證失敗");
+    assertEquals(tables.coffee_orders[0].payment_status, "pending");
+    assertEquals(tables.coffee_orders[0].payment_id, "");
+  });
+});
+
+t("金流回呼簽章邊界 - jkoPayResult 會拒絕回呼與交易訂單不一致", async () => {
+  const callbackOrderId = "C20260420-JKO-MISMATCH-A";
+  const payloadOrderId = "C20260420-JKO-MISMATCH-B";
+  const sig = await hmacSign(`jkopay-callback:${callbackOrderId}`);
+
+  await withMockedSupabaseTables({
+    coffee_orders: [{
+      id: callbackOrderId,
+      payment_method: "jkopay",
+      payment_status: "pending",
+      payment_id: "",
+      payment_provider_status_code: "",
+    }],
+  }, async (tables) => {
+    const result = await jkoPayResult(
+      {
+        orderId: callbackOrderId,
+        sig,
+        transaction: {
+          platform_order_id: payloadOrderId,
+          status: "0",
+          tradeNo: "TRADE-MISMATCH",
+        },
+      },
+      new Request("https://example.com/jkopay-result"),
+    );
+
+    assertEquals(result.valid, false);
+    assertEquals(result.success, false);
+    assertEquals(result.error, "訂單編號驗證失敗");
+    assertEquals(tables.coffee_orders[0].payment_status, "pending");
+    assertEquals(tables.coffee_orders[0].payment_id, "");
+  });
 });
 
 t("金流回呼簽章邊界 - jkoPayResult 允許合法簽章同步付款成功", async () => {

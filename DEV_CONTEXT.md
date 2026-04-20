@@ -69,6 +69,7 @@
 ### 測試與守門
 
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
+- 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
 - `tests/e2e/smoke.spec.ts` 已覆蓋：
   - 前台暖色樣式
   - 備註欄不得出現 `<slot />`
