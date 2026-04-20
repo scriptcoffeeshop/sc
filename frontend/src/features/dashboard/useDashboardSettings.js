@@ -1,6 +1,7 @@
 import { nextTick, ref } from "vue";
 
 const PAYMENT_METHOD_ORDER = ["cod", "linepay", "jkopay", "transfer"];
+const SECTION_TITLE_ORDER = ["products", "delivery", "notes"];
 
 const deliveryOptions = ref([]);
 const paymentOptions = ref({
@@ -10,6 +11,23 @@ const paymentOptions = ref({
   transfer: { icon: "", icon_url: "", name: "", description: "" },
 });
 const linePaySandbox = ref(true);
+const brandingSettings = ref({
+  siteTitle: "",
+  siteSubtitle: "",
+  siteEmoji: "",
+  siteIconUrl: "",
+});
+const storefrontSettings = ref({
+  announcementEnabled: false,
+  announcement: "",
+  autoOrderEmailEnabled: true,
+  isOpen: true,
+});
+const sectionTitleSettings = ref({
+  products: { title: "", color: "#268BD2", size: "text-lg", bold: true, iconUrl: "" },
+  delivery: { title: "", color: "#268BD2", size: "text-lg", bold: true, iconUrl: "" },
+  notes: { title: "", color: "#268BD2", size: "text-base", bold: true, iconUrl: "" },
+});
 
 let services = null;
 let deliveryRoutingTableElement = null;
@@ -28,6 +46,33 @@ function buildPaymentOptionsView(rawPaymentOptions = {}) {
     result[method] = normalizePaymentOption(method, rawPaymentOptions?.[method]);
     return result;
   }, {});
+}
+
+function buildDefaultSectionTitleSettings() {
+  const { getDefaultIconUrl } = getServices();
+  return {
+    products: {
+      title: "咖啡豆選購",
+      color: "#268BD2",
+      size: "text-lg",
+      bold: true,
+      iconUrl: getDefaultIconUrl("products"),
+    },
+    delivery: {
+      title: "配送方式",
+      color: "#268BD2",
+      size: "text-lg",
+      bold: true,
+      iconUrl: getDefaultIconUrl("delivery"),
+    },
+    notes: {
+      title: "訂單備註",
+      color: "#268BD2",
+      size: "text-base",
+      bold: true,
+      iconUrl: getDefaultIconUrl("notes"),
+    },
+  };
 }
 
 function migrateLegacyDeliveryConfig(settings) {
@@ -169,6 +214,9 @@ function registerDeliveryRoutingTableElement(element) {
 
 function replaceSettingsConfig(settings = {}) {
   const {
+    getDefaultIconUrl,
+    sectionIconSettingKey,
+    normalizeIconPath,
     normalizeDeliveryOption,
     parseBooleanSetting,
     linePaySandboxCacheKey,
@@ -182,6 +230,35 @@ function replaceSettingsConfig(settings = {}) {
     }
   }
 
+  brandingSettings.value = {
+    siteTitle: String(settings.site_title || ""),
+    siteSubtitle: String(settings.site_subtitle || ""),
+    siteEmoji: String(settings.site_icon_emoji || ""),
+    siteIconUrl: normalizeIconPath(settings.site_icon_url || ""),
+  };
+  storefrontSettings.value = {
+    announcementEnabled: String(settings.announcement_enabled) === "true",
+    announcement: String(settings.announcement || ""),
+    autoOrderEmailEnabled: parseBooleanSetting(
+      settings.order_confirmation_auto_email_enabled,
+      true,
+    ),
+    isOpen: String(settings.is_open) !== "false",
+  };
+  const defaultSectionTitleSettings = buildDefaultSectionTitleSettings();
+  sectionTitleSettings.value = SECTION_TITLE_ORDER.reduce((result, section) => {
+    const defaults = defaultSectionTitleSettings[section];
+    result[section] = {
+      title: String(settings[`${section}_section_title`] || ""),
+      color: String(settings[`${section}_section_color`] || defaults.color),
+      size: String(settings[`${section}_section_size`] || defaults.size),
+      bold: String(settings[`${section}_section_bold`]) !== "false",
+      iconUrl: normalizeIconPath(
+        settings[sectionIconSettingKey(section)] || defaults.iconUrl,
+      ),
+    };
+    return result;
+  }, {});
   paymentOptions.value = buildPaymentOptionsView(parsedPaymentOptions);
   deliveryOptions.value = migrateLegacyDeliveryConfig(settings).map((item) =>
     normalizeDeliveryOption(item)
@@ -205,6 +282,15 @@ function replaceSettingsConfig(settings = {}) {
   }
 
   queueDeliverySortableSync();
+}
+
+function resetSectionTitle(section) {
+  const defaults = buildDefaultSectionTitleSettings();
+  if (!defaults[section]) return;
+  sectionTitleSettings.value = {
+    ...sectionTitleSettings.value,
+    [section]: { ...defaults[section] },
+  };
 }
 
 function addDeliveryOption() {
@@ -233,7 +319,11 @@ function removeDeliveryOption(id) {
 }
 
 function buildSettingsConfig() {
-  const { normalizeDeliveryOption, normalizePaymentOption } = getServices();
+  const {
+    normalizeDeliveryOption,
+    normalizePaymentOption,
+    normalizeIconPath,
+  } = getServices();
   const normalizedDeliveryOptions = deliveryOptions.value
     .map((item) => normalizeDeliveryOption(item))
     .filter((item) => item.name.trim());
@@ -244,9 +334,43 @@ function buildSettingsConfig() {
   }, {});
 
   return {
+    settings: {
+      announcement_enabled: String(storefrontSettings.value.announcementEnabled),
+      announcement: storefrontSettings.value.announcement,
+      order_confirmation_auto_email_enabled: String(
+        storefrontSettings.value.autoOrderEmailEnabled,
+      ),
+      is_open: String(storefrontSettings.value.isOpen),
+      site_title: brandingSettings.value.siteTitle.trim(),
+      site_subtitle: brandingSettings.value.siteSubtitle.trim(),
+      site_icon_emoji: brandingSettings.value.siteEmoji.trim(),
+      site_icon_url: normalizeIconPath(brandingSettings.value.siteIconUrl),
+      products_section_title: sectionTitleSettings.value.products.title.trim(),
+      products_section_color: sectionTitleSettings.value.products.color,
+      products_section_size: sectionTitleSettings.value.products.size,
+      products_section_bold: String(sectionTitleSettings.value.products.bold),
+      products_section_icon_url: normalizeIconPath(
+        sectionTitleSettings.value.products.iconUrl,
+      ),
+      delivery_section_title: sectionTitleSettings.value.delivery.title.trim(),
+      delivery_section_color: sectionTitleSettings.value.delivery.color,
+      delivery_section_size: sectionTitleSettings.value.delivery.size,
+      delivery_section_bold: String(sectionTitleSettings.value.delivery.bold),
+      delivery_section_icon_url: normalizeIconPath(
+        sectionTitleSettings.value.delivery.iconUrl,
+      ),
+      notes_section_title: sectionTitleSettings.value.notes.title.trim(),
+      notes_section_color: sectionTitleSettings.value.notes.color,
+      notes_section_size: sectionTitleSettings.value.notes.size,
+      notes_section_bold: String(sectionTitleSettings.value.notes.bold),
+      notes_section_icon_url: normalizeIconPath(
+        sectionTitleSettings.value.notes.iconUrl,
+      ),
+      linepay_sandbox: String(linePaySandbox.value),
+      delivery_options_config: JSON.stringify(normalizedDeliveryOptions),
+      payment_options_config: JSON.stringify(normalizedPaymentOptions),
+    },
     linePaySandboxChecked: Boolean(linePaySandbox.value),
-    deliveryOptionsConfig: JSON.stringify(normalizedDeliveryOptions),
-    paymentOptionsConfig: JSON.stringify(normalizedPaymentOptions),
   };
 }
 
@@ -259,6 +383,9 @@ export function configureDashboardSettingsServices(nextServices) {
 
 export function useDashboardSettings() {
   return {
+    brandingSettings,
+    storefrontSettings,
+    sectionTitleSettings,
     deliveryOptions,
     paymentOptions,
     linePaySandbox,
@@ -269,6 +396,7 @@ export function useDashboardSettings() {
 export const dashboardSettingsActions = {
   registerDeliveryRoutingTableElement,
   replaceSettingsConfig,
+  resetSectionTitle,
   addDeliveryOption,
   removeDeliveryOption,
   buildSettingsConfig,

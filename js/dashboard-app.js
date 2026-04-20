@@ -127,8 +127,11 @@ configureDashboardSessionServices({
   Swal: globalThis.Swal,
 });
 configureDashboardSettingsServices({
+  getDefaultIconUrl,
+  normalizeIconPath,
   normalizeDeliveryOption,
   normalizePaymentOption,
+  sectionIconSettingKey,
   defaultDeliveryOptions: DEFAULT_DELIVERY_OPTIONS,
   parseBooleanSetting,
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
@@ -175,6 +178,7 @@ const settingsController = createSettingsController({
     dashboardSettings = settings;
   },
   replaceSettingsConfig: dashboardSettingsActions.replaceSettingsConfig,
+  resetSectionTitle: dashboardSettingsActions.resetSectionTitle,
   buildSettingsConfig: dashboardSettingsActions.buildSettingsConfig,
 });
 const orderNotificationsController = createOrderNotificationsController({

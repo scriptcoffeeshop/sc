@@ -45,9 +45,9 @@ As of 2026-04-20:
   - users
   - blacklist
   - session / login flow
-  - settings delivery / payment / sandbox
+  - settings branding / section titles / delivery / payment / sandbox
 - Bridge-backed sections still pending:
-  - settings branding / section titles / bank accounts
+  - settings bank accounts
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
@@ -132,7 +132,7 @@ For a feature to be considered migrated:
   - users: done early
   - blacklist: done early
   - session/login flow: done early
-  - settings delivery / payment / sandbox: done early
+  - settings branding / section titles / delivery / payment / sandbox: done early
 - Remove dependency on dashboard-specific legacy page orchestration for normal admin usage.
 
 #### 2026-06-15 to 2026-06-21

@@ -266,6 +266,7 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
 
 type DashboardRouteOptions = {
   onAdminLineLogin?: (request: PlaywrightRequest) => void;
+  onUpdateSettings?: (request: PlaywrightRequest) => void;
 };
 
 async function installDashboardRoutes(
@@ -504,6 +505,12 @@ async function installDashboardRoutes(
         success: true,
         accounts: [],
       });
+      return;
+    }
+
+    if (action === "updateSettings") {
+      options.onUpdateSettings?.(request);
+      await fulfillJson(route, { success: true });
       return;
     }
 
@@ -1133,6 +1140,51 @@ test.describe("smoke", () => {
 
     await deliveryRows.nth(1).locator('[data-action="remove-delivery-option-row"]').click();
     await expect(deliveryRows).toHaveCount(1);
+  });
+
+  test("dashboard settings save sends branding and section title state", async ({ page }) => {
+    let updatePayload: any = null;
+
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page, {
+      onUpdateSettings: (request) => {
+        updatePayload = request.postDataJSON();
+      },
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-settings").click();
+
+    await page.locator("#s-site-title").fill("新的品牌名稱");
+    await page.locator("#s-site-subtitle").fill("新的副標題");
+    await page.locator("#s-ann-enabled").check();
+    await page.locator("#s-announcement").fill("今日暫停部分配送");
+    await page.locator('input[name="s-open"][value="false"]').check();
+    await page.locator("#s-products-title").fill("精品豆專區");
+    await page.locator("#s-products-color").fill("#cb4b16");
+    await page.locator("#s-linepay-sandbox").uncheck();
+    await page.locator('[data-action="save-settings"]').click();
+
+    await expect.poll(() => updatePayload?.settings?.site_title).toBe("新的品牌名稱");
+    expect(updatePayload?.settings?.site_subtitle).toBe("新的副標題");
+    expect(updatePayload?.settings?.announcement_enabled).toBe("true");
+    expect(updatePayload?.settings?.announcement).toBe("今日暫停部分配送");
+    expect(updatePayload?.settings?.is_open).toBe("false");
+    expect(updatePayload?.settings?.products_section_title).toBe("精品豆專區");
+    expect(updatePayload?.settings?.products_section_color).toBe("#cb4b16");
+    expect(updatePayload?.settings?.linepay_sandbox).toBe("false");
   });
 
   test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {

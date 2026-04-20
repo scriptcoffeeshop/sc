@@ -13,6 +13,7 @@
         <div>
           <label class="block text-sm ui-text-strong mb-1">網站標題</label>
           <input
+            v-model.trim="brandingSettings.siteTitle"
             type="text"
             id="s-site-title"
             class="input-field"
@@ -22,6 +23,7 @@
         <div>
           <label class="block text-sm ui-text-strong mb-1">副標題</label>
           <input
+            v-model.trim="brandingSettings.siteSubtitle"
             type="text"
             id="s-site-subtitle"
             class="input-field"
@@ -33,6 +35,7 @@
         <div>
           <label class="block text-sm ui-text-strong mb-1">備援文字圖示（可留空）</label>
           <input
+            v-model.trim="brandingSettings.siteEmoji"
             type="text"
             id="s-site-emoji"
             class="input-field"
@@ -44,7 +47,7 @@
           <div class="flex gap-3 items-center">
             <img
               id="s-icon-preview"
-              src="../../../../icons/logo.png"
+              :src="getSiteIconPreviewUrl()"
               alt="品牌圖示"
               class="w-10 h-10 rounded object-cover border shadow-sm"
             >
@@ -68,7 +71,7 @@
                 id="s-icon-url-display"
                 class="text-xs ui-text-muted truncate max-w-[240px]"
               >
-                未設定 (預設)
+                {{ getSiteIconDisplayText() }}
               </div>
             </div>
             <input
@@ -78,7 +81,7 @@
               accept="image/png,image/jpeg,image/webp"
               data-action="upload-site-icon"
             >
-            <input type="hidden" id="s-site-icon-url">
+            <input v-model="brandingSettings.siteIconUrl" type="hidden" id="s-site-icon-url">
           </div>
         </div>
       </div>
@@ -103,7 +106,7 @@
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-2 mb-2">
-          <input type="hidden" id="s-products-icon-url">
+          <input v-model="sectionTitleSettings.products.iconUrl" type="hidden" id="s-products-icon-url">
           <input
             type="file"
             id="s-products-icon-file"
@@ -114,9 +117,9 @@
           >
           <img
             id="s-products-icon-preview"
-            src=""
+            :src="getSectionIconPreviewUrl('products')"
             alt=""
-            class="icon-upload-preview hidden"
+            class="icon-upload-preview"
           >
           <button
             type="button"
@@ -129,23 +132,25 @@
           <span
             id="s-products-icon-url-display"
             class="text-[11px] ui-text-muted truncate max-w-[250px]"
-          ></span>
+          >{{ getDisplayUrl(sectionTitleSettings.products.iconUrl) }}</span>
         </div>
         <div class="flex flex-wrap gap-2 items-center">
           <input
+            v-model.trim="sectionTitleSettings.products.title"
             type="text"
             id="s-products-title"
             class="input-field flex-1 min-w-[150px]"
             placeholder="咖啡豆選購"
           >
           <input
+            v-model="sectionTitleSettings.products.color"
             type="color"
             id="s-products-color"
-            value=""
             class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
             title="文字顏色"
           >
           <select
+            v-model="sectionTitleSettings.products.size"
             id="s-products-size"
             class="input-field w-24"
             title="文字大小"
@@ -157,6 +162,7 @@
           </select>
           <label class="flex items-center gap-1 cursor-pointer ui-bg-soft px-3 py-2 rounded border ui-border">
             <input
+              v-model="sectionTitleSettings.products.bold"
               type="checkbox"
               id="s-products-bold"
             >
@@ -178,7 +184,7 @@
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-2 mb-2">
-          <input type="hidden" id="s-delivery-icon-url">
+          <input v-model="sectionTitleSettings.delivery.iconUrl" type="hidden" id="s-delivery-icon-url">
           <input
             type="file"
             id="s-delivery-icon-file"
@@ -189,9 +195,9 @@
           >
           <img
             id="s-delivery-icon-preview"
-            src=""
+            :src="getSectionIconPreviewUrl('delivery')"
             alt=""
-            class="icon-upload-preview hidden"
+            class="icon-upload-preview"
           >
           <button
             type="button"
@@ -204,23 +210,25 @@
           <span
             id="s-delivery-icon-url-display"
             class="text-[11px] ui-text-muted truncate max-w-[250px]"
-          ></span>
+          >{{ getDisplayUrl(sectionTitleSettings.delivery.iconUrl) }}</span>
         </div>
         <div class="flex flex-wrap gap-2 items-center">
           <input
+            v-model.trim="sectionTitleSettings.delivery.title"
             type="text"
             id="s-delivery-title"
             class="input-field flex-1 min-w-[150px]"
             placeholder="配送方式"
           >
           <input
+            v-model="sectionTitleSettings.delivery.color"
             type="color"
             id="s-delivery-color"
-            value=""
             class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
             title="文字顏色"
           >
           <select
+            v-model="sectionTitleSettings.delivery.size"
             id="s-delivery-size"
             class="input-field w-24"
             title="文字大小"
@@ -232,6 +240,7 @@
           </select>
           <label class="flex items-center gap-1 cursor-pointer ui-bg-soft px-3 py-2 rounded border ui-border">
             <input
+              v-model="sectionTitleSettings.delivery.bold"
               type="checkbox"
               id="s-delivery-bold"
             >
@@ -253,7 +262,7 @@
           </button>
         </div>
         <div class="flex flex-wrap items-center gap-2 mb-2">
-          <input type="hidden" id="s-notes-icon-url">
+          <input v-model="sectionTitleSettings.notes.iconUrl" type="hidden" id="s-notes-icon-url">
           <input
             type="file"
             id="s-notes-icon-file"
@@ -264,9 +273,9 @@
           >
           <img
             id="s-notes-icon-preview"
-            src=""
+            :src="getSectionIconPreviewUrl('notes')"
             alt=""
-            class="icon-upload-preview hidden"
+            class="icon-upload-preview"
           >
           <button
             type="button"
@@ -279,23 +288,25 @@
           <span
             id="s-notes-icon-url-display"
             class="text-[11px] ui-text-muted truncate max-w-[250px]"
-          ></span>
+          >{{ getDisplayUrl(sectionTitleSettings.notes.iconUrl) }}</span>
         </div>
         <div class="flex flex-wrap gap-2 items-center">
           <input
+            v-model.trim="sectionTitleSettings.notes.title"
             type="text"
             id="s-notes-title"
             class="input-field flex-1 min-w-[150px]"
             placeholder="訂單備註"
           >
           <input
+            v-model="sectionTitleSettings.notes.color"
             type="color"
             id="s-notes-color"
-            value=""
             class="h-10 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
             title="文字顏色"
           >
           <select
+            v-model="sectionTitleSettings.notes.size"
             id="s-notes-size"
             class="input-field w-24"
             title="文字大小"
@@ -307,6 +318,7 @@
           </select>
           <label class="flex items-center gap-1 cursor-pointer ui-bg-soft px-3 py-2 rounded border ui-border">
             <input
+              v-model="sectionTitleSettings.notes.bold"
               type="checkbox"
               id="s-notes-bold"
             >
@@ -322,10 +334,11 @@
         公告設定
       </h3>
       <label class="flex items-center gap-2 mb-3 cursor-pointer">
-        <input type="checkbox" id="s-ann-enabled" class="w-4 h-4">
+        <input v-model="storefrontSettings.announcementEnabled" type="checkbox" id="s-ann-enabled" class="w-4 h-4">
         <span>啟用公告</span>
       </label>
       <UiTextarea
+        v-model="storefrontSettings.announcement"
         id="s-announcement"
         class="input-field resize-none"
         rows="3"
@@ -340,6 +353,7 @@
       </h3>
       <label class="flex items-center gap-2 cursor-pointer">
         <input
+          v-model="storefrontSettings.autoOrderEmailEnabled"
           type="checkbox"
           id="s-auto-order-email-enabled"
           class="w-4 h-4"
@@ -359,18 +373,20 @@
       <div class="flex gap-4">
         <label class="flex items-center gap-2 cursor-pointer">
           <input
+            v-model="storefrontSettings.isOpen"
             type="radio"
             name="s-open"
-            value="true"
+            :value="true"
             class="w-4 h-4"
           >
           營業中
         </label>
         <label class="flex items-center gap-2 cursor-pointer">
           <input
+            v-model="storefrontSettings.isOpen"
             type="radio"
             name="s-open"
-            value="false"
+            :value="false"
             class="w-4 h-4"
           >
           休息中
@@ -757,6 +773,9 @@ import { useDashboardSession } from "./useDashboardSession.js";
 
 const { activeTab } = useDashboardSession();
 const {
+  brandingSettings,
+  storefrontSettings,
+  sectionTitleSettings,
   deliveryOptions,
   paymentOptions,
   linePaySandbox,
@@ -773,6 +792,21 @@ function resolvePreviewUrl(rawUrl, fallbackKey) {
 
 function getDisplayUrl(rawUrl) {
   return resolveAssetUrl(rawUrl) || String(rawUrl || "");
+}
+
+function getSiteIconPreviewUrl() {
+  return resolvePreviewUrl(brandingSettings.value.siteIconUrl, "brand");
+}
+
+function getSiteIconDisplayText() {
+  return brandingSettings.value.siteIconUrl ? "自訂 Logo" : "未設定 (預設)";
+}
+
+function getSectionIconPreviewUrl(section) {
+  return resolvePreviewUrl(
+    sectionTitleSettings.value?.[section]?.iconUrl,
+    section,
+  );
 }
 
 function getDeliveryPreviewUrl(item) {

@@ -356,7 +356,7 @@ export function createIconAssetsController(deps) {
         return;
       }
 
-      document.getElementById("s-site-icon-url").value = data.url;
+      syncInputValue(document.getElementById("s-site-icon-url"), data.url);
       updateIconPreview({
         previewId: "s-icon-preview",
         rawUrl: data.url,
@@ -376,7 +376,7 @@ export function createIconAssetsController(deps) {
   }
 
   async function resetSiteIcon() {
-    document.getElementById("s-site-icon-url").value = "";
+    syncInputValue(document.getElementById("s-site-icon-url"), "");
     updateIconPreview({
       previewId: "s-icon-preview",
       rawUrl: deps.getDefaultIconUrl("brand"),
