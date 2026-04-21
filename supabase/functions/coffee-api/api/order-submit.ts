@@ -380,6 +380,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
             payment_expires_at: paymentExpiresAt,
             payment_last_checked_at: new Date().toISOString(),
             payment_provider_status_code: "",
+            payment_redirect_url: paymentUrl,
           })
           .eq("id", orderId);
         if (updateEntryError) {

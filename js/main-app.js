@@ -1058,16 +1058,19 @@ async function handleJkoPayReturn(orderId) {
     );
     const result = await response.json();
     if (result.success) {
-      Swal.fire(
-        buildPaymentStatusDialogOptions({
-          orderId,
-          paymentMethod: "jkopay",
-          paymentStatus: result.paymentStatus,
-          paymentExpiresAt: result.paymentExpiresAt,
-          paymentConfirmedAt: result.paymentConfirmedAt,
-          paymentLastCheckedAt: result.paymentLastCheckedAt,
-        }),
-      );
+      const dialogOptions = buildPaymentStatusDialogOptions({
+        orderId,
+        paymentMethod: "jkopay",
+        paymentStatus: result.paymentStatus,
+        paymentExpiresAt: result.paymentExpiresAt,
+        paymentConfirmedAt: result.paymentConfirmedAt,
+        paymentLastCheckedAt: result.paymentLastCheckedAt,
+        paymentUrl: result.paymentUrl,
+      });
+      const dialogResult = await Swal.fire(dialogOptions);
+      if (dialogResult.isConfirmed && dialogOptions.paymentLaunchUrl) {
+        window.location.href = dialogOptions.paymentLaunchUrl;
+      }
       return;
     }
     Swal.fire(

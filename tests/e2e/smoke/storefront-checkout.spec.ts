@@ -327,6 +327,7 @@ test.describe("smoke / storefront checkout", () => {
         paymentStatus: "pending",
         paymentExpiresAt: "2026-04-21T12:34:00.000Z",
         paymentLastCheckedAt: "2026-04-21T01:10:00.000Z",
+        paymentUrl: "https://pay.example/jko/JKO-PENDING-1",
       },
       {
         orderId: "JKO-FAILED-1",
@@ -415,6 +416,9 @@ test.describe("smoke / storefront checkout", () => {
     await expect(ordersList).toContainText("街口支付付款失敗");
     await expect(ordersList).toContainText("您已取消街口支付付款流程");
     await expect(ordersList).toContainText("付款期限已過");
+    await expect(
+      page.getByRole("link", { name: "前往街口付款" }),
+    ).toHaveAttribute("href", "https://pay.example/jko/JKO-PENDING-1");
 
     const refreshButton = page.getByRole("button", {
       name: "重新整理街口付款狀態",
@@ -424,5 +428,8 @@ test.describe("smoke / storefront checkout", () => {
 
     await expect.poll(() => inquiryCalls).toBe(1);
     await expect(ordersList).toContainText("付款狀態：已付款");
+    await expect(page.getByRole("link", { name: "前往街口付款" })).toHaveCount(
+      0,
+    );
   });
 });

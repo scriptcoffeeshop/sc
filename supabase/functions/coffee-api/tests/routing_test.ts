@@ -380,6 +380,49 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Routing Integration - getMyOrders exposes jkopay payment redirect URL",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_orders: [{
+        id: "JKO-ORDER-1",
+        line_user_id: "user-jko-link",
+        created_at: "2026-04-21T02:00:00.000Z",
+        items: "街口測試豆 x1",
+        items_json: [],
+        total: 220,
+        delivery_method: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 1 號",
+        payment_method: "jkopay",
+        payment_status: "pending",
+        payment_expires_at: "2026-04-21T12:34:00.000Z",
+        payment_redirect_url: "https://pay.example/jko/JKO-ORDER-1",
+      }],
+    }, async () => {
+      const token = await signJwt({ userId: "user-jko-link" });
+      const response = await app.fetch(
+        buildActionRequest("getMyOrders", {
+          method: "GET",
+          headers: { authorization: `Bearer ${token}` },
+        }),
+      );
+      const payload = await response.json();
+
+      assertEquals(response.status, 200);
+      assertEquals(payload.success, true);
+      assertEquals(payload.orders.length, 1);
+      assertEquals(
+        payload.orders[0].paymentUrl,
+        "https://pay.example/jko/JKO-ORDER-1",
+      );
+    });
+  },
+});
+
+Deno.test({
   name: "Routing Integration - submitOrder quote errors do not create orders",
   sanitizeOps: false,
   sanitizeResources: false,

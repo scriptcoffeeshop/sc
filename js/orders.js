@@ -21,6 +21,18 @@ function normalizeTrackingUrl(url) {
   }
 }
 
+function normalizePaymentLaunchUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
 function getDefaultTrackingUrl(deliveryMethod) {
   if (deliveryMethod === "seven_eleven") {
     return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
@@ -137,7 +149,8 @@ function getPaymentActionGuide(paymentMethod, paymentStatus) {
     return {
       tone: "warning",
       title: "街口支付待付款",
-      description: "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新整理付款狀態。",
+      description:
+        "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結或更新付款狀態。",
       actionLabel: "重新整理街口付款狀態",
       actionType: "refresh-jkopay",
     };
@@ -241,8 +254,12 @@ export function getCustomerPaymentDisplay(order) {
   const paymentExpiresAtText = formatDateTimeText(order?.paymentExpiresAt);
   const paymentConfirmedAtText = formatDateTimeText(order?.paymentConfirmedAt);
   const paymentLastCheckedAtText = formatDateTimeText(order?.paymentLastCheckedAt);
+  const paymentUrl = normalizePaymentLaunchUrl(order?.paymentUrl);
   const showPaymentDeadline = Boolean(paymentExpiresAtText) &&
     ["pending", "processing", "expired"].includes(paymentStatus);
+  const canResumePayment = paymentMethod === "jkopay" &&
+    ["pending", "processing"].includes(paymentStatus) &&
+    Boolean(paymentUrl);
 
   return {
     paymentMethod,
@@ -262,6 +279,8 @@ export function getCustomerPaymentDisplay(order) {
     guideDescription: guide.description,
     actionLabel: guide.actionLabel || "",
     actionType: guide.actionType || "",
+    paymentUrl,
+    canResumePayment,
   };
 }
 
@@ -304,12 +323,22 @@ export function buildPaymentStatusDialogOptions(params) {
     ? "warning"
     : "info";
 
-  return {
+  const dialogOptions = {
     icon,
     title: display.guideTitle,
     html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
     confirmButtonColor: "#3C2415",
+    confirmButtonText: display.canResumePayment ? "前往街口付款" : "我知道了",
   };
+
+  if (display.canResumePayment) {
+    dialogOptions.showCancelButton = true;
+    dialogOptions.cancelButtonText = "關閉";
+    dialogOptions.cancelButtonColor = "#94a3b8";
+    dialogOptions.paymentLaunchUrl = display.paymentUrl;
+  }
+
+  return dialogOptions;
 }
 
 export function buildPaymentLaunchDialogOptions(params) {
@@ -525,16 +554,19 @@ async function refreshJkoPayStatus(orderId, triggerButton) {
       throw new Error(result.error || "街口付款狀態更新失敗");
     }
     await showMyOrders();
-    Swal.fire(
-      buildPaymentStatusDialogOptions({
-        orderId,
-        paymentMethod: "jkopay",
-        paymentStatus: result.paymentStatus,
-        paymentExpiresAt: result.paymentExpiresAt,
-        paymentConfirmedAt: result.paymentConfirmedAt,
-        paymentLastCheckedAt: result.paymentLastCheckedAt,
-      }),
-    );
+    const dialogOptions = buildPaymentStatusDialogOptions({
+      orderId,
+      paymentMethod: "jkopay",
+      paymentStatus: result.paymentStatus,
+      paymentExpiresAt: result.paymentExpiresAt,
+      paymentConfirmedAt: result.paymentConfirmedAt,
+      paymentLastCheckedAt: result.paymentLastCheckedAt,
+      paymentUrl: result.paymentUrl,
+    });
+    const dialogResult = await Swal.fire(dialogOptions);
+    if (dialogResult.isConfirmed && dialogOptions.paymentLaunchUrl) {
+      window.location.href = dialogOptions.paymentLaunchUrl;
+    }
   } catch (error) {
     Swal.fire("更新失敗", error.message || "街口付款狀態更新失敗", "error");
   } finally {
@@ -601,7 +633,17 @@ function createPaymentMetaElement(order, paymentStatus) {
 
   if (display.actionType === "refresh-jkopay") {
     const actionRow = document.createElement("div");
-    actionRow.className = "mt-3";
+    actionRow.className = "mt-3 flex flex-wrap gap-2";
+
+    if (display.canResumePayment) {
+      const payLink = document.createElement("a");
+      payLink.href = display.paymentUrl;
+      payLink.className =
+        "rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100";
+      payLink.textContent = "前往街口付款";
+      actionRow.appendChild(payLink);
+    }
+
     const actionButton = document.createElement("button");
     actionButton.type = "button";
     actionButton.dataset.paymentAction = display.actionType;

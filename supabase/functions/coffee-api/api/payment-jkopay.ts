@@ -18,6 +18,36 @@ import {
 } from "../utils/jkopay.ts";
 import { supabase } from "../utils/supabase.ts";
 
+function normalizePaymentRedirectUrl(value: unknown): string {
+  const raw = String(value || "").trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
+}
+
+function resolveJkoPaymentRedirectUrl(
+  transaction: Record<string, unknown> | undefined,
+  storedValue: unknown,
+): string {
+  const candidates = [
+    transaction?.payment_url,
+    transaction?.paymentUrl,
+    storedValue,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizePaymentRedirectUrl(candidate);
+    if (normalized) return normalized;
+  }
+
+  return "";
+}
+
 async function syncJkoPayOrderStatus(params: {
   orderId: string;
   statusCode: number | null;
@@ -305,7 +335,7 @@ export async function jkoPayInquiry(
   const { data: order, error: orderError } = await supabase.from(
     "coffee_orders",
   )
-    .select("id, line_user_id, payment_method")
+    .select("id, line_user_id, payment_method, payment_redirect_url")
     .eq("id", orderId)
     .maybeSingle();
   if (orderError) return { success: false, error: orderError.message };
@@ -340,6 +370,10 @@ export async function jkoPayInquiry(
     const transaction = transactions.find((item) =>
       String(item?.platform_order_id || "").trim() === orderId
     ) || transactions[0];
+    const paymentUrl = resolveJkoPaymentRedirectUrl(
+      transaction,
+      order.payment_redirect_url,
+    );
 
     if (!transaction) {
       const syncResult = await syncJkoPayOrderStatus({
@@ -369,6 +403,7 @@ export async function jkoPayInquiry(
         paymentExpiresAt: syncResult.paymentExpiresAt,
         paymentConfirmedAt: syncResult.paymentConfirmedAt,
         paymentLastCheckedAt: syncResult.paymentLastCheckedAt,
+        paymentUrl,
         message: "尚未取得街口交易資料",
         inquiry: inquiryResponse,
         error: syncResult.error,
@@ -385,6 +420,21 @@ export async function jkoPayInquiry(
       preferProcessingForPending: true,
     });
     if (syncResult.success) {
+      if (
+        paymentUrl &&
+        paymentUrl !== String(order.payment_redirect_url || "").trim()
+      ) {
+        const { error: persistRedirectError } = await supabase.from(
+          "coffee_orders",
+        ).update({
+          payment_redirect_url: paymentUrl,
+        }).eq("id", orderId);
+        if (persistRedirectError) {
+          console.warn(
+            `[jkopay] failed to persist payment redirect url: ${orderId} (${persistRedirectError.message})`,
+          );
+        }
+      }
       if (syncResult.statusChanged) {
         await notifyJkoPayPaymentStatusChanged(
           orderId,
@@ -410,6 +460,7 @@ export async function jkoPayInquiry(
       paymentExpiresAt: syncResult.paymentExpiresAt,
       paymentConfirmedAt: syncResult.paymentConfirmedAt,
       paymentLastCheckedAt: syncResult.paymentLastCheckedAt,
+      paymentUrl,
       inquiry: inquiryResponse,
       error: syncResult.error,
     };
