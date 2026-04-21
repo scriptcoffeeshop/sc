@@ -63,7 +63,7 @@ test.describe("smoke / storefront", () => {
     ).toBe("mock-customer-token");
   });
 
-  test("storefront desktop login prompt keeps content-card proportion", async ({ page }) => {
+  test("storefront desktop login prompt keeps stacked content-card proportion", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
     await page.setViewportSize({ width: 1728, height: 960 });
@@ -89,7 +89,7 @@ test.describe("smoke / storefront", () => {
     expect(metrics).toBeTruthy();
     expect(metrics?.widthDelta ?? 999).toBeLessThan(48);
     expect(metrics?.promptDisplay).toBe("flex");
-    expect(metrics?.promptFlexDirection).toBe("row");
+    expect(metrics?.promptFlexDirection).toBe("column");
     expect(metrics?.promptAlignItems).toBe("center");
   });
 

@@ -36,7 +36,7 @@
     <div id="login-section" class="mb-6 px-4 py-4 sm:px-5 rounded-xl ui-card-section">
       <div
         id="login-prompt"
-        class="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:gap-4"
+        class="flex flex-col items-center justify-center gap-3 text-center"
       >
         <p class="text-gray-600 leading-relaxed">請先使用 LINE 帳號登入以進行訂購</p>
         <UiButton
