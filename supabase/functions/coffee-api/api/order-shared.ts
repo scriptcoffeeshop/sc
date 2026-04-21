@@ -1,5 +1,6 @@
 import { hmacSign } from "../utils/auth.ts";
 import {
+  FRONTEND_URL,
   LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN,
   LINE_ORDER_NOTIFY_TO,
   SUPABASE_URL,
@@ -359,7 +360,22 @@ export async function createJkoPayCallbackSignature(orderId: string) {
 
 export function resolveMainPageUrlWithQuery(query: URLSearchParams): string {
   const qs = query.toString();
-  return qs ? `main.html?${qs}` : "main.html";
+  const frontendBase = String(FRONTEND_URL || "").trim().replace(/\/+$/, "") ||
+    "https://scriptcoffeeshop.github.io/sc";
+
+  try {
+    const url = new URL("main.html", `${frontendBase}/`);
+    url.protocol = "https:";
+    url.search = qs;
+    return url.toString();
+  } catch {
+    const fallback = new URL(
+      "main.html",
+      "https://scriptcoffeeshop.github.io/sc/",
+    );
+    fallback.search = qs;
+    return fallback.toString();
+  }
 }
 
 export function resolveApiCallbackBase(req: Request): string {

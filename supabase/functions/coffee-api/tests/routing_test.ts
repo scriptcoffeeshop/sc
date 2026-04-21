@@ -1,6 +1,9 @@
 import { assertEquals, assertStringIncludes } from "@std/assert";
 import app from "../index.ts";
-import { buildCustomFieldsHtml } from "../api/order-shared.ts";
+import {
+  buildCustomFieldsHtml,
+  resolveMainPageUrlWithQuery,
+} from "../api/order-shared.ts";
 import { signJwt } from "../utils/auth.ts";
 import { withMockedSupabaseTables } from "./test-support.ts";
 
@@ -51,6 +54,20 @@ Deno.test({
 
       assertEquals(response.headers.get("Access-Control-Allow-Origin"), origin);
     }
+  },
+});
+
+Deno.test({
+  name: "Order Shared - JKO result display URL is absolute HTTPS",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    const url = resolveMainPageUrlWithQuery(
+      new URLSearchParams({ jkoOrderId: "SO-JKO-1" }),
+    );
+
+    assertEquals(url.startsWith("https://"), true);
+    assertStringIncludes(url, "main.html?jkoOrderId=SO-JKO-1");
   },
 });
 
