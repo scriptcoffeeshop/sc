@@ -9,8 +9,7 @@
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. 只要變更前端 `JS / CSS / HTML`，必須同步更新前端快取版號：
-   `python3 scripts/sync_frontend_version.py <version>`。
+2. 前端 cache busting 由 `.frontend-version` 統一管理；推送前跑 `npm run guardrails`，其會執行 `python3 scripts/sync_frontend_version.py --check`。若需要提升版本，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
 3. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
 4. 專案溝通、註解、commit message 以繁體中文為主。
 5. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
@@ -74,7 +73,7 @@
 
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
-- `tests/e2e/smoke.spec.ts` 已覆蓋：
+- `tests/e2e/smoke/` 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆分，並共用 `tests/e2e/support/smoke-fixtures.ts`；目前覆蓋：
   - 前台暖色樣式
   - 備註欄不得出現 `<slot />`
   - 會員資料彈窗導角
@@ -118,6 +117,7 @@
 - Playwright smoke 已新增兩類保護：街口支付顧客端狀態/操作驗證，以及桌機版登入提示比例驗證。
 - 本機健康檢查入口已補齊：`npm run health` 現在會串 `ci-local + build + 全量 Playwright`；`npm run e2e` 改成跑所有 E2E spec，`npm run e2e:smoke` 保留快速冒煙檢查。
 - GitHub Actions 的 Playwright 步驟已改成走 `npm run e2e`，避免本機與 CI 的 E2E 覆蓋範圍分岔。
+- README 已更新為現行 `guardrails` / `sync_frontend_version.py --check` 流程，不再要求協作者逐檔手動 bump `?v=`；Smoke E2E 從單一 3000+ 行檔案拆成 `tests/e2e/smoke/` 多檔與共用 fixture。
 - repo 內已追蹤的 `.DS_Store` / `supabase/.DS_Store` 已從 git index 移除，之後由 `.gitignore` 接手忽略。
 - `tests/e2e/features.spec.ts` 已對齊目前 Vue storefront / dashboard 行為：全家地圖選門市、CSV 匯出、用戶封鎖、訂單狀態更新四條 feature 測試現在都可被全量 `npm run e2e` 穩定執行。
 - `DashboardSettingsSection.vue` 已由 979 行巨型單檔拆成 39 行組裝層，並新增六個設定卡片元件：branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts。
@@ -203,7 +203,8 @@ rtk python3 scripts/sync_frontend_version.py --check
 - `README.md`：專案入口與開發規則
 - `docs/frontend-vue-migration-plan.md`：前端 Vue 遷移決策與分階段策略
 - `docs/repo-hygiene.md`：敏感檔、金鑰輪替與 git 歷史清理流程
-- `tests/e2e/smoke.spec.ts`：目前主要 smoke regression 保護網
+- `tests/e2e/smoke/`：主要 smoke regression 保護網
+- `tests/e2e/support/smoke-fixtures.ts`：Smoke E2E 共用 route/stub fixture
 
 ---
 

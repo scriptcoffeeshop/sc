@@ -8,7 +8,7 @@
 - **文字說明修改規定**：程式呈現的文字說明（UI Text），若沒有明確提及需要修改，則**嚴格禁止擅自修改**。若認為有必要，必須先徵得同意。
 - **自動化推送與部署**：
   - 修改 Edge Functions 後，必須部署至 Supabase：`supabase functions deploy coffee-api --no-verify-jwt`。
-  - 建議使用 `python3 scripts/push_and_watch.py` 進行推送，此腳本會自動監控 CI 狀態並嘗試自動修復格式錯誤。
+  - 推送前請先在本機跑 `npm run health`；若只改後端或 guardrail 相關內容，可先用 `npm run ci-local` 快速確認。
   - `main` / `master` 每次 push 通過 CI 後，會自動：
     - 部署前端到 GitHub Pages
     - 執行 `supabase db push`
@@ -17,7 +17,7 @@
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
   - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
-- **檔案版號與快取**：**不可輕忽的手機 Cache**。只要修改了任何 `.js` 檔案，必須同步修改引用該檔案之 `.html` 或 Vue 元件中的 `v=X` 版號（例如 `?v=52` 提升至 `?v=53`）。
+- **檔案版號與快取**：**不可輕忽的手機 Cache**。前端 cache busting 由 `.frontend-version` 與 `scripts/sync_frontend_version.py` 統一管理；`npm run guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`，避免 `?v=X` 版本參照漂移。若需要提升版本，請執行 `python3 scripts/sync_frontend_version.py <新版本號>`，不要逐檔手動改。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 
 ## 2. 前端開發規範 (MPA & Vue 3)
@@ -32,6 +32,7 @@
   - `.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；請使用 `.env.staging.example`、`.env.supabase.local.example` 作為範本。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
   - 本機完整健康檢查請使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`；E2E 快篩可用 `npm run e2e:smoke`。
+  - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`，共用路由與 stub 請放在 `tests/e2e/support/smoke-fixtures.ts`，避免再把所有回歸測試塞回單一檔案。
   - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
 
 ## 3. 後端與資料庫規範 (Deno & Supabase)
