@@ -55,6 +55,10 @@ export function useStorefrontShell(deps = {}) {
   }
 
   function handleCloseOrdersModal() {
+    if (deps.closeOrderHistory) {
+      deps.closeOrderHistory();
+      return;
+    }
     deps.document?.getElementById?.("my-orders-modal")?.classList.add("hidden");
   }
 

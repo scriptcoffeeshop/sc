@@ -1,0 +1,197 @@
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
+let useStorefrontOrderHistory;
+
+beforeAll(async () => {
+  vi.stubGlobal("Swal", {
+    mixin: vi.fn(() => ({ fire: vi.fn() })),
+  });
+  vi.stubGlobal("window", {
+    ENV: {
+      API_URL: "https://api.example/coffee",
+    },
+    location: {
+      origin: "https://app.example",
+      pathname: "/main.html",
+      href: "https://app.example/main.html",
+    },
+  });
+
+  ({ useStorefrontOrderHistory } = await import("./useStorefrontOrderHistory.js"));
+});
+
+function createSuccessResponse(payload) {
+  return {
+    json: vi.fn(async () => payload),
+  };
+}
+
+describe("useStorefrontOrderHistory", () => {
+  it("opens my orders, loads transformed cards, and exposes resume actions", async () => {
+    const authFetch = vi.fn(async (url) => {
+      if (String(url).includes("action=getMyOrders")) {
+        return createSuccessResponse({
+          success: true,
+          orders: [
+            {
+              orderId: "LINEPAY-001",
+              deliveryMethod: "delivery",
+              status: "pending",
+              city: "新竹市",
+              address: "測試路 1 號",
+              items: "測試豆 x1",
+              total: 220,
+              paymentMethod: "linepay",
+              paymentStatus: "pending",
+              paymentUrl: "https://pay.example/linepay/LINEPAY-001",
+            },
+            {
+              orderId: "JKO-001",
+              deliveryMethod: "home_delivery",
+              status: "processing",
+              city: "新竹市",
+              address: "測試路 2 號",
+              items: "街口測試豆 x1",
+              total: 240,
+              paymentMethod: "jkopay",
+              paymentStatus: "processing",
+              paymentUrl: "https://pay.example/jko/JKO-001",
+              paymentLastCheckedAt: "2026-04-21T01:20:00.000Z",
+              shippingProvider: "黑貓宅急便",
+              trackingNumber: "AB123456789",
+            },
+          ],
+        });
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+    const Swal = { fire: vi.fn(async () => ({ isConfirmed: false })) };
+
+    const history = useStorefrontOrderHistory({
+      authFetch,
+      Swal,
+      getCurrentUser: () => ({ userId: "user-1" }),
+      writeClipboard: vi.fn(async () => undefined),
+    });
+
+    await history.openOrderHistory();
+
+    expect(history.isOrderHistoryOpen.value).toBe(true);
+    expect(history.orderHistoryState.value).toBe("ready");
+    expect(history.ordersView.value).toHaveLength(2);
+    expect(history.ordersView.value[0]).toMatchObject({
+      orderId: "LINEPAY-001",
+      deliveryMethodLabel: "宅配",
+      locationText: "新竹市測試路 1 號",
+    });
+    expect(history.ordersView.value[0].paymentDisplay).toMatchObject({
+      canResumePayment: true,
+      resumePaymentLabel: "前往 LINE Pay 付款",
+    });
+    expect(history.ordersView.value[1].paymentDisplay).toMatchObject({
+      actionType: "refresh-jkopay",
+      actionLabel: "重新整理街口付款狀態",
+      canResumePayment: true,
+      resumePaymentLabel: "前往街口付款",
+    });
+    expect(history.ordersView.value[1].trackingUrl).toContain("postserv.post.gov.tw");
+    expect(Swal.fire).not.toHaveBeenCalled();
+  });
+
+  it("shows login prompt when user opens my orders without authentication", async () => {
+    const Swal = { fire: vi.fn(async () => ({ isConfirmed: false })) };
+    const history = useStorefrontOrderHistory({
+      authFetch: vi.fn(),
+      Swal,
+      getCurrentUser: () => null,
+      writeClipboard: vi.fn(async () => undefined),
+    });
+
+    await history.openOrderHistory();
+
+    expect(history.isOrderHistoryOpen.value).toBe(false);
+    expect(Swal.fire).toHaveBeenCalledWith("請先登入", "", "info");
+  });
+
+  it("refreshes jkopay status, reloads orders, and relaunches payment when confirmed", async () => {
+    const authFetch = vi.fn(async (url) => {
+      if (String(url).includes("action=jkoPayInquiry")) {
+        return createSuccessResponse({
+          success: true,
+          paymentStatus: "processing",
+          paymentLastCheckedAt: "2026-04-21T03:00:00.000Z",
+          paymentUrl: "https://pay.example/jko/JKO-001",
+        });
+      }
+      if (String(url).includes("action=getMyOrders")) {
+        return createSuccessResponse({
+          success: true,
+          orders: [
+            {
+              orderId: "JKO-001",
+              deliveryMethod: "delivery",
+              status: "pending",
+              city: "新竹市",
+              address: "測試路 9 號",
+              items: "街口測試豆 x1",
+              total: 220,
+              paymentMethod: "jkopay",
+              paymentStatus: "processing",
+              paymentUrl: "https://pay.example/jko/JKO-001",
+            },
+          ],
+        });
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+    const launchUrl = vi.fn();
+    const Swal = {
+      fire: vi.fn(async () => ({ isConfirmed: true })),
+    };
+    const history = useStorefrontOrderHistory({
+      authFetch,
+      Swal,
+      launchUrl,
+      getCurrentUser: () => ({ userId: "user-1" }),
+      writeClipboard: vi.fn(async () => undefined),
+    });
+
+    await history.refreshJkoPayStatus("JKO-001");
+
+    expect(authFetch).toHaveBeenCalledWith(
+      expect.stringContaining("action=jkoPayInquiry&orderId=JKO-001"),
+    );
+    expect(authFetch).toHaveBeenCalledWith(
+      expect.stringContaining("action=getMyOrders"),
+    );
+    expect(Swal.fire).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "街口付款確認中",
+        confirmButtonText: "前往街口付款",
+        paymentLaunchUrl: "https://pay.example/jko/JKO-001",
+      }),
+    );
+    expect(launchUrl).toHaveBeenCalledWith("https://pay.example/jko/JKO-001");
+    expect(history.refreshingOrderId.value).toBe("");
+  });
+
+  it("copies tracking numbers into the clipboard and shows toast feedback", async () => {
+    const writeClipboard = vi.fn(async () => undefined);
+    const Toast = { fire: vi.fn() };
+    const history = useStorefrontOrderHistory({
+      authFetch: vi.fn(),
+      Swal: { fire: vi.fn(async () => ({ isConfirmed: false })) },
+      Toast,
+      getCurrentUser: () => ({ userId: "user-1" }),
+      writeClipboard,
+    });
+
+    await history.copyTrackingNumber(" AB123456789 ");
+
+    expect(writeClipboard).toHaveBeenCalledWith("AB123456789");
+    expect(Toast.fire).toHaveBeenCalledWith({
+      icon: "success",
+      title: "單號已複製",
+    });
+  });
+});

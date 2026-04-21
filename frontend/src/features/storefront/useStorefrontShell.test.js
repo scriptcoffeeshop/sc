@@ -38,15 +38,12 @@ describe("useStorefrontShell", () => {
   it("delegates storefront actions and keeps derived UI state in sync", () => {
     let selectedBankAccountId = "1";
     const announcementClassList = createClassList();
-    const ordersClassList = createClassList();
+    const closeOrderHistory = vi.fn();
     const deps = {
       document: {
         getElementById: vi.fn((id) => {
           if (id === "announcement-banner") {
             return { classList: announcementClassList };
-          }
-          if (id === "my-orders-modal") {
-            return { classList: ordersClassList };
           }
           return null;
         }),
@@ -60,6 +57,7 @@ describe("useStorefrontShell", () => {
       logoutCurrentUser: vi.fn(),
       showProfileModal: vi.fn(),
       showMyOrders: vi.fn(),
+      closeOrderHistory,
       selectPayment: vi.fn(),
       selectDelivery: vi.fn(),
       openStoreMap: vi.fn(),
@@ -83,7 +81,7 @@ describe("useStorefrontShell", () => {
     shell.handleSelectBankAccount("2");
 
     expect(announcementClassList.add).toHaveBeenCalledWith("hidden");
-    expect(ordersClassList.add).toHaveBeenCalledWith("hidden");
+    expect(closeOrderHistory).toHaveBeenCalledTimes(1);
     expect(deps.startMainLogin).toHaveBeenCalledTimes(1);
     expect(deps.logoutCurrentUser).toHaveBeenCalledTimes(1);
     expect(deps.showProfileModal).toHaveBeenCalledTimes(1);

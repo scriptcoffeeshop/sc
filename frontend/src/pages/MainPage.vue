@@ -164,7 +164,16 @@
     @submit-order="submitOrderFromCart"
   />
 
-  <StorefrontOrderHistoryModal @close="handleCloseOrdersModal" />
+  <StorefrontOrderHistoryModal
+    :is-open="isOrderHistoryOpen"
+    :state="orderHistoryState"
+    :error-text="orderHistoryError"
+    :orders="ordersView"
+    :refreshing-order-id="refreshingOrderId"
+    @close="handleCloseOrdersModal"
+    @copy-tracking-number="copyTrackingNumber"
+    @refresh-jkopay-status="refreshJkoPayStatus"
+  />
 </template>
 
 <script setup>
@@ -179,6 +188,7 @@ import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderH
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
+import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.js";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.js";
 import {
   clearSelectedStore,
@@ -196,7 +206,7 @@ import {
   showProfileModal,
   startMainLogin,
 } from "../../../js/main-app.js";
-import { showMyOrders, submitOrder } from "../../../js/orders.js";
+import { submitOrder } from "../../../js/orders.js";
 import { getProductsViewModel } from "../../../js/products.js";
 
 const originalBodyClass = document.body.className;
@@ -225,6 +235,17 @@ const {
   toggleCartDrawer,
   submitOrderFromCart,
 } = useStorefrontCart({ orderApi: { submitOrder } });
+const {
+  isOrderHistoryOpen,
+  orderHistoryError,
+  orderHistoryState,
+  refreshingOrderId,
+  ordersView,
+  openOrderHistory,
+  closeOrderHistory,
+  copyTrackingNumber,
+  refreshJkoPayStatus,
+} = useStorefrontOrderHistory();
 const {
   productsCategories,
   deliveryOptions,
@@ -262,7 +283,8 @@ const {
   startMainLogin,
   logoutCurrentUser,
   showProfileModal,
-  showMyOrders,
+  showMyOrders: openOrderHistory,
+  closeOrderHistory,
 });
 
 function handleCartUpdated(event) {

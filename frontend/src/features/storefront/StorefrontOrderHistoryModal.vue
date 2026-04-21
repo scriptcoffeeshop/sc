@@ -1,7 +1,8 @@
 <template>
   <div
     id="my-orders-modal"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    :class="{ hidden: !isOpen }"
   >
     <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
       <div class="p-4 border-b flex justify-between items-center">
@@ -17,13 +18,66 @@
           &times;
         </button>
       </div>
-      <div id="my-orders-list" class="flex-1 overflow-y-auto p-4"></div>
+      <div id="my-orders-list" class="flex-1 overflow-y-auto p-4">
+        <p
+          v-if="state === 'loading'"
+          class="text-center text-gray-500 py-8"
+        >
+          載入中...
+        </p>
+        <p
+          v-else-if="state === 'error'"
+          class="text-center text-red-500 py-8"
+        >
+          {{ errorText || "訂單載入失敗" }}
+        </p>
+        <p
+          v-else-if="state === 'empty'"
+          class="text-center text-gray-500 py-8"
+        >
+          尚無訂單
+        </p>
+        <template v-else>
+          <StorefrontOrderHistoryCard
+            v-for="order in orders"
+            :key="order.orderId"
+            :order="order"
+            :refreshing="refreshingOrderId === order.orderId"
+            @copy-tracking-number="$emit('copy-tracking-number', $event)"
+            @refresh-jkopay-status="$emit('refresh-jkopay-status', $event)"
+          />
+        </template>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ListOrdered } from "lucide-vue-next";
+import StorefrontOrderHistoryCard from "./StorefrontOrderHistoryCard.vue";
 
-defineEmits(["close"]);
+defineProps({
+  isOpen: {
+    type: Boolean,
+    default: false,
+  },
+  state: {
+    type: String,
+    default: "empty",
+  },
+  errorText: {
+    type: String,
+    default: "",
+  },
+  orders: {
+    type: Array,
+    default: () => [],
+  },
+  refreshingOrderId: {
+    type: String,
+    default: "",
+  },
+});
+
+defineEmits(["close", "copy-tracking-number", "refresh-jkopay-status"]);
 </script>
