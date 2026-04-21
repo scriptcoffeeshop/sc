@@ -2,7 +2,7 @@
 // form-renderer.js — 動態表單欄位渲染與收集
 // ============================================
 
-import { escapeHtml, isValidEmail } from "./utils.js";
+import { isValidEmail } from "./utils.js";
 import { getDefaultIconUrl, resolveAssetUrl, setIconElement } from "./icons.js";
 
 const STOREFRONT_PUBLIC_BRANDING_CACHE_KEY =
@@ -23,7 +23,7 @@ function normalizeSiteSubtitle(value) {
  */
 export function renderDynamicFields(fields, container, deliveryMethod) {
   if (!container) return;
-  container.innerHTML = "";
+  container.replaceChildren();
 
   if (!fields || fields.length === 0) return;
 
@@ -46,31 +46,43 @@ export function renderDynamicFields(fields, container, deliveryMethod) {
   fields.forEach((f) => {
     const wrapper = document.createElement("div");
     const fieldId = `field-${f.field_key}`;
-    const requiredMark = f.required
-      ? ' <span class="text-red-500">*</span>'
-      : "";
+    const buildLabel = () => {
+      const label = document.createElement("label");
+      label.className = "block font-medium mb-2";
+      label.style.color = "var(--primary)";
+      label.append(f.label || "");
+      if (f.required) {
+        label.append(" ");
+        const requiredSpan = document.createElement("span");
+        requiredSpan.className = "text-red-500";
+        requiredSpan.textContent = "*";
+        label.appendChild(requiredSpan);
+      }
+      return label;
+    };
 
     if (f.field_type === "section_title") {
       // 區塊標題：獨自佔一整列
       wrapper.className = "md:col-span-2";
-      wrapper.innerHTML =
-        `<h2 class="text-lg font-bold mb-2" style="color:var(--primary)">${
-          escapeHtml(f.label)
-        }</h2>`;
+      const title = document.createElement("h2");
+      title.className = "text-lg font-bold mb-2";
+      title.style.color = "var(--primary)";
+      title.textContent = String(f.label || "");
+      wrapper.appendChild(title);
       grid.appendChild(wrapper);
       return;
     }
 
     if (f.field_type === "textarea") {
       wrapper.className = "md:col-span-2";
-      wrapper.innerHTML = `
-                <label class="block font-medium mb-2" style="color:var(--primary)">${
-        escapeHtml(f.label)
-      }${requiredMark}</label>
-                <textarea id="${fieldId}" class="input-field resize-none" rows="2" placeholder="${
-        escapeHtml(f.placeholder || "")
-      }" ${f.required ? "required" : ""}></textarea>
-            `;
+      wrapper.appendChild(buildLabel());
+      const textarea = document.createElement("textarea");
+      textarea.id = fieldId;
+      textarea.className = "input-field resize-none";
+      textarea.rows = 2;
+      textarea.placeholder = String(f.placeholder || "");
+      textarea.required = Boolean(f.required);
+      wrapper.appendChild(textarea);
       grid.appendChild(wrapper);
       return;
     }
@@ -80,46 +92,50 @@ export function renderDynamicFields(fields, container, deliveryMethod) {
       try {
         options = JSON.parse(f.options || "[]");
       } catch {}
-      const optionsHtml = options.map((o) =>
-        `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`
-      ).join("");
-      wrapper.innerHTML = `
-                <label class="block font-medium mb-2" style="color:var(--primary)">${
-        escapeHtml(f.label)
-      }${requiredMark}</label>
-                <select id="${fieldId}" class="input-field" ${
-        f.required ? "required" : ""
-      }>
-                    <option value="">請選擇</option>
-                    ${optionsHtml}
-                </select>
-            `;
+      wrapper.appendChild(buildLabel());
+      const select = document.createElement("select");
+      select.id = fieldId;
+      select.className = "input-field";
+      select.required = Boolean(f.required);
+      const placeholderOption = document.createElement("option");
+      placeholderOption.value = "";
+      placeholderOption.textContent = "請選擇";
+      select.appendChild(placeholderOption);
+      options.forEach((optionValue) => {
+        const option = document.createElement("option");
+        option.value = String(optionValue || "");
+        option.textContent = String(optionValue || "");
+        select.appendChild(option);
+      });
+      wrapper.appendChild(select);
       grid.appendChild(wrapper);
       return;
     }
 
     if (f.field_type === "checkbox") {
-      wrapper.innerHTML = `
-                <label class="flex items-center gap-2 cursor-pointer font-medium" style="color:var(--primary)">
-                    <input type="checkbox" id="${fieldId}" class="w-4 h-4">
-                    ${escapeHtml(f.label)}
-                </label>
-            `;
+      const label = document.createElement("label");
+      label.className = "flex items-center gap-2 cursor-pointer font-medium";
+      label.style.color = "var(--primary)";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = fieldId;
+      checkbox.className = "w-4 h-4";
+      label.appendChild(checkbox);
+      label.append(String(f.label || ""));
+      wrapper.appendChild(label);
       grid.appendChild(wrapper);
       return;
     }
 
     // text, email, tel, number 等
-    wrapper.innerHTML = `
-            <label class="block font-medium mb-2" style="color:var(--primary)">${
-      escapeHtml(f.label)
-    }${requiredMark}</label>
-            <input type="${
-      f.field_type || "text"
-    }" id="${fieldId}" class="input-field" placeholder="${
-      escapeHtml(f.placeholder || "")
-    }" ${f.required ? "required" : ""}>
-        `;
+    wrapper.appendChild(buildLabel());
+    const input = document.createElement("input");
+    input.type = String(f.field_type || "text");
+    input.id = fieldId;
+    input.className = "input-field";
+    input.placeholder = String(f.placeholder || "");
+    input.required = Boolean(f.required);
+    wrapper.appendChild(input);
     grid.appendChild(wrapper);
   });
 

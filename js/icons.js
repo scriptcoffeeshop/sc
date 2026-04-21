@@ -226,7 +226,7 @@ export function setIconElement(element, option = {}, fallbackKey = "", alt = "")
   }
 
   if (element instanceof HTMLElement) {
-    element.innerHTML = "";
+    element.replaceChildren();
     if (url) {
       const img = document.createElement("img");
       img.src = url;

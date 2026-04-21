@@ -498,12 +498,21 @@ async function loadInitData() {
       }
     } else throw new Error(result.error);
   } catch (e) {
-    document.getElementById("products-container").innerHTML =
-      `<p class="p-8 text-center text-red-600">載入資料失敗: ${e.message}<br><button type="button" data-reload-page="true" class="mt-3 btn-primary">重試</button></p>`;
-    document.querySelector('[data-reload-page="true"]')?.addEventListener(
-      "click",
-      () => window.location.reload(),
-    );
+    const productsContainer = document.getElementById("products-container");
+    if (productsContainer) {
+      const message = document.createElement("p");
+      message.className = "p-8 text-center text-red-600";
+      message.append(`載入資料失敗: ${e.message}`);
+      message.appendChild(document.createElement("br"));
+      const retryButton = document.createElement("button");
+      retryButton.type = "button";
+      retryButton.dataset.reloadPage = "true";
+      retryButton.className = "mt-3 btn-primary";
+      retryButton.textContent = "重試";
+      retryButton.addEventListener("click", () => window.location.reload());
+      message.appendChild(retryButton);
+      productsContainer.replaceChildren(message);
+    }
   }
 }
 
@@ -836,7 +845,7 @@ function renderBankAccounts() {
   if (container.dataset?.vueManaged === "true") return;
   if (!Array.isArray(state.bankAccounts) || state.bankAccounts.length === 0) {
     state.selectedBankAccountId = "";
-    container.innerHTML = "";
+    container.replaceChildren();
     return;
   }
 
@@ -848,41 +857,66 @@ function renderBankAccounts() {
     state.selectedBankAccountId = state.bankAccounts[0].id;
   }
 
-  container.innerHTML = state.bankAccounts.map((b) => {
+  const fragment = document.createDocumentFragment();
+  state.bankAccounts.forEach((b) => {
     const isSelected = state.selectedBankAccountId == b.id;
     const borderClass = isSelected
       ? "border-primary ring-2 ring-primary bg-orange-50"
       : "border-[#d1dce5] bg-white";
-    return `
-        <div class="p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}" data-bank-card="true" data-bank-id="${b.id}">
-            <div class="flex items-center gap-3 mb-1">
-                <input type="radio" name="bank_account_selection" value="${b.id}" class="w-4 h-4 text-primary" ${
-      isSelected ? "checked" : ""
-    }>
-                <div class="font-semibold text-gray-800">${
-      escapeHtml(b.bankName)
-    } (${escapeHtml(b.bankCode)})</div>
-            </div>
-            <div class="flex items-center gap-2 mt-1 pl-7">
-                <span class="text-lg font-mono font-medium" style="color:var(--primary)">${
-      escapeHtml(b.accountNumber)
-    }</span>
-                <button type="button" data-copy-account="true" data-account="${
-      escapeHtml(b.accountNumber)
-    }" class="text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors" title="複製帳號">
-                    複製
-                </button>
-            </div>
-            ${
-      b.accountName
-        ? `<div class="text-sm text-gray-500 mt-1 pl-7">戶名: ${
-          escapeHtml(b.accountName)
-        }</div>`
-        : ""
+
+    const card = document.createElement("div");
+    card.className =
+      `p-3 rounded-lg mb-2 relative cursor-pointer font-sans transition-all border ${borderClass}`;
+    card.dataset.bankCard = "true";
+    card.dataset.bankId = String(b.id);
+
+    const topRow = document.createElement("div");
+    topRow.className = "flex items-center gap-3 mb-1";
+
+    const radio = document.createElement("input");
+    radio.type = "radio";
+    radio.name = "bank_account_selection";
+    radio.value = String(b.id);
+    radio.className = "w-4 h-4 text-primary";
+    radio.checked = Boolean(isSelected);
+
+    const bankLabel = document.createElement("div");
+    bankLabel.className = "font-semibold text-gray-800";
+    bankLabel.textContent =
+      `${String(b.bankName || "")} (${String(b.bankCode || "")})`;
+
+    topRow.append(radio, bankLabel);
+
+    const accountRow = document.createElement("div");
+    accountRow.className = "flex items-center gap-2 mt-1 pl-7";
+
+    const accountNumber = document.createElement("span");
+    accountNumber.className = "text-lg font-mono font-medium";
+    accountNumber.style.color = "var(--primary)";
+    accountNumber.textContent = String(b.accountNumber || "");
+
+    const copyButton = document.createElement("button");
+    copyButton.type = "button";
+    copyButton.dataset.copyAccount = "true";
+    copyButton.dataset.account = String(b.accountNumber || "");
+    copyButton.className =
+      "text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded transition-colors";
+    copyButton.title = "複製帳號";
+    copyButton.textContent = "複製";
+
+    accountRow.append(accountNumber, copyButton);
+    card.append(topRow, accountRow);
+
+    if (b.accountName) {
+      const accountName = document.createElement("div");
+      accountName.className = "text-sm text-gray-500 mt-1 pl-7";
+      accountName.textContent = `戶名: ${String(b.accountName)}`;
+      card.appendChild(accountName);
     }
-        </div>
-        `;
-  }).join("");
+
+    fragment.appendChild(card);
+  });
+  container.replaceChildren(fragment);
 
   container.querySelectorAll("[data-bank-card]").forEach((card) => {
     card.addEventListener("click", () => {
@@ -941,11 +975,11 @@ function fallbackCopyTextToClipboard(text, btn) {
 }
 
 function showCopySuccess(btn) {
-  const originalText = btn.innerHTML;
-  btn.innerHTML = "已複製";
+  const originalText = btn.textContent;
+  btn.textContent = "已複製";
   btn.classList.add("bg-green-100", "text-green-700");
   setTimeout(() => {
-    btn.innerHTML = originalText;
+    btn.textContent = originalText;
     btn.classList.remove("bg-green-100", "text-green-700");
   }, 2000);
 }

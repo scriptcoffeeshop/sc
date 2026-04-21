@@ -3,12 +3,12 @@
 // ============================================
 
 import { API_URL, districtData } from "./config.js";
-import { escapeHtml, Toast } from "./utils.js";
+import { Toast } from "./utils.js";
 import { state } from "./state.js";
 import {
   getDefaultIconUrl,
   getDeliveryIconFallbackKey,
-  renderIconMarkup,
+  setIconElement,
 } from "./icons.js";
 
 let allStores = [];
@@ -38,7 +38,7 @@ window.renderDeliveryOptions = function (config) {
   const list = document.getElementById("delivery-options-list");
   if (!list) return;
   if (list.dataset?.vueManaged === "true") return;
-  list.innerHTML = "";
+  list.replaceChildren();
 
   // 只渲染有啟用的物流方式
   const activeOptions = config.filter((opt) => opt.enabled);
@@ -47,25 +47,33 @@ window.renderDeliveryOptions = function (config) {
     const div = document.createElement("div");
     div.className = "delivery-option";
     div.dataset.id = opt.id;
+    const checkMark = document.createElement("div");
+    checkMark.className = "check-mark";
+    const selectedIcon = document.createElement("img");
+    selectedIcon.src = getDefaultIconUrl("selected");
+    selectedIcon.alt = "";
+    selectedIcon.className = "ui-icon-img";
+    checkMark.appendChild(selectedIcon);
 
-    div.innerHTML = `
-            <div class="check-mark"><img src="${
-      getDefaultIconUrl("selected")
-    }" alt="" class="ui-icon-img"></div>
-            <div class="option-icon">${
-      renderIconMarkup(
-        opt,
-        getDeliveryIconFallbackKey(opt.id),
-        `${opt.name || "配送"} 圖示`,
-      )
-    }</div>
-            <div class="font-semibold" style="font-size: 0.95rem;">${
-      escapeHtml(opt.name || "")
-    }</div>
-            <div class="text-xs text-gray-500 mt-1">${
-      escapeHtml(opt.description || "")
-    }</div>
-        `;
+    const optionIcon = document.createElement("div");
+    optionIcon.className = "option-icon";
+    setIconElement(
+      optionIcon,
+      opt,
+      getDeliveryIconFallbackKey(opt.id),
+      `${opt.name || "配送"} 圖示`,
+    );
+
+    const title = document.createElement("div");
+    title.className = "font-semibold";
+    title.style.fontSize = "0.95rem";
+    title.textContent = String(opt.name || "");
+
+    const description = document.createElement("div");
+    description.className = "text-xs text-gray-500 mt-1";
+    description.textContent = String(opt.description || "");
+
+    div.append(checkMark, optionIcon, title, description);
     div.addEventListener("click", () => {
       selectDelivery(opt.id, { currentTarget: div });
     });
@@ -146,10 +154,17 @@ export const selectDelivery = window.selectDelivery;
 export function updateDistricts() {
   const city = document.getElementById("delivery-city").value;
   const distSelect = document.getElementById("delivery-district");
-  distSelect.innerHTML = '<option value="">請選擇</option>';
+  distSelect.replaceChildren();
+  const placeholderOption = document.createElement("option");
+  placeholderOption.value = "";
+  placeholderOption.textContent = "請選擇";
+  distSelect.appendChild(placeholderOption);
   if (city && districtData[city]) {
     districtData[city].forEach((d) => {
-      distSelect.innerHTML += `<option value="${d}">${d}</option>`;
+      const option = document.createElement("option");
+      option.value = String(d);
+      option.textContent = String(d);
+      distSelect.appendChild(option);
     });
   }
 }
@@ -385,7 +400,7 @@ export async function openStoreSearchModal() {
       searchInput.addEventListener("input", () => {
         const kw = searchInput.value.trim().toLowerCase();
         if (kw.length < 1) {
-          resultsDiv.innerHTML = "";
+          resultsDiv.replaceChildren();
           hintP.textContent = `共 ${allStores.length} 間門市，請輸入關鍵字搜尋`;
           return;
         }
@@ -396,25 +411,35 @@ export async function openStoreSearchModal() {
         hintP.textContent = matches.length >= 50
           ? `顯示前 50 筆，請輸入更精確的關鍵字`
           : `找到 ${matches.length} 間門市`;
-        resultsDiv.innerHTML = matches.map((s) => `
-                    <div class="store-result-item" data-store-result="true" data-id="${
-          escapeHtml(s.id)
-        }" data-name="${escapeHtml(s.name)}" data-addr="${
-          escapeHtml(s.address)
-        }"
-                         style="padding:10px 12px; border-bottom:1px solid #eee; cursor:pointer; transition:background 0.2s;">
-                        <div style="font-weight:600; font-size:14px;">${
-          escapeHtml(s.name)
-        }</div>
-                        <div style="color:#666; font-size:12px;">${
-          escapeHtml(s.address)
-        }</div>
-                        <div style="color:#aaa; font-size:11px;">代號：${
-          escapeHtml(s.id)
-        }</div>
-                    </div>
-                `).join("");
-        resultsDiv.querySelectorAll('[data-store-result="true"]').forEach((item) => {
+        const fragment = document.createDocumentFragment();
+        matches.forEach((store) => {
+          const item = document.createElement("div");
+          item.className = "store-result-item";
+          item.dataset.storeResult = "true";
+          item.dataset.id = String(store.id || "");
+          item.dataset.name = String(store.name || "");
+          item.dataset.addr = String(store.address || "");
+          item.style.padding = "10px 12px";
+          item.style.borderBottom = "1px solid #eee";
+          item.style.cursor = "pointer";
+          item.style.transition = "background 0.2s";
+
+          const name = document.createElement("div");
+          name.style.fontWeight = "600";
+          name.style.fontSize = "14px";
+          name.textContent = String(store.name || "");
+
+          const address = document.createElement("div");
+          address.style.color = "#666";
+          address.style.fontSize = "12px";
+          address.textContent = String(store.address || "");
+
+          const code = document.createElement("div");
+          code.style.color = "#aaa";
+          code.style.fontSize = "11px";
+          code.textContent = `代號：${String(store.id || "")}`;
+
+          item.append(name, address, code);
           item.addEventListener("click", () => {
             applyStoreSelection({
               storeId: item.dataset.id,
@@ -423,7 +448,9 @@ export async function openStoreSearchModal() {
             });
             Swal.close();
           });
+          fragment.appendChild(item);
         });
+        resultsDiv.replaceChildren(fragment);
       });
     },
   });

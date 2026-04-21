@@ -32,6 +32,8 @@ This creates three concrete problems:
 
 The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and `order-notifications-controller.js` is now only a 29-line orchestrator backed by smaller notification modules.
 
+Storefront legacy rendering is also moving into maintenance-only mode more aggressively now: the remaining `innerHTML` renderers in `js/*.js` have been reduced to zero, and smoke coverage now blocks regression on the core storefront containers.
+
 ## Current Progress Snapshot
 
 As of 2026-04-21:
@@ -57,6 +59,7 @@ As of 2026-04-21:
 - Remaining legacy-heavy areas:
   - maintenance-only legacy `dashboard.html` / root entrypoint
   - compatibility wrapper `js/dashboard-app.js`
+  - maintenance-only storefront `main.html` / `js/main-app.js` compatibility layer, now using DOM APIs instead of `innerHTML` for the remaining cart / products / dynamic field fallbacks
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 

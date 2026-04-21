@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`126`
+- 目前前端版號：`127`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -55,6 +55,7 @@
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分；storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` / `renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
 - storefront「我的訂單」列表已改成 DOM API 安全渲染，`js/orders.js` 不再以 `innerHTML` 拼接後端訂單資料。
+- storefront legacy `js/*.js` 的 `innerHTML` renderer 已清到 0；商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 DOM API / `replaceChildren()`。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
 ### 後端演進
@@ -81,7 +82,7 @@
   - dashboard settings icon controls 不得退回 document-level event delegation
   - dashboard settings / form fields controls 不得退回 document-level event delegation
 - dashboard `orders` / `products` / `categories` / `promotions` / `formfields` / `users` / `blacklist` 不得退回 `coffee:dashboard-*` custom-event bridge
-- storefront `delivery-options-list` / `bank-accounts-list` 不得退回 imperative `innerHTML` renderer
+- storefront `products-container` / `dynamic-fields-container` / `cart-items` / `total-price` / `cart-discount-details` / `cart-shipping-notice` / `delivery-options-list` / `bank-accounts-list` 不得退回 imperative `innerHTML` renderer
 - storefront「我的訂單」不得將 API 回傳內容當 HTML 插入 DOM，惡意 `<script>` / `<img onerror>` payload 只能以文字顯示
 
 ---
@@ -114,7 +115,9 @@
 - `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
 - `js/dashboard/modules/order-notifications-controller.js` 已縮成 29 行協調層，Flex payload、Flex 歷史與 Email 發送拆到獨立模組，站名來源也改走 dashboard settings state，不再直接讀 `#s-site-title` DOM。
 - E2E 新增通知 smoke，驗證後台訂單卡的 `LINE通知` / `發送信件` 仍會打到正確 API。
-- 前端快取版號更新為 `126`。
+- storefront legacy `innerHTML` renderer 已清到 0；`js/products.js`、`js/cart.js`、`js/form-renderer.js`、`js/delivery.js`、`js/main-app.js`、`js/icons.js` 改走 DOM API，dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
+- storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
+- 前端快取版號更新為 `127`。
 
 ### 2026-04-20
 

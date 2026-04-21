@@ -158,8 +158,10 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
   }
 
   if (!deliveryOptions.length) {
-    container.innerHTML =
-      '<p class="text-xs ui-text-muted">尚未設定配送方式</p>';
+    const emptyState = document.createElement("p");
+    emptyState.className = "text-xs ui-text-muted";
+    emptyState.textContent = "尚未設定配送方式";
+    container.replaceChildren(emptyState);
     return;
   }
 
@@ -171,16 +173,24 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
     }
   }
 
-  container.innerHTML = deliveryOptions.map((option) => {
-    const checked = visibility[option.id] !== false;
-    return `<label class="flex items-center gap-1 text-sm cursor-pointer px-2 py-1 rounded-lg border" style="border-color:#E2DCC8">
-              <input type="checkbox" class="dv-cb" data-delivery-id="${
-      escapeHtml(option.id || "")
-    }" ${checked ? "checked" : ""}> ${
-      escapeHtml(option.label || option.id || "")
-    }
-          </label>`;
-  }).join("");
+  const fragment = document.createDocumentFragment();
+  deliveryOptions.forEach((option) => {
+    const checkboxLabel = document.createElement("label");
+    checkboxLabel.className =
+      "flex items-center gap-1 text-sm cursor-pointer px-2 py-1 rounded-lg border";
+    checkboxLabel.style.borderColor = "#E2DCC8";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "dv-cb";
+    checkbox.dataset.deliveryId = String(option.id || "");
+    checkbox.checked = visibility[option.id] !== false;
+
+    checkboxLabel.append(checkbox, ` ${String(option.label || option.id || "")}`);
+    fragment.appendChild(checkboxLabel);
+  });
+
+  container.replaceChildren(fragment);
 }
 
 function collectDeliveryVisibility() {

@@ -137,6 +137,17 @@ type MainRouteOptions = {
       transfer: boolean;
     };
   }>;
+  formFields?: Array<{
+    id?: number;
+    field_key: string;
+    label: string;
+    field_type: string;
+    placeholder?: string;
+    options?: string;
+    required?: boolean;
+    enabled?: boolean;
+    delivery_visibility?: string | null;
+  }>;
   onCustomerLineLogin?: (request: PlaywrightRequest) => void;
 };
 
@@ -153,6 +164,17 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
       payment,
     },
   ];
+  const formFields = Array.isArray(options.formFields)
+    ? options.formFields.map((field, index) => ({
+      id: Number(field.id) || index + 1,
+      enabled: field.enabled !== false,
+      required: Boolean(field.required),
+      options: field.options || "",
+      placeholder: field.placeholder || "",
+      delivery_visibility: field.delivery_visibility ?? null,
+      ...field,
+    }))
+    : [];
   await page.route(`${SUPABASE_REST_PREFIX}**`, async (route) => {
     // Force storefront fallback path (getInitData) for deterministic smoke checks.
     await route.abort();
@@ -186,7 +208,7 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
           },
         ],
         categories: [{ id: 1, name: "測試分類" }],
-        formFields: [],
+        formFields,
         bankAccounts: [
           {
             id: "ba-1",
@@ -1270,9 +1292,20 @@ test.describe("smoke", () => {
     await expect(accountRadios.nth(1)).toBeChecked();
   });
 
-  test("storefront delivery and bank account lists avoid imperative innerHTML renderers", async ({ page }) => {
+  test("storefront legacy containers avoid imperative innerHTML renderers", async ({ page }) => {
     await installGlobalStubs(page);
-    await installMainRoutes(page);
+    await installMainRoutes(page, {
+      formFields: [
+        {
+          field_key: "company_note",
+          label: "公司備註",
+          field_type: "text",
+          placeholder: "請輸入備註",
+          required: false,
+          enabled: true,
+        },
+      ],
+    });
 
     await page.addInitScript(() => {
       const originalInnerHTML = Object.getOwnPropertyDescriptor(
@@ -1286,9 +1319,19 @@ test.describe("smoke", () => {
             return originalInnerHTML.get?.call(this) ?? "";
           },
           set(value) {
+            const blockedIds = new Set([
+              "delivery-options-list",
+              "bank-accounts-list",
+              "products-container",
+              "dynamic-fields-container",
+              "cart-items",
+              "total-price",
+              "cart-discount-details",
+              "cart-shipping-notice",
+            ]);
             if (
               this instanceof HTMLElement &&
-              (this.id === "delivery-options-list" || this.id === "bank-accounts-list")
+              blockedIds.has(this.id)
             ) {
               throw new Error(`legacy renderer blocked: ${this.id}`);
             }
@@ -1310,11 +1353,17 @@ test.describe("smoke", () => {
 
     await page.goto("/main.html");
 
+    await expect(page.locator("#products-container")).toContainText("測試豆");
+    await expect(page.locator("#dynamic-fields-container")).toContainText("公司備註");
     await expect(page.locator('.delivery-option[data-id="delivery"]')).toBeVisible();
     await page.locator("#transfer-option").click();
     await expect(page.locator('#bank-accounts-list [data-bank-card="true"]')).toHaveCount(2);
     await page.locator('#bank-accounts-list input[name="bank_account_selection"]').nth(1).click();
     await expect(page.locator('#bank-accounts-list [data-bank-card="true"]').nth(1)).toHaveClass(/ring-2/);
+    await page.locator("#products-container .spec-btn-add").first().click();
+    await page.locator('.bottom-bar button:has-text("購物車")').click();
+    await expect(page.locator("#cart-items")).toContainText("測試豆");
+    await expect(page.locator("#total-price")).toContainText("總金額");
   });
 
   test("storefront store search selection works without body click delegation", async ({ page }) => {
