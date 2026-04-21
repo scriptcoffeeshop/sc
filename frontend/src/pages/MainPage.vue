@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import StorefrontBottomBar from "../features/storefront/StorefrontBottomBar.vue";
@@ -178,20 +178,13 @@ import StorefrontHeader from "../features/storefront/StorefrontHeader.vue";
 import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderHistoryModal.vue";
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
+import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
 import {
   clearSelectedStore,
   selectDelivery,
   openStoreMap,
 } from "../../../js/delivery.js";
 import { Toast } from "../../../js/utils.js";
-import {
-  addToCart,
-  getCartSnapshot,
-  removeCartItem,
-  toggleCart,
-  updateCartItemQty,
-  updateCartItemQtyByKeys,
-} from "../../../js/cart.js";
 import { getDefaultIconUrl } from "../../../js/icons.js";
 import {
   getStorefrontUiSnapshot,
@@ -207,146 +200,35 @@ import { getProductsViewModel } from "../../../js/products.js";
 
 const originalBodyClass = document.body.className;
 const productsCategories = ref([]);
-const cartItems = ref([]);
 const deliveryOptions = ref([]);
 const bankAccounts = ref([]);
 const selectedBankAccountId = ref("");
-const selectedDelivery = ref("");
-const deliveryName = ref("該配送方式");
-const shippingConfig = ref(null);
 const copiedBankAccountId = ref("");
 const selectedCheckIconUrl = getDefaultIconUrl("selected");
-const cartSummary = ref({
-  subtotal: 0,
-  appliedPromos: [],
-  totalDiscount: 0,
-  discountedItemKeys: [],
-  afterDiscount: 0,
-  totalAfterDiscount: 0,
-  shippingFee: 0,
-  finalTotal: 0,
-  quoteAvailable: false,
-});
-
-const discountedItemKeySet = computed(() =>
-  new Set(Array.isArray(cartSummary.value.discountedItemKeys)
-    ? cartSummary.value.discountedItemKeys
-    : []),
-);
-
-const totalPriceText = computed(() =>
-  `$${Number(cartSummary.value.finalTotal || 0)}`,
-);
-
-const hasPromos = computed(() =>
-  cartSummary.value.totalDiscount > 0 &&
-  Array.isArray(cartSummary.value.appliedPromos) &&
-  cartSummary.value.appliedPromos.length > 0,
-);
-
-const hasShippingRule = computed(() => {
-  const fee = Number(shippingConfig.value?.fee || 0);
-  const threshold = Number(shippingConfig.value?.freeThreshold || 0);
-  const quoteFee = Number(cartSummary.value.shippingFee || 0);
-  return threshold > 0 || fee > 0 || quoteFee > 0;
-});
-
-const showShippingBadge = computed(() =>
-  !!(
-    selectedDelivery.value &&
-    cartSummary.value.quoteAvailable &&
-    hasShippingRule.value
-  ),
-);
-
-const isFreeShipping = computed(() =>
-  !!(
-    showShippingBadge.value &&
-    Number(shippingConfig.value?.freeThreshold || 0) > 0 &&
-    Number(cartSummary.value.shippingFee || 0) === 0
-  ),
-);
-
-const showShippingNotice = computed(() =>
-  !!(
-    showShippingBadge.value &&
-    !isFreeShipping.value &&
-    Number(cartSummary.value.shippingFee || 0) > 0
-  ),
-);
-
-const shippingNoticeTitle = computed(() =>
-  Number(shippingConfig.value?.freeThreshold || 0) > 0
-    ? `未達 ${deliveryName.value}免運門檻`
-    : `${deliveryName.value}運費`,
-);
-
-const showDiscountSection = computed(() =>
-  hasPromos.value || isFreeShipping.value,
-);
-
-const shippingDiff = computed(() => {
-  const threshold = Number(shippingConfig.value?.freeThreshold || 0);
-  if (!threshold) return 0;
-  const diff = threshold - Number(cartSummary.value.totalAfterDiscount || 0);
-  return diff > 0 ? diff : 0;
-});
-
-const freeShippingThresholdText = computed(() => {
-  const threshold = Number(shippingConfig.value?.freeThreshold || 0);
-  return threshold > 0 ? ` (滿$${threshold})` : "";
-});
-
-const cartQtyMap = computed(() => {
-  const map = new Map();
-  cartItems.value.forEach((item) => {
-    map.set(
-      `${Number(item.productId)}-${String(item.specKey || "")}`,
-      Math.max(1, Number(item.qty) || 1),
-    );
-  });
-  return map;
-});
-
-const cartItemCount = computed(() =>
-  cartItems.value.reduce(
-    (sum, item) => sum + Math.max(0, Number(item.qty) || 0),
-    0,
-  ),
-);
-
-function itemKey(productId, specKey = "") {
-  return `${Number(productId)}-${String(specKey || "")}`;
-}
-
-function getSpecQty(productId, specKey) {
-  return cartQtyMap.value.get(itemKey(productId, specKey)) || 0;
-}
-
-function changeSpecQty(productId, specKey, delta) {
-  if (delta > 0 && getSpecQty(productId, specKey) <= 0) {
-    addToCart(productId, specKey);
-    return;
-  }
-  updateCartItemQtyByKeys(productId, specKey, delta);
-}
-
-function changeCartItemQty(index, delta) {
-  updateCartItemQty(index, delta);
-}
-
-function removeCartIndex(index) {
-  removeCartItem(index);
-}
-
-function toggleCartDrawer() {
-  toggleCart();
-}
-
-function submitOrderFromCart() {
-  toggleCart();
-  void submitOrder();
-}
+const {
+  cartItems,
+  selectedDelivery,
+  deliveryName,
+  cartSummary,
+  discountedItemKeySet,
+  totalPriceText,
+  showShippingBadge,
+  isFreeShipping,
+  showShippingNotice,
+  shippingNoticeTitle,
+  showDiscountSection,
+  shippingDiff,
+  freeShippingThresholdText,
+  cartQtyMap,
+  cartItemCount,
+  syncCartSnapshot,
+  handleCartUpdated: syncCartFromEvent,
+  changeSpecQty,
+  changeCartItemQty,
+  removeCartIndex,
+  toggleCartDrawer,
+  submitOrderFromCart,
+} = useStorefrontCart({ orderApi: { submitOrder } });
 
 function handleCloseAnnouncement() {
   document.getElementById("announcement-banner")?.classList.add("hidden");
@@ -430,15 +312,7 @@ function handleProductsUpdated(event) {
 }
 
 function handleCartUpdated(event) {
-  const detail = event?.detail || {};
-  cartItems.value = Array.isArray(detail.items) ? detail.items : [];
-  selectedDelivery.value = String(detail.selectedDelivery || "");
-  deliveryName.value = String(detail.deliveryName || "該配送方式");
-  shippingConfig.value = detail.shippingConfig || null;
-  cartSummary.value = {
-    ...cartSummary.value,
-    ...(detail.summary || {}),
-  };
+  syncCartFromEvent(event);
   syncStorefrontUiState();
 }
 
@@ -457,7 +331,7 @@ onMounted(() => {
   productsCategories.value = Array.isArray(productVm.categories)
     ? productVm.categories
     : [];
-  cartItems.value = getCartSnapshot();
+  syncCartSnapshot();
 
   void initMainApp().then(() => {
     syncStorefrontUiState();

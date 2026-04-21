@@ -380,6 +380,92 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Routing Integration - updateSettings round-trips key configs",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "settings-admin",
+        role: "ADMIN",
+        status: "ACTIVE",
+      }],
+      coffee_settings: [],
+    }, async () => {
+      const token = await signJwt({ userId: "settings-admin" });
+      const deliveryOptions = JSON.stringify([{
+        id: "delivery",
+        label: "宅配",
+        iconUrl: "https://scriptcoffee.com.tw/sc/icons/delivery-truck.png",
+        enabled: true,
+      }]);
+      const paymentOptions = JSON.stringify({
+        linepay: {
+          label: "LINE Pay",
+          iconUrl: "https://scriptcoffee.com.tw/icons/payment-linepay.png",
+          enabled: true,
+        },
+        jkopay: {
+          label: "街口支付",
+          icon_url: "icons/payment-jkopay.png",
+          enabled: true,
+        },
+      });
+
+      const updateResponse = await app.fetch(
+        buildActionRequest("updateSettings", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}` },
+          body: {
+            settings: {
+              linepay_sandbox: false,
+              delivery_options_config: deliveryOptions,
+              payment_options_config: paymentOptions,
+            },
+          },
+        }),
+      );
+      const updatePayload = await updateResponse.json();
+      assertEquals(updateResponse.status, 200);
+      assertEquals(updatePayload.success, true);
+
+      const getResponse = await app.fetch(
+        buildActionRequest("getSettings", {
+          method: "GET",
+          headers: { authorization: `Bearer ${token}` },
+        }),
+      );
+      const getPayload = await getResponse.json();
+
+      assertEquals(getResponse.status, 200);
+      assertEquals(getPayload.success, true);
+      assertEquals(getPayload.settings.linepay_sandbox, "false");
+      assertEquals(
+        JSON.parse(getPayload.settings.delivery_options_config),
+        [{
+          id: "delivery",
+          label: "宅配",
+          enabled: true,
+          icon_url: "icons/delivery-truck.png",
+        }],
+      );
+      assertEquals(JSON.parse(getPayload.settings.payment_options_config), {
+        linepay: {
+          label: "LINE Pay",
+          enabled: true,
+          icon_url: "icons/payment-linepay.png",
+        },
+        jkopay: {
+          label: "街口支付",
+          icon_url: "icons/payment-jkopay.png",
+          enabled: true,
+        },
+      });
+    });
+  },
+});
+
+Deno.test({
   name:
     "Routing Integration - getMyOrders exposes online payment redirect URLs",
   sanitizeOps: false,
