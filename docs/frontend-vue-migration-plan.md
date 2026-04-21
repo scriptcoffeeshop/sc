@@ -53,9 +53,11 @@ As of 2026-04-21:
   - `DashboardPage.vue`: 167 lines
   - `DashboardSettingsSection.vue`: 39 lines
   - `DashboardOrdersSection.vue`: 31 lines
+  - `MainPage.vue`: 472 lines
   - settings cards: branding, section titles, storefront status, delivery/payment routing, payment options, bank accounts
   - orders subcomponents: toolbar, order card
   - notification modules: flex payload builder, flex controller, email controller
+  - storefront subcomponents: header, product grid, delivery section, payment section, bottom bar, cart drawer, order history modal
 - Remaining legacy-heavy areas:
   - maintenance-only legacy `dashboard.html` / root entrypoint
   - compatibility wrapper `js/dashboard-app.js`
