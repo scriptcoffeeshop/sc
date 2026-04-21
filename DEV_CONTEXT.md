@@ -9,7 +9,7 @@
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. 前端 cache busting 由 `.frontend-version` 統一管理；推送前跑 `npm run guardrails`，其會執行 `python3 scripts/sync_frontend_version.py --check`。若需要提升版本，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+2. legacy `main.html` / `dashboard.html` / `js/*.js` 的 cache busting 由 `.frontend-version` 管理；GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。推送前跑 `npm run guardrails`，其會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
 3. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
 4. 專案溝通、註解、commit message 以繁體中文為主。
 5. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
@@ -25,7 +25,7 @@
 - 主要分支：`main`
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
-- 前端版號來源：`.frontend-version`
+- 前端 legacy 版號來源：`.frontend-version`
 - 目前前端版號：`130`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions

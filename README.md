@@ -17,7 +17,7 @@
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
   - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
-- **檔案版號與快取**：**不可輕忽的手機 Cache**。前端 cache busting 由 `.frontend-version` 與 `scripts/sync_frontend_version.py` 統一管理；`npm run guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`，避免 `?v=X` 版本參照漂移。若需要提升版本，請執行 `python3 scripts/sync_frontend_version.py <新版本號>`，不要逐檔手動改。
+- **檔案版號與快取**：**不可輕忽的手機 Cache**。legacy 根目錄 `main.html` / `dashboard.html` / `js/*.js` 的 `?v=` 仍由 `.frontend-version` 與 `scripts/sync_frontend_version.py` 管理；GitHub Pages 的 Vite 產物則在 build 後統一改寫為穩定 `assets/*.js|css` 路徑，並於 CI deploy 時自動注入 commit SHA 版號，降低 push 後 HTML 與 asset 快取短暫失配造成的按鈕失效。若需要手動提升 legacy 版號，請執行 `python3 scripts/sync_frontend_version.py <新版本號>`，不要逐檔手動改。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 
 ## 2. 前端開發規範 (MPA & Vue 3)

@@ -94,7 +94,7 @@ jobs:
         run: npm install
 
       - name: Build frontend artifact
-        run: npm run build
+        run: FRONTEND_ASSET_VERSION="${GITHUB_SHA::12}" npm run build
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
