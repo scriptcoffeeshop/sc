@@ -168,7 +168,7 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import StorefrontBottomBar from "../features/storefront/StorefrontBottomBar.vue";
@@ -179,6 +179,7 @@ import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderH
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
+import { useStorefrontShell } from "../features/storefront/useStorefrontShell.js";
 import {
   clearSelectedStore,
   selectDelivery,
@@ -199,11 +200,6 @@ import { showMyOrders, submitOrder } from "../../../js/orders.js";
 import { getProductsViewModel } from "../../../js/products.js";
 
 const originalBodyClass = document.body.className;
-const productsCategories = ref([]);
-const deliveryOptions = ref([]);
-const bankAccounts = ref([]);
-const selectedBankAccountId = ref("");
-const copiedBankAccountId = ref("");
 const selectedCheckIconUrl = getDefaultIconUrl("selected");
 const {
   cartItems,
@@ -229,87 +225,45 @@ const {
   toggleCartDrawer,
   submitOrderFromCart,
 } = useStorefrontCart({ orderApi: { submitOrder } });
-
-function handleCloseAnnouncement() {
-  document.getElementById("announcement-banner")?.classList.add("hidden");
-}
-
-function handleStorefrontLogin() {
-  void startMainLogin();
-}
-
-function handleStorefrontLogout() {
-  logoutCurrentUser();
-}
-
-function handleShowProfile() {
-  void showProfileModal();
-}
-
-function handleShowMyOrders() {
-  void showMyOrders();
-}
-
-function handleCloseOrdersModal() {
-  document.getElementById("my-orders-modal")?.classList.add("hidden");
-}
-
-function handleSelectPayment(method) {
-  selectPayment(method);
-  syncStorefrontUiState();
-}
-
-function handleSelectDelivery(method) {
-  selectDelivery(method);
-  syncStorefrontUiState();
-}
-
-function handleOpenStoreMap() {
-  void openStoreMap();
-}
-
-function handleClearSelectedStore() {
-  clearSelectedStore();
-}
-
-function handleSelectBankAccount(bankId) {
-  selectBankAccount(bankId);
-  syncStorefrontUiState();
-}
-
-function handleCopyTransferAccount(bankId, accountNumber) {
-  const account = String(accountNumber || "").trim();
-  if (!account) return;
-  navigator.clipboard.writeText(account)
-    .then(() => {
-      copiedBankAccountId.value = String(bankId);
-      Toast.fire({ icon: "success", title: "帳號已複製" });
-      window.setTimeout(() => {
-        if (copiedBankAccountId.value === String(bankId)) {
-          copiedBankAccountId.value = "";
-        }
-      }, 2000);
-    })
-    .catch(() => Swal.fire("錯誤", "複製失敗，請手動複製", "error"));
-}
-
-function syncStorefrontUiState() {
-  const snapshot = getStorefrontUiSnapshot();
-  deliveryOptions.value = Array.isArray(snapshot.deliveryConfig)
-    ? snapshot.deliveryConfig.filter((item) => item && item.enabled !== false)
-    : [];
-  bankAccounts.value = Array.isArray(snapshot.bankAccounts)
-    ? snapshot.bankAccounts
-    : [];
-  selectedBankAccountId.value = String(snapshot.selectedBankAccountId || "");
-}
-
-function handleProductsUpdated(event) {
-  const detail = event?.detail || {};
-  productsCategories.value = Array.isArray(detail.categories)
-    ? detail.categories
-    : [];
-}
+const {
+  productsCategories,
+  deliveryOptions,
+  bankAccounts,
+  selectedBankAccountId,
+  copiedBankAccountId,
+  syncStorefrontUiState,
+  syncProductsSnapshot,
+  handleProductsUpdated,
+  handleCloseAnnouncement,
+  handleStorefrontLogin,
+  handleStorefrontLogout,
+  handleShowProfile,
+  handleShowMyOrders,
+  handleCloseOrdersModal,
+  handleSelectPayment,
+  handleSelectDelivery,
+  handleOpenStoreMap,
+  handleClearSelectedStore,
+  handleSelectBankAccount,
+  handleCopyTransferAccount,
+} = useStorefrontShell({
+  document,
+  clipboard: navigator.clipboard,
+  setTimeout: window.setTimeout.bind(window),
+  Swal,
+  Toast,
+  getProductsViewModel,
+  getStorefrontUiSnapshot,
+  clearSelectedStore,
+  selectDelivery,
+  openStoreMap,
+  selectPayment,
+  selectBankAccount,
+  startMainLogin,
+  logoutCurrentUser,
+  showProfileModal,
+  showMyOrders,
+});
 
 function handleCartUpdated(event) {
   syncCartFromEvent(event);
@@ -327,10 +281,7 @@ onMounted(() => {
   if (productsContainer) productsContainer.dataset.vueManaged = "true";
   if (cartContainer) cartContainer.dataset.vueManaged = "true";
 
-  const productVm = getProductsViewModel();
-  productsCategories.value = Array.isArray(productVm.categories)
-    ? productVm.categories
-    : [];
+  syncProductsSnapshot();
   syncCartSnapshot();
 
   void initMainApp().then(() => {
