@@ -33,6 +33,12 @@ function normalizePaymentLaunchUrl(url) {
   }
 }
 
+function getPaymentLaunchActionLabel(paymentMethod) {
+  if (paymentMethod === "linepay") return "前往 LINE Pay 付款";
+  if (paymentMethod === "jkopay") return "前往街口付款";
+  return "前往付款";
+}
+
 function getDefaultTrackingUrl(deliveryMethod) {
   if (deliveryMethod === "seven_eleven") {
     return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
@@ -195,7 +201,8 @@ function getPaymentActionGuide(paymentMethod, paymentStatus) {
     return {
       tone: "warning",
       title: "LINE Pay 待付款",
-      description: "此訂單尚未完成 LINE Pay 付款，請回到付款頁或重新下單。",
+      description:
+        "請儘快完成 LINE Pay 付款；若稍後付款，可到「我的訂單」重新打開付款連結。",
     };
   }
 
@@ -257,7 +264,7 @@ export function getCustomerPaymentDisplay(order) {
   const paymentUrl = normalizePaymentLaunchUrl(order?.paymentUrl);
   const showPaymentDeadline = Boolean(paymentExpiresAtText) &&
     ["pending", "processing", "expired"].includes(paymentStatus);
-  const canResumePayment = paymentMethod === "jkopay" &&
+  const canResumePayment = ["linepay", "jkopay"].includes(paymentMethod) &&
     ["pending", "processing"].includes(paymentStatus) &&
     Boolean(paymentUrl);
 
@@ -281,6 +288,9 @@ export function getCustomerPaymentDisplay(order) {
     actionType: guide.actionType || "",
     paymentUrl,
     canResumePayment,
+    resumePaymentLabel: canResumePayment
+      ? getPaymentLaunchActionLabel(paymentMethod)
+      : "",
   };
 }
 
@@ -328,7 +338,9 @@ export function buildPaymentStatusDialogOptions(params) {
     title: display.guideTitle,
     html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
     confirmButtonColor: "#3C2415",
-    confirmButtonText: display.canResumePayment ? "前往街口付款" : "我知道了",
+    confirmButtonText: display.canResumePayment
+      ? display.resumePaymentLabel
+      : "我知道了",
   };
 
   if (display.canResumePayment) {
@@ -364,7 +376,7 @@ export function buildPaymentLaunchDialogOptions(params) {
     `<p style="margin:12px 0 0 0; color:#475569;">${escapeHtml(display.guideDescription)}</p>`,
   );
   detailLines.push(
-    `<p style="margin:8px 0 0 0; color:#475569;">若您稍後再付款，可到「我的訂單」查看期限與最新狀態。</p>`,
+    `<p style="margin:8px 0 0 0; color:#475569;">若您稍後再付款，可到「我的訂單」重新打開付款連結並查看最新狀態。</p>`,
   );
 
   return {
@@ -631,7 +643,7 @@ function createPaymentMetaElement(order, paymentStatus) {
   );
   wrapper.appendChild(meta);
 
-  if (display.actionType === "refresh-jkopay") {
+  if (display.canResumePayment || display.actionType === "refresh-jkopay") {
     const actionRow = document.createElement("div");
     actionRow.className = "mt-3 flex flex-wrap gap-2";
 
@@ -640,21 +652,23 @@ function createPaymentMetaElement(order, paymentStatus) {
       payLink.href = display.paymentUrl;
       payLink.className =
         "rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100";
-      payLink.textContent = "前往街口付款";
+      payLink.textContent = display.resumePaymentLabel;
       actionRow.appendChild(payLink);
     }
 
-    const actionButton = document.createElement("button");
-    actionButton.type = "button";
-    actionButton.dataset.paymentAction = display.actionType;
-    actionButton.dataset.orderId = String(order.orderId || "");
-    actionButton.className =
-      "rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60";
-    actionButton.textContent = display.actionLabel;
-    actionButton.addEventListener("click", () => {
-      void refreshJkoPayStatus(String(order.orderId || ""), actionButton);
-    });
-    actionRow.appendChild(actionButton);
+    if (display.actionType === "refresh-jkopay") {
+      const actionButton = document.createElement("button");
+      actionButton.type = "button";
+      actionButton.dataset.paymentAction = display.actionType;
+      actionButton.dataset.orderId = String(order.orderId || "");
+      actionButton.className =
+        "rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60";
+      actionButton.textContent = display.actionLabel;
+      actionButton.addEventListener("click", () => {
+        void refreshJkoPayStatus(String(order.orderId || ""), actionButton);
+      });
+      actionRow.appendChild(actionButton);
+    }
     wrapper.appendChild(actionRow);
   }
 
@@ -1213,7 +1227,7 @@ export async function submitOrder() {
       // 線上支付: 依付款方式顯示對應跳轉文案
       if (result.paymentUrl) {
         resetOrderDraft();
-        if (paymentMethod === "jkopay") {
+        if (paymentMethod === "jkopay" || paymentMethod === "linepay") {
           Swal.fire(
             buildPaymentLaunchDialogOptions({
               orderId: result.orderId,

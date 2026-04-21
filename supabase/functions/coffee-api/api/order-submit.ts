@@ -300,16 +300,19 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 
       if (lpRes.returnCode === "0000" && lpRes.info) {
         const transactionId = String(lpRes.info.transactionId);
+        const paymentUrl = String(
+          lpRes.info.paymentUrl?.web || lpRes.info.paymentUrl?.app || "",
+        ).trim();
         await supabase.from("coffee_orders").update({
           payment_id: transactionId,
           payment_last_checked_at: new Date().toISOString(),
+          payment_redirect_url: paymentUrl,
         }).eq("id", orderId);
         return {
           success: true,
           orderId,
           total,
-          paymentUrl: lpRes.info.paymentUrl?.web ||
-            lpRes.info.paymentUrl?.app || "",
+          paymentUrl,
           transactionId,
         };
       }

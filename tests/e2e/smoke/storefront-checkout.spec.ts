@@ -306,7 +306,7 @@ test.describe("smoke / storefront checkout", () => {
     await expect(page).not.toHaveURL(/jkopay_redirect=1/);
   });
 
-  test("storefront my orders shows jkopay status guidance and refresh action", async ({ page }) => {
+  test("storefront my orders shows online pay resume links and jkopay refresh action", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page, {
       payment: { cod: true, linepay: false, jkopay: true, transfer: false },
@@ -314,6 +314,19 @@ test.describe("smoke / storefront checkout", () => {
 
     let inquiryCalls = 0;
     let ordersState = [
+      {
+        orderId: "LINEPAY-PENDING-1",
+        timestamp: "2026-04-21T02:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 5 號",
+        items: "LINE Pay 測試豆 x1",
+        total: 220,
+        paymentMethod: "linepay",
+        paymentStatus: "pending",
+        paymentUrl: "https://pay.example/linepay/LINEPAY-PENDING-1",
+      },
       {
         orderId: "JKO-PENDING-1",
         timestamp: "2026-04-21T01:00:00.000Z",
@@ -410,6 +423,12 @@ test.describe("smoke / storefront checkout", () => {
     await page.getByRole("button", { name: "我的訂單" }).click();
 
     const ordersList = page.locator("#my-orders-list");
+    await expect(ordersList).toContainText("付款方式：LINE Pay");
+    await expect(ordersList).toContainText("LINE Pay 待付款");
+    await expect(ordersList).toContainText("請儘快完成 LINE Pay");
+    await expect(
+      page.getByRole("link", { name: "前往 LINE Pay 付款" }),
+    ).toHaveAttribute("href", "https://pay.example/linepay/LINEPAY-PENDING-1");
     await expect(ordersList).toContainText("付款方式：街口支付");
     await expect(ordersList).toContainText("付款期限");
     await expect(ordersList).toContainText("請儘快完成街口支付");
@@ -431,5 +450,7 @@ test.describe("smoke / storefront checkout", () => {
     await expect(page.getByRole("link", { name: "前往街口付款" })).toHaveCount(
       0,
     );
+    await expect(page.getByRole("link", { name: "前往 LINE Pay 付款" }))
+      .toHaveCount(1);
   });
 });
