@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`128`
+- 目前前端版號：`129`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -119,7 +119,8 @@
 - storefront legacy `innerHTML` renderer 已清到 0；`js/products.js`、`js/cart.js`、`js/form-renderer.js`、`js/delivery.js`、`js/main-app.js`、`js/icons.js` 改走 DOM API，dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
 - storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
 - `MainPage.vue` 已從 1209 行拆到 472 行，Storefront Wave 2 的 header / product grid / delivery / payment / bottom bar / cart drawer / order history section 都已拆成獨立 Vue 元件。
-- 前端快取版號更新為 `128`。
+- `js/dashboard/modules/order-flex-message.js` 已從 491 行拆到 40 行協調層，主要內容分到 `order-flex-body.js`、`order-flex-bubble.js`、`order-flex-layout.js`。
+- 前端快取版號更新為 `129`。
 
 ### 2026-04-20
 
