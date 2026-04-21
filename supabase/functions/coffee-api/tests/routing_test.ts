@@ -380,7 +380,8 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Routing Integration - getMyOrders exposes online payment redirect URLs",
+  name:
+    "Routing Integration - getMyOrders exposes online payment redirect URLs",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
