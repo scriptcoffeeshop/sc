@@ -112,6 +112,10 @@
 
 ### 2026-04-21
 
+- 本機健康檢查入口已補齊：`npm run health` 現在會串 `ci-local + build + 全量 Playwright`；`npm run e2e` 改成跑所有 E2E spec，`npm run e2e:smoke` 保留快速冒煙檢查。
+- GitHub Actions 的 Playwright 步驟已改成走 `npm run e2e`，避免本機與 CI 的 E2E 覆蓋範圍分岔。
+- repo 內已追蹤的 `.DS_Store` / `supabase/.DS_Store` 已從 git index 移除，之後由 `.gitignore` 接手忽略。
+- `tests/e2e/features.spec.ts` 已對齊目前 Vue storefront / dashboard 行為：全家地圖選門市、CSV 匯出、用戶封鎖、訂單狀態更新四條 feature 測試現在都可被全量 `npm run e2e` 穩定執行。
 - `DashboardSettingsSection.vue` 已由 979 行巨型單檔拆成 39 行組裝層，並新增六個設定卡片元件：branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts。
 - `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
 - `js/dashboard/modules/order-notifications-controller.js` 已縮成 29 行協調層，Flex payload、Flex 歷史與 Email 發送拆到獨立模組，站名來源也改走 dashboard settings state，不再直接讀 `#s-site-title` DOM。

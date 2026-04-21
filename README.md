@@ -31,6 +31,7 @@
   - `supabase/.temp/` 屬於 Supabase CLI 本機暫存資料，現在由 `.gitignore` 忽略，不應提交。
   - `.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；請使用 `.env.staging.example`、`.env.supabase.local.example` 作為範本。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
+  - 本機完整健康檢查請使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`；E2E 快篩可用 `npm run e2e:smoke`。
   - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
 
 ## 3. 後端與資料庫規範 (Deno & Supabase)
