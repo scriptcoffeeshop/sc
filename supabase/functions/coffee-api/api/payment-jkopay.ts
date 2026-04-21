@@ -31,6 +31,9 @@ async function syncJkoPayOrderStatus(params: {
   statusChanged: boolean;
   statusCode: number | null;
   tradeNo: string;
+  paymentExpiresAt?: string;
+  paymentConfirmedAt?: string;
+  paymentLastCheckedAt?: string;
   message?: string;
   error?: string;
 }> {
@@ -60,6 +63,9 @@ async function syncJkoPayOrderStatus(params: {
       statusChanged: false,
       statusCode,
       tradeNo,
+      paymentExpiresAt: "",
+      paymentConfirmedAt: "",
+      paymentLastCheckedAt: "",
       error: orderError.message,
     };
   }
@@ -72,6 +78,9 @@ async function syncJkoPayOrderStatus(params: {
       statusChanged: false,
       statusCode,
       tradeNo,
+      paymentExpiresAt: "",
+      paymentConfirmedAt: "",
+      paymentLastCheckedAt: "",
       error: "找不到訂單",
     };
   }
@@ -84,6 +93,9 @@ async function syncJkoPayOrderStatus(params: {
       statusChanged: false,
       statusCode,
       tradeNo,
+      paymentExpiresAt: String(order.payment_expires_at || ""),
+      paymentConfirmedAt: String(order.payment_confirmed_at || ""),
+      paymentLastCheckedAt: String(order.payment_last_checked_at || ""),
       error: "此訂單非使用街口支付",
     };
   }
@@ -162,10 +174,18 @@ async function syncJkoPayOrderStatus(params: {
         statusChanged: false,
         statusCode,
         tradeNo,
+        paymentExpiresAt: String(order.payment_expires_at || ""),
+        paymentConfirmedAt: String(order.payment_confirmed_at || ""),
+        paymentLastCheckedAt: nowIso,
         error: updateError.message,
       };
     }
   }
+
+  const paymentConfirmedAt = nextPaymentStatus === "paid" &&
+      !String(order.payment_confirmed_at || "").trim()
+    ? nowIso
+    : String(order.payment_confirmed_at || "");
 
   return {
     success: true,
@@ -175,6 +195,9 @@ async function syncJkoPayOrderStatus(params: {
     statusChanged,
     statusCode,
     tradeNo,
+    paymentExpiresAt: String(order.payment_expires_at || ""),
+    paymentConfirmedAt,
+    paymentLastCheckedAt: nowIso,
     message: "街口付款狀態已同步",
   };
 }
@@ -343,6 +366,9 @@ export async function jkoPayInquiry(
         success: syncResult.success,
         orderId,
         paymentStatus: syncResult.paymentStatus,
+        paymentExpiresAt: syncResult.paymentExpiresAt,
+        paymentConfirmedAt: syncResult.paymentConfirmedAt,
+        paymentLastCheckedAt: syncResult.paymentLastCheckedAt,
         message: "尚未取得街口交易資料",
         inquiry: inquiryResponse,
         error: syncResult.error,
@@ -381,6 +407,9 @@ export async function jkoPayInquiry(
       paymentStatus: syncResult.paymentStatus,
       statusCode: syncResult.statusCode,
       tradeNo: syncResult.tradeNo,
+      paymentExpiresAt: syncResult.paymentExpiresAt,
+      paymentConfirmedAt: syncResult.paymentConfirmedAt,
+      paymentLastCheckedAt: syncResult.paymentLastCheckedAt,
       inquiry: inquiryResponse,
       error: syncResult.error,
     };

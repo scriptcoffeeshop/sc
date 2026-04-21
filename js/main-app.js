@@ -20,6 +20,7 @@ import {
 } from "./delivery.js";
 import {
   applySavedOrderFormPrefs,
+  buildPaymentStatusDialogOptions,
   initReceiptRequestUi,
 } from "./orders.js";
 import { applyBranding, renderDynamicFields } from "./form-renderer.js";
@@ -1043,56 +1044,6 @@ async function handleLinePayCallback(lpAction, params) {
   }
 }
 
-function getJkoStatusPresentation(paymentStatus) {
-  const normalized = String(paymentStatus || "").trim();
-  if (normalized === "paid") {
-    return { icon: "success", title: "付款成功", text: "街口支付已完成付款。" };
-  }
-  if (normalized === "processing") {
-    return {
-      icon: "info",
-      title: "付款確認中",
-      text: "已返回商店，系統正在同步街口付款結果，請稍候再查看我的訂單。",
-    };
-  }
-  if (normalized === "pending") {
-    return {
-      icon: "info",
-      title: "待付款",
-      text: "此訂單尚未完成街口付款，您可回到我的訂單重新確認付款狀態。",
-    };
-  }
-  if (normalized === "refunded") {
-    return {
-      icon: "info",
-      title: "已退款",
-      text: "此訂單已完成退款，若有疑問請聯繫店家。",
-    };
-  }
-  if (normalized === "cancelled") {
-    return { icon: "info", title: "付款已取消", text: "您已取消街口支付付款流程。" };
-  }
-  if (normalized === "failed") {
-    return {
-      icon: "error",
-      title: "付款失敗",
-      text: "街口支付回傳付款失敗，請重新下單或聯繫店家。",
-    };
-  }
-  if (normalized === "expired") {
-    return {
-      icon: "warning",
-      title: "付款逾期",
-      text: "此筆街口付款已逾期失效，請重新下單或聯繫店家協助。",
-    };
-  }
-  return {
-    icon: "info",
-    title: "付款確認中",
-    text: "已返回商店，系統仍在確認街口付款結果，請稍候再查看我的訂單。",
-  };
-}
-
 async function handleJkoPayReturn(orderId) {
   if (!orderId) return;
   Swal.fire({
@@ -1107,29 +1058,34 @@ async function handleJkoPayReturn(orderId) {
     );
     const result = await response.json();
     if (result.success) {
-      const ui = getJkoStatusPresentation(result.paymentStatus);
-      Swal.fire({
-        icon: ui.icon,
-        title: ui.title,
-        text: `訂單編號：${orderId}。${ui.text}`,
-        confirmButtonColor: "#3C2415",
-      });
+      Swal.fire(
+        buildPaymentStatusDialogOptions({
+          orderId,
+          paymentMethod: "jkopay",
+          paymentStatus: result.paymentStatus,
+          paymentExpiresAt: result.paymentExpiresAt,
+          paymentConfirmedAt: result.paymentConfirmedAt,
+          paymentLastCheckedAt: result.paymentLastCheckedAt,
+        }),
+      );
       return;
     }
-    Swal.fire({
-      icon: "info",
-      title: "付款確認中",
-      text: `訂單編號：${orderId}。${
-        result.error || "系統尚未收到街口最終結果，請稍後到「我的訂單」確認。"
-      }`,
-      confirmButtonColor: "#3C2415",
-    });
+    Swal.fire(
+      buildPaymentStatusDialogOptions({
+        orderId,
+        paymentMethod: "jkopay",
+        paymentStatus: "processing",
+        paymentLastCheckedAt: new Date().toISOString(),
+      }),
+    );
   } catch (_error) {
-    Swal.fire({
-      icon: "info",
-      title: "付款確認中",
-      text: `訂單編號：${orderId}。系統尚未收到街口最終結果，請稍後到「我的訂單」確認。`,
-      confirmButtonColor: "#3C2415",
-    });
+    Swal.fire(
+      buildPaymentStatusDialogOptions({
+        orderId,
+        paymentMethod: "jkopay",
+        paymentStatus: "processing",
+        paymentLastCheckedAt: new Date().toISOString(),
+      }),
+    );
   }
 }

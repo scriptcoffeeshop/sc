@@ -50,14 +50,14 @@ const DELIVERY_METHOD_TEXT = {
   in_store: "來店取貨",
 };
 
-const PAYMENT_METHOD_TEXT = {
+export const PAYMENT_METHOD_TEXT = {
   cod: "貨到付款",
   linepay: "LINE Pay",
   jkopay: "街口支付",
   transfer: "線上轉帳",
 };
 
-const PAYMENT_STATUS_TEXT = {
+export const PAYMENT_STATUS_TEXT = {
   pending: "待付款",
   processing: "付款確認中",
   paid: "已付款",
@@ -67,12 +67,287 @@ const PAYMENT_STATUS_TEXT = {
   refunded: "已退款",
 };
 
-function formatDateTimeText(value) {
+export function formatDateTimeText(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) return "";
   return parsed.toLocaleString("zh-TW");
+}
+
+function normalizePaymentMethod(paymentMethod) {
+  const normalized = String(paymentMethod || "").trim();
+  return normalized || "cod";
+}
+
+function normalizePaymentStatusForDisplay(paymentMethod, paymentStatus) {
+  const normalized = String(paymentStatus || "").trim();
+  if (normalized) return normalized;
+  return normalizePaymentMethod(paymentMethod) === "cod" ? "" : "pending";
+}
+
+function getPaymentActionGuide(paymentMethod, paymentStatus) {
+  if (paymentMethod === "jkopay") {
+    if (paymentStatus === "paid") {
+      return {
+        tone: "success",
+        title: "街口支付已完成",
+        description: "付款已完成，店家會依訂單狀態安排備貨與出貨。",
+      };
+    }
+    if (paymentStatus === "processing") {
+      return {
+        tone: "info",
+        title: "街口付款確認中",
+        description:
+          "您已返回商店，系統正在同步街口付款結果，通常 1 到 2 分鐘內會更新。",
+        actionLabel: "重新整理街口付款狀態",
+        actionType: "refresh-jkopay",
+      };
+    }
+    if (paymentStatus === "failed") {
+      return {
+        tone: "danger",
+        title: "街口支付付款失敗",
+        description:
+          "街口支付未完成扣款。若您已看到扣款畫面，請先保留截圖並聯繫店家協助確認。",
+      };
+    }
+    if (paymentStatus === "cancelled") {
+      return {
+        tone: "danger",
+        title: "街口支付已取消",
+        description: "您已取消街口支付付款流程；若仍需此商品，請重新下單。",
+      };
+    }
+    if (paymentStatus === "expired") {
+      return {
+        tone: "warning",
+        title: "街口支付已逾期",
+        description: "付款期限已過，此筆街口支付已失效；若仍需此商品，請重新下單。",
+      };
+    }
+    if (paymentStatus === "refunded") {
+      return {
+        tone: "success",
+        title: "街口支付已退款",
+        description: "此筆街口付款已退款完成，若款項未入帳請再聯繫店家確認。",
+      };
+    }
+    return {
+      tone: "warning",
+      title: "街口支付待付款",
+      description: "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新整理付款狀態。",
+      actionLabel: "重新整理街口付款狀態",
+      actionType: "refresh-jkopay",
+    };
+  }
+
+  if (paymentMethod === "linepay") {
+    if (paymentStatus === "paid") {
+      return {
+        tone: "success",
+        title: "LINE Pay 已完成",
+        description: "付款已完成，店家會依訂單狀態安排備貨與出貨。",
+      };
+    }
+    if (paymentStatus === "processing") {
+      return {
+        tone: "info",
+        title: "LINE Pay 確認中",
+        description: "系統正在同步 LINE Pay 付款結果，請稍候再回來查看。",
+      };
+    }
+    if (paymentStatus === "failed") {
+      return {
+        tone: "danger",
+        title: "LINE Pay 付款失敗",
+        description: "LINE Pay 未完成付款，若仍需商品請重新下單。",
+      };
+    }
+    if (paymentStatus === "cancelled") {
+      return {
+        tone: "danger",
+        title: "LINE Pay 已取消",
+        description: "您已取消 LINE Pay 付款流程；若仍需此商品，請重新下單。",
+      };
+    }
+    if (paymentStatus === "expired") {
+      return {
+        tone: "warning",
+        title: "LINE Pay 已逾期",
+        description: "付款期限已過，此筆 LINE Pay 付款已失效；若仍需此商品，請重新下單。",
+      };
+    }
+    return {
+      tone: "warning",
+      title: "LINE Pay 待付款",
+      description: "此訂單尚未完成 LINE Pay 付款，請回到付款頁或重新下單。",
+    };
+  }
+
+  if (paymentMethod === "transfer") {
+    if (paymentStatus === "paid") {
+      return {
+        tone: "success",
+        title: "匯款已確認",
+        description: "店家已完成對帳，後續會依訂單狀態安排處理。",
+      };
+    }
+    if (paymentStatus === "failed") {
+      return {
+        tone: "danger",
+        title: "匯款對帳失敗",
+        description: "目前尚未完成匯款對帳，請確認帳號末 5 碼是否正確並聯繫店家。",
+      };
+    }
+    return {
+      tone: "info",
+      title: "等待店家核帳",
+      description: "我們已收到您的匯款資訊，店家核帳後會將付款狀態更新為已付款。",
+    };
+  }
+
+  return {
+    tone: "neutral",
+    title: "付款方式",
+    description: "此訂單採取貨或到貨付款，請於取件或收貨時再付款。",
+  };
+}
+
+function getPaymentToneClasses(tone) {
+  if (tone === "success") {
+    return "border-green-200 bg-green-50 text-green-900";
+  }
+  if (tone === "info") {
+    return "border-sky-200 bg-sky-50 text-sky-900";
+  }
+  if (tone === "warning") {
+    return "border-amber-200 bg-amber-50 text-amber-900";
+  }
+  if (tone === "danger") {
+    return "border-rose-200 bg-rose-50 text-rose-900";
+  }
+  return "border-slate-200 bg-slate-50 text-slate-900";
+}
+
+export function getCustomerPaymentDisplay(order) {
+  const paymentMethod = normalizePaymentMethod(order?.paymentMethod);
+  const paymentStatus = normalizePaymentStatusForDisplay(
+    paymentMethod,
+    order?.paymentStatus,
+  );
+  const guide = getPaymentActionGuide(paymentMethod, paymentStatus);
+  const paymentExpiresAtText = formatDateTimeText(order?.paymentExpiresAt);
+  const paymentConfirmedAtText = formatDateTimeText(order?.paymentConfirmedAt);
+  const paymentLastCheckedAtText = formatDateTimeText(order?.paymentLastCheckedAt);
+  const showPaymentDeadline = Boolean(paymentExpiresAtText) &&
+    ["pending", "processing", "expired"].includes(paymentStatus);
+
+  return {
+    paymentMethod,
+    paymentStatus,
+    methodLabel: PAYMENT_METHOD_TEXT[paymentMethod] || paymentMethod,
+    statusLabel: paymentStatus
+      ? PAYMENT_STATUS_TEXT[paymentStatus] || paymentStatus
+      : "",
+    paymentExpiresAtText,
+    paymentConfirmedAtText,
+    paymentLastCheckedAtText,
+    showPaymentDeadline,
+    badgeClass: getPaymentBadgeClass(paymentStatus),
+    showBadge: paymentMethod !== "cod",
+    tone: guide.tone,
+    guideTitle: guide.title,
+    guideDescription: guide.description,
+    actionLabel: guide.actionLabel || "",
+    actionType: guide.actionType || "",
+  };
+}
+
+export function buildPaymentStatusDialogOptions(params) {
+  const display = getCustomerPaymentDisplay(params);
+  const orderId = escapeHtml(String(params?.orderId || ""));
+  const detailLines = [
+    `<p style="margin:0 0 8px 0;"><strong>訂單編號：</strong>${orderId || "未提供"}</p>`,
+    `<p style="margin:0 0 8px 0;"><strong>付款方式：</strong>${escapeHtml(display.methodLabel)}</p>`,
+  ];
+  if (display.statusLabel) {
+    detailLines.push(
+      `<p style="margin:0 0 8px 0;"><strong>付款狀態：</strong>${escapeHtml(display.statusLabel)}</p>`,
+    );
+  }
+  if (display.showPaymentDeadline) {
+    detailLines.push(
+      `<p style="margin:0 0 8px 0;"><strong>付款期限：</strong>${escapeHtml(display.paymentExpiresAtText)}</p>`,
+    );
+  }
+  if (display.paymentConfirmedAtText) {
+    detailLines.push(
+      `<p style="margin:0 0 8px 0;"><strong>付款完成：</strong>${escapeHtml(display.paymentConfirmedAtText)}</p>`,
+    );
+  }
+  if (display.paymentLastCheckedAtText) {
+    detailLines.push(
+      `<p style="margin:0 0 8px 0;"><strong>最近同步：</strong>${escapeHtml(display.paymentLastCheckedAtText)}</p>`,
+    );
+  }
+  detailLines.push(
+    `<p style="margin:12px 0 0 0; color:#475569;">${escapeHtml(display.guideDescription)}</p>`,
+  );
+
+  const icon = display.paymentStatus === "paid" || display.paymentStatus === "refunded"
+    ? "success"
+    : display.paymentStatus === "failed"
+    ? "error"
+    : display.paymentStatus === "expired"
+    ? "warning"
+    : "info";
+
+  return {
+    icon,
+    title: display.guideTitle,
+    html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
+    confirmButtonColor: "#3C2415",
+  };
+}
+
+export function buildPaymentLaunchDialogOptions(params) {
+  const display = getCustomerPaymentDisplay({
+    paymentMethod: params?.paymentMethod,
+    paymentStatus: "pending",
+    paymentExpiresAt: params?.paymentExpiresAt,
+  });
+  const orderId = escapeHtml(String(params?.orderId || ""));
+  const total = Number(params?.total || 0);
+  const detailLines = [
+    `<p style="margin:0 0 8px 0;"><strong>訂單編號：</strong>${orderId || "未提供"}</p>`,
+    `<p style="margin:0 0 8px 0;"><strong>付款方式：</strong>${escapeHtml(display.methodLabel)}</p>`,
+    `<p style="margin:0 0 8px 0;"><strong>付款狀態：</strong>${escapeHtml(display.statusLabel || "待付款")}</p>`,
+    `<p style="margin:0 0 8px 0;"><strong>訂單金額：</strong>$${total}</p>`,
+  ];
+  if (display.showPaymentDeadline) {
+    detailLines.push(
+      `<p style="margin:0 0 8px 0;"><strong>付款期限：</strong>${escapeHtml(display.paymentExpiresAtText)}</p>`,
+    );
+  }
+  detailLines.push(
+    `<p style="margin:12px 0 0 0; color:#475569;">${escapeHtml(display.guideDescription)}</p>`,
+  );
+  detailLines.push(
+    `<p style="margin:8px 0 0 0; color:#475569;">若您稍後再付款，可到「我的訂單」查看期限與最新狀態。</p>`,
+  );
+
+  return {
+    icon: "info",
+    title: `前往${display.methodLabel}`,
+    html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
+    confirmButtonText: `前往${display.methodLabel}`,
+    cancelButtonText: "稍後付款",
+    showCancelButton: true,
+    confirmButtonColor: "#3C2415",
+    cancelButtonColor: "#94a3b8",
+  };
 }
 
 function composeDeliveryAddress(address, companyOrBuilding) {
@@ -151,16 +426,17 @@ function getPaymentBadgeClass(paymentStatus) {
 }
 
 function createPaymentBadge(order, paymentStatus) {
-  const paymentMethod = String(order.paymentMethod || "").trim();
-  if (!paymentMethod || paymentMethod === "cod") return null;
+  const display = getCustomerPaymentDisplay({
+    paymentMethod: order?.paymentMethod,
+    paymentStatus,
+  });
+  if (!display.showBadge) return null;
 
   const badge = document.createElement("span");
   badge.className = `text-xs px-2 py-0.5 rounded-full ${
-    getPaymentBadgeClass(paymentStatus)
+    display.badgeClass
   }`;
-  badge.textContent = `${PAYMENT_METHOD_TEXT[paymentMethod] || paymentMethod} ${
-    PAYMENT_STATUS_TEXT[paymentStatus] || paymentStatus
-  }`;
+  badge.textContent = `${display.methodLabel} ${display.statusLabel}`.trim();
   return badge;
 }
 
@@ -232,35 +508,115 @@ function appendPaymentMetaLine(parent, label, value, addTopMargin) {
   parent.appendChild(row);
 }
 
-function createPaymentMetaElement(order, paymentStatus) {
-  const paymentMethod = String(order.paymentMethod || "").trim();
-  if (!paymentMethod || paymentMethod === "cod") return null;
+async function refreshJkoPayStatus(orderId, triggerButton) {
+  if (!orderId) return;
+  const button = triggerButton instanceof HTMLButtonElement ? triggerButton : null;
+  const originalText = button?.textContent || "";
+  if (button) {
+    button.disabled = true;
+    button.textContent = "更新中...";
+  }
+  try {
+    const response = await authFetch(
+      `${API_URL}?action=jkoPayInquiry&orderId=${encodeURIComponent(orderId)}`,
+    );
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || "街口付款狀態更新失敗");
+    }
+    await showMyOrders();
+    Swal.fire(
+      buildPaymentStatusDialogOptions({
+        orderId,
+        paymentMethod: "jkopay",
+        paymentStatus: result.paymentStatus,
+        paymentExpiresAt: result.paymentExpiresAt,
+        paymentConfirmedAt: result.paymentConfirmedAt,
+        paymentLastCheckedAt: result.paymentLastCheckedAt,
+      }),
+    );
+  } catch (error) {
+    Swal.fire("更新失敗", error.message || "街口付款狀態更新失敗", "error");
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
 
-  const paymentExpiresAtText = formatDateTimeText(order.paymentExpiresAt);
-  const paymentLastCheckedAtText = formatDateTimeText(order.paymentLastCheckedAt);
-  const paymentProviderStatusCode = String(order.paymentProviderStatusCode || "")
-    .trim();
-  const showExpiresAt = paymentExpiresAtText &&
-    (paymentStatus === "pending" || paymentStatus === "processing" ||
-      paymentStatus === "expired");
+function createPaymentMetaElement(order, paymentStatus) {
+  const display = getCustomerPaymentDisplay({
+    ...order,
+    paymentStatus,
+  });
+  if (!display.showBadge) return null;
 
   const wrapper = document.createElement("div");
-  wrapper.className = "text-xs text-gray-600 bg-slate-50 p-2 rounded mb-2";
-  appendPaymentMetaLine(wrapper, "付款期限：", showExpiresAt ? paymentExpiresAtText : "", false);
-  appendPaymentMetaLine(
-    wrapper,
-    "最近同步：",
-    paymentLastCheckedAtText,
-    wrapper.childNodes.length > 0,
-  );
-  appendPaymentMetaLine(
-    wrapper,
-    "金流狀態碼：",
-    paymentProviderStatusCode,
-    wrapper.childNodes.length > 0,
-  );
+  wrapper.className =
+    `mb-2 rounded-xl border p-3 ${getPaymentToneClasses(display.tone)}`;
 
-  return wrapper.childNodes.length > 0 ? wrapper : null;
+  const heading = document.createElement("div");
+  heading.className = "flex flex-wrap items-start justify-between gap-2";
+
+  const title = document.createElement("div");
+  title.className = "font-semibold";
+  title.textContent = `付款方式：${display.methodLabel}`;
+
+  const statusBadge = document.createElement("span");
+  statusBadge.className = `text-xs px-2 py-0.5 rounded-full ${display.badgeClass}`;
+  statusBadge.textContent = display.statusLabel;
+
+  heading.append(title, statusBadge);
+  wrapper.appendChild(heading);
+
+  const description = document.createElement("p");
+  description.className = "mt-2 text-sm leading-6";
+  description.textContent = display.guideDescription;
+  wrapper.appendChild(description);
+
+  const meta = document.createElement("div");
+  meta.className = "mt-3 text-xs leading-6 text-slate-700";
+  appendPaymentMetaLine(meta, "付款方式：", display.methodLabel, false);
+  appendPaymentMetaLine(meta, "付款狀態：", display.statusLabel, true);
+  appendPaymentMetaLine(
+    meta,
+    "付款期限：",
+    display.showPaymentDeadline ? display.paymentExpiresAtText : "",
+    true,
+  );
+  appendPaymentMetaLine(
+    meta,
+    "付款完成：",
+    display.paymentConfirmedAtText,
+    true,
+  );
+  appendPaymentMetaLine(
+    meta,
+    "最近同步：",
+    display.paymentLastCheckedAtText,
+    true,
+  );
+  wrapper.appendChild(meta);
+
+  if (display.actionType === "refresh-jkopay") {
+    const actionRow = document.createElement("div");
+    actionRow.className = "mt-3";
+    const actionButton = document.createElement("button");
+    actionButton.type = "button";
+    actionButton.dataset.paymentAction = display.actionType;
+    actionButton.dataset.orderId = String(order.orderId || "");
+    actionButton.className =
+      "rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60";
+    actionButton.textContent = display.actionLabel;
+    actionButton.addEventListener("click", () => {
+      void refreshJkoPayStatus(String(order.orderId || ""), actionButton);
+    });
+    actionRow.appendChild(actionButton);
+    wrapper.appendChild(actionRow);
+  }
+
+  return wrapper;
 }
 
 function createOrderCard(order) {
@@ -805,22 +1161,48 @@ export async function submitOrder() {
         }).catch(() => {});
       } catch {}
 
+      const resetOrderDraft = () => {
+        clearCart();
+        const noteEl = document.getElementById("order-note");
+        if (noteEl) noteEl.value = "";
+        applySavedOrderFormPrefs();
+      };
+
       // 線上支付: 依付款方式顯示對應跳轉文案
       if (result.paymentUrl) {
-        const providerLabel = paymentMethod === "jkopay"
-          ? "街口支付"
-          : paymentMethod === "linepay"
+        resetOrderDraft();
+        if (paymentMethod === "jkopay") {
+          Swal.fire(
+            buildPaymentLaunchDialogOptions({
+              orderId: result.orderId,
+              paymentMethod,
+              total: result.total,
+              paymentExpiresAt: result.paymentExpiresAt,
+            }),
+          ).then((dialogResult) => {
+            if (dialogResult.isConfirmed) {
+              window.location.href = result.paymentUrl;
+            }
+          });
+          return;
+        }
+
+        const providerLabel = paymentMethod === "linepay"
           ? "LINE Pay"
           : "線上付款";
         Swal.fire({
           icon: "info",
-          title: `跳轉至 ${providerLabel}`,
-          text: `即將跳轉至 ${providerLabel} 付款頁面...`,
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-        }).then(() => {
-          window.location.href = result.paymentUrl;
+          title: `跳轉至${providerLabel}`,
+          text: `訂單已建立，將前往 ${providerLabel} 完成付款。`,
+          confirmButtonText: `前往${providerLabel}`,
+          cancelButtonText: "稍後付款",
+          showCancelButton: true,
+          confirmButtonColor: "#3C2415",
+          cancelButtonColor: "#94a3b8",
+        }).then((dialogResult) => {
+          if (dialogResult.isConfirmed) {
+            window.location.href = result.paymentUrl;
+          }
         });
         return;
       }
@@ -853,12 +1235,10 @@ export async function submitOrder() {
           html: `<p>訂單編號：<b>${result.orderId}</b></p>
                            <p>請匯款 <b style="color:#e63946">$${result.total}</b> 至以下帳號：</p>
                            ${bankHtml}
-                           <p style="color:#666;font-size:0.9em;">(您的匯款末5碼已記錄，將用於對帳)</p>`,
+          <p style="color:#666;font-size:0.9em;">(您的匯款末5碼已記錄，將用於對帳)</p>`,
           confirmButtonColor: "#3C2415",
         }).then(() => {
-          clearCart();
-          document.getElementById("order-note").value = "";
-          applySavedOrderFormPrefs();
+          resetOrderDraft();
         });
         return;
       }
@@ -869,9 +1249,7 @@ export async function submitOrder() {
         text: `訂單編號：${result.orderId}`,
         confirmButtonColor: "#3C2415",
       }).then(() => {
-        clearCart();
-        document.getElementById("order-note").value = "";
-        applySavedOrderFormPrefs();
+        resetOrderDraft();
       });
     } else throw new Error(result.error || "訂單送出發生未知錯誤");
   } catch (e) {

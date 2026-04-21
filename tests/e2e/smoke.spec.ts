@@ -123,6 +123,7 @@ type MainRouteOptions = {
   payment?: {
     cod: boolean;
     linepay: boolean;
+    jkopay?: boolean;
     transfer: boolean;
   };
   deliveryOptions?: Array<{
@@ -134,6 +135,7 @@ type MainRouteOptions = {
     payment: {
       cod: boolean;
       linepay: boolean;
+      jkopay?: boolean;
       transfer: boolean;
     };
   }>;
@@ -152,8 +154,16 @@ type MainRouteOptions = {
 };
 
 async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
-  const payment = options.payment ??
+  const paymentSource = options.payment ??
     { cod: true, linepay: false, transfer: true };
+  const payment = {
+    cod: Boolean(paymentSource.cod),
+    linepay: Boolean(paymentSource.linepay),
+    jkopay: paymentSource.jkopay === undefined
+      ? Boolean(paymentSource.linepay)
+      : Boolean(paymentSource.jkopay),
+    transfer: Boolean(paymentSource.transfer),
+  };
   const deliveryOptions = options.deliveryOptions ?? [
     {
       id: "delivery",
@@ -235,6 +245,11 @@ async function installMainRoutes(page: Page, options: MainRouteOptions = {}) {
               icon: "💚",
               name: "LINE Pay",
               description: "線上安全付款",
+            },
+            jkopay: {
+              icon: "🟧",
+              name: "街口支付",
+              description: "街口支付線上付款",
             },
             transfer: {
               icon: "🏦",
@@ -1157,6 +1172,36 @@ test.describe("smoke", () => {
     ).toBe("mock-customer-token");
   });
 
+  test("storefront desktop login prompt keeps content-card proportion", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+    await page.setViewportSize({ width: 1728, height: 960 });
+
+    await page.goto("/main.html");
+
+    const metrics = await page.evaluate(() => {
+      const loginSection = document.getElementById("login-section");
+      const prompt = document.getElementById("login-prompt");
+      const mainCard = document.querySelector(".ui-card");
+      if (!loginSection || !prompt || !mainCard) return null;
+      const loginRect = loginSection.getBoundingClientRect();
+      const cardRect = mainCard.getBoundingClientRect();
+      const promptStyles = getComputedStyle(prompt);
+      return {
+        widthDelta: Math.abs(loginRect.width - cardRect.width),
+        promptDisplay: promptStyles.display,
+        promptFlexDirection: promptStyles.flexDirection,
+        promptAlignItems: promptStyles.alignItems,
+      };
+    });
+
+    expect(metrics).toBeTruthy();
+    expect(metrics?.widthDelta ?? 999).toBeLessThan(48);
+    expect(metrics?.promptDisplay).toBe("flex");
+    expect(metrics?.promptFlexDirection).toBe("row");
+    expect(metrics?.promptAlignItems).toBe("center");
+  });
+
   test("storefront action icons use vector sizing and currentColor", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
@@ -1894,6 +1939,210 @@ test.describe("smoke", () => {
     expect(submitBody).toBeTruthy();
     expect(submitBody.paymentMethod).toBe("linepay");
     await expect(page).toHaveURL(/linepay_redirect=1/);
+  });
+
+  test("storefront submit order jkopay prompt shows deadline and next steps", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      payment: { cod: true, linepay: false, jkopay: true, transfer: false },
+    });
+
+    let submitOrderCalls = 0;
+    await page.route(`${API_URL}?action=submitOrder**`, async (route) => {
+      submitOrderCalls += 1;
+      await fulfillJson(route, {
+        success: true,
+        orderId: "SO-JKOPAY-1",
+        total: 220,
+        paymentUrl: "/main.html?jkopay_redirect=1",
+        paymentExpiresAt: "2026-04-21T12:34:00.000Z",
+      });
+    });
+
+    await page.addInitScript(() => {
+      const swalCalls: Array<Record<string, unknown>> = [];
+      (window as any).__storefrontSwalCalls = swalCalls;
+      (window as any).Swal.fire = async (input: any) => {
+        const payload = typeof input === "string" ? { title: input } : input || {};
+        swalCalls.push(payload);
+        if (String(payload.title || "").includes("確認訂單")) {
+          return { isConfirmed: true };
+        }
+        return { isConfirmed: false };
+      };
+
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+
+    await page.locator('.delivery-option[data-id="delivery"]').click();
+    await page.selectOption("#delivery-city", "新竹市");
+    await page.fill("#delivery-detail-address", "測試路 8 號");
+    await page.locator("#products-container .spec-btn-add").first().click();
+    await page.locator("#jkopay-option").click();
+    await page.check("#policy-agree");
+
+    await page.locator('.bottom-bar button:has-text("購物車")').click();
+    await page.locator("#cart-submit-btn").click();
+
+    await expect.poll(() => submitOrderCalls).toBe(1);
+
+    await expect.poll(async () => {
+      return await page.evaluate(() => {
+        const calls = (window as any).__storefrontSwalCalls || [];
+        return Boolean(calls.find((item: any) =>
+          String(item?.title || "").includes("街口支付")
+        ));
+      });
+    }).toBe(true);
+
+    const promptSummary = await page.evaluate(() => {
+      const calls = (window as any).__storefrontSwalCalls || [];
+      const match = calls.find((item: any) =>
+        String(item?.title || "").includes("街口支付")
+      ) || {};
+      return {
+        title: String(match.title || ""),
+        html: String(match.html || ""),
+        text: String(match.text || ""),
+      };
+    });
+
+    expect(promptSummary.title).toContain("街口支付");
+    expect(promptSummary.html).toContain("付款期限");
+    expect(promptSummary.html).toContain("待付款");
+    expect(promptSummary.html).toContain("我的訂單");
+    expect(promptSummary.html).toContain("SO-JKOPAY-1");
+    await expect(page).not.toHaveURL(/jkopay_redirect=1/);
+  });
+
+  test("storefront my orders shows jkopay status guidance and refresh action", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      payment: { cod: true, linepay: false, jkopay: true, transfer: false },
+    });
+
+    let inquiryCalls = 0;
+    let ordersState = [
+      {
+        orderId: "JKO-PENDING-1",
+        timestamp: "2026-04-21T01:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 1 號",
+        items: "街口測試豆 x1",
+        total: 220,
+        paymentMethod: "jkopay",
+        paymentStatus: "pending",
+        paymentExpiresAt: "2026-04-21T12:34:00.000Z",
+        paymentLastCheckedAt: "2026-04-21T01:10:00.000Z",
+      },
+      {
+        orderId: "JKO-FAILED-1",
+        timestamp: "2026-04-20T01:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 2 號",
+        items: "街口測試豆 x1",
+        total: 220,
+        paymentMethod: "jkopay",
+        paymentStatus: "failed",
+      },
+      {
+        orderId: "JKO-CANCELLED-1",
+        timestamp: "2026-04-19T01:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 3 號",
+        items: "街口測試豆 x1",
+        total: 220,
+        paymentMethod: "jkopay",
+        paymentStatus: "cancelled",
+      },
+      {
+        orderId: "JKO-EXPIRED-1",
+        timestamp: "2026-04-18T01:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 4 號",
+        items: "街口測試豆 x1",
+        total: 220,
+        paymentMethod: "jkopay",
+        paymentStatus: "expired",
+        paymentExpiresAt: "2026-04-18T12:34:00.000Z",
+      },
+    ];
+
+    await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
+      await fulfillJson(route, {
+        success: true,
+        orders: ordersState,
+      });
+    });
+
+    await page.route(`${API_URL}?action=jkoPayInquiry**`, async (route) => {
+      inquiryCalls += 1;
+      ordersState = ordersState.map((order) =>
+        order.orderId === "JKO-PENDING-1"
+          ? {
+            ...order,
+            paymentStatus: "paid",
+            paymentConfirmedAt: "2026-04-21T01:20:00.000Z",
+            paymentLastCheckedAt: "2026-04-21T01:20:00.000Z",
+          }
+          : order
+      );
+      await fulfillJson(route, {
+        success: true,
+        orderId: "JKO-PENDING-1",
+        paymentStatus: "paid",
+      });
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+    await page.getByRole("button", { name: "我的訂單" }).click();
+
+    const ordersList = page.locator("#my-orders-list");
+    await expect(ordersList).toContainText("付款方式：街口支付");
+    await expect(ordersList).toContainText("付款期限");
+    await expect(ordersList).toContainText("請儘快完成街口支付");
+    await expect(ordersList).toContainText("街口支付付款失敗");
+    await expect(ordersList).toContainText("您已取消街口支付付款流程");
+    await expect(ordersList).toContainText("付款期限已過");
+
+    const refreshButton = page.getByRole("button", {
+      name: "重新整理街口付款狀態",
+    });
+    await expect(refreshButton).toBeVisible();
+    await refreshButton.click();
+
+    await expect.poll(() => inquiryCalls).toBe(1);
+    await expect(ordersList).toContainText("付款狀態：已付款");
   });
 
   test("dashboard order status flow works", async ({ page }) => {

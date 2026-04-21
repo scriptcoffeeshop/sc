@@ -27,7 +27,7 @@
 - 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端版號來源：`.frontend-version`
-- 目前前端版號：`129`
+- 目前前端版號：`130`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會自動部署前端
@@ -112,6 +112,10 @@
 
 ### 2026-04-21
 
+- 顧客端街口支付資訊已補齊：下單完成提示、街口回跳結果與「我的訂單」現在會顯示付款方式、待付款提示、付款期限、失敗/取消/逾期說明，且待付款 / 確認中可直接重新整理街口付款狀態。
+- storefront「我的訂單」彈窗已放大為較實用的桌機尺寸，避免付款資訊與操作按鈕擁擠。
+- 桌機版 storefront header / login prompt 已重新限制在與主內容卡相同的 `max-w-3xl` 寬度，登入提示文案與 LINE 按鈕在桌機版會同列顯示，不再出現過寬的橫幅比例失衡。
+- Playwright smoke 已新增兩類保護：街口支付顧客端狀態/操作驗證，以及桌機版登入提示比例驗證。
 - 本機健康檢查入口已補齊：`npm run health` 現在會串 `ci-local + build + 全量 Playwright`；`npm run e2e` 改成跑所有 E2E spec，`npm run e2e:smoke` 保留快速冒煙檢查。
 - GitHub Actions 的 Playwright 步驟已改成走 `npm run e2e`，避免本機與 CI 的 E2E 覆蓋範圍分岔。
 - repo 內已追蹤的 `.DS_Store` / `supabase/.DS_Store` 已從 git index 移除，之後由 `.gitignore` 接手忽略。
@@ -124,7 +128,7 @@
 - storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
 - `MainPage.vue` 已從 1209 行拆到 472 行，Storefront Wave 2 的 header / product grid / delivery / payment / bottom bar / cart drawer / order history section 都已拆成獨立 Vue 元件。
 - `js/dashboard/modules/order-flex-message.js` 已從 491 行拆到 40 行協調層，主要內容分到 `order-flex-body.js`、`order-flex-bubble.js`、`order-flex-layout.js`。
-- 前端快取版號更新為 `129`。
+- 前端快取版號更新為 `130`。
 
 ### 2026-04-20
 

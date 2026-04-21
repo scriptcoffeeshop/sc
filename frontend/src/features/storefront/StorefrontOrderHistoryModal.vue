@@ -3,7 +3,7 @@
     id="my-orders-modal"
     class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
   >
-    <div class="bg-white rounded-2xl max-w-lg w-full max-h-[80vh] overflow-hidden flex flex-col">
+    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
       <div class="p-4 border-b flex justify-between items-center">
         <h3 class="text-lg font-bold" style="color: var(--primary)">
           <span class="tab-with-icon"><ListOrdered class="ui-action-icon" aria-hidden="true" />我的訂單</span>
