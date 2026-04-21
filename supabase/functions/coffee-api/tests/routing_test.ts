@@ -34,6 +34,27 @@ function buildActionRequest(
 }
 
 Deno.test({
+  name: "CORS - Vite preview origins are allowed",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    for (const origin of ["http://localhost:4173", "http://127.0.0.1:4173"]) {
+      const response = await app.fetch(
+        new Request("https://example.com/?action=getInitData", {
+          method: "OPTIONS",
+          headers: {
+            Origin: origin,
+            "Access-Control-Request-Method": "GET",
+          },
+        }),
+      );
+
+      assertEquals(response.headers.get("Access-Control-Allow-Origin"), origin);
+    }
+  },
+});
+
+Deno.test({
   name: "Routing Guards - write actions reject GET requests",
   sanitizeOps: false,
   sanitizeResources: false,
