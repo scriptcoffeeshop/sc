@@ -49,6 +49,7 @@ BEGIN
   IF custom_fields_type IS NOT NULL AND custom_fields_type <> 'jsonb' THEN
     EXECUTE $sql$
       ALTER TABLE public.coffee_orders
+      ALTER COLUMN custom_fields DROP DEFAULT,
       ALTER COLUMN custom_fields TYPE JSONB
       USING public.try_parse_jsonb_object(custom_fields, '{}'::jsonb)
     $sql$;
@@ -71,6 +72,7 @@ BEGIN
   IF receipt_info_type IS NOT NULL AND receipt_info_type <> 'jsonb' THEN
     EXECUTE $sql$
       ALTER TABLE public.coffee_orders
+      ALTER COLUMN receipt_info DROP DEFAULT,
       ALTER COLUMN receipt_info TYPE JSONB
       USING public.try_parse_jsonb_object(receipt_info, 'null'::jsonb)
     $sql$;
