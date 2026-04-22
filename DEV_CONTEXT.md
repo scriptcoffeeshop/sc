@@ -2,20 +2,22 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。
 
-最後更新：2026-04-21
+最後更新：2026-04-22
 
 ---
 
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. legacy `main.html` / `dashboard.html` / `js/*.js` 的 cache busting 由 `.frontend-version` 管理；GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。推送前跑 `npm run guardrails`，其會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
-3. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
-4. 專案溝通、註解、commit message 以繁體中文為主。
-5. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
-6. E2E 若攔截 CDN 腳本，需留意 `integrity/crossorigin` 的 SRI 驗證衝突。
-7. `google6cb7aa3783369937.html` 為受保護檔案，不可刪除或修改。
-8. `.env*` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；只有 `.example` / `.sample` / `.template` 類範本可入版控。
+2. legacy `main.html` / `dashboard.html` / `js/*.js` 的 cache busting 由 `.frontend-version` 管理；GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+3. 目前專案流程：修改程式碼後預設不跑本地驗證以節省 token，先 commit/push 並等待 CI；只有 CI 報錯、使用者明確要求，或需要釐清高風險問題時才跑本地 `guardrails` / tests。
+4. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
+5. 專案溝通、註解、commit message 以繁體中文為主。
+6. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
+7. E2E 若攔截 CDN 腳本，需留意 `integrity/crossorigin` 的 SRI 驗證衝突。
+8. `google6cb7aa3783369937.html` 為受保護檔案，不可刪除或修改。
+9. `.env*` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；只有 `.example` / `.sample` / `.template` 類範本可入版控。
+10. 金流正式金鑰只放在 Supabase / GitHub secrets，不寫入 repo、文件或測試 fixture。
 
 ---
 
@@ -62,12 +64,16 @@
 
 - `orders.ts`、`payments.ts` 已拆成較小模組，路由匯入點維持不變。
 - rate limiter 已抽成共用 store；預設仍走記憶體 backend，但若設定 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`，可切到 Upstash Redis REST 作為分散式配額儲存。
+- LINE Pay / 街口支付已支援付款期限：超過 `payment_expires_at` 的線上付款訂單會自動轉為 `status=failed`、`payment_status=expired`，查詢、付款確認、街口 inquiry/result 流程都會先正規化逾期狀態。
+- 街口支付已切正式環境：正式 API base URL 為 `https://onlinepay.jkopay.com`，`JKOPAY_STORE_ID` / `JKOPAY_API_KEY` / `JKOPAY_SECRET_KEY` / `JKOPAY_BASE_URL` 皆走 Supabase secrets。
 
 ### 視覺與互動
 
 - 前台目前已回到暖棕 / 米白系配色。
 - 全站固定操作 icon 已改為向量化對齊邏輯，legacy 入口也已補齊，不應再出現 emoji 作為正式操作 icon。
 - 後台主題以 `Solarized Light` 為基底。
+- 線上付款 UX 已分情境：下單後付款彈窗可提示「稍後可到我的訂單重新打開付款連結」；但在「我的訂單」內會改成直接提示按下方付款按鈕，不再自我指向「我的訂單」。
+- 街口支付在「我的訂單」已移除手動「重新整理街口付款狀態」入口，和 LINE Pay 一樣以重新打開付款連結為主要操作。
 
 ### 測試與守門
 
@@ -84,6 +90,7 @@
 - dashboard `orders` / `products` / `categories` / `promotions` / `formfields` / `users` / `blacklist` 不得退回 `coffee:dashboard-*` custom-event bridge
 - storefront `products-container` / `dynamic-fields-container` / `cart-items` / `total-price` / `cart-discount-details` / `cart-shipping-notice` / `delivery-options-list` / `bank-accounts-list` 不得退回 imperative `innerHTML` renderer
 - storefront「我的訂單」不得將 API 回傳內容當 HTML 插入 DOM，惡意 `<script>` / `<img onerror>` payload 只能以文字顯示
+- storefront checkout smoke 已覆蓋 LINE Pay / 街口支付付款彈窗不得重複「稍後付款可到我的訂單」文案，以及「我的訂單」內待付款提示不得再出現「可到我的訂單」。
 
 ---
 
@@ -98,7 +105,8 @@
 ### 自動部署限制
 
 - 前端自動部署已正常。
-- 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過，不會真的更新後端。
+- 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過 setup / db push / function deploy，但整體 job 仍可能顯示成功；後端 function 變更需確認 deploy step 真的有跑，或用本機已登入的 Supabase CLI 手動 `rtk npm run supabase:deploy`。
+- 街口正式環境要求的來源 IP 白名單不在 repo 內管理；若使用 Cloudflare、主機防火牆或其他 WAF，需在外部平台另行設定。
 
 ### 遷移未完成區
 
@@ -109,9 +117,18 @@
 
 ## 5) 最近有效變更
 
+### 2026-04-22
+
+- 街口支付已切正式環境：Supabase secrets 已更新正式 Store ID / API Key / Secret Key / base URL，程式預設正式網域改為官方 `https://onlinepay.jkopay.com`，並已手動部署 `coffee-api`；金鑰不可寫入 repo。
+- LINE Pay / 街口支付的逾期線上付款會自動轉為失敗訂單：`status=failed`、`payment_status=expired`，並補齊 dashboard filter/label、Email template、LINE Flex 與 routing/payment regression。
+- 「我的訂單」內的街口支付手動刷新入口已移除，改為和 LINE Pay 一樣只提供重新打開付款連結；街口回跳 result/inquiry 流程仍保留後端同步能力。
+- 付款提示文案已分情境：下單後付款彈窗保留「稍後可到我的訂單重新打開付款連結」，但「我的訂單」卡片改為「請點下方付款按鈕繼續」，避免使用者已在我的訂單時看到自我指向提示。
+- 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
+- LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
+
 ### 2026-04-21
 
-- 顧客端街口支付資訊已補齊：下單完成提示、街口回跳結果與「我的訂單」現在會顯示付款方式、待付款提示、付款期限、失敗/取消/逾期說明，且待付款 / 確認中可直接重新整理街口付款狀態。
+- 顧客端街口支付資訊已補齊：下單完成提示、街口回跳結果與「我的訂單」現在會顯示付款方式、待付款提示、付款期限、失敗/取消/逾期說明；手動重新整理街口付款狀態入口已於 2026-04-22 移除。
 - storefront「我的訂單」彈窗已放大為較實用的桌機尺寸，避免付款資訊與操作按鈕擁擠。
 - 桌機版 storefront header / login prompt 已重新限制在與主內容卡相同的 `max-w-3xl` 寬度，登入提示文案與 LINE 按鈕在桌機版會同列顯示，不再出現過寬的橫幅比例失衡。
 - Playwright smoke 已新增兩類保護：街口支付顧客端狀態/操作驗證，以及桌機版登入提示比例驗證。
