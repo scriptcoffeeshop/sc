@@ -405,7 +405,9 @@ test.describe("smoke / storefront checkout", () => {
     const ordersList = page.locator("#my-orders-list");
     await expect(ordersList).toContainText("付款方式：LINE Pay");
     await expect(ordersList).toContainText("LINE Pay 待付款");
-    await expect(ordersList).toContainText("請儘快完成 LINE Pay");
+    await expect(ordersList).toContainText(
+      "請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。",
+    );
     await expect(
       page.getByRole("link", { name: "前往 LINE Pay 付款" }),
     ).toHaveAttribute("href", "https://pay.example/linepay/LINEPAY-PENDING-1");

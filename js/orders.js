@@ -199,7 +199,7 @@ function getPaymentActionGuide(paymentMethod, paymentStatus) {
       tone: "warning",
       title: "LINE Pay 待付款",
       description:
-        "請儘快完成 LINE Pay 付款；若稍後付款，可到「我的訂單」重新打開付款連結。",
+        "請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。",
     };
   }
 
