@@ -92,7 +92,7 @@ import {
   dashboardFormFieldsActions,
   useDashboardFormFields,
 } from "./useDashboardFormFields.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { formFieldsView } = useDashboardFormFields();
 const { activeTab } = useDashboardSession();

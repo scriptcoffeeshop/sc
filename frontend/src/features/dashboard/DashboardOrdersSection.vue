@@ -21,7 +21,7 @@
 import DashboardOrderCard from "./DashboardOrderCard.vue";
 import DashboardOrdersToolbar from "./DashboardOrdersToolbar.vue";
 import { useDashboardOrders } from "./useDashboardOrders.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const {
   ordersView,

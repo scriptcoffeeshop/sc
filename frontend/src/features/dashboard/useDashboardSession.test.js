@@ -19,7 +19,7 @@ function createLocalStorageMock(initialEntries = {}) {
 
 async function loadSessionModule() {
   vi.resetModules();
-  return await import("./useDashboardSession.js");
+  return await import("./useDashboardSession.ts");
 }
 
 describe("useDashboardSession", () => {

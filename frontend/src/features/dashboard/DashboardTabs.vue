@@ -115,7 +115,7 @@ import { TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import {
   dashboardSessionActions,
   useDashboardSession,
-} from "./useDashboardSession.js";
+} from "./useDashboardSession.ts";
 
 const { activeTab } = useDashboardSession();
 const setActiveTab = (tab) => dashboardSessionActions.setActiveTab(tab);

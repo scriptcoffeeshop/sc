@@ -59,7 +59,7 @@ import {
   configureDashboardSessionServices,
   dashboardSessionActions,
   getDashboardCurrentUser,
-} from "./useDashboardSession.js";
+} from "./useDashboardSession.ts";
 import {
   configureDashboardSettingsServices,
   dashboardSettingsActions,

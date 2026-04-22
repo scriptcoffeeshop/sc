@@ -119,7 +119,7 @@ import {
   dashboardUsersActions,
   useDashboardUsers,
 } from "./useDashboardUsers.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { userSearch, usersView, updateUserSearch } = useDashboardUsers();
 const { activeTab } = useDashboardSession();

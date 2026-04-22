@@ -6,7 +6,7 @@ function jsonResponse(payload) {
 
 async function loadUsersModule(activeTab = "orders") {
   vi.resetModules();
-  vi.doMock("./useDashboardSession.js", () => ({
+  vi.doMock("./useDashboardSession.ts", () => ({
     getDashboardActiveTab: () => activeTab,
   }));
   return await import("./useDashboardUsers.js");

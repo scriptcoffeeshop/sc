@@ -97,7 +97,7 @@ import UiButton from "../../components/ui/button/Button.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
 import { getDefaultIconUrl } from "../../../../js/icons.js";
 import { dashboardSettingsIconActions } from "./useDashboardSettingsIcons.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 defineProps({
   categories: {

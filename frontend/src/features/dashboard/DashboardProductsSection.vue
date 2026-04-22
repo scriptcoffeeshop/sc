@@ -114,7 +114,7 @@ import {
   dashboardProductsActions,
   useDashboardProducts,
 } from "./useDashboardProducts.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { productsGroupsView } = useDashboardProducts();
 const { activeTab } = useDashboardSession();

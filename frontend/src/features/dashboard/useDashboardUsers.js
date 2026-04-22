@@ -1,5 +1,5 @@
 import { computed, ref } from "vue";
-import { getDashboardActiveTab } from "./useDashboardSession.js";
+import { getDashboardActiveTab } from "./useDashboardSession.ts";
 
 const users = ref([]);
 const blacklist = ref([]);

@@ -9,7 +9,7 @@
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. legacy `main.html` / `dashboard.html` / `js/*.js` 的 cache busting 由 `.frontend-version` 管理；GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+2. legacy `main.html` / `js/*.js` 的 cache busting 由 `.frontend-version` 管理；根目錄 `dashboard.html` 已改成瘦身的本機 compat redirect，不再承載實際後台靜態 DOM。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
 3. 目前專案流程：修改程式碼後預設不跑本地驗證以節省 token，先 commit/push 並等待 CI；只有 CI 報錯、使用者明確要求，或需要釐清高風險問題時才跑本地 `guardrails` / tests。
 4. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
 5. 專案溝通、註解、commit message 以繁體中文為主。
@@ -18,6 +18,7 @@
 8. `google6cb7aa3783369937.html` 為受保護檔案，不可刪除或修改。
 9. `.env*` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；只有 `.example` / `.sample` / `.template` 類範本可入版控。
 10. 金流正式金鑰只放在 Supabase / GitHub secrets，不寫入 repo、文件或測試 fixture。
+11. `frontend/src/types/` 是共享型別來源；新的 composable 請直接用 `.ts`，`guardrails` 會跑 `scripts/check_new_composables_ts.py` 阻擋新增 `use*.js`。
 
 ---
 
@@ -25,7 +26,7 @@
 
 - 專案：Script Coffee（前台訂購 + 後台管理）
 - 主要分支：`main`
-- 前端：`Vite + Vue 3`，保留 legacy `main.html` / `dashboard.html` 相容入口
+- 前端：`Vite + Vue 3`；實際 deploy 入口為 `frontend/main.html` / `frontend/dashboard.html`，根目錄 `dashboard.html` 僅保留本機 compat redirect
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端 legacy 版號來源：`.frontend-version`
 - 目前前端版號：`130`
@@ -48,11 +49,12 @@
 - 最終目標已確定為 `Vue 3 + Vite SFC`。
 - 後台是優先遷移區：
   - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.js`、`useDashboardProducts.js`、`useDashboardCategories.js`、`useDashboardPromotions.js`、`useDashboardFormFields.js`、`useDashboardUsers.js`)
-  - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.js`)
+  - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.ts`)
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts 六個卡片元件
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.js`，`js/dashboard-app.js` 現在只剩薄相容殼
+  - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分；storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
 - `MainPage.vue` 已降為 472 行組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
 - `MainPage.vue` 與 storefront feature/composable 已不再直接 import `js/*.js` legacy 模組；目前透過 `frontend/src/features/storefront/storefrontLegacyBridge.js` 集中承接 products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue，下一步再逐步縮小 bridge 內的 legacy 依賴。
@@ -79,6 +81,7 @@
 ### 測試與守門
 
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
+- `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
 - `tests/e2e/smoke/` 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆分，並共用 `tests/e2e/support/smoke-fixtures.ts`；目前覆蓋：
   - 前台暖色樣式
@@ -130,6 +133,11 @@
 - storefront legacy bridge 已集中：`MainPage.vue`、`StorefrontDeliverySection`、`useStorefrontCart`、`useStorefrontOrderHistory` 不再靜態 import legacy `js/*.js`；products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue 統一收斂於 `storefrontLegacyBridge.js`，page shell 只依賴 storefront feature/composable。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
+- backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
+- frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useStorefrontOrderHistory` 轉為 `.ts`。
+- 新增 `scripts/check_new_composables_ts.py`，`guardrails` 會阻擋新增 `frontend/src/features/**/use*.js`（既有 allowlist 除外）。
+- 根目錄 `dashboard.html` 已瘦身為本機 compat redirect，不再保留 1400+ 行 legacy 後台靜態結構。
+- `npm run ci-local` 已納入 `npm run test:unit`，讓 frontend composable unit test 成為日常守門，而不是只在 `health` 才執行。
 
 ### 2026-04-21
 
@@ -212,6 +220,7 @@ rtk git log --oneline origin/main
 ```bash
 rtk npm run hygiene
 rtk npm run guardrails
+rtk npm run test:unit
 rtk npm run ci-local
 rtk npm run build
 rtk npm run e2e

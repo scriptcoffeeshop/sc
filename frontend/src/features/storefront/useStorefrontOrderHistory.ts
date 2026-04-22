@@ -1,6 +1,92 @@
-import { computed, ref } from "vue";
+import { computed, ref, type ComputedRef, type Ref } from "vue";
+import type { Order, ReceiptInfo, SessionUser } from "../../types/index";
 
-const ORDER_STATUS_TEXT = {
+type PaymentTone = "success" | "info" | "warning" | "danger" | "neutral";
+
+interface OrderHistoryPaymentDisplay {
+  paymentMethod: string;
+  paymentStatus: string;
+  methodLabel: string;
+  statusLabel: string;
+  paymentExpiresAtText: string;
+  paymentConfirmedAtText: string;
+  paymentLastCheckedAtText: string;
+  showPaymentDeadline: boolean;
+  badgeClass: string;
+  showBadge: boolean;
+  tone: PaymentTone;
+  guideTitle: string;
+  guideDescription: string;
+  actionLabel: string;
+  actionType: string;
+  paymentUrl: string;
+  canResumePayment: boolean;
+  resumePaymentLabel: string;
+}
+
+interface OrderHistoryItem {
+  orderId: string;
+  statusLabel: string;
+  deliveryMethodLabel: string;
+  locationText: string;
+  itemsText: string;
+  totalText: string;
+  receiptInfo: ReceiptInfo | null;
+  showReceiptInfo: boolean;
+  shippingProvider: string;
+  trackingNumber: string;
+  trackingUrl: string;
+  hasShippingInfo: boolean;
+  paymentDisplay: OrderHistoryPaymentDisplay & { toneClass: string };
+  paymentStatus: string;
+  paymentLastCheckedAtText: string;
+  paymentConfirmedAtText: string;
+  paymentExpiresAtText: string;
+}
+
+interface OrderHistoryResponse {
+  success?: boolean;
+  orders?: Order[];
+}
+
+interface OrderHistoryToast {
+  fire: (payload: { icon?: string; title?: string }) => unknown;
+}
+
+interface OrderHistorySwal {
+  fire: (...args: unknown[]) => Promise<unknown> | unknown;
+}
+
+interface OrderHistoryDeps {
+  authFetch?: (
+    input: RequestInfo | URL,
+    init?: RequestInit,
+  ) => Promise<{ json: () => Promise<unknown> }>;
+  Swal?: OrderHistorySwal;
+  Toast?: OrderHistoryToast;
+  apiUrl?: string;
+  getCurrentUser?: () => SessionUser | null;
+  writeClipboard?: (text: string) => Promise<unknown> | unknown;
+  getCustomerPaymentDisplay?: (
+    order: Order,
+    options: { context: "orderHistory" },
+  ) => OrderHistoryPaymentDisplay;
+  formatDateTimeText?: (value: unknown) => string;
+}
+
+interface OrderHistoryState {
+  isOrderHistoryOpen: Ref<boolean>;
+  isLoadingOrderHistory: Ref<boolean>;
+  orderHistoryError: Ref<string>;
+  orderHistoryState: ComputedRef<"loading" | "error" | "empty" | "ready">;
+  ordersView: ComputedRef<OrderHistoryItem[]>;
+  openOrderHistory: () => Promise<void>;
+  closeOrderHistory: () => void;
+  loadMyOrders: () => Promise<void>;
+  copyTrackingNumber: (trackingNumber: string) => Promise<void>;
+}
+
+const ORDER_STATUS_TEXT: Record<string, string> = {
   pending: "待處理",
   processing: "處理中",
   shipped: "已出貨",
@@ -9,7 +95,7 @@ const ORDER_STATUS_TEXT = {
   cancelled: "已取消",
 };
 
-const DELIVERY_METHOD_TEXT = {
+const DELIVERY_METHOD_TEXT: Record<string, string> = {
   delivery: "宅配",
   home_delivery: "全台宅配",
   seven_eleven: "7-11 取件",
@@ -17,7 +103,7 @@ const DELIVERY_METHOD_TEXT = {
   in_store: "來店取貨",
 };
 
-function normalizeTrackingUrl(url) {
+function normalizeTrackingUrl(url: unknown) {
   const raw = String(url || "").trim();
   if (!raw || !/^https?:\/\//i.test(raw)) return "";
   try {
@@ -29,7 +115,7 @@ function normalizeTrackingUrl(url) {
   }
 }
 
-function getDefaultTrackingUrl(deliveryMethod) {
+function getDefaultTrackingUrl(deliveryMethod: unknown) {
   if (deliveryMethod === "seven_eleven") {
     return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
   }
@@ -42,17 +128,19 @@ function getDefaultTrackingUrl(deliveryMethod) {
   return "";
 }
 
-function normalizeReceiptInfo(raw) {
+function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const buyer = String(raw.buyer || "").trim();
-  const taxId = String(raw.taxId || "").trim();
-  const address = String(raw.address || "").trim();
-  const needDateStamp = Boolean(raw.needDateStamp);
+
+  const record = raw as Partial<ReceiptInfo>;
+  const buyer = String(record.buyer || "").trim();
+  const taxId = String(record.taxId || "").trim();
+  const address = String(record.address || "").trim();
+  const needDateStamp = Boolean(record.needDateStamp);
   if (taxId && !/^\d{8}$/.test(taxId)) return null;
   return { buyer, taxId, address, needDateStamp };
 }
 
-function getPaymentToneClasses(tone) {
+function getPaymentToneClasses(tone: PaymentTone) {
   if (tone === "success") return "border-green-200 bg-green-50 text-green-900";
   if (tone === "info") return "border-sky-200 bg-sky-50 text-sky-900";
   if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-900";
@@ -60,7 +148,7 @@ function getPaymentToneClasses(tone) {
   return "border-slate-200 bg-slate-50 text-slate-900";
 }
 
-function formatDateTimeTextFallback(value) {
+function formatDateTimeTextFallback(value: unknown) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const parsed = new Date(raw);
@@ -68,7 +156,7 @@ function formatDateTimeTextFallback(value) {
   return parsed.toLocaleString("zh-TW");
 }
 
-function getCustomerPaymentDisplayFallback(order) {
+function getCustomerPaymentDisplayFallback(order: Order): OrderHistoryPaymentDisplay {
   const paymentMethod = String(order?.paymentMethod || "cod").trim() || "cod";
   const paymentStatus = String(order?.paymentStatus || "").trim();
   return {
@@ -78,7 +166,9 @@ function getCustomerPaymentDisplayFallback(order) {
     statusLabel: paymentStatus,
     paymentExpiresAtText: formatDateTimeTextFallback(order?.paymentExpiresAt),
     paymentConfirmedAtText: formatDateTimeTextFallback(order?.paymentConfirmedAt),
-    paymentLastCheckedAtText: formatDateTimeTextFallback(order?.paymentLastCheckedAt),
+    paymentLastCheckedAtText: formatDateTimeTextFallback(
+      order?.paymentLastCheckedAt,
+    ),
     showPaymentDeadline: Boolean(order?.paymentExpiresAt),
     badgeClass: "",
     showBadge: paymentMethod !== "cod",
@@ -93,7 +183,13 @@ function getCustomerPaymentDisplayFallback(order) {
   };
 }
 
-function buildOrderHistoryItem(order, deps = {}) {
+function buildOrderHistoryItem(
+  order: Order,
+  deps: Pick<
+    OrderHistoryDeps,
+    "getCustomerPaymentDisplay" | "formatDateTimeText"
+  > = {},
+): OrderHistoryItem {
   const paymentStatus = String(order.paymentStatus || "").trim();
   const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
     getCustomerPaymentDisplayFallback;
@@ -113,8 +209,9 @@ function buildOrderHistoryItem(order, deps = {}) {
 
   return {
     orderId: String(order.orderId || ""),
-    statusLabel: ORDER_STATUS_TEXT[order.status] || String(order.status || ""),
-    deliveryMethodLabel: DELIVERY_METHOD_TEXT[order.deliveryMethod] ||
+    statusLabel: ORDER_STATUS_TEXT[order.status as string] ||
+      String(order.status || ""),
+    deliveryMethodLabel: DELIVERY_METHOD_TEXT[order.deliveryMethod as string] ||
       String(order.deliveryMethod || ""),
     locationText,
     itemsText: String(order.items || ""),
@@ -140,13 +237,15 @@ function buildOrderHistoryItem(order, deps = {}) {
   };
 }
 
-export function useStorefrontOrderHistory(deps = {}) {
+export function useStorefrontOrderHistory(
+  deps: OrderHistoryDeps = {},
+): OrderHistoryState {
   const authFetchFn = deps.authFetch || globalThis.fetch?.bind(globalThis);
   const swal = deps.Swal || globalThis.Swal || { fire: async () => undefined };
   const toast = deps.Toast || { fire: () => undefined };
   const apiUrl = deps.apiUrl || "";
   const getCurrentUser = deps.getCurrentUser || (() => null);
-  const writeClipboard = deps.writeClipboard || ((text) =>
+  const writeClipboard = deps.writeClipboard || ((text: string) =>
     globalThis.navigator?.clipboard?.writeText?.(text));
   const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
     getCustomerPaymentDisplayFallback;
@@ -155,7 +254,7 @@ export function useStorefrontOrderHistory(deps = {}) {
   const isOrderHistoryOpen = ref(false);
   const isLoadingOrderHistory = ref(false);
   const orderHistoryError = ref("");
-  const rawOrders = ref([]);
+  const rawOrders = ref<Order[]>([]);
 
   const ordersView = computed(() =>
     rawOrders.value.map((order) =>
@@ -167,10 +266,10 @@ export function useStorefrontOrderHistory(deps = {}) {
   );
 
   const orderHistoryState = computed(() => {
-    if (isLoadingOrderHistory.value) return "loading";
-    if (orderHistoryError.value) return "error";
-    if (!ordersView.value.length) return "empty";
-    return "ready";
+    if (isLoadingOrderHistory.value) return "loading" as const;
+    if (orderHistoryError.value) return "error" as const;
+    if (!ordersView.value.length) return "empty" as const;
+    return "ready" as const;
   });
 
   async function loadMyOrders() {
@@ -181,8 +280,11 @@ export function useStorefrontOrderHistory(deps = {}) {
       const response = await authFetchFn(
         `${apiUrl}?action=getMyOrders&_=${Date.now()}`,
       );
-      const result = await response.json();
-      if (!result.success || !Array.isArray(result.orders) || !result.orders.length) {
+      const result = await response.json() as OrderHistoryResponse;
+      if (
+        !result.success || !Array.isArray(result.orders) ||
+        !result.orders.length
+      ) {
         rawOrders.value = [];
         return;
       }
@@ -208,7 +310,7 @@ export function useStorefrontOrderHistory(deps = {}) {
     isOrderHistoryOpen.value = false;
   }
 
-  async function copyTrackingNumber(trackingNumber) {
+  async function copyTrackingNumber(trackingNumber: string) {
     const normalizedTrackingNumber = String(trackingNumber || "").trim();
     if (!normalizedTrackingNumber) return;
     try {

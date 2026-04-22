@@ -1,13 +1,32 @@
-import { computed, ref } from "vue";
+import { computed, ref, type ComputedRef, type Ref } from "vue";
+import type {
+  DashboardSessionServices,
+  SessionUser,
+} from "../../types/index";
 
-const currentUser = ref(null);
+interface LineLoginResult {
+  success?: boolean;
+  isAdmin?: boolean;
+  token?: string;
+  user?: SessionUser;
+  error?: string;
+}
+
+interface DashboardSessionState {
+  currentUser: Ref<SessionUser | null>;
+  activeTab: Ref<string>;
+  isAuthenticated: ComputedRef<boolean>;
+  adminDisplayName: ComputedRef<string>;
+}
+
+const currentUser = ref<SessionUser | null>(null);
 const activeTab = ref("orders");
 
-let services = null;
+let services: DashboardSessionServices | null = null;
 let initialDataLoaded = false;
-let initialDataPromise = null;
+let initialDataPromise: Promise<void> | null = null;
 
-function getServices() {
+function getServices(): DashboardSessionServices {
   if (!services) {
     throw new Error("Dashboard session services 尚未初始化");
   }
@@ -23,12 +42,12 @@ function clearStoredSession() {
   localStorage.removeItem(jwtStorageKey);
 }
 
-function normalizeTab(tab) {
+function normalizeTab(tab: string) {
   const { tabs = [], defaultTab = "orders" } = getServices();
   return tabs.includes(tab) ? tab : defaultTab;
 }
 
-async function runTabLoader(tab) {
+async function runTabLoader(tab: string) {
   const tabLoaders = getServices().getDashboardTabLoaders?.() || {};
   const loader = tabLoaders[tab];
   if (typeof loader === "function") {
@@ -54,7 +73,7 @@ async function ensureInitialDataLoaded() {
   await initialDataPromise;
 }
 
-async function setActiveTab(tab, options = {}) {
+async function setActiveTab(tab: string, options: { force?: boolean } = {}) {
   const normalizedTab = normalizeTab(tab);
   const shouldReload = Boolean(options.force) || activeTab.value !== normalizedTab;
   activeTab.value = normalizedTab;
@@ -63,7 +82,7 @@ async function setActiveTab(tab, options = {}) {
   }
 }
 
-async function enterAdmin(tab) {
+async function enterAdmin(tab?: string) {
   await ensureInitialDataLoaded();
   await setActiveTab(tab || activeTab.value || getServices().defaultTab, {
     force: true,
@@ -75,7 +94,7 @@ function getAuthUserId() {
   return currentUser.value.userId;
 }
 
-async function handleLineCallback(code, state) {
+async function handleLineCallback(code: string | null, state: string | null) {
   const {
     Swal,
     authFetch,
@@ -98,7 +117,7 @@ async function handleLineCallback(code, state) {
   Swal.fire({
     title: "登入中...",
     allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
+    didOpen: () => Swal.showLoading?.(),
   });
 
   try {
@@ -109,17 +128,17 @@ async function handleLineCallback(code, state) {
         redirectUri: lineRedirect,
       }),
     });
-    const result = await response.json();
+    const result = await response.json() as LineLoginResult;
     window.history.replaceState({}, "", "dashboard.html");
 
-    if (result.success && result.isAdmin) {
+    if (result.success && result.isAdmin && result.user) {
       currentUser.value = result.user;
       localStorage.setItem(adminStorageKey, JSON.stringify(result.user));
       if (result.token) {
         localStorage.setItem(jwtStorageKey, result.token);
       }
       initialDataLoaded = false;
-      Swal.close();
+      Swal.close?.();
       await enterAdmin(defaultTab);
       return;
     }
@@ -148,7 +167,7 @@ async function checkLogin() {
   }
 
   try {
-    currentUser.value = JSON.parse(savedAdmin);
+    currentUser.value = JSON.parse(savedAdmin) as SessionUser;
     await enterAdmin(defaultTab);
   } catch {
     clearStoredSession();
@@ -180,11 +199,13 @@ function startLogin() {
   return loginWithLineFn(lineRedirect, loginStateKey);
 }
 
-export function configureDashboardSessionServices(nextServices) {
+export function configureDashboardSessionServices(
+  nextServices: Partial<DashboardSessionServices>,
+) {
   services = {
     ...services,
     ...nextServices,
-  };
+  } as DashboardSessionServices;
 }
 
 export function getDashboardCurrentUser() {
@@ -195,7 +216,7 @@ export function getDashboardActiveTab() {
   return activeTab.value;
 }
 
-export function useDashboardSession() {
+export function useDashboardSession(): DashboardSessionState {
   return {
     currentUser,
     activeTab,

@@ -188,7 +188,7 @@ import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSe
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { createStorefrontLegacyBridge } from "../features/storefront/storefrontLegacyBridge.js";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
-import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.js";
+import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.js";
 
 const originalBodyClass = document.body.className;

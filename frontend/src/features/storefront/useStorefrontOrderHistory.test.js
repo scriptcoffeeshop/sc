@@ -17,7 +17,7 @@ beforeAll(async () => {
     },
   });
 
-  ({ useStorefrontOrderHistory } = await import("./useStorefrontOrderHistory.js"));
+  ({ useStorefrontOrderHistory } = await import("./useStorefrontOrderHistory.ts"));
 });
 
 function createSuccessResponse(payload) {

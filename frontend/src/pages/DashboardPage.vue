@@ -97,7 +97,7 @@ import { ICON_CATALOG, getDefaultIconUrl } from "../../../js/icons.js";
 import {
   dashboardSessionActions,
   useDashboardSession,
-} from "../features/dashboard/useDashboardSession.js";
+} from "../features/dashboard/useDashboardSession.ts";
 
 const brandIconUrl = getDefaultIconUrl("brand");
 const originalBodyClass = document.body.className;

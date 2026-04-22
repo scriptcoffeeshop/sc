@@ -66,7 +66,7 @@ import {
   dashboardCategoriesActions,
   useDashboardCategories,
 } from "./useDashboardCategories.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { categoriesView, newCategoryName } = useDashboardCategories();
 const { activeTab } = useDashboardSession();

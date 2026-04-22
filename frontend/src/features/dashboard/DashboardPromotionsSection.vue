@@ -103,7 +103,7 @@ import {
   dashboardPromotionsActions,
   useDashboardPromotions,
 } from "./useDashboardPromotions.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { promotionsView } = useDashboardPromotions();
 const { activeTab } = useDashboardSession();

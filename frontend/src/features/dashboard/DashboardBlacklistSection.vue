@@ -61,7 +61,7 @@ import {
   dashboardUsersActions,
   useDashboardUsers,
 } from "./useDashboardUsers.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { blacklistView } = useDashboardUsers();
 const { activeTab } = useDashboardSession();

@@ -29,7 +29,7 @@ import DashboardStorefrontStatusSettingsCard from "./DashboardStorefrontStatusSe
 import {
   dashboardSettingsActions,
 } from "./useDashboardSettings.js";
-import { useDashboardSession } from "./useDashboardSession.js";
+import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { activeTab } = useDashboardSession();
 
