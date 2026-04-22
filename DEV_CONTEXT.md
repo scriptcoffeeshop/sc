@@ -125,6 +125,7 @@
 - 付款提示文案已分情境：下單後付款彈窗保留「稍後可到我的訂單重新打開付款連結」，但「我的訂單」卡片改為「請點下方付款按鈕繼續」，避免使用者已在我的訂單時看到自我指向提示。
 - 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
 - LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
+- storefront legacy 遷移續推：`MainPage.vue` 已移除對 `js/products.js` / `getProductsViewModel` 的直接 import，商品清單改只透過 `coffee:products-updated` 事件同步，降低 products legacy 模組與 Vue shell 的耦合。
 
 ### 2026-04-21
 

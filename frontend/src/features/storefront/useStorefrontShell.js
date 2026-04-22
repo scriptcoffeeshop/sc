@@ -18,13 +18,6 @@ export function useStorefrontShell(deps = {}) {
     selectedBankAccountId.value = String(snapshot.selectedBankAccountId || "");
   }
 
-  function syncProductsSnapshot() {
-    const productVm = deps.getProductsViewModel?.() || {};
-    productsCategories.value = Array.isArray(productVm.categories)
-      ? productVm.categories
-      : [];
-  }
-
   function handleProductsUpdated(event) {
     const detail = event?.detail || {};
     productsCategories.value = Array.isArray(detail.categories)
@@ -111,7 +104,6 @@ export function useStorefrontShell(deps = {}) {
     selectedBankAccountId,
     copiedBankAccountId,
     syncStorefrontUiState,
-    syncProductsSnapshot,
     handleProductsUpdated,
     handleCloseAnnouncement,
     handleStorefrontLogin,

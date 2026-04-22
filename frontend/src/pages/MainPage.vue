@@ -205,7 +205,6 @@ import {
   startMainLogin,
 } from "../../../js/main-app.js";
 import { submitOrder } from "../../../js/orders.js";
-import { getProductsViewModel } from "../../../js/products.js";
 
 const originalBodyClass = document.body.className;
 const selectedCheckIconUrl = getDefaultIconUrl("selected");
@@ -249,7 +248,6 @@ const {
   selectedBankAccountId,
   copiedBankAccountId,
   syncStorefrontUiState,
-  syncProductsSnapshot,
   handleProductsUpdated,
   handleCloseAnnouncement,
   handleStorefrontLogin,
@@ -269,7 +267,6 @@ const {
   setTimeout: window.setTimeout.bind(window),
   Swal,
   Toast,
-  getProductsViewModel,
   getStorefrontUiSnapshot,
   clearSelectedStore,
   selectDelivery,
@@ -299,7 +296,6 @@ onMounted(() => {
   if (productsContainer) productsContainer.dataset.vueManaged = "true";
   if (cartContainer) cartContainer.dataset.vueManaged = "true";
 
-  syncProductsSnapshot();
   syncCartSnapshot();
 
   void initMainApp().then(() => {

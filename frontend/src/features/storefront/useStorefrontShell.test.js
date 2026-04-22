@@ -8,9 +8,6 @@ function createClassList() {
 describe("useStorefrontShell", () => {
   it("syncs storefront products, delivery options, and bank account state", () => {
     const deps = {
-      getProductsViewModel: vi.fn(() => ({
-        categories: [{ category: "咖啡豆", products: [] }],
-      })),
       getStorefrontUiSnapshot: vi.fn(() => ({
         deliveryConfig: [
           { id: "delivery", name: "宅配", enabled: true },
@@ -22,7 +19,11 @@ describe("useStorefrontShell", () => {
     };
 
     const shell = useStorefrontShell(deps);
-    shell.syncProductsSnapshot();
+    shell.handleProductsUpdated({
+      detail: {
+        categories: [{ category: "咖啡豆", products: [] }],
+      },
+    });
     shell.syncStorefrontUiState();
 
     expect(shell.productsCategories.value).toEqual([
