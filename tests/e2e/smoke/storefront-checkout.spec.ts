@@ -446,6 +446,9 @@ test.describe("smoke / storefront checkout", () => {
     await expect(ordersList).toContainText("付款方式：LINE Pay");
     await expect(ordersList).toContainText("LINE Pay 待付款");
     await expect(ordersList).toContainText(
+      "這筆訂單尚未完成 LINE Pay，請點下方「前往 LINE Pay 付款」繼續；付款後狀態會自動同步。",
+    );
+    await expect(ordersList).not.toContainText(
       "請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。",
     );
     await expect(
@@ -453,7 +456,12 @@ test.describe("smoke / storefront checkout", () => {
     ).toHaveAttribute("href", "https://pay.example/linepay/LINEPAY-PENDING-1");
     await expect(ordersList).toContainText("付款方式：街口支付");
     await expect(ordersList).toContainText("付款期限");
-    await expect(ordersList).toContainText("請儘快完成街口支付");
+    await expect(ordersList).toContainText(
+      "這筆訂單尚未完成街口支付，請點下方「前往街口付款」繼續；付款後狀態會自動同步。",
+    );
+    await expect(ordersList).not.toContainText(
+      "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
+    );
     await expect(ordersList).toContainText("街口支付付款失敗");
     await expect(ordersList).toContainText("您已取消街口支付付款流程");
     await expect(ordersList).toContainText("付款期限已過");

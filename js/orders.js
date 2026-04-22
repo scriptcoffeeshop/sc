@@ -248,7 +248,34 @@ function getPaymentToneClasses(tone) {
   return "border-slate-200 bg-slate-50 text-slate-900";
 }
 
-export function getCustomerPaymentDisplay(order) {
+function getOrderHistoryPaymentGuideDescription(params) {
+  const paymentMethod = params?.paymentMethod;
+  const paymentStatus = params?.paymentStatus;
+  const resumePaymentLabel = params?.resumePaymentLabel;
+  if (
+    !["linepay", "jkopay"].includes(paymentMethod) ||
+    !["pending", "processing"].includes(paymentStatus)
+  ) {
+    return "";
+  }
+
+  const methodLabel = PAYMENT_METHOD_TEXT[paymentMethod] || paymentMethod;
+  const readableMethodLabel = /^[A-Za-z]/.test(methodLabel)
+    ? ` ${methodLabel}`
+    : methodLabel;
+  if (paymentStatus === "processing") {
+    if (!resumePaymentLabel) {
+      return "付款結果正在同步中，通常 1 到 2 分鐘內會更新；若停留過久請聯繫店家協助。";
+    }
+    return `付款結果正在同步中；若您尚未完成付款，也可以點下方「${resumePaymentLabel}」繼續。`;
+  }
+  if (!resumePaymentLabel) {
+    return `這筆訂單尚未完成${readableMethodLabel}，付款連結尚未建立；請稍候重新整理或聯繫店家協助。`;
+  }
+  return `這筆訂單尚未完成${readableMethodLabel}，請點下方「${resumePaymentLabel}」繼續；付款後狀態會自動同步。`;
+}
+
+export function getCustomerPaymentDisplay(order, options = {}) {
   const paymentMethod = normalizePaymentMethod(order?.paymentMethod);
   const paymentStatus = normalizePaymentStatusForDisplay(
     paymentMethod,
@@ -264,6 +291,16 @@ export function getCustomerPaymentDisplay(order) {
   const canResumePayment = ["linepay", "jkopay"].includes(paymentMethod) &&
     ["pending", "processing"].includes(paymentStatus) &&
     Boolean(paymentUrl);
+  const resumePaymentLabel = canResumePayment
+    ? getPaymentLaunchActionLabel(paymentMethod)
+    : "";
+  const orderHistoryGuideDescription = options?.context === "orderHistory"
+    ? getOrderHistoryPaymentGuideDescription({
+      paymentMethod,
+      paymentStatus,
+      resumePaymentLabel,
+    })
+    : "";
 
   return {
     paymentMethod,
@@ -280,14 +317,12 @@ export function getCustomerPaymentDisplay(order) {
     showBadge: paymentMethod !== "cod",
     tone: guide.tone,
     guideTitle: guide.title,
-    guideDescription: guide.description,
+    guideDescription: orderHistoryGuideDescription || guide.description,
     actionLabel: guide.actionLabel || "",
     actionType: guide.actionType || "",
     paymentUrl,
     canResumePayment,
-    resumePaymentLabel: canResumePayment
-      ? getPaymentLaunchActionLabel(paymentMethod)
-      : "",
+    resumePaymentLabel,
   };
 }
 
@@ -547,7 +582,7 @@ function createPaymentMetaElement(order, paymentStatus) {
   const display = getCustomerPaymentDisplay({
     ...order,
     paymentStatus,
-  });
+  }, { context: "orderHistory" });
   if (!display.showBadge) return null;
 
   const wrapper = document.createElement("div");

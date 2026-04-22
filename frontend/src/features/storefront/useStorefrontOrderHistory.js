@@ -70,7 +70,9 @@ function getPaymentToneClasses(tone) {
 
 function buildOrderHistoryItem(order) {
   const paymentStatus = String(order.paymentStatus || "").trim();
-  const paymentDisplay = getCustomerPaymentDisplay(order);
+  const paymentDisplay = getCustomerPaymentDisplay(order, {
+    context: "orderHistory",
+  });
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
   const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
   const defaultTrackingUrl = getDefaultTrackingUrl(order.deliveryMethod);

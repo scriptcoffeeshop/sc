@@ -86,14 +86,22 @@ describe("useStorefrontOrderHistory", () => {
     });
     expect(history.ordersView.value[0].paymentDisplay).toMatchObject({
       canResumePayment: true,
+      guideDescription:
+        "這筆訂單尚未完成 LINE Pay，請點下方「前往 LINE Pay 付款」繼續；付款後狀態會自動同步。",
       resumePaymentLabel: "前往 LINE Pay 付款",
     });
     expect(history.ordersView.value[1].paymentDisplay).toMatchObject({
       canResumePayment: true,
+      guideDescription:
+        "付款結果正在同步中；若您尚未完成付款，也可以點下方「前往街口付款」繼續。",
       resumePaymentLabel: "前往街口付款",
     });
     expect(history.ordersView.value[1].paymentDisplay.actionType).toBe("");
     expect(history.ordersView.value[1].paymentDisplay.actionLabel).toBe("");
+    expect(history.ordersView.value[0].paymentDisplay.guideDescription)
+      .not.toContain("我的訂單");
+    expect(history.ordersView.value[1].paymentDisplay.guideDescription)
+      .not.toContain("我的訂單");
     expect(history.ordersView.value[1].trackingUrl).toContain("postserv.post.gov.tw");
     expect(Swal.fire).not.toHaveBeenCalled();
   });
