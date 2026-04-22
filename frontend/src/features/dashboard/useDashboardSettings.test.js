@@ -270,4 +270,67 @@ describe("useDashboardSettings", () => {
       "false",
     );
   });
+
+  it("falls back to cached sandbox state and manages custom delivery options", async () => {
+    const module = await loadSettingsModule();
+    const localStorage = createLocalStorageMock({
+      coffee_linepay_sandbox: "false",
+    });
+    vi.stubGlobal("localStorage", localStorage);
+    vi.spyOn(Date, "now").mockReturnValue(1_762_000_000_000);
+
+    module.configureDashboardSettingsServices(createSettingsServices());
+    module.dashboardSettingsActions.replaceSettingsConfig({
+      site_title: "Script Coffee",
+      delivery_options_config: JSON.stringify([
+        {
+          id: "delivery",
+          label: "宅配",
+          name: "宅配",
+          enabled: true,
+          fee: 100,
+          free_threshold: 1200,
+          payment: {
+            cod: true,
+            linepay: true,
+            jkopay: false,
+            transfer: true,
+          },
+        },
+      ]),
+      payment_options_config: "{}",
+    });
+
+    const dashboard = module.useDashboardSettings();
+    expect(dashboard.linePaySandbox.value).toBe(false);
+
+    module.dashboardSettingsActions.addDeliveryOption();
+    expect(
+      dashboard.deliveryOptions.value.find((item) =>
+        item.id === "custom_1762000000000"
+      ),
+    ).toMatchObject({
+      name: "新物流方式",
+      description: "設定敘述",
+      fee: 0,
+      free_threshold: 0,
+      payment: {
+        cod: true,
+        linepay: false,
+        jkopay: false,
+        transfer: false,
+      },
+    });
+
+    module.dashboardSettingsActions.removeDeliveryOption("delivery");
+    expect(dashboard.deliveryOptions.value.map((item) => item.id)).toEqual([
+      "custom_1762000000000",
+    ]);
+
+    module.dashboardSettingsActions.resetSectionTitle("products");
+    expect(dashboard.sectionTitleSettings.value.products).toMatchObject({
+      title: "咖啡豆選購",
+      iconUrl: "icons/products.png",
+    });
+  });
 });

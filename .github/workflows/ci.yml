@@ -55,11 +55,11 @@ jobs:
       - name: Run frontend unit tests
         run: npm run test:unit
 
-      - name: Run E2E tests
-        run: npm run e2e -- --reporter=line
-
       - name: Build frontend artifact
         run: FRONTEND_ASSET_VERSION="${GITHUB_SHA::12}" npm run build
+
+      - name: Run E2E tests
+        run: SKIP_E2E_BUILD=1 npm run e2e -- --reporter=line
 
       - name: Verify formatting
         run: deno fmt --check .

@@ -98,4 +98,79 @@ describe("useStorefrontCart", () => {
     expect(cartApi.toggleCart).toHaveBeenCalledTimes(2);
     expect(orderApi.submitOrder).toHaveBeenCalledTimes(1);
   });
+
+  it("handles zero-quantity boundaries and flat shipping rules", () => {
+    const cartApi = createCartApi();
+    const cart = useStorefrontCart({ cartApi });
+
+    cart.changeSpecQty(10, "half", -1);
+    expect(cartApi.addToCart).not.toHaveBeenCalled();
+    expect(cartApi.updateCartItemQtyByKeys).toHaveBeenCalledWith(
+      10,
+      "half",
+      -1,
+    );
+
+    cart.handleCartUpdated({
+      detail: {
+        items: [{ productId: 10, specKey: "half", qty: 0 }],
+        selectedDelivery: "delivery",
+        deliveryName: "宅配",
+        shippingConfig: { fee: 60, freeThreshold: 0 },
+        summary: {
+          appliedPromos: [],
+          totalDiscount: 0,
+          discountedItemKeys: [],
+          totalAfterDiscount: 0,
+          shippingFee: 60,
+          finalTotal: 60,
+          quoteAvailable: true,
+        },
+      },
+    });
+
+    expect(cart.cartItemCount.value).toBe(0);
+    expect(cart.showShippingBadge.value).toBe(true);
+    expect(cart.isFreeShipping.value).toBe(false);
+    expect(cart.showShippingNotice.value).toBe(true);
+    expect(cart.shippingNoticeTitle.value).toBe("宅配運費");
+    expect(cart.freeShippingThresholdText.value).toBe("");
+  });
+
+  it("supports stacked promotions alongside free shipping", () => {
+    const cartApi = createCartApi();
+    const cart = useStorefrontCart({ cartApi });
+
+    cart.handleCartUpdated({
+      detail: {
+        items: [
+          { productId: 10, specKey: "half", qty: 1, unitPrice: 420 },
+          { productId: 11, specKey: "full", qty: 2, unitPrice: 390 },
+        ],
+        selectedDelivery: "delivery",
+        deliveryName: "宅配",
+        shippingConfig: { fee: 120, freeThreshold: 1000 },
+        summary: {
+          appliedPromos: [
+            { name: "任選兩件折 $50", discount: 50 },
+            { name: "滿千免運", discount: 120 },
+          ],
+          totalDiscount: 170,
+          discountedItemKeys: ["10-half", "11-full"],
+          totalAfterDiscount: 1200,
+          shippingFee: 0,
+          finalTotal: 1200,
+          quoteAvailable: true,
+        },
+      },
+    });
+
+    expect(cart.discountedItemKeySet.value.has("10-half")).toBe(true);
+    expect(cart.discountedItemKeySet.value.has("11-full")).toBe(true);
+    expect(cart.showDiscountSection.value).toBe(true);
+    expect(cart.isFreeShipping.value).toBe(true);
+    expect(cart.showShippingNotice.value).toBe(false);
+    expect(cart.shippingDiff.value).toBe(0);
+    expect(cart.totalPriceText.value).toBe("$1200");
+  });
 });

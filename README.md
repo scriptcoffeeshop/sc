@@ -27,12 +27,12 @@
   - 新增 legacy 互動時，請在既有 delegation/router 註冊；若區塊已經是 Vue feature，請直接走元件事件，不要再繞回 document-level delegation。
 - **前端型別治理**：共享型別統一放在 `frontend/src/types/`；新的 composable 請直接用 `.ts`，`npm run guardrails` 會執行 `scripts/check_new_composables_ts.py` 阻擋新增 `use*.js`。
 - **SRI 與 E2E 測試相容性**：HTML 使用了 SRI (`integrity`)。在進行 Playwright 測試時，若需 mock 腳本，必須透過 `installGlobalStubs` 動態移除 `integrity` 屬性，避免瀏覽器阻擋載入。
-- **Vite 整合**：雖然專案包含 legacy 資源，但打包與啟動流程已由 Vite 接管。請透過 `npm run dev` 或 `npm run build` 進行開發與建構。
+- **Vite 整合**：雖然專案包含 legacy 資源，但打包與啟動流程已由 Vite 接管。請透過 `npm run dev` 或 `npm run build` 進行開發與建構；`npm run e2e` 會走 production build + `vite preview`，避免只在 dev server 才通過。
 - **Repo 衛生規則**：
   - `supabase/.temp/` 屬於 Supabase CLI 本機暫存資料，現在由 `.gitignore` 忽略，不應提交。
   - `.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；請使用 `.env.staging.example`、`.env.supabase.local.example` 作為範本。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
-  - 本機完整健康檢查請使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。
+  - 本機完整健康檢查請使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。若已先 `npm run build`，`health` 會重用產物，不再重複 build。
   - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`，共用路由與 stub 請放在 `tests/e2e/support/smoke-fixtures.ts`，避免再把所有回歸測試塞回單一檔案。
   - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
 
