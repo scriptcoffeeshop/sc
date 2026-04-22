@@ -14,7 +14,6 @@ import {
   selectDelivery,
 } from "../../../../js/delivery.js";
 import {
-  getStorefrontUiSnapshot,
   initMainApp,
   logoutCurrentUser,
   selectBankAccount,
@@ -51,9 +50,6 @@ export function createStorefrontLegacyBridge(options = {}) {
       },
       orderApi: { submitOrder },
     },
-    productsDeps: {
-      getStorefrontUiSnapshot,
-    },
     orderHistoryDeps: {
       authFetch,
       apiUrl: API_URL,
@@ -65,13 +61,11 @@ export function createStorefrontLegacyBridge(options = {}) {
       getCustomerPaymentDisplay,
     },
     deliveryDeps: {
-      getStorefrontUiSnapshot,
       clearSelectedStore,
       selectDelivery,
       openStoreMap,
     },
     paymentDeps: {
-      getStorefrontUiSnapshot,
       clipboard: options.clipboard || runtimeNavigator?.clipboard,
       setTimeout: options.setTimeout ||
         runtimeSetTimeout?.bind(runtimeWindow || globalThis),

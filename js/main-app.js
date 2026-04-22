@@ -33,8 +33,6 @@ import {
 import { normalizeStorefrontDeliveryConfig } from "./storefront-models.js";
 
 let currentDeliveryConfig = [];
-let currentPaymentOptionConfig = {};
-let currentSettings = {};
 function initMainDomBindings() {
   const deliveryCity = document.getElementById("delivery-city");
   if (deliveryCity) {
@@ -108,28 +106,6 @@ export async function initMainApp() {
     window.history.replaceState({}, "", "main.html");
     await checkStoreToken(storeToken);
   }
-}
-
-export function getStorefrontUiSnapshot() {
-  return {
-    products: Array.isArray(state.products)
-      ? state.products.map((item) => ({ ...item }))
-      : [],
-    categories: Array.isArray(state.categories)
-      ? state.categories.map((item) => ({ ...item }))
-      : [],
-    settings: { ...currentSettings },
-    deliveryConfig: Array.isArray(currentDeliveryConfig)
-      ? currentDeliveryConfig.map((item) => ({ ...item }))
-      : [],
-    paymentOptionConfig: { ...currentPaymentOptionConfig },
-    selectedDelivery: String(state.selectedDelivery || ""),
-    selectedPayment: String(state.selectedPayment || "cod"),
-    bankAccounts: Array.isArray(state.bankAccounts)
-      ? state.bankAccounts.map((account) => ({ ...account }))
-      : [],
-    selectedBankAccountId: String(state.selectedBankAccountId || ""),
-  };
 }
 
 // 由 Vue Page 元件在 onMounted 時顯式呼叫 initMainApp()
@@ -528,7 +504,6 @@ async function loadInitData() {
 }
 
 function applySettings(s) {
-  currentSettings = { ...s };
   if (String(s.announcement_enabled) === "true" && s.announcement) {
     const announcementEl = document.getElementById("announcement-text");
     if (announcementEl) {
@@ -558,8 +533,6 @@ function applySettings(s) {
       paymentOptions = JSON.parse(paymentOptionsStr);
     } catch (e) {}
   }
-  currentPaymentOptionConfig = paymentOptions;
-
   const paymentOptionsElement = document.getElementById("payment-options");
   if (paymentOptionsElement?.dataset?.vueManaged !== "true") {
     ["cod", "linepay", "jkopay", "transfer"].forEach((method) => {

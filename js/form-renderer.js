@@ -23,6 +23,7 @@ function normalizeSiteSubtitle(value) {
  */
 export function renderDynamicFields(fields, container, deliveryMethod) {
   if (!container) return;
+  if (container.dataset?.vueManaged === "true") return;
   container.replaceChildren();
 
   if (!fields || fields.length === 0) return;

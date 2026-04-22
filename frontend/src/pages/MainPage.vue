@@ -24,7 +24,11 @@
         @clear-selected-store="handleClearSelectedStore"
       />
 
-      <div id="dynamic-fields-container"></div>
+      <StorefrontDynamicFields
+        :fields="visibleFormFields"
+        :selected-delivery="selectedDelivery || dynamicFieldsSelectedDelivery"
+        :current-user="dynamicFieldsCurrentUser"
+      />
 
       <StorefrontPaymentSection
         :bank-accounts="bankAccounts"
@@ -182,13 +186,16 @@ import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import StorefrontBottomBar from "../features/storefront/StorefrontBottomBar.vue";
 import StorefrontCartDrawer from "../features/storefront/StorefrontCartDrawer.vue";
 import StorefrontDeliverySection from "../features/storefront/StorefrontDeliverySection.vue";
+import StorefrontDynamicFields from "../features/storefront/StorefrontDynamicFields.vue";
 import StorefrontHeader from "../features/storefront/StorefrontHeader.vue";
 import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderHistoryModal.vue";
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { createStorefrontLegacyBridge } from "../features/storefront/storefrontLegacyBridge.js";
+import { getStorefrontUiSnapshot } from "../features/storefront/storefrontUiSnapshot.ts";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.ts";
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
+import { useStorefrontDynamicFields } from "../features/storefront/useStorefrontDynamicFields.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
@@ -239,7 +246,7 @@ const {
 const {
   productsCategories,
   refreshProductsState,
-} = useStorefrontProducts(storefrontBridge.productsDeps);
+} = useStorefrontProducts({ getStorefrontUiSnapshot });
 const {
   deliveryOptions,
   resolveDeliveryIcon,
@@ -247,7 +254,10 @@ const {
   handleSelectDelivery,
   handleOpenStoreMap,
   handleClearSelectedStore,
-} = useStorefrontDelivery(storefrontBridge.deliveryDeps);
+} = useStorefrontDelivery({
+  ...storefrontBridge.deliveryDeps,
+  getStorefrontUiSnapshot,
+});
 const {
   bankAccounts,
   selectedBankAccountId,
@@ -256,14 +266,23 @@ const {
   handleSelectPayment,
   handleSelectBankAccount,
   handleCopyTransferAccount,
-} = useStorefrontPayment(storefrontBridge.paymentDeps);
+} = useStorefrontPayment({
+  ...storefrontBridge.paymentDeps,
+  getStorefrontUiSnapshot,
+});
+const {
+  currentUser: dynamicFieldsCurrentUser,
+  selectedDelivery: dynamicFieldsSelectedDelivery,
+  visibleFormFields,
+  refreshDynamicFieldsState,
+} = useStorefrontDynamicFields({ getStorefrontUiSnapshot });
 const {
   handleCloseAnnouncement,
   handleStorefrontLogin,
-  handleStorefrontLogout,
-  handleShowProfile,
   handleShowMyOrders,
   handleCloseOrdersModal,
+  handleStorefrontLogout: logoutFromShell,
+  handleShowProfile: showProfileFromShell,
 } = useStorefrontShell({
   ...storefrontBridge.shellDeps,
   showMyOrders: openOrderHistory,
@@ -274,10 +293,21 @@ function syncStorefrontUiState() {
   refreshProductsState();
   refreshDeliveryState();
   syncPaymentState();
+  refreshDynamicFieldsState();
 }
 
 function handleCartUpdated(event) {
   syncCartFromEvent(event);
+  syncStorefrontUiState();
+}
+
+function handleStorefrontLogout() {
+  logoutFromShell();
+  syncStorefrontUiState();
+}
+
+async function handleShowProfile() {
+  await showProfileFromShell();
   syncStorefrontUiState();
 }
 
