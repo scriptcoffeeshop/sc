@@ -101,12 +101,13 @@ function appendTrackingSection(bodyContents, order) {
 }
 
 function appendCancelReasonSection(bodyContents, newStatus, cancelReason) {
-  if (newStatus !== "cancelled" || !cancelReason) return;
+  if (!["cancelled", "failed"].includes(newStatus) || !cancelReason) return;
+  const reasonLabel = newStatus === "failed" ? "失敗原因" : "取消原因";
 
   bodyContents.push(createFlexSeparator("md"));
   bodyContents.push(
     createFlexInfoRow({
-      label: "取消原因",
+      label: reasonLabel,
       text: cancelReason,
       margin: "md",
       valueColor: "#DC322F",

@@ -8,7 +8,7 @@ import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
 
 export type LinePayStatus = "paid" | "cancelled";
-export const EXPIRED_PAYMENT_CANCEL_REASON = "付款期限已過，自動取消";
+export const EXPIRED_PAYMENT_FAILURE_REASON = "付款期限已過，自動設為失敗訂單";
 const LINEPAY_PAYMENT_TIMEOUT_MS = 20 * 60 * 1000;
 
 interface EmailBranding {
@@ -159,8 +159,23 @@ export function buildExpiredOnlinePaymentUpdates(
   if (!["linepay", "jkopay"].includes(paymentMethod)) return null;
 
   const paymentStatus = normalizePaymentStatus(order.payment_status);
+  const orderStatus = String(order.status || "pending").trim() || "pending";
+  const statusReason = String(order.cancel_reason || "").trim();
+  if (paymentStatus === "expired") {
+    const updates: Record<string, unknown> = {};
+    if (
+      orderStatus === "cancelled" &&
+      statusReason === EXPIRED_PAYMENT_FAILURE_REASON
+    ) {
+      updates.status = "failed";
+    }
+    if (!statusReason) {
+      updates.cancel_reason = EXPIRED_PAYMENT_FAILURE_REASON;
+    }
+    return Object.keys(updates).length ? updates : null;
+  }
   if (
-    ["paid", "failed", "cancelled", "expired", "refunded"].includes(
+    ["paid", "failed", "cancelled", "refunded"].includes(
       paymentStatus,
     )
   ) {
@@ -181,9 +196,11 @@ export function buildExpiredOnlinePaymentUpdates(
   ) {
     updates.payment_expires_at = resolvedPaymentExpiresAt;
   }
-  if (String(order.status || "pending").trim() === "pending") {
-    updates.status = "cancelled";
-    updates.cancel_reason = EXPIRED_PAYMENT_CANCEL_REASON;
+  if (orderStatus === "pending") {
+    updates.status = "failed";
+    updates.cancel_reason = EXPIRED_PAYMENT_FAILURE_REASON;
+  } else if (orderStatus === "failed" && !statusReason) {
+    updates.cancel_reason = EXPIRED_PAYMENT_FAILURE_REASON;
   }
   return updates;
 }

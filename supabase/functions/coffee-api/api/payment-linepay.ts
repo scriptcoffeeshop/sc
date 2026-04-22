@@ -27,7 +27,11 @@ export async function linePayConfirm(data: Record<string, unknown>) {
   const expiredOrderResult = await expireOnlinePaymentOrderIfNeeded(order);
   const activeOrder = expiredOrderResult.order || order;
   if (String(activeOrder.payment_status || "") === "expired") {
-    return { success: false, error: "付款期限已過，訂單已自動取消", orderId };
+    return {
+      success: false,
+      error: "付款期限已過，訂單已自動設為失敗",
+      orderId,
+    };
   }
   if (activeOrder.payment_status === "paid") {
     return { success: true, message: "此訂單已完成付款", orderId };
@@ -78,7 +82,7 @@ export async function linePayConfirm(data: Record<string, unknown>) {
       await supabase.from("coffee_orders").update(updates).eq("id", orderId);
       return {
         success: false,
-        error: "付款期限已過，訂單已自動取消",
+        error: "付款期限已過，訂單已自動設為失敗",
         orderId,
       };
     }
@@ -138,7 +142,11 @@ export async function linePayCancel(
   const expiredOrderResult = await expireOnlinePaymentOrderIfNeeded(order);
   const activeOrder = expiredOrderResult.order || order;
   if (activeOrder && String(activeOrder.payment_status || "") === "expired") {
-    return { success: true, message: "付款已逾期，訂單已自動取消", orderId };
+    return {
+      success: true,
+      message: "付款已逾期，訂單已自動設為失敗",
+      orderId,
+    };
   }
 
   let statusChanged = false;

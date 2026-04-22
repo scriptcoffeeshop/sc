@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert";
 import {
   buildCancelledNotificationHtml,
+  buildFailedNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
@@ -272,6 +273,33 @@ Deno.test("Email Templates - Cancelled Notification", () => {
   );
 });
 
+Deno.test("Email Templates - Failed Notification", () => {
+  const html = buildFailedNotificationHtml({
+    orderId: "C20261231-FAILED01",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-failed.png",
+    lineName: "失敗客人",
+    failureReason: "付款期限已過，自動設為失敗訂單",
+    note: "測試失敗通知",
+  });
+
+  assertEquals(
+    html.includes("⚠️ 訂單已失敗通知"),
+    true,
+    "Missing failed email title",
+  );
+  assertEquals(
+    html.includes("付款期限已過，自動設為失敗訂單"),
+    true,
+    "Missing failed reason content",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-failed.png"),
+    true,
+    "Failed email should use provided custom logo URL",
+  );
+});
+
 Deno.test("Line Flex Template - Include Note", () => {
   const flex = buildOrderStatusLineFlexMessage({
     orderId: "C20261231-AABBCCDD",
@@ -344,7 +372,7 @@ Deno.test("Line Flex Template - Payment Expired Label", () => {
   const flex = buildOrderStatusLineFlexMessage({
     orderId: "C20261231-STATUS02",
     siteTitle: "Script Coffee",
-    status: "cancelled",
+    status: "failed",
     deliveryMethod: "delivery",
     city: "新竹市",
     district: "東區",

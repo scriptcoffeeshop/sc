@@ -609,22 +609,22 @@ Deno.test({
             order,
           ]),
         );
-        assertEquals(orderById["LINEPAY-EXPIRED-1"].status, "cancelled");
+        assertEquals(orderById["LINEPAY-EXPIRED-1"].status, "failed");
         assertEquals(orderById["LINEPAY-EXPIRED-1"].paymentStatus, "expired");
         assertEquals(
           orderById["LINEPAY-EXPIRED-1"].cancelReason,
-          "付款期限已過，自動取消",
+          "付款期限已過，自動設為失敗訂單",
         );
-        assertEquals(orderById["JKO-EXPIRED-1"].status, "cancelled");
+        assertEquals(orderById["JKO-EXPIRED-1"].status, "failed");
         assertEquals(orderById["JKO-EXPIRED-1"].paymentStatus, "expired");
         assertEquals(
           orderById["JKO-EXPIRED-1"].cancelReason,
-          "付款期限已過，自動取消",
+          "付款期限已過，自動設為失敗訂單",
         );
 
-        assertEquals(tables.coffee_orders[0].status, "cancelled");
+        assertEquals(tables.coffee_orders[0].status, "failed");
         assertEquals(tables.coffee_orders[0].payment_status, "expired");
-        assertEquals(tables.coffee_orders[1].status, "cancelled");
+        assertEquals(tables.coffee_orders[1].status, "failed");
         assertEquals(tables.coffee_orders[1].payment_status, "expired");
       } finally {
         globalThis.Date = realDate;

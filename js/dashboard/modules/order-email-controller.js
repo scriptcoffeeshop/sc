@@ -23,6 +23,8 @@ export function createOrderEmailController(deps) {
       ? "處理中通知"
       : status === "completed"
       ? "完成通知"
+      : status === "failed"
+      ? "失敗通知"
       : status === "cancelled"
       ? "取消通知"
       : "成立確認信";

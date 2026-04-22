@@ -367,7 +367,7 @@ t("金流回呼簽章邊界 - linePayCancel 允許合法簽章取消待付款訂
   });
 });
 
-t("LINE Pay - 逾期訂單確認付款時會自動取消並標記付款逾期", async () => {
+t("LINE Pay - 逾期訂單確認付款時會自動設為失敗並標記付款逾期", async () => {
   const orderId = "C20260420-LINE-EXPIRED";
 
   await withMockedSupabaseTables({
@@ -410,12 +410,12 @@ t("LINE Pay - 逾期訂單確認付款時會自動取消並標記付款逾期", 
       });
 
       assertEquals(result.success, false);
-      assertEquals(result.error, "付款期限已過，訂單已自動取消");
+      assertEquals(result.error, "付款期限已過，訂單已自動設為失敗");
       assertEquals(tables.coffee_orders[0].payment_status, "expired");
-      assertEquals(tables.coffee_orders[0].status, "cancelled");
+      assertEquals(tables.coffee_orders[0].status, "failed");
       assertEquals(
         tables.coffee_orders[0].cancel_reason,
-        "付款期限已過，自動取消",
+        "付款期限已過，自動設為失敗訂單",
       );
     } finally {
       globalThis.Date = realDate;

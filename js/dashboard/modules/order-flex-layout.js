@@ -3,6 +3,7 @@ export const orderStatusColorMap = {
   processing: "#268BD2",
   shipped: "#859900",
   completed: "#586E75",
+  failed: "#DC322F",
   cancelled: "#DC322F",
 };
 

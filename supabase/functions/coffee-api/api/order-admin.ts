@@ -11,6 +11,7 @@ import { sendEmail } from "../utils/email.ts";
 import {
   buildCancelledNotificationHtml,
   buildCompletedNotificationHtml,
+  buildFailedNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
@@ -20,11 +21,12 @@ import { supabase } from "../utils/supabase.ts";
 function resolveOrderEmailMode(
   modeInput: unknown,
   orderStatus: string,
-): "confirmation" | "processing" | "shipping" | "completed" | "cancelled" {
+): "confirmation" | "processing" | "shipping" | "completed" | "cancelled" |
+  "failed" {
   const mode = String(modeInput || "").trim();
   if (
     mode === "confirmation" || mode === "processing" || mode === "shipping" ||
-    mode === "completed" || mode === "cancelled"
+    mode === "completed" || mode === "cancelled" || mode === "failed"
   ) {
     return mode;
   }
@@ -32,6 +34,7 @@ function resolveOrderEmailMode(
   if (orderStatus === "shipped") return "shipping";
   if (orderStatus === "completed") return "completed";
   if (orderStatus === "cancelled") return "cancelled";
+  if (orderStatus === "failed") return "failed";
   return "confirmation";
 }
 
@@ -51,7 +54,7 @@ export async function updateOrderStatus(
 
   const updates: Record<string, unknown> = { status: newStatus };
   const cancelReason = String(data.cancelReason || "").trim();
-  if (newStatus === "cancelled") {
+  if (newStatus === "cancelled" || newStatus === "failed") {
     updates.cancel_reason = cancelReason;
   } else {
     updates.cancel_reason = "";
@@ -168,6 +171,16 @@ export async function sendOrderEmail(
       note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已取消通知`;
+  } else if (mode === "failed") {
+    htmlContent = buildFailedNotificationHtml({
+      orderId,
+      siteTitle,
+      logoUrl: siteLogoUrl,
+      lineName,
+      failureReason: String(orderData.cancel_reason || ""),
+      note: String(orderData.note || ""),
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 已失敗通知`;
   } else {
     const receiptInfo = parseReceiptInfo(orderData.receipt_info);
     const customFieldsHtml = await buildCustomFieldsHtml(
@@ -208,6 +221,8 @@ export async function sendOrderEmail(
     ? "處理中通知"
     : mode === "completed"
     ? "完成通知"
+    : mode === "failed"
+    ? "失敗通知"
     : mode === "cancelled"
     ? "取消通知"
     : "成立確認信";

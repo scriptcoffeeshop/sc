@@ -31,6 +31,7 @@ const ORDER_STATUS_LABEL: Record<string, string> = {
   processing: "處理中",
   shipped: "已出貨",
   completed: "已完成",
+  failed: "已失敗",
   cancelled: "已取消",
 };
 
@@ -64,6 +65,7 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   processing: "#268BD2",
   shipped: "#859900",
   completed: "#586E75",
+  failed: "#DC322F",
   cancelled: "#DC322F",
 };
 

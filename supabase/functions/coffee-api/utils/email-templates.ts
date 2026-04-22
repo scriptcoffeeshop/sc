@@ -431,6 +431,15 @@ export interface CancelledNotificationParams {
   note?: string;
 }
 
+export interface FailedNotificationParams {
+  orderId: string;
+  siteTitle: string;
+  logoUrl?: string;
+  lineName: string;
+  failureReason: string;
+  note?: string;
+}
+
 export function buildCompletedNotificationHtml(
   params: CompletedNotificationParams,
 ): string {
@@ -499,6 +508,47 @@ export function buildCancelledNotificationHtml(
       ${buildOrderNoteHtml(String(params.note || ""), "8px 0 0 0")}
     </div>
     <p style="margin-top: 20px; color: #555;">若您有任何疑問，請直接聯繫我們，我們會盡快協助您。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+        `;
+}
+
+export function buildFailedNotificationHtml(
+  params: FailedNotificationParams,
+): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
+  const reasonText = String(params.failureReason || "").trim();
+  const safeReason = sanitize(reasonText || "未提供失敗原因");
+
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#B42318",
+      title: "⚠️ 訂單已失敗通知",
+      subtitle: displaySiteTitle,
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #B42318; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單已標記為失敗。</h2>
+    <p>這封信是要通知您，訂單 <strong>${
+    sanitize(params.orderId)
+  }</strong> 目前未成立，系統已將其標記為失敗。</p>
+    <div style="background-color: #fef3f2; border-left: 4px solid #B42318; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 8px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
+      <p style="margin: 0;"><strong>失敗原因：</strong> ${safeReason}</p>
+      ${buildOrderNoteHtml(String(params.note || ""), "8px 0 0 0")}
+    </div>
+    <p style="margin-top: 20px; color: #555;">若仍需商品，請重新下單；如有疑問，歡迎直接聯繫我們。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>

@@ -70,5 +70,6 @@ export const VALID_ORDER_STATUSES = [
   "processing",
   "shipped",
   "completed",
+  "failed",
   "cancelled",
 ];

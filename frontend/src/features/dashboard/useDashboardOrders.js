@@ -264,8 +264,11 @@ function buildOrderViewModel(order) {
     items: order.items || "",
     note: order.note || "",
     cancelReason: String(order.cancelReason || "").trim(),
+    statusReasonLabel: String(order.status || "") === "failed"
+      ? "失敗原因"
+      : "取消原因",
     showCancellationReason:
-      String(order.status || "") === "cancelled" &&
+      ["cancelled", "failed"].includes(String(order.status || "")) &&
       Boolean(String(order.cancelReason || "").trim()),
     receiptInfo,
     showReceiptInfo: Boolean(receiptInfo),

@@ -123,7 +123,7 @@
       v-if="order.showCancellationReason"
       class="text-sm text-red-700 bg-red-50 p-2 rounded mb-2 border border-red-100"
     >
-      <span class="ui-text-subtle">取消原因：</span>{{ order.cancelReason }}
+      <span class="ui-text-subtle">{{ order.statusReasonLabel }}：</span>{{ order.cancelReason }}
     </div>
 
     <div class="flex justify-between items-center">

@@ -68,19 +68,25 @@ export function createOrderStatusController(deps) {
         trackingNumber = shippingInfo?.trackingNumber || "";
         shippingProvider = shippingInfo?.shippingProvider || "";
         trackingUrl = shippingInfo?.trackingUrl || "";
-      } else if (status === "cancelled") {
+      } else if (status === "cancelled" || status === "failed") {
+        const reasonLabel = status === "failed" ? "失敗原因" : "取消原因";
+        const title = status === "failed" ? "設定失敗訂單" : "設定已取消";
+        const confirmButtonText = status === "failed" ? "確認失敗" : "確認取消";
+        const placeholder = status === "failed"
+          ? "請輸入失敗原因，例如：付款逾時未完成"
+          : "請輸入取消原因，例如：付款逾時未完成";
         const { value: cancelInfo, isConfirmed } = await deps.Swal.fire({
-          title: "設定已取消",
+          title,
           html: `
           <div class="text-left space-y-2">
-            <label class="text-sm ui-text-strong block">取消原因（選填）</label>
-            <textarea id="swal-cancel-reason" class="swal2-textarea" placeholder="請輸入取消原因，例如：付款逾時未完成">${
+            <label class="text-sm ui-text-strong block">${reasonLabel}（選填）</label>
+            <textarea id="swal-cancel-reason" class="swal2-textarea" placeholder="${placeholder}">${
             deps.esc(String(targetOrder.cancelReason || "").trim())
           }</textarea>
           </div>
         `,
           showCancelButton: true,
-          confirmButtonText: "確認取消",
+          confirmButtonText,
           cancelButtonText: "取消",
           confirmButtonColor: "#DC322F",
           focusConfirm: false,
@@ -122,7 +128,7 @@ export function createOrderStatusController(deps) {
         payload.trackingNumber = trackingNumber;
         payload.shippingProvider = shippingProvider;
         payload.trackingUrl = trackingUrl;
-      } else if (status === "cancelled") {
+      } else if (status === "cancelled" || status === "failed") {
         payload.cancelReason = cancelReason;
       } else {
         payload.cancelReason = "";
@@ -146,7 +152,7 @@ export function createOrderStatusController(deps) {
         flexOrder.trackingNumber = trackingNumber || "";
         flexOrder.shippingProvider = shippingProvider || "";
         flexOrder.trackingUrl = trackingUrl || "";
-      } else if (status === "cancelled") {
+      } else if (status === "cancelled" || status === "failed") {
         flexOrder.cancelReason = cancelReason;
       } else {
         flexOrder.cancelReason = "";

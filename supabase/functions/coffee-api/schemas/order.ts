@@ -91,6 +91,7 @@ export const updateOrderStatusSchema = z.object({
     "processing",
     "shipped",
     "completed",
+    "failed",
     "cancelled",
   ]),
   cancelReason: z.string().optional(),
@@ -115,6 +116,7 @@ export const batchUpdateOrderStatusSchema = z.object({
     "processing",
     "shipped",
     "completed",
+    "failed",
     "cancelled",
   ]),
   paymentStatus: paymentStatusSchema.optional(),
@@ -145,6 +147,7 @@ export const sendOrderEmailSchema = z.object({
     "processing",
     "shipping",
     "completed",
+    "failed",
     "cancelled",
   ])
     .optional(),

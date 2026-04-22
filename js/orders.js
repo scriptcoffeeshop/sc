@@ -57,6 +57,7 @@ const ORDER_STATUS_TEXT = {
   processing: "處理中",
   shipped: "已出貨",
   completed: "已完成",
+  failed: "已失敗",
   cancelled: "已取消",
 };
 

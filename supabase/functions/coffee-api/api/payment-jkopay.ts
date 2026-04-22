@@ -1,5 +1,5 @@
 import {
-  EXPIRED_PAYMENT_CANCEL_REASON,
+  EXPIRED_PAYMENT_FAILURE_REASON,
   getJkoCallbackTransaction,
   getJkoOrderIdFromPayload,
   getJkoStatusCodeFromPayload,
@@ -195,8 +195,8 @@ async function syncJkoPayOrderStatus(params: {
     nextPaymentStatus === "expired" &&
     String(order.status || "pending").trim() === "pending"
   ) {
-    updates.status = "cancelled";
-    updates.cancel_reason = EXPIRED_PAYMENT_CANCEL_REASON;
+    updates.status = "failed";
+    updates.cancel_reason = EXPIRED_PAYMENT_FAILURE_REASON;
   }
 
   if (Object.keys(updates).length > 0) {

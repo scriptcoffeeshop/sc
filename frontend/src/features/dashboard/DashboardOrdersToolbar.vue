@@ -37,6 +37,7 @@
         <option value="processing">訂單狀態：處理中</option>
         <option value="shipped">訂單狀態：已出貨</option>
         <option value="completed">訂單狀態：已完成</option>
+        <option value="failed">訂單狀態：已失敗</option>
         <option value="cancelled">訂單狀態：已取消</option>
       </select>
       <select
@@ -133,6 +134,7 @@
         <option value="processing">處理中</option>
         <option value="shipped">已出貨</option>
         <option value="completed">已完成</option>
+        <option value="failed">已失敗</option>
         <option value="cancelled">已取消</option>
       </select>
       <select
