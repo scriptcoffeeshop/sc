@@ -26,6 +26,59 @@ function createSuccessResponse(payload) {
   };
 }
 
+function createPaymentDisplay(order) {
+  const paymentMethod = String(order?.paymentMethod || "cod");
+  const paymentStatus = String(order?.paymentStatus || "");
+  const resumePaymentLabel = paymentMethod === "jkopay"
+    ? "前往街口付款"
+    : paymentMethod === "linepay"
+    ? "前往 LINE Pay 付款"
+    : "";
+  const isResumable = ["linepay", "jkopay"].includes(paymentMethod) &&
+    ["pending", "processing"].includes(paymentStatus) &&
+    Boolean(order?.paymentUrl);
+  const guideDescription = paymentStatus === "processing"
+    ? `付款結果正在同步中；若您尚未完成付款，也可以點下方「${resumePaymentLabel}」繼續。`
+    : `這筆訂單尚未完成 ${
+      paymentMethod === "linepay" ? "LINE Pay" : "街口支付"
+    }，請點下方「${resumePaymentLabel}」繼續；付款後狀態會自動同步。`
+      .replace("完成 街口支付", "完成街口支付")
+      .replace("完成 LINE Pay", "完成 LINE Pay");
+
+  return {
+    paymentMethod,
+    paymentStatus,
+    methodLabel: paymentMethod,
+    statusLabel: paymentStatus,
+    paymentExpiresAtText: "",
+    paymentConfirmedAtText: "",
+    paymentLastCheckedAtText: "",
+    showPaymentDeadline: false,
+    badgeClass: "",
+    showBadge: true,
+    tone: paymentStatus === "processing" ? "info" : "warning",
+    guideTitle: "",
+    guideDescription,
+    actionLabel: "",
+    actionType: "",
+    paymentUrl: String(order?.paymentUrl || ""),
+    canResumePayment: isResumable,
+    resumePaymentLabel: isResumable ? resumePaymentLabel : "",
+  };
+}
+
+function createOrderHistoryDeps(overrides = {}) {
+  return {
+    Swal: { fire: vi.fn(async () => ({ isConfirmed: false })) },
+    Toast: { fire: vi.fn() },
+    getCurrentUser: () => ({ userId: "user-1" }),
+    writeClipboard: vi.fn(async () => undefined),
+    getCustomerPaymentDisplay: vi.fn(createPaymentDisplay),
+    formatDateTimeText: vi.fn((value) => String(value || "")),
+    ...overrides,
+  };
+}
+
 describe("useStorefrontOrderHistory", () => {
   it("opens my orders, loads transformed cards, and exposes resume actions", async () => {
     const authFetch = vi.fn(async (url) => {
@@ -67,12 +120,10 @@ describe("useStorefrontOrderHistory", () => {
     });
     const Swal = { fire: vi.fn(async () => ({ isConfirmed: false })) };
 
-    const history = useStorefrontOrderHistory({
+    const history = useStorefrontOrderHistory(createOrderHistoryDeps({
       authFetch,
       Swal,
-      getCurrentUser: () => ({ userId: "user-1" }),
-      writeClipboard: vi.fn(async () => undefined),
-    });
+    }));
 
     await history.openOrderHistory();
 
@@ -108,12 +159,11 @@ describe("useStorefrontOrderHistory", () => {
 
   it("shows login prompt when user opens my orders without authentication", async () => {
     const Swal = { fire: vi.fn(async () => ({ isConfirmed: false })) };
-    const history = useStorefrontOrderHistory({
+    const history = useStorefrontOrderHistory(createOrderHistoryDeps({
       authFetch: vi.fn(),
       Swal,
       getCurrentUser: () => null,
-      writeClipboard: vi.fn(async () => undefined),
-    });
+    }));
 
     await history.openOrderHistory();
 
@@ -124,13 +174,13 @@ describe("useStorefrontOrderHistory", () => {
   it("copies tracking numbers into the clipboard and shows toast feedback", async () => {
     const writeClipboard = vi.fn(async () => undefined);
     const Toast = { fire: vi.fn() };
-    const history = useStorefrontOrderHistory({
+    const history = useStorefrontOrderHistory(createOrderHistoryDeps({
       authFetch: vi.fn(),
       Swal: { fire: vi.fn(async () => ({ isConfirmed: false })) },
       Toast,
       getCurrentUser: () => ({ userId: "user-1" }),
       writeClipboard,
-    });
+    }));
 
     await history.copyTrackingNumber(" AB123456789 ");
 

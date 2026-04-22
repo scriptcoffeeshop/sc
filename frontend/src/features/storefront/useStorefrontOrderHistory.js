@@ -1,12 +1,4 @@
 import { computed, ref } from "vue";
-import { state } from "../../../../js/state.js";
-import { API_URL } from "../../../../js/config.js";
-import { authFetch } from "../../../../js/auth.js";
-import { Toast } from "../../../../js/utils.js";
-import {
-  formatDateTimeText,
-  getCustomerPaymentDisplay,
-} from "../../../../js/orders.js";
 
 const ORDER_STATUS_TEXT = {
   pending: "待處理",
@@ -68,8 +60,44 @@ function getPaymentToneClasses(tone) {
   return "border-slate-200 bg-slate-50 text-slate-900";
 }
 
-function buildOrderHistoryItem(order) {
+function formatDateTimeTextFallback(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toLocaleString("zh-TW");
+}
+
+function getCustomerPaymentDisplayFallback(order) {
+  const paymentMethod = String(order?.paymentMethod || "cod").trim() || "cod";
+  const paymentStatus = String(order?.paymentStatus || "").trim();
+  return {
+    paymentMethod,
+    paymentStatus,
+    methodLabel: paymentMethod,
+    statusLabel: paymentStatus,
+    paymentExpiresAtText: formatDateTimeTextFallback(order?.paymentExpiresAt),
+    paymentConfirmedAtText: formatDateTimeTextFallback(order?.paymentConfirmedAt),
+    paymentLastCheckedAtText: formatDateTimeTextFallback(order?.paymentLastCheckedAt),
+    showPaymentDeadline: Boolean(order?.paymentExpiresAt),
+    badgeClass: "",
+    showBadge: paymentMethod !== "cod",
+    tone: "neutral",
+    guideTitle: "付款方式",
+    guideDescription: "",
+    actionLabel: "",
+    actionType: "",
+    paymentUrl: String(order?.paymentUrl || "").trim(),
+    canResumePayment: false,
+    resumePaymentLabel: "",
+  };
+}
+
+function buildOrderHistoryItem(order, deps = {}) {
   const paymentStatus = String(order.paymentStatus || "").trim();
+  const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
+    getCustomerPaymentDisplayFallback;
+  const formatDateTimeText = deps.formatDateTimeText || formatDateTimeTextFallback;
   const paymentDisplay = getCustomerPaymentDisplay(order, {
     context: "orderHistory",
   });
@@ -113,20 +141,30 @@ function buildOrderHistoryItem(order) {
 }
 
 export function useStorefrontOrderHistory(deps = {}) {
-  const authFetchFn = deps.authFetch || authFetch;
-  const swal = deps.Swal || Swal;
-  const toast = deps.Toast || Toast;
-  const apiUrl = deps.apiUrl || API_URL;
-  const getCurrentUser = deps.getCurrentUser || (() => state.currentUser);
+  const authFetchFn = deps.authFetch || globalThis.fetch?.bind(globalThis);
+  const swal = deps.Swal || globalThis.Swal || { fire: async () => undefined };
+  const toast = deps.Toast || { fire: () => undefined };
+  const apiUrl = deps.apiUrl || "";
+  const getCurrentUser = deps.getCurrentUser || (() => null);
   const writeClipboard = deps.writeClipboard || ((text) =>
-    navigator.clipboard.writeText(text));
+    globalThis.navigator?.clipboard?.writeText?.(text));
+  const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
+    getCustomerPaymentDisplayFallback;
+  const formatDateTimeText = deps.formatDateTimeText || formatDateTimeTextFallback;
 
   const isOrderHistoryOpen = ref(false);
   const isLoadingOrderHistory = ref(false);
   const orderHistoryError = ref("");
   const rawOrders = ref([]);
 
-  const ordersView = computed(() => rawOrders.value.map(buildOrderHistoryItem));
+  const ordersView = computed(() =>
+    rawOrders.value.map((order) =>
+      buildOrderHistoryItem(order, {
+        getCustomerPaymentDisplay,
+        formatDateTimeText,
+      })
+    )
+  );
 
   const orderHistoryState = computed(() => {
     if (isLoadingOrderHistory.value) return "loading";
@@ -139,6 +177,7 @@ export function useStorefrontOrderHistory(deps = {}) {
     isLoadingOrderHistory.value = true;
     orderHistoryError.value = "";
     try {
+      if (!authFetchFn) throw new Error("訂單查詢尚未初始化");
       const response = await authFetchFn(
         `${apiUrl}?action=getMyOrders&_=${Date.now()}`,
       );

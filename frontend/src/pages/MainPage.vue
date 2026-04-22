@@ -18,6 +18,7 @@
         :delivery-options="deliveryOptions"
         :selected-delivery="selectedDelivery"
         :selected-check-icon-url="selectedCheckIconUrl"
+        :resolve-delivery-icon="storefrontBridge.resolveDeliveryIcon"
         @select-delivery="handleSelectDelivery"
         @open-store-map="handleOpenStoreMap"
         @clear-selected-store="handleClearSelectedStore"
@@ -185,29 +186,28 @@ import StorefrontHeader from "../features/storefront/StorefrontHeader.vue";
 import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderHistoryModal.vue";
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
+import { createStorefrontLegacyBridge } from "../features/storefront/storefrontLegacyBridge.js";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.js";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.js";
-import {
-  clearSelectedStore,
-  selectDelivery,
-  openStoreMap,
-} from "../../../js/delivery.js";
-import { Toast } from "../../../js/utils.js";
-import { getDefaultIconUrl } from "../../../js/icons.js";
-import {
-  getStorefrontUiSnapshot,
-  initMainApp,
-  logoutCurrentUser,
-  selectBankAccount,
-  selectPayment,
-  showProfileModal,
-  startMainLogin,
-} from "../../../js/main-app.js";
-import { submitOrder } from "../../../js/orders.js";
 
 const originalBodyClass = document.body.className;
-const selectedCheckIconUrl = getDefaultIconUrl("selected");
+const storefrontBridge = createStorefrontLegacyBridge({
+  document,
+  window,
+  clipboard: navigator.clipboard,
+  Swal,
+});
+const {
+  isOrderHistoryOpen,
+  orderHistoryError,
+  orderHistoryState,
+  ordersView,
+  openOrderHistory,
+  closeOrderHistory,
+  copyTrackingNumber,
+} = useStorefrontOrderHistory(storefrontBridge.orderHistoryDeps);
+const selectedCheckIconUrl = storefrontBridge.selectedCheckIconUrl;
 const {
   cartItems,
   selectedDelivery,
@@ -231,16 +231,7 @@ const {
   removeCartIndex,
   toggleCartDrawer,
   submitOrderFromCart,
-} = useStorefrontCart({ orderApi: { submitOrder } });
-const {
-  isOrderHistoryOpen,
-  orderHistoryError,
-  orderHistoryState,
-  ordersView,
-  openOrderHistory,
-  closeOrderHistory,
-  copyTrackingNumber,
-} = useStorefrontOrderHistory();
+} = useStorefrontCart(storefrontBridge.cartDeps);
 const {
   productsCategories,
   deliveryOptions,
@@ -262,20 +253,7 @@ const {
   handleSelectBankAccount,
   handleCopyTransferAccount,
 } = useStorefrontShell({
-  document,
-  clipboard: navigator.clipboard,
-  setTimeout: window.setTimeout.bind(window),
-  Swal,
-  Toast,
-  getStorefrontUiSnapshot,
-  clearSelectedStore,
-  selectDelivery,
-  openStoreMap,
-  selectPayment,
-  selectBankAccount,
-  startMainLogin,
-  logoutCurrentUser,
-  showProfileModal,
+  ...storefrontBridge.shellDeps,
   showMyOrders: openOrderHistory,
   closeOrderHistory,
 });
@@ -298,7 +276,7 @@ onMounted(() => {
 
   syncCartSnapshot();
 
-  void initMainApp().then(() => {
+  void storefrontBridge.initMainApp().then(() => {
     syncStorefrontUiState();
   });
 });

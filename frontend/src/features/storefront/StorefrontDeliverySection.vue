@@ -185,10 +185,6 @@
 
 <script setup>
 import UiButton from "../../components/ui/button/Button.vue";
-import {
-  getDeliveryIconFallbackKey,
-  getIconUrlFromConfig,
-} from "../../../../js/icons.js";
 
 defineEmits([
   "select-delivery",
@@ -209,14 +205,21 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  resolveDeliveryIcon: {
+    type: Function,
+    default: null,
+  },
 });
 
 function getDeliveryIcon(option) {
-  const fallbackKey = getDeliveryIconFallbackKey(option?.id);
-  const url = getIconUrlFromConfig(option, fallbackKey);
+  const resolvedIcon = props.resolveDeliveryIcon?.(option) || {};
+  const url = String(resolvedIcon.url || "").trim();
+  const fallbackText = String(
+    resolvedIcon.fallbackText || option?.icon || "",
+  ).trim();
   return {
     url,
-    fallbackText: url ? "" : String(option?.icon || "").trim(),
+    fallbackText: url ? "" : fallbackText,
   };
 }
 </script>

@@ -55,6 +55,7 @@
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.js`，`js/dashboard-app.js` 現在只剩薄相容殼
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分；storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
 - `MainPage.vue` 已降為 472 行組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
+- `MainPage.vue` 與 storefront feature/composable 已不再直接 import `js/*.js` legacy 模組；目前透過 `frontend/src/features/storefront/storefrontLegacyBridge.js` 集中承接 products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue，下一步再逐步縮小 bridge 內的 legacy 依賴。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` / `renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
 - storefront「我的訂單」列表已改成 DOM API 安全渲染，`js/orders.js` 不再以 `innerHTML` 拼接後端訂單資料。
 - storefront legacy `js/*.js` 的 `innerHTML` renderer 已清到 0；商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 DOM API / `replaceChildren()`。
@@ -126,6 +127,7 @@
 - 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
 - LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
 - storefront legacy 遷移續推：`MainPage.vue` 已移除對 `js/products.js` / `getProductsViewModel` 的直接 import，商品清單改只透過 `coffee:products-updated` 事件同步，降低 products legacy 模組與 Vue shell 的耦合。
+- storefront legacy bridge 已集中：`MainPage.vue`、`StorefrontDeliverySection`、`useStorefrontCart`、`useStorefrontOrderHistory` 不再靜態 import legacy `js/*.js`；products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue 統一收斂於 `storefrontLegacyBridge.js`，page shell 只依賴 storefront feature/composable。
 
 ### 2026-04-21
 

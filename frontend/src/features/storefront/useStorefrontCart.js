@@ -1,12 +1,4 @@
 import { computed, ref } from "vue";
-import {
-  addToCart,
-  getCartSnapshot,
-  removeCartItem,
-  toggleCart,
-  updateCartItemQty,
-  updateCartItemQtyByKeys,
-} from "../../../../js/cart.js";
 
 const defaultCartSummary = {
   subtotal: 0,
@@ -24,15 +16,17 @@ function itemKey(productId, specKey = "") {
   return `${Number(productId)}-${String(specKey || "")}`;
 }
 
+const defaultCartApi = {
+  addToCart: () => {},
+  getCartSnapshot: () => [],
+  removeCartItem: () => {},
+  toggleCart: () => {},
+  updateCartItemQty: () => {},
+  updateCartItemQtyByKeys: () => {},
+};
+
 export function useStorefrontCart(deps = {}) {
-  const cartApi = deps.cartApi || {
-    addToCart,
-    getCartSnapshot,
-    removeCartItem,
-    toggleCart,
-    updateCartItemQty,
-    updateCartItemQtyByKeys,
-  };
+  const cartApi = deps.cartApi || defaultCartApi;
   const orderApi = deps.orderApi || { submitOrder: () => {} };
 
   const cartItems = ref([]);
