@@ -14,11 +14,6 @@ import {
   selectDelivery,
 } from "../../../../js/delivery.js";
 import {
-  getDefaultIconUrl,
-  getDeliveryIconFallbackKey,
-  getIconUrlFromConfig,
-} from "../../../../js/icons.js";
-import {
   getStorefrontUiSnapshot,
   initMainApp,
   logoutCurrentUser,
@@ -35,15 +30,6 @@ import {
 import { state } from "../../../../js/state.js";
 import { Toast } from "../../../../js/utils.js";
 
-function resolveDeliveryIcon(option) {
-  const fallbackKey = getDeliveryIconFallbackKey(option?.id);
-  const url = getIconUrlFromConfig(option, fallbackKey);
-  return {
-    url,
-    fallbackText: url ? "" : String(option?.icon || "").trim(),
-  };
-}
-
 export function createStorefrontLegacyBridge(options = {}) {
   const runtimeWindow = options.window || globalThis.window;
   const runtimeNavigator = runtimeWindow?.navigator || globalThis.navigator;
@@ -54,8 +40,6 @@ export function createStorefrontLegacyBridge(options = {}) {
     ((text) => runtimeNavigator?.clipboard?.writeText?.(text));
 
   return {
-    selectedCheckIconUrl: getDefaultIconUrl("selected"),
-    resolveDeliveryIcon,
     cartDeps: {
       cartApi: {
         addToCart,
@@ -77,19 +61,26 @@ export function createStorefrontLegacyBridge(options = {}) {
       formatDateTimeText,
       getCustomerPaymentDisplay,
     },
-    shellDeps: {
-      document: options.document || globalThis.document,
+    deliveryDeps: {
+      getStorefrontUiSnapshot,
+      clearSelectedStore,
+      selectDelivery,
+      openStoreMap,
+    },
+    paymentDeps: {
+      getStorefrontUiSnapshot,
       clipboard: options.clipboard || runtimeNavigator?.clipboard,
       setTimeout: options.setTimeout ||
         runtimeSetTimeout?.bind(runtimeWindow || globalThis),
       Swal: swal,
       Toast: toast,
-      getStorefrontUiSnapshot,
-      clearSelectedStore,
-      selectDelivery,
-      openStoreMap,
       selectPayment,
       selectBankAccount,
+    },
+    shellDeps: {
+      document: options.document || globalThis.document,
+      Swal: swal,
+      Toast: toast,
       startMainLogin,
       logoutCurrentUser,
       showProfileModal,

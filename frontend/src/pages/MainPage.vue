@@ -18,7 +18,7 @@
         :delivery-options="deliveryOptions"
         :selected-delivery="selectedDelivery"
         :selected-check-icon-url="selectedCheckIconUrl"
-        :resolve-delivery-icon="storefrontBridge.resolveDeliveryIcon"
+        :resolve-delivery-icon="resolveDeliveryIcon"
         @select-delivery="handleSelectDelivery"
         @open-store-map="handleOpenStoreMap"
         @clear-selected-store="handleClearSelectedStore"
@@ -188,8 +188,12 @@ import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSe
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { createStorefrontLegacyBridge } from "../features/storefront/storefrontLegacyBridge.js";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
+import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
+import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
+import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.js";
+import { getDefaultIconUrl } from "../../../js/icons.js";
 
 const originalBodyClass = document.body.className;
 const storefrontBridge = createStorefrontLegacyBridge({
@@ -207,7 +211,7 @@ const {
   closeOrderHistory,
   copyTrackingNumber,
 } = useStorefrontOrderHistory(storefrontBridge.orderHistoryDeps);
-const selectedCheckIconUrl = storefrontBridge.selectedCheckIconUrl;
+const selectedCheckIconUrl = getDefaultIconUrl("selected");
 const {
   cartItems,
   selectedDelivery,
@@ -234,29 +238,42 @@ const {
 } = useStorefrontCart(storefrontBridge.cartDeps);
 const {
   productsCategories,
+  handleProductsUpdated,
+} = useStorefrontProducts();
+const {
   deliveryOptions,
+  resolveDeliveryIcon,
+  syncDeliveryState,
+  handleSelectDelivery,
+  handleOpenStoreMap,
+  handleClearSelectedStore,
+} = useStorefrontDelivery(storefrontBridge.deliveryDeps);
+const {
   bankAccounts,
   selectedBankAccountId,
   copiedBankAccountId,
-  syncStorefrontUiState,
-  handleProductsUpdated,
+  syncPaymentState,
+  handleSelectPayment,
+  handleSelectBankAccount,
+  handleCopyTransferAccount,
+} = useStorefrontPayment(storefrontBridge.paymentDeps);
+const {
   handleCloseAnnouncement,
   handleStorefrontLogin,
   handleStorefrontLogout,
   handleShowProfile,
   handleShowMyOrders,
   handleCloseOrdersModal,
-  handleSelectPayment,
-  handleSelectDelivery,
-  handleOpenStoreMap,
-  handleClearSelectedStore,
-  handleSelectBankAccount,
-  handleCopyTransferAccount,
 } = useStorefrontShell({
   ...storefrontBridge.shellDeps,
   showMyOrders: openOrderHistory,
   closeOrderHistory,
 });
+
+function syncStorefrontUiState() {
+  syncDeliveryState();
+  syncPaymentState();
+}
 
 function handleCartUpdated(event) {
   syncCartFromEvent(event);

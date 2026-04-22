@@ -56,8 +56,9 @@
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.js`，`js/dashboard-app.js` 現在只剩薄相容殼
   - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
 - 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分；storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
-- `MainPage.vue` 已降為 472 行組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
-- `MainPage.vue` 與 storefront feature/composable 已不再直接 import `js/*.js` legacy 模組；目前透過 `frontend/src/features/storefront/storefrontLegacyBridge.js` 集中承接 products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue，下一步再逐步縮小 bridge 內的 legacy 依賴。
+- `MainPage.vue` 已是 storefront 組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
+- storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
+- `storefrontLegacyBridge.js` 已移除 icons、delivery、payment 的通用 shell export，改分成 `deliveryDeps`、`paymentDeps`、`shellDeps`；目前主要仍承接 cart、order history、main-app 初始化與 auth/config/state glue，下一步再處理 `cart.js`、`orders.js`、`main-app.js` 的高風險切面。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` / `renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
 - storefront「我的訂單」列表已改成 DOM API 安全渲染，`js/orders.js` 不再以 `innerHTML` 拼接後端訂單資料。
 - storefront legacy `js/*.js` 的 `innerHTML` renderer 已清到 0；商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 DOM API / `replaceChildren()`。
