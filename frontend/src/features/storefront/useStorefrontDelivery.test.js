@@ -71,8 +71,14 @@ describe("useStorefrontDelivery", () => {
     delivery.handleOpenStoreMap();
     delivery.handleClearSelectedStore();
 
-    expect(delivery.deliveryOptions.value).toEqual([
-      { id: "delivery", name: "宅配", enabled: true },
+    expect(delivery.deliveryOptions.value).toMatchObject([
+      {
+        id: "delivery",
+        name: "宅配",
+        enabled: true,
+        label: "宅配",
+        payment: { cod: false, linepay: false, jkopay: false, transfer: false },
+      },
     ]);
     expect(deps.selectDelivery).toHaveBeenCalledWith("delivery");
     expect(deps.openStoreMap).toHaveBeenCalledTimes(1);
