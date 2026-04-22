@@ -1,4 +1,6 @@
 import { API_URL, LINE_REDIRECT } from "../../../../js/config.js";
+import Sortable from "sortablejs";
+import Swal from "sweetalert2";
 import { esc, Toast } from "../../../../js/utils.js";
 import { authFetch, loginWithLine } from "../../../../js/auth.js";
 import {
@@ -116,7 +118,7 @@ configureDashboardSessionServices({
   loadInitialData: () => loadInitialDashboardData(),
   defaultTab: "orders",
   tabs: dashboardTabs,
-  Swal: globalThis.Swal,
+  Swal,
 });
 
 configureDashboardSettingsServices({
@@ -124,7 +126,7 @@ configureDashboardSettingsServices({
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
   applyDashboardBranding: brandingController.applyDashboardBranding,
   loadBankAccounts: dashboardBankAccountsActions.loadBankAccounts,
   getDefaultIconUrl,
@@ -135,7 +137,7 @@ configureDashboardSettingsServices({
   defaultDeliveryOptions: DEFAULT_DELIVERY_OPTIONS,
   parseBooleanSetting,
   linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
-  Sortable: globalThis.Sortable,
+  Sortable,
 });
 
 configureDashboardSettingsIconServices({
@@ -143,7 +145,7 @@ configureDashboardSettingsIconServices({
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
 });
 
 configureDashboardBankAccountsServices({
@@ -151,8 +153,8 @@ configureDashboardBankAccountsServices({
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
-  Swal: globalThis.Swal,
-  Sortable: globalThis.Sortable,
+  Swal,
+  Sortable,
 });
 
 const orderNotificationsController = createOrderNotificationsController({
@@ -162,7 +164,7 @@ const orderNotificationsController = createOrderNotificationsController({
   getSiteTitle: () => dashboardSettingsActions.getRawSettings()?.site_title,
   getOrders: getDashboardOrders,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
   esc,
   orderStatusLabel,
   orderMethodLabel,
@@ -181,7 +183,7 @@ const orderStatusController = createOrderStatusController({
   previewOrderStatusNotification:
     orderNotificationsController.previewOrderStatusNotification,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
   esc,
   orderStatusLabel,
 });
@@ -191,7 +193,7 @@ configureDashboardOrdersServices({
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
   changeOrderStatus: orderStatusController.changeOrderStatus,
   showFlexHistory: orderNotificationsController.showFlexHistory,
   sendOrderFlexByOrderId: orderNotificationsController.sendOrderFlexByOrderId,
@@ -209,8 +211,8 @@ configureDashboardCategoriesServices({
     dashboardProductsActions.syncCategories();
   },
   Toast,
-  Swal: globalThis.Swal,
-  Sortable: globalThis.Sortable,
+  Swal,
+  Sortable,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
 
@@ -221,8 +223,8 @@ configureDashboardPromotionsServices({
   getProducts: getDashboardProducts,
   ensureProductsLoaded: dashboardProductsActions.loadProducts,
   Toast,
-  Swal: globalThis.Swal,
-  Sortable: globalThis.Sortable,
+  Swal,
+  Sortable,
 });
 
 configureDashboardFormFieldsServices({
@@ -230,9 +232,9 @@ configureDashboardFormFieldsServices({
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
   esc,
-  Sortable: globalThis.Sortable,
+  Sortable,
   getDashboardSettings: dashboardSettingsActions.getRawSettings,
   requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
@@ -243,7 +245,7 @@ configureDashboardUsersServices({
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   getCurrentUser: getDashboardCurrentUser,
   Toast,
-  Swal: globalThis.Swal,
+  Swal,
   esc,
 });
 
@@ -254,8 +256,8 @@ configureDashboardProductsServices({
   getCategories: getDashboardCategories,
   ensureCategoriesLoaded: () => dashboardCategoriesActions.loadCategories(),
   Toast,
-  Swal: globalThis.Swal,
-  Sortable: globalThis.Sortable,
+  Swal,
+  Sortable,
 });
 
 dashboardTabLoaders = {
