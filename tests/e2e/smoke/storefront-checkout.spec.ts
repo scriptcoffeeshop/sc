@@ -180,6 +180,22 @@ test.describe("smoke / storefront checkout", () => {
     });
 
     await page.addInitScript(() => {
+      const swalCalls: Array<Record<string, unknown>> = [];
+      const persistSwalCalls = () => {
+        localStorage.setItem(
+          "__storefrontSwalCalls",
+          JSON.stringify(swalCalls),
+        );
+      };
+      (window as any).__storefrontSwalCalls = swalCalls;
+      (window as any).Swal.fire = async (input: any) => {
+        const payload = typeof input === "string"
+          ? { title: input }
+          : input || {};
+        swalCalls.push(payload);
+        persistSwalCalls();
+        return { isConfirmed: true };
+      };
       localStorage.setItem(
         "coffee_user",
         JSON.stringify({
@@ -220,6 +236,26 @@ test.describe("smoke / storefront checkout", () => {
     expect(submitBody).toBeTruthy();
     expect(submitBody.paymentMethod).toBe("linepay");
     await expect(page).toHaveURL(/linepay_redirect=1/);
+
+    const promptSummary = await page.evaluate(() => {
+      const calls = JSON.parse(
+        localStorage.getItem("__storefrontSwalCalls") || "[]",
+      );
+      const match = calls.find((item: any) =>
+        String(item?.title || "").includes("LINE Pay")
+      ) || {};
+      return {
+        title: String(match.title || ""),
+        html: String(match.html || ""),
+      };
+    });
+
+    expect(promptSummary.title).toContain("LINE Pay");
+    expect(promptSummary.html).toContain(
+      "請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。",
+    );
+    expect(promptSummary.html).not.toContain("若您稍後再付款");
+    expect(promptSummary.html.match(/我的訂單/g)?.length ?? 0).toBe(1);
   });
 
   test("storefront submit order jkopay prompt shows deadline and next steps", async ({ page }) => {
@@ -301,7 +337,11 @@ test.describe("smoke / storefront checkout", () => {
     expect(promptSummary.title).toContain("街口支付");
     expect(promptSummary.html).toContain("付款期限");
     expect(promptSummary.html).toContain("待付款");
-    expect(promptSummary.html).toContain("我的訂單");
+    expect(promptSummary.html).toContain(
+      "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
+    );
+    expect(promptSummary.html).not.toContain("若您稍後再付款");
+    expect(promptSummary.html.match(/我的訂單/g)?.length ?? 0).toBe(1);
     expect(promptSummary.html).toContain("SO-JKOPAY-1");
     await expect(page).not.toHaveURL(/jkopay_redirect=1/);
   });

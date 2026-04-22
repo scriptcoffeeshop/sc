@@ -372,9 +372,6 @@ export function buildPaymentLaunchDialogOptions(params) {
   detailLines.push(
     `<p style="margin:12px 0 0 0; color:#475569;">${escapeHtml(display.guideDescription)}</p>`,
   );
-  detailLines.push(
-    `<p style="margin:8px 0 0 0; color:#475569;">若您稍後再付款，可到「我的訂單」重新打開付款連結並查看最新狀態。</p>`,
-  );
 
   return {
     icon: "info",
