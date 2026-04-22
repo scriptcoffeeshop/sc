@@ -129,6 +129,7 @@
 - storefront legacy 遷移續推：`MainPage.vue` 已移除對 `js/products.js` / `getProductsViewModel` 的直接 import，商品清單改只透過 `coffee:products-updated` 事件同步，降低 products legacy 模組與 Vue shell 的耦合。
 - storefront legacy bridge 已集中：`MainPage.vue`、`StorefrontDeliverySection`、`useStorefrontCart`、`useStorefrontOrderHistory` 不再靜態 import legacy `js/*.js`；products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue 統一收斂於 `storefrontLegacyBridge.js`，page shell 只依賴 storefront feature/composable。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
+- backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
 
 ### 2026-04-21
 
