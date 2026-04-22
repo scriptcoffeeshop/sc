@@ -17,6 +17,14 @@ function createLocalStorageMock(initialEntries = {}) {
   };
 }
 
+function createDeferred() {
+  let resolve;
+  const promise = new Promise((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}
+
 async function loadSessionModule() {
   vi.resetModules();
   return await import("./useDashboardSession.ts");
@@ -137,5 +145,51 @@ describe("useDashboardSession", () => {
     expect(module.useDashboardSession().activeTab.value).toBe("orders");
     expect(localStorage.removeItem).toHaveBeenCalledWith("coffee_admin");
     expect(localStorage.removeItem).toHaveBeenCalledWith("coffee_jwt");
+  });
+
+  it("keeps a user-selected tab when stored-session bootstrap is still loading", async () => {
+    const module = await loadSessionModule();
+    const initialLoad = createDeferred();
+    const localStorage = createLocalStorageMock({
+      coffee_admin: JSON.stringify({
+        userId: "saved-admin",
+        displayName: "Saved Admin",
+      }),
+      coffee_jwt: "saved-token",
+    });
+    vi.stubGlobal("localStorage", localStorage);
+    vi.stubGlobal("window", {
+      history: { replaceState: vi.fn() },
+      location: { search: "" },
+    });
+
+    const usersLoader = vi.fn(async () => undefined);
+    const ordersLoader = vi.fn(async () => undefined);
+
+    module.configureDashboardSessionServices({
+      tabs: ["orders", "users"],
+      defaultTab: "orders",
+      lineRedirect: "https://app.example/dashboard.html",
+      loginWithLineFn: vi.fn(),
+      loadInitialData: vi.fn(() => initialLoad.promise),
+      getDashboardTabLoaders: () => ({
+        orders: ordersLoader,
+        users: usersLoader,
+      }),
+      Swal: { fire: vi.fn(), showLoading: vi.fn(), close: vi.fn() },
+    });
+
+    const bootstrapPromise = module.dashboardSessionActions.checkLogin();
+    expect(module.useDashboardSession().isAuthenticated.value).toBe(true);
+
+    await module.dashboardSessionActions.setActiveTab("users");
+    expect(module.useDashboardSession().activeTab.value).toBe("users");
+
+    initialLoad.resolve();
+    await bootstrapPromise;
+
+    expect(module.useDashboardSession().activeTab.value).toBe("users");
+    expect(usersLoader).toHaveBeenCalledTimes(1);
+    expect(ordersLoader).not.toHaveBeenCalled();
   });
 });

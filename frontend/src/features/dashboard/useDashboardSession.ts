@@ -83,9 +83,14 @@ async function setActiveTab(tab: string, options: { force?: boolean } = {}) {
 }
 
 async function enterAdmin(tab?: string) {
+  const requestedTab = normalizeTab(
+    tab || activeTab.value || getServices().defaultTab || "orders",
+  );
+  const tabBeforeInitialLoad = activeTab.value;
   await ensureInitialDataLoaded();
-  await setActiveTab(tab || activeTab.value || getServices().defaultTab, {
-    force: true,
+  const userChangedTabWhileLoading = activeTab.value !== tabBeforeInitialLoad;
+  await setActiveTab(userChangedTabWhileLoading ? activeTab.value : requestedTab, {
+    force: !userChangedTabWhileLoading,
   });
 }
 
