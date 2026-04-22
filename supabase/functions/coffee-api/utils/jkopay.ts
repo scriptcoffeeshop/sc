@@ -8,7 +8,7 @@ import {
 } from "./config.ts";
 
 const DEFAULT_JKOPAY_UAT_BASE_URL = "https://uat-onlinepay.jkopay.app";
-const DEFAULT_JKOPAY_PROD_BASE_URL = "https://onlinepay.jkopay.app";
+const DEFAULT_JKOPAY_PROD_BASE_URL = "https://onlinepay.jkopay.com";
 
 interface JkoPayRuntimeConfig {
   apiKey: string;
