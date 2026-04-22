@@ -8,7 +8,7 @@ Vue 3 + Vite SFC is the final frontend target.
 
 Starting on 2026-04-19:
 
-- `dashboard.html`, `main.html`, `js/dashboard-app.js`, `js/main-app.js`, `js/cart.js`, and similar legacy entrypoints enter maintenance-only mode.
+- Root `dashboard.html` / `main.html` are local compatibility redirects; `js/dashboard-app.js`, `js/main-app.js`, `js/cart.js`, and similar legacy modules enter maintenance-only mode.
 - No new product feature should be implemented in legacy first.
 - Any unavoidable legacy change must be either:
   - a parity adapter for an already-built Vue feature
@@ -60,9 +60,9 @@ As of 2026-04-21:
   - notification modules: flex payload builder shell + body/bubble/layout helpers, flex controller, email controller
   - storefront subcomponents: header, product grid, delivery section, payment section, bottom bar, cart drawer, order history modal
 - Remaining legacy-heavy areas:
-  - maintenance-only legacy `dashboard.html` / root entrypoint
+  - local compatibility redirects for root `dashboard.html` / `main.html`
   - compatibility wrapper `js/dashboard-app.js`
-  - maintenance-only storefront `main.html` / `js/main-app.js` compatibility layer, now using DOM APIs instead of `innerHTML` for the remaining cart / products / dynamic field fallbacks
+  - maintenance-only storefront `js/main-app.js` compatibility layer, now used by the Vue bundle and DOM API fallbacks instead of a root legacy HTML page
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
 
@@ -166,9 +166,7 @@ For a feature to be considered migrated:
 #### 2026-06-22
 
 - Legacy dashboard enters removal-ready state.
-- `dashboard.html` and `js/dashboard-app.js` should either:
-  - redirect to the Vue entrypoint, or
-  - be deleted if no longer needed by deployment/runtime constraints
+- Root `dashboard.html` redirects to the Vue build output; `js/dashboard-app.js` can be deleted once no compatibility imports remain.
 
 ## Scope Priority
 
@@ -185,7 +183,7 @@ Dashboard is the first migration target because:
 After dashboard stabilizes, apply the same policy to:
 
 - `frontend/src/pages/MainPage.vue`
-- `main.html`
+- root `main.html` compatibility redirect
 - `js/main-app.js`
 - `js/cart.js`
 

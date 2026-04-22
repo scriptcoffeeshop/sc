@@ -9,7 +9,7 @@
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. legacy `main.html` / `js/*.js` 的 cache busting 由 `.frontend-version` 管理；根目錄 `dashboard.html` 已改成瘦身的本機 compat redirect，不再承載實際後台靜態 DOM。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+2. legacy `js/*.js` 的 cache busting 由 `.frontend-version` 管理；根目錄 `main.html` / `dashboard.html` 已改成瘦身的本機 compat redirect，不再承載實際前後台靜態 DOM。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
 3. 目前專案流程：修改程式碼後預設不跑本地驗證以節省 token，先 commit/push 並等待 CI；只有 CI 報錯、使用者明確要求，或需要釐清高風險問題時才跑本地 `guardrails` / tests。
 4. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
 5. 專案溝通、註解、commit message 以繁體中文為主。
@@ -26,7 +26,7 @@
 
 - 專案：Script Coffee（前台訂購 + 後台管理）
 - 主要分支：`main`
-- 前端：`Vite + Vue 3`；實際 deploy 入口為 `frontend/main.html` / `frontend/dashboard.html`，根目錄 `dashboard.html` 僅保留本機 compat redirect
+- 前端：`Vite + Vue 3`；實際 deploy 入口為 `frontend/main.html` / `frontend/dashboard.html`，根目錄 `main.html` / `dashboard.html` 僅保留本機 compat redirect
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端 legacy 版號來源：`.frontend-version`
 - 目前前端版號：`130`
@@ -55,7 +55,7 @@
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.js`，`js/dashboard-app.js` 現在只剩薄相容殼
   - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
-- 前台 `MainPage.vue` 已存在，但 legacy `main.html` / `js/main-app.js` 仍是相容層的一部分；storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
+- 前台 `MainPage.vue` 已存在，根目錄 `main.html` 已瘦身為本機 compat redirect；`js/main-app.js` 仍保留作為 Vite bundle 內的相容層。storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
 - `MainPage.vue` 已是 storefront 組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
 - storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
 - `storefrontLegacyBridge.js` 已移除 icons、delivery、payment 的通用 shell export，改分成 `deliveryDeps`、`paymentDeps`、`shellDeps`；目前主要仍承接 cart、order history、main-app 初始化與 auth/config/state glue，下一步再處理 `cart.js`、`orders.js`、`main-app.js` 的高風險切面。
@@ -137,7 +137,7 @@
 - backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
 - frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useStorefrontOrderHistory` 轉為 `.ts`。
 - 新增 `scripts/check_new_composables_ts.py`，`guardrails` 會阻擋新增 `frontend/src/features/**/use*.js`（既有 allowlist 除外）。
-- 根目錄 `dashboard.html` 已瘦身為本機 compat redirect，不再保留 1400+ 行 legacy 後台靜態結構。
+- 根目錄 `main.html` / `dashboard.html` 已瘦身為本機 compat redirect，不再保留大量 legacy 前後台靜態結構。
 - `npm run ci-local` 已納入 `npm run test:unit`，讓 frontend composable unit test 成為日常守門，而不是只在 `health` 才執行。
 
 ### 2026-04-21
