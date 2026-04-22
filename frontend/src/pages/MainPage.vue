@@ -191,7 +191,6 @@ import StorefrontHeader from "../features/storefront/StorefrontHeader.vue";
 import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderHistoryModal.vue";
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
-import { createStorefrontLegacyBridge } from "../features/storefront/storefrontLegacyBridge.js";
 import { getStorefrontUiSnapshot } from "../features/storefront/storefrontUiSnapshot.ts";
 import { useStorefrontCart } from "../features/storefront/useStorefrontCart.ts";
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
@@ -200,15 +199,31 @@ import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontO
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
+import { authFetch } from "../../../js/auth.js";
+import { API_URL } from "../../../js/config.js";
 import { getDefaultIconUrl } from "../../../js/icons.js";
+import {
+  clearSelectedStore,
+  openStoreMap,
+  selectDelivery,
+} from "../features/storefront/storefrontDeliveryActions.ts";
+import {
+  initMainApp,
+  logoutCurrentUser,
+  selectBankAccount,
+  selectPayment,
+  showProfileModal,
+  startMainLogin,
+} from "../features/storefront/storefrontMainApp.ts";
+import {
+  formatDateTimeText,
+  getCustomerPaymentDisplay,
+  submitOrder,
+} from "../features/storefront/storefrontOrderActions.ts";
+import { state } from "../../../js/state.js";
+import { Toast } from "../../../js/utils.js";
 
 const originalBodyClass = document.body.className;
-const storefrontBridge = createStorefrontLegacyBridge({
-  document,
-  window,
-  clipboard: navigator.clipboard,
-  Swal,
-});
 const {
   isOrderHistoryOpen,
   orderHistoryError,
@@ -217,7 +232,15 @@ const {
   openOrderHistory,
   closeOrderHistory,
   copyTrackingNumber,
-} = useStorefrontOrderHistory(storefrontBridge.orderHistoryDeps);
+} = useStorefrontOrderHistory({
+  authFetch,
+  apiUrl: API_URL,
+  getCurrentUser: () => state.currentUser,
+  Swal,
+  Toast,
+  formatDateTimeText,
+  getCustomerPaymentDisplay,
+});
 const selectedCheckIconUrl = getDefaultIconUrl("selected");
 const {
   cartItems,
@@ -242,7 +265,9 @@ const {
   removeCartIndex,
   toggleCartDrawer,
   submitOrderFromCart,
-} = useStorefrontCart(storefrontBridge.cartDeps);
+} = useStorefrontCart({
+  orderApi: { submitOrder },
+});
 const {
   productsCategories,
   refreshProductsState,
@@ -255,7 +280,9 @@ const {
   handleOpenStoreMap,
   handleClearSelectedStore,
 } = useStorefrontDelivery({
-  ...storefrontBridge.deliveryDeps,
+  clearSelectedStore,
+  selectDelivery,
+  openStoreMap,
   getStorefrontUiSnapshot,
 });
 const {
@@ -267,7 +294,11 @@ const {
   handleSelectBankAccount,
   handleCopyTransferAccount,
 } = useStorefrontPayment({
-  ...storefrontBridge.paymentDeps,
+  clipboard: navigator.clipboard,
+  setTimeout: window.setTimeout.bind(window),
+  Swal,
+  selectPayment,
+  selectBankAccount,
   getStorefrontUiSnapshot,
 });
 const {
@@ -284,7 +315,10 @@ const {
   handleStorefrontLogout: logoutFromShell,
   handleShowProfile: showProfileFromShell,
 } = useStorefrontShell({
-  ...storefrontBridge.shellDeps,
+  document,
+  startMainLogin,
+  logoutCurrentUser,
+  showProfileModal,
   showMyOrders: openOrderHistory,
   closeOrderHistory,
 });
@@ -323,7 +357,7 @@ onMounted(() => {
 
   syncCartSnapshot();
 
-  void storefrontBridge.initMainApp().then(() => {
+  void initMainApp().then(() => {
     syncStorefrontUiState();
   });
 });

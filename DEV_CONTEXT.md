@@ -59,10 +59,10 @@
 - `MainPage.vue` 已是 storefront 組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
 - storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
 - `useStorefrontCart.js`、`useStorefrontShell.js` 已轉為 `useStorefrontCart.ts`、`useStorefrontShell.ts`；目前 storefront 仍留在 JS 的 composable 已再縮減。
-- `storefrontLegacyBridge.js` 已移除 icons、products snapshot、delivery snapshot、payment snapshot 的通用 shell export，改分成 `deliveryDeps`、`paymentDeps`、`shellDeps`；目前主要仍承接 cart、order history、main-app 初始化與 auth/config/state glue，下一步再處理 `cart.js`、`orders.js`、`main-app.js` 的高風險切面。
-- storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` / `renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
-- storefront「我的訂單」列表已改成 DOM API 安全渲染，`js/orders.js` 不再以 `innerHTML` 拼接後端訂單資料。
-- storefront legacy `js/*.js` 的 `innerHTML` renderer 已清到 0；商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 DOM API / `replaceChildren()`。
+- `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 只保留相容 re-export。
+- storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` 已是相容 no-op，`renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
+- storefront「我的訂單」列表已改成 DOM API 安全渲染，`storefrontOrderActions.ts` 不再以 `innerHTML` 拼接後端訂單資料。
+- storefront legacy `js/*.js` 前台檔案已改為相容 re-export；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 
 ### 後端演進
@@ -135,8 +135,8 @@
 - 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
 - LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
 - storefront legacy 遷移續推：`useStorefrontProducts.ts` 已吸收商品分組 / spec normalize，`useStorefrontDelivery.ts` 已吸收 delivery config fallback/migration；`MainPage.vue` 現在透過 `storefrontUiSnapshot.ts` 同步 products/delivery/payment/dynamic fields state，不再依賴 `coffee:products-updated` 事件或 bridge 的 main-app snapshot export。
-- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值，legacy `renderDynamicFields()` 在 Vue-managed 容器會直接退出，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
-- storefront legacy bridge 已集中且縮小：products/delivery/payment/dynamic fields 的快照 glue 不再經 bridge；cart/orders/main-app/auth/config/state glue 仍暫由 `storefrontLegacyBridge.js` 與 `storefrontUiSnapshot.ts` 承接。
+- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值，legacy `renderDynamicFields()` 已改為相容 no-op，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
+- storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，legacy `js/` 只保留相容 re-export。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
@@ -162,7 +162,7 @@
 - `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
 - `js/dashboard/modules/order-notifications-controller.js` 已縮成 29 行協調層，Flex payload、Flex 歷史與 Email 發送拆到獨立模組，站名來源也改走 dashboard settings state，不再直接讀 `#s-site-title` DOM。
 - E2E 新增通知 smoke，驗證後台訂單卡的 `LINE通知` / `發送信件` 仍會打到正確 API。
-- storefront legacy `innerHTML` renderer 已清到 0；`js/products.js`、`js/cart.js`、`js/form-renderer.js`、`js/delivery.js`、`js/main-app.js`、`js/icons.js` 改走 DOM API，dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
+- storefront legacy `innerHTML` renderer 已清到 0；前台 `js/products.js` 已移除，`js/cart.js`、`js/delivery.js`、`js/form-renderer.js`、`js/orders.js`、`js/main-app.js` 只保留相容 re-export，實作位於 storefront feature TS 檔；dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
 - storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
 - `MainPage.vue` 已從 1209 行拆到 472 行，Storefront Wave 2 的 header / product grid / delivery / payment / bottom bar / cart drawer / order history section 都已拆成獨立 Vue 元件。
 - `js/dashboard/modules/order-flex-message.js` 已從 491 行拆到 40 行協調層，主要內容分到 `order-flex-body.js`、`order-flex-bubble.js`、`order-flex-layout.js`。
@@ -191,7 +191,7 @@
 - dashboard page 已改成由 Vue `onMounted()` 直接載入 public branding；`dashboard-globals.js`、`initDashboardApp()` fallback 與舊的 `window.*` dashboard helper 已移除。
 - `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
 - storefront `delivery-options-list` / `bank-accounts-list` 已改由 `MainPage.vue` 直接渲染，`renderDeliveryOptions()` / `renderBankAccounts()` 在 Vue-managed 容器上會直接退出，不再走 imperative `innerHTML` renderer。
-- storefront `js/orders.js` 的「我的訂單」列表已改成 DOM API 建構，移除 legacy `innerHTML` 訂單列表 renderer，並補上 API XSS payload smoke。
+- storefront `storefrontOrderActions.ts` 的「我的訂單」列表已改成 DOM API 建構，移除 legacy `innerHTML` 訂單列表 renderer，並補上 API XSS payload smoke。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
 - 新增 `scripts/check_migration_names.py`，未來 migration 檔名統一為 `YYYYMMDDHHmm_slug.sql`；歷史 migration 不回改。

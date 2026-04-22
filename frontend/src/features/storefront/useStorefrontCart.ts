@@ -1,4 +1,12 @@
 import { computed, ref } from "vue";
+import {
+  addToCart,
+  getCartSnapshot,
+  removeCartItem,
+  toggleCart,
+  updateCartItemQty,
+  updateCartItemQtyByKeys,
+} from "./storefrontCartStore.ts";
 
 interface StorefrontCartItem {
   productId?: number | string;
@@ -74,12 +82,12 @@ function itemKey(productId: unknown, specKey: unknown = "") {
 }
 
 const defaultCartApi: StorefrontCartApi = {
-  addToCart: () => {},
-  getCartSnapshot: () => [],
-  removeCartItem: () => {},
-  toggleCart: () => {},
-  updateCartItemQty: () => {},
-  updateCartItemQtyByKeys: () => {},
+  addToCart,
+  getCartSnapshot,
+  removeCartItem,
+  toggleCart,
+  updateCartItemQty,
+  updateCartItemQtyByKeys,
 };
 
 const defaultOrderApi: StorefrontOrderApi = {

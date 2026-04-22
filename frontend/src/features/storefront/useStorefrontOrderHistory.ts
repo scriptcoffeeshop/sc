@@ -249,7 +249,8 @@ export function useStorefrontOrderHistory(
     globalThis.navigator?.clipboard?.writeText?.(text));
   const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
     getCustomerPaymentDisplayFallback;
-  const formatDateTimeText = deps.formatDateTimeText || formatDateTimeTextFallback;
+  const formatDateTimeText = deps.formatDateTimeText ||
+    formatDateTimeTextFallback;
 
   const isOrderHistoryOpen = ref(false);
   const isLoadingOrderHistory = ref(false);
