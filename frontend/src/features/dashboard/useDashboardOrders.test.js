@@ -8,7 +8,7 @@ function jsonResponse(payload) {
 
 async function loadOrdersModule() {
   vi.resetModules();
-  return await import("./useDashboardOrders.js");
+  return await import("./useDashboardOrders.ts");
 }
 
 describe("useDashboardOrders", () => {

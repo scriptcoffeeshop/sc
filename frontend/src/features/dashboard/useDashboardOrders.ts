@@ -10,9 +10,11 @@ import {
   orderStatusOptions,
 } from "../../../../js/dashboard/modules/order-shared.js";
 
-const orders = ref([]);
-const selectedOrderIds = ref(new Set());
-const pendingStatusByOrderId = ref({});
+type DashboardOrderServices = Record<string, any>;
+
+const orders = ref<any[]>([]);
+const selectedOrderIds = ref<Set<string>>(new Set());
+const pendingStatusByOrderId = ref<Record<string, string>>({});
 
 const filters = reactive({
   status: "all",
@@ -30,13 +32,22 @@ const batchForm = reactive({
   paymentStatus: "__keep__",
 });
 
-let services = null;
+let services: DashboardOrderServices | null = null;
 
-function getServices() {
+function getServices(): DashboardOrderServices {
   if (!services) {
     throw new Error("Dashboard orders services 尚未初始化");
   }
   return services;
+}
+
+function getFormControlValue(id: string) {
+  const element = document.getElementById(id) as
+    | HTMLInputElement
+    | HTMLSelectElement
+    | HTMLTextAreaElement
+    | null;
+  return String(element?.value || "").trim();
 }
 
 function parseDateBound(dateStr, isEnd = false) {
@@ -92,7 +103,7 @@ function syncSelectedOrderIds() {
 }
 
 function syncPendingStatuses() {
-  const nextPendingStatusByOrderId = {};
+  const nextPendingStatusByOrderId: Record<string, string> = {};
   for (const order of orders.value) {
     const nextStatus = pendingStatusByOrderId.value[order.orderId];
     if (nextStatus && nextStatus !== order.status) {
@@ -406,16 +417,13 @@ async function batchUpdateOrders() {
       confirmButtonColor: "#268BD2",
       focusConfirm: false,
       preConfirm: () => {
-        const trackingNumEl = document.getElementById(
+        const trackingNumberValue = getFormControlValue(
           "swal-batch-tracking-number",
         );
-        const providerEl = document.getElementById(
+        const shippingProviderValue = getFormControlValue(
           "swal-batch-shipping-provider",
         );
-        const urlEl = document.getElementById("swal-batch-tracking-url");
-        const trackingNumberValue = String(trackingNumEl?.value || "").trim();
-        const shippingProviderValue = String(providerEl?.value || "").trim();
-        const trackingUrlValue = String(urlEl?.value || "").trim();
+        const trackingUrlValue = getFormControlValue("swal-batch-tracking-url");
         if (trackingUrlValue && !/^https?:\/\//i.test(trackingUrlValue)) {
           Swal.showValidationMessage(
             "物流追蹤網址需以 http:// 或 https:// 開頭",
@@ -435,7 +443,7 @@ async function batchUpdateOrders() {
     trackingUrl = value?.trackingUrl || "";
   }
 
-  const payload = {
+  const payload: Record<string, any> = {
     userId: getAuthUserId(),
     orderIds,
     status: batchForm.status,
@@ -498,7 +506,7 @@ async function batchDeleteOrders() {
     });
     const data = await response.json();
     if (!data.success) throw new Error(data.error || "批次刪除失敗");
-    selectedOrderIds.value = new Set();
+    selectedOrderIds.value = new Set<string>();
     Toast.fire({ icon: "success", title: data.message || "批次刪除完成" });
     await loadOrders();
   } catch (error) {

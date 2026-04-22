@@ -46,7 +46,7 @@ async function loadSettingsIconsModule() {
     }),
   };
 
-  vi.doMock("./useDashboardSettings.js", () => ({
+  vi.doMock("./useDashboardSettings.ts", () => ({
     useDashboardSettings: () => dashboardSettingsState,
   }));
   vi.doMock("../../../../js/icons.js", () => ({

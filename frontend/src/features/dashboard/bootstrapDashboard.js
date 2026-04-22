@@ -46,7 +46,7 @@ import {
 import {
   configureDashboardFormFieldsServices,
   dashboardFormFieldsActions,
-} from "./useDashboardFormFields.js";
+} from "./useDashboardFormFields.ts";
 import {
   configureDashboardBankAccountsServices,
   dashboardBankAccountsActions,
@@ -63,7 +63,7 @@ import {
 import {
   configureDashboardSettingsServices,
   dashboardSettingsActions,
-} from "./useDashboardSettings.js";
+} from "./useDashboardSettings.ts";
 import {
   configureDashboardSettingsIconServices,
 } from "./useDashboardSettingsIcons.js";
@@ -75,7 +75,7 @@ import {
   configureDashboardOrdersServices,
   dashboardOrdersActions,
   getDashboardOrders,
-} from "./useDashboardOrders.js";
+} from "./useDashboardOrders.ts";
 import {
   configureDashboardProductsServices,
   dashboardProductsActions,

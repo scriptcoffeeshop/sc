@@ -68,7 +68,7 @@
 
 <script setup>
 import UiTextarea from "../../components/ui/textarea/Textarea.vue";
-import { useDashboardSettings } from "./useDashboardSettings.js";
+import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const { storefrontSettings } = useDashboardSettings();
 </script>

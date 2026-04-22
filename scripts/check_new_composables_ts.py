@@ -12,11 +12,8 @@ FEATURES_DIR = ROOT / "frontend" / "src" / "features"
 LEGACY_JS_COMPOSABLE_ALLOWLIST = {
     "frontend/src/features/dashboard/useDashboardBankAccounts.js",
     "frontend/src/features/dashboard/useDashboardCategories.js",
-    "frontend/src/features/dashboard/useDashboardFormFields.js",
-    "frontend/src/features/dashboard/useDashboardOrders.js",
     "frontend/src/features/dashboard/useDashboardProducts.js",
     "frontend/src/features/dashboard/useDashboardPromotions.js",
-    "frontend/src/features/dashboard/useDashboardSettings.js",
     "frontend/src/features/dashboard/useDashboardSettingsIcons.js",
     "frontend/src/features/dashboard/useDashboardUsers.js",
 }

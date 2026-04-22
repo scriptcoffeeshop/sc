@@ -7,7 +7,7 @@ import {
   resolveAssetUrl,
 } from "../../../../js/icons.js";
 import { sectionIconSettingKey } from "../../../../js/dashboard/modules/settings-shared.js";
-import { useDashboardSettings } from "./useDashboardSettings.js";
+import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const {
   brandingSettings,

@@ -20,7 +20,7 @@
 <script setup>
 import DashboardOrderCard from "./DashboardOrderCard.vue";
 import DashboardOrdersToolbar from "./DashboardOrdersToolbar.vue";
-import { useDashboardOrders } from "./useDashboardOrders.js";
+import { useDashboardOrders } from "./useDashboardOrders.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const {

@@ -214,7 +214,7 @@ import {
 import {
   dashboardSettingsActions,
   useDashboardSettings,
-} from "./useDashboardSettings.js";
+} from "./useDashboardSettings.ts";
 
 const routingPaymentMethods = [
   { key: "cod", label: "貨到/取貨付款" },

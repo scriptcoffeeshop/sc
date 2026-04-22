@@ -199,7 +199,7 @@
 import {
   dashboardOrdersActions,
   useDashboardOrders,
-} from "./useDashboardOrders.js";
+} from "./useDashboardOrders.ts";
 
 defineProps({
   order: {

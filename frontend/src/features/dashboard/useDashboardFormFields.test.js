@@ -8,7 +8,7 @@ function jsonResponse(payload) {
 
 async function loadFormFieldsModule() {
   vi.resetModules();
-  return await import("./useDashboardFormFields.js");
+  return await import("./useDashboardFormFields.ts");
 }
 
 describe("useDashboardFormFields", () => {

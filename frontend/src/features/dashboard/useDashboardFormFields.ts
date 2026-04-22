@@ -1,6 +1,12 @@
 import { computed, nextTick, ref } from "vue";
 
-const FIELD_TYPE_LABELS = {
+type DashboardFormFieldsServices = Record<string, any>;
+type DashboardFormControl =
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
+
+const FIELD_TYPE_LABELS: Record<string, string> = {
   text: "文字",
   email: "Email",
   tel: "電話",
@@ -11,11 +17,11 @@ const FIELD_TYPE_LABELS = {
   section_title: "區塊標題",
 };
 
-const formFields = ref([]);
+const formFields = ref<any[]>([]);
 
-let services = null;
-let formFieldsListElement = null;
-let formFieldsSortable = null;
+let services: DashboardFormFieldsServices | null = null;
+let formFieldsListElement: HTMLElement | null = null;
+let formFieldsSortable: any = null;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -26,11 +32,23 @@ function escapeHtml(value) {
     .replaceAll("'", "&#39;");
 }
 
-function getServices() {
+function getServices(): DashboardFormFieldsServices {
   if (!services) {
     throw new Error("Dashboard form fields services 尚未初始化");
   }
   return services;
+}
+
+function getFormControl(id: string) {
+  return document.getElementById(id) as DashboardFormControl | null;
+}
+
+function getFormControlValue(id: string) {
+  return String(getFormControl(id)?.value || "").trim();
+}
+
+function isFormCheckboxChecked(id: string) {
+  return Boolean((document.getElementById(id) as HTMLInputElement | null)?.checked);
 }
 
 function getHiddenDeliveryMethodsText(deliveryVisibility) {
@@ -81,15 +99,16 @@ function destroyFormFieldsSortable() {
 async function syncFormFieldsSortable() {
   const { Sortable, Swal, Toast } = getServices();
   destroyFormFieldsSortable();
-  if (!formFieldsListElement?.querySelector?.("[data-field-id]")) return;
+  const listElement = formFieldsListElement;
+  if (!listElement?.querySelector?.("[data-field-id]")) return;
 
   if (Sortable?.create) {
-    formFieldsSortable = Sortable.create(formFieldsListElement, {
+    formFieldsSortable = Sortable.create(listElement, {
       handle: ".drag-handle",
       animation: 150,
       onEnd: async () => {
         const ids = Array.from(
-          formFieldsListElement.querySelectorAll("[data-field-id]"),
+          listElement.querySelectorAll<HTMLElement>("[data-field-id]"),
         )
           .map((element) => Number.parseInt(element.dataset.fieldId || "", 10))
           .filter((id) => !Number.isNaN(id));
@@ -107,12 +126,12 @@ async function syncFormFieldsSortable() {
   }
 
   if (typeof Sortable === "function") {
-    formFieldsSortable = new Sortable(formFieldsListElement, {
+    formFieldsSortable = new Sortable(listElement, {
       handle: ".drag-handle",
       animation: 150,
       onEnd: async () => {
         const ids = Array.from(
-          formFieldsListElement.querySelectorAll("[data-field-id]"),
+          listElement.querySelectorAll<HTMLElement>("[data-field-id]"),
         )
           .map((element) => Number.parseInt(element.dataset.fieldId || "", 10))
           .filter((id) => !Number.isNaN(id));
@@ -134,7 +153,7 @@ async function queueFormFieldsSync() {
   await syncFormFieldsSortable();
 }
 
-function registerFormFieldsListElement(element) {
+function registerFormFieldsListElement(element: HTMLElement | null) {
   formFieldsListElement = element || null;
   if (!formFieldsListElement) {
     destroyFormFieldsSortable();
@@ -149,7 +168,7 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
 
   const configStr = getServices().getDashboardSettings()?.delivery_options_config ||
     "";
-  let deliveryOptions = [];
+  let deliveryOptions: any[] = [];
   if (configStr) {
     try {
       deliveryOptions = JSON.parse(configStr);
@@ -165,7 +184,7 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
     return;
   }
 
-  let visibility = {};
+  let visibility: Record<string, boolean> = {};
   if (existingVisibility) {
     try {
       visibility = JSON.parse(existingVisibility);
@@ -194,12 +213,13 @@ function renderDeliveryVisibilityCheckboxes(existingVisibility) {
 }
 
 function collectDeliveryVisibility() {
-  const checkboxes = document.querySelectorAll(".dv-cb");
+  const checkboxes = document.querySelectorAll<HTMLInputElement>(".dv-cb");
   if (!checkboxes.length) return null;
 
-  const visibility = {};
+  const visibility: Record<string, boolean> = {};
   checkboxes.forEach((checkbox) => {
-    visibility[checkbox.dataset.deliveryId] = checkbox.checked;
+    const deliveryId = checkbox.dataset.deliveryId || "";
+    if (deliveryId) visibility[deliveryId] = checkbox.checked;
   });
   return JSON.stringify(visibility);
 }
@@ -285,22 +305,22 @@ async function showAddFieldModal() {
     confirmButtonColor: "#268BD2",
     didOpen: () => renderDeliveryVisibilityCheckboxes(null),
     preConfirm: () => {
-      const fieldKey = document.getElementById("swal-fk").value.trim();
-      const label = document.getElementById("swal-fl").value.trim();
+      const fieldKey = getFormControlValue("swal-fk");
+      const label = getFormControlValue("swal-fl");
       if (!fieldKey || !label) {
         Swal.showValidationMessage("識別碼和名稱為必填");
         return false;
       }
 
-      const fieldType = document.getElementById("swal-ft").value;
-      const placeholder = document.getElementById("swal-fp").value.trim();
-      const optionsRaw = document.getElementById("swal-fo").value.trim();
+      const fieldType = getFormControlValue("swal-ft");
+      const placeholder = getFormControlValue("swal-fp");
+      const optionsRaw = getFormControlValue("swal-fo");
       const options = optionsRaw
         ? JSON.stringify(
           optionsRaw.split(",").map((value) => value.trim()).filter(Boolean),
         )
         : "";
-      const required = document.getElementById("swal-fr").checked;
+      const required = isFormCheckboxChecked("swal-fr");
       const deliveryVisibility = collectDeliveryVisibility();
 
       return {
@@ -402,21 +422,21 @@ async function editFormField(id) {
     didOpen: () =>
       renderDeliveryVisibilityCheckboxes(field.delivery_visibility || null),
     preConfirm: () => {
-      const label = document.getElementById("swal-fl").value.trim();
+      const label = getFormControlValue("swal-fl");
       if (!label) {
         Swal.showValidationMessage("名稱為必填");
         return false;
       }
 
-      const fieldType = document.getElementById("swal-ft").value;
-      const placeholder = document.getElementById("swal-fp").value.trim();
-      const optionsRaw = document.getElementById("swal-fo").value.trim();
+      const fieldType = getFormControlValue("swal-ft");
+      const placeholder = getFormControlValue("swal-fp");
+      const optionsRaw = getFormControlValue("swal-fo");
       const options = optionsRaw
         ? JSON.stringify(
           optionsRaw.split(",").map((value) => value.trim()).filter(Boolean),
         )
         : "";
-      const required = document.getElementById("swal-fr").checked;
+      const required = isFormCheckboxChecked("swal-fr");
       const deliveryVisibility = collectDeliveryVisibility();
 
       return {

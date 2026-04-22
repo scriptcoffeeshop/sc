@@ -99,7 +99,7 @@ import {
 import {
   dashboardSettingsActions,
   useDashboardSettings,
-} from "./useDashboardSettings.js";
+} from "./useDashboardSettings.ts";
 
 const sectionRows = [
   { key: "products", label: "商品區塊", placeholder: "咖啡豆選購" },

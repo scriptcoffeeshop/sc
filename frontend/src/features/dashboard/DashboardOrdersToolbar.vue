@@ -190,7 +190,7 @@ import { ref, watchEffect } from "vue";
 import {
   dashboardOrdersActions,
   useDashboardOrders,
-} from "./useDashboardOrders.js";
+} from "./useDashboardOrders.ts";
 
 const {
   filters,

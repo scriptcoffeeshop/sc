@@ -1,11 +1,14 @@
 import { nextTick, ref } from "vue";
 
+type DashboardSettingsServices = Record<string, any>;
+type DashboardSettingsRecord = Record<string, any>;
+
 const PAYMENT_METHOD_ORDER = ["cod", "linepay", "jkopay", "transfer"];
 const SECTION_TITLE_ORDER = ["products", "delivery", "notes"];
 
-const rawSettings = ref({});
-const deliveryOptions = ref([]);
-const paymentOptions = ref({
+const rawSettings = ref<DashboardSettingsRecord>({});
+const deliveryOptions = ref<any[]>([]);
+const paymentOptions = ref<Record<string, any>>({
   cod: { icon: "", icon_url: "", name: "", description: "" },
   linepay: { icon: "", icon_url: "", name: "", description: "" },
   jkopay: { icon: "", icon_url: "", name: "", description: "" },
@@ -24,33 +27,33 @@ const storefrontSettings = ref({
   autoOrderEmailEnabled: true,
   isOpen: true,
 });
-const sectionTitleSettings = ref({
+const sectionTitleSettings = ref<Record<string, any>>({
   products: { title: "", color: "#268BD2", size: "text-lg", bold: true, iconUrl: "" },
   delivery: { title: "", color: "#268BD2", size: "text-lg", bold: true, iconUrl: "" },
   notes: { title: "", color: "#268BD2", size: "text-base", bold: true, iconUrl: "" },
 });
 
-let services = null;
-let deliveryRoutingTableElement = null;
-let deliverySortable = null;
+let services: DashboardSettingsServices | null = null;
+let deliveryRoutingTableElement: HTMLElement | null = null;
+let deliverySortable: any = null;
 let settingsLoadToken = 0;
 
-function getServices() {
+function getServices(): DashboardSettingsServices {
   if (!services) {
     throw new Error("Dashboard settings services 尚未初始化");
   }
   return services;
 }
 
-function buildPaymentOptionsView(rawPaymentOptions = {}) {
+function buildPaymentOptionsView(rawPaymentOptions: DashboardSettingsRecord = {}) {
   const { normalizePaymentOption } = getServices();
-  return PAYMENT_METHOD_ORDER.reduce((result, method) => {
+  return PAYMENT_METHOD_ORDER.reduce<Record<string, any>>((result, method) => {
     result[method] = normalizePaymentOption(method, rawPaymentOptions?.[method]);
     return result;
   }, {});
 }
 
-function buildDefaultSectionTitleSettings() {
+function buildDefaultSectionTitleSettings(): Record<string, any> {
   const { getDefaultIconUrl } = getServices();
   return {
     products: {
@@ -77,10 +80,10 @@ function buildDefaultSectionTitleSettings() {
   };
 }
 
-function migrateLegacyDeliveryConfig(settings) {
+function migrateLegacyDeliveryConfig(settings: DashboardSettingsRecord) {
   const { defaultDeliveryOptions } = getServices();
   const deliveryConfigStr = settings.delivery_options_config || "";
-  let deliveryConfig = [];
+  let deliveryConfig: any[] = [];
 
   if (deliveryConfigStr) {
     try {
@@ -93,7 +96,7 @@ function migrateLegacyDeliveryConfig(settings) {
   if (deliveryConfig.length) return deliveryConfig;
 
   const routingConfigStr = settings.payment_routing_config || "";
-  let routingConfig = {};
+  let routingConfig: Record<string, any> = {};
   if (routingConfigStr) {
     try {
       routingConfig = JSON.parse(routingConfigStr);
@@ -136,7 +139,7 @@ function migrateLegacyDeliveryConfig(settings) {
     };
   }
 
-  return Object.values(defaultDeliveryOptions).map((item) => ({
+  return Object.values(defaultDeliveryOptions as Record<string, any>).map((item) => ({
     ...item,
     payment: routingConfig[item.id] || {
       cod: true,
@@ -155,7 +158,7 @@ function destroyDeliverySortable() {
   deliverySortable = null;
 }
 
-function reorderDeliveryOptions(ids) {
+function reorderDeliveryOptions(ids: string[]) {
   const currentItems = Array.isArray(deliveryOptions.value)
     ? deliveryOptions.value
     : [];
@@ -174,15 +177,16 @@ function reorderDeliveryOptions(ids) {
 async function syncDeliverySortable() {
   const { Sortable } = getServices();
   destroyDeliverySortable();
-  if (!deliveryRoutingTableElement?.querySelector?.("[data-delivery-id]")) return;
+  const tableElement = deliveryRoutingTableElement;
+  if (!tableElement?.querySelector?.("[data-delivery-id]")) return;
 
-  const createOptions = {
+  const createOptions: Record<string, any> = {
     animation: 150,
     handle: ".cursor-move",
     ghostClass: "ui-bg-soft",
     onEnd: () => {
       const ids = Array.from(
-        deliveryRoutingTableElement.querySelectorAll("[data-delivery-id]"),
+        tableElement.querySelectorAll<HTMLElement>("[data-delivery-id]"),
       )
         .map((element) => String(element.dataset.deliveryId || "").trim())
         .filter(Boolean);
@@ -191,12 +195,12 @@ async function syncDeliverySortable() {
   };
 
   if (Sortable?.create) {
-    deliverySortable = Sortable.create(deliveryRoutingTableElement, createOptions);
+    deliverySortable = Sortable.create(tableElement, createOptions);
     return;
   }
 
   if (typeof Sortable === "function") {
-    deliverySortable = new Sortable(deliveryRoutingTableElement, createOptions);
+    deliverySortable = new Sortable(tableElement, createOptions);
   }
 }
 
@@ -205,7 +209,7 @@ async function queueDeliverySortableSync() {
   await syncDeliverySortable();
 }
 
-function registerDeliveryRoutingTableElement(element) {
+function registerDeliveryRoutingTableElement(element: HTMLElement | null) {
   deliveryRoutingTableElement = element || null;
   if (!deliveryRoutingTableElement) {
     destroyDeliverySortable();
@@ -214,7 +218,7 @@ function registerDeliveryRoutingTableElement(element) {
   queueDeliverySortableSync();
 }
 
-function replaceSettingsConfig(settings = {}) {
+function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
   rawSettings.value = settings;
   const {
     getDefaultIconUrl,
@@ -225,7 +229,7 @@ function replaceSettingsConfig(settings = {}) {
     linePaySandboxCacheKey,
   } = getServices();
   const paymentOptionsStr = settings.payment_options_config || "";
-  let parsedPaymentOptions = {};
+  let parsedPaymentOptions: DashboardSettingsRecord = {};
   if (paymentOptionsStr) {
     try {
       parsedPaymentOptions = JSON.parse(paymentOptionsStr);
@@ -249,7 +253,7 @@ function replaceSettingsConfig(settings = {}) {
     isOpen: String(settings.is_open) !== "false",
   };
   const defaultSectionTitleSettings = buildDefaultSectionTitleSettings();
-  sectionTitleSettings.value = SECTION_TITLE_ORDER.reduce((result, section) => {
+  sectionTitleSettings.value = SECTION_TITLE_ORDER.reduce<Record<string, any>>((result, section) => {
     const defaults = defaultSectionTitleSettings[section];
     result[section] = {
       title: String(settings[`${section}_section_title`] || ""),
@@ -287,7 +291,7 @@ function replaceSettingsConfig(settings = {}) {
   queueDeliverySortableSync();
 }
 
-function resetSectionTitle(section) {
+function resetSectionTitle(section: string) {
   const defaults = buildDefaultSectionTitleSettings();
   if (!defaults[section]) return;
   sectionTitleSettings.value = {
@@ -314,7 +318,7 @@ function addDeliveryOption() {
   queueDeliverySortableSync();
 }
 
-function removeDeliveryOption(id) {
+function removeDeliveryOption(id: string | number) {
   deliveryOptions.value = deliveryOptions.value.filter((item) =>
     String(item.id || "") !== String(id || "")
   );
@@ -331,7 +335,7 @@ function buildSettingsConfig() {
     .map((item) => normalizeDeliveryOption(item))
     .filter((item) => item.name.trim());
 
-  const normalizedPaymentOptions = PAYMENT_METHOD_ORDER.reduce((result, method) => {
+  const normalizedPaymentOptions = PAYMENT_METHOD_ORDER.reduce<Record<string, any>>((result, method) => {
     result[method] = normalizePaymentOption(method, paymentOptions.value?.[method]);
     return result;
   }, {});

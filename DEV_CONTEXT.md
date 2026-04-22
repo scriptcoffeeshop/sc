@@ -48,9 +48,9 @@
 
 - 最終目標已確定為 `Vue 3 + Vite SFC`。
 - 後台是優先遷移區：
-  - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.js`、`useDashboardProducts.js`、`useDashboardCategories.js`、`useDashboardPromotions.js`、`useDashboardFormFields.js`、`useDashboardUsers.js`)
+  - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.ts`、`useDashboardProducts.js`、`useDashboardCategories.js`、`useDashboardPromotions.js`、`useDashboardFormFields.ts`、`useDashboardUsers.js`)
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.ts`)
-  - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.js`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
+  - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.ts`、`useDashboardBankAccounts.js`、`useDashboardSettingsIcons.js`）
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts 六個卡片元件
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.js`，`js/dashboard-app.js` 現在只剩薄相容殼
@@ -137,9 +137,10 @@
 - storefront legacy 遷移續推：`useStorefrontProducts.ts` 已吸收商品分組 / spec normalize，`useStorefrontDelivery.ts` 已吸收 delivery config fallback/migration；`MainPage.vue` 現在直接從 `getStorefrontUiSnapshot()` 同步 products/delivery state，不再依賴 `coffee:products-updated` 事件。
 - storefront legacy bridge 已集中：`MainPage.vue`、`StorefrontDeliverySection`、`useStorefrontCart`、`useStorefrontOrderHistory` 不再靜態 import legacy `js/*.js`；products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue 統一收斂於 `storefrontLegacyBridge.js`，page shell 只依賴 storefront feature/composable。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
+- dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
 - backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
-- frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useStorefrontOrderHistory` 轉為 `.ts`。
+- frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useDashboardOrders`、`useDashboardFormFields`、`useDashboardSettings`、`useStorefrontOrderHistory` 轉為 `.ts`。
 - 新增 `scripts/check_new_composables_ts.py`，`guardrails` 會阻擋新增 `frontend/src/features/**/use*.js`（既有 allowlist 除外）。
 - `scripts/check_new_composables_ts.py` 的 storefront allowlist 已移除 `useStorefrontCart.js`、`useStorefrontShell.js`，避免後續又把這兩支退回 JS。
 - 根目錄 `main.html` / `dashboard.html` 已瘦身為本機 compat redirect，不再保留大量 legacy 前後台靜態結構。
@@ -178,10 +179,10 @@
 - dashboard `users` / `blacklist` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-users-updated` / `coffee:dashboard-blacklist-updated`。
 - dashboard `session / tab` 已改成 reactive state，不再依賴 `dashboard-session-controller.js` 來切換登入頁、管理頁與 tab 顯示。
 - dashboard `settings` 的 delivery routing / payment options / sandbox 已改成 reactive state，不再由 `settings-controller.js` 直接組 HTML table。
-- dashboard `settings` 的 branding / section titles / announcement / store status 已改成 reactive state，並由 `useDashboardSettings.js` 統一提交 payload。
+- dashboard `settings` 的 branding / section titles / announcement / store status 已改成 reactive state，並由 `useDashboardSettings.ts` 統一提交 payload。
 - dashboard `settings` 的 bank accounts 已改成 reactive state，不再依賴 `bank-accounts.js` 的 imperative `innerHTML` renderer。
 - dashboard `settings` / `icon library` 的 icon upload、預覽與 quick apply 已改成 Vue 直連 reactive state，不再依賴 `icon-assets-controller.js` 或 document-level change/click delegation。
-- dashboard `settings` 的 load/save 已併入 `useDashboardSettings.js`，`settings-controller.js` 已移除。
+- dashboard `settings` 的 load/save 已併入 `useDashboardSettings.ts`，`settings-controller.js` 已移除。
 - dashboard `settings` / `formfields` 的按鈕互動已改成元件內 `@click`，不再經過 `createSettingsActionHandlers()`。
 - dashboard `categories` / `users` / `blacklist` 的按鈕與搜尋已改成元件內 `@click` / `@keyup.enter`，不再經過 `createUsersActionHandlers()`、`search-users` 的 document keyup delegation，`useDashboardUsers.js` 也已改用 reactive `activeTab` 判斷黑名單頁。
 - dashboard `products` / `promotions` 的按鈕與 modal 儲存已改成元件內 `@click` / `@submit.prevent`，不再經過 `createProductsActionHandlers()` 或 `product-form` / `promotion-form` 的 imperative submit listener。

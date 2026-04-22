@@ -28,7 +28,7 @@ import DashboardSectionTitlesSettingsCard from "./DashboardSectionTitlesSettings
 import DashboardStorefrontStatusSettingsCard from "./DashboardStorefrontStatusSettingsCard.vue";
 import {
   dashboardSettingsActions,
-} from "./useDashboardSettings.js";
+} from "./useDashboardSettings.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { activeTab } = useDashboardSession();

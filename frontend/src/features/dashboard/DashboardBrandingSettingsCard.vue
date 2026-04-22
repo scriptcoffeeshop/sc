@@ -88,7 +88,7 @@ import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,
 } from "./useDashboardSettingsIcons.js";
-import { useDashboardSettings } from "./useDashboardSettings.js";
+import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const { brandingSettings } = useDashboardSettings();
 const { getSiteIconPreviewUrl } = useDashboardSettingsIcons();

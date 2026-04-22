@@ -91,7 +91,7 @@ import { onMounted, ref, watch } from "vue";
 import {
   dashboardFormFieldsActions,
   useDashboardFormFields,
-} from "./useDashboardFormFields.js";
+} from "./useDashboardFormFields.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { formFieldsView } = useDashboardFormFields();

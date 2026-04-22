@@ -90,7 +90,7 @@ function createSettingsServices(overrides = {}) {
 
 async function loadSettingsModule() {
   vi.resetModules();
-  return await import("./useDashboardSettings.js");
+  return await import("./useDashboardSettings.ts");
 }
 
 describe("useDashboardSettings", () => {
