@@ -68,12 +68,13 @@ export async function linePayConfirm(data: Record<string, unknown>) {
     }
 
     if (String(confirmRes.returnCode || "").trim() === "1180") {
-      const updates = buildExpiredOnlinePaymentUpdates(activeOrder, new Date(), {
-        force: true,
-      }) || {
-        payment_status: "expired",
-        payment_last_checked_at: new Date().toISOString(),
-      };
+      const updates =
+        buildExpiredOnlinePaymentUpdates(activeOrder, new Date(), {
+          force: true,
+        }) || {
+          payment_status: "expired",
+          payment_last_checked_at: new Date().toISOString(),
+        };
       await supabase.from("coffee_orders").update(updates).eq("id", orderId);
       return {
         success: false,

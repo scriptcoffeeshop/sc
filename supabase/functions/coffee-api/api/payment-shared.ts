@@ -159,7 +159,11 @@ export function buildExpiredOnlinePaymentUpdates(
   if (!["linepay", "jkopay"].includes(paymentMethod)) return null;
 
   const paymentStatus = normalizePaymentStatus(order.payment_status);
-  if (["paid", "failed", "cancelled", "expired", "refunded"].includes(paymentStatus)) {
+  if (
+    ["paid", "failed", "cancelled", "expired", "refunded"].includes(
+      paymentStatus,
+    )
+  ) {
     return null;
   }
 
@@ -172,7 +176,9 @@ export function buildExpiredOnlinePaymentUpdates(
     payment_status: "expired",
     payment_last_checked_at: now.toISOString(),
   };
-  if (resolvedPaymentExpiresAt && !String(order.payment_expires_at || "").trim()) {
+  if (
+    resolvedPaymentExpiresAt && !String(order.payment_expires_at || "").trim()
+  ) {
     updates.payment_expires_at = resolvedPaymentExpiresAt;
   }
   if (String(order.status || "pending").trim() === "pending") {
