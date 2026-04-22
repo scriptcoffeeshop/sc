@@ -85,6 +85,7 @@
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
+- 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
 - `tests/e2e/smoke/` 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆分，並共用 `tests/e2e/support/smoke-fixtures.ts`；目前覆蓋：
   - 前台暖色樣式
