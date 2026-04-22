@@ -1,5 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
-import { useStorefrontDelivery } from "./useStorefrontDelivery.ts";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
+let useStorefrontDelivery;
+
+beforeAll(async () => {
+  vi.stubGlobal("Swal", {
+    mixin: vi.fn(() => ({ fire: vi.fn() })),
+  });
+
+  ({ useStorefrontDelivery } = await import("./useStorefrontDelivery.ts"));
+});
 
 describe("useStorefrontDelivery", () => {
   it("syncs enabled delivery options and delegates delivery actions", () => {
