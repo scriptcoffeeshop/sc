@@ -12,6 +12,7 @@ import {
   persistOrderCreatedLineNotifyResult,
   resolveApiCallbackBase,
   resolveJkoPaymentExpiresAtIso,
+  resolveLinePayPaymentExpiresAtIso,
   resolveMainPageUrlWithQuery,
   sendAdminOrderCreatedFlexNotification,
   sendCustomerOrderCreatedFlexNotification,
@@ -305,6 +306,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         ).trim();
         await supabase.from("coffee_orders").update({
           payment_id: transactionId,
+          payment_expires_at: resolveLinePayPaymentExpiresAtIso(),
           payment_last_checked_at: new Date().toISOString(),
           payment_redirect_url: paymentUrl,
         }).eq("id", orderId);

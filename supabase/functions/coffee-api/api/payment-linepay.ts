@@ -1,4 +1,6 @@
 import {
+  buildExpiredOnlinePaymentUpdates,
+  expireOnlinePaymentOrderIfNeeded,
   hasValidLinePayCallbackSignature,
   notifyLinePayPaymentStatusChanged,
 } from "./payment-shared.ts";
@@ -15,19 +17,26 @@ export async function linePayConfirm(data: Record<string, unknown>) {
   }
 
   const { data: order, error: oErr } = await supabase.from("coffee_orders")
-    .select("id, total, payment_id, payment_status, payment_method")
+    .select(
+      "id, total, payment_id, payment_status, payment_method, payment_expires_at, status, cancel_reason, created_at",
+    )
     .eq("id", orderId)
     .maybeSingle();
 
   if (oErr || !order) return { success: false, error: "找不到訂單資料" };
-  if (order.payment_status === "paid") {
+  const expiredOrderResult = await expireOnlinePaymentOrderIfNeeded(order);
+  const activeOrder = expiredOrderResult.order || order;
+  if (String(activeOrder.payment_status || "") === "expired") {
+    return { success: false, error: "付款期限已過，訂單已自動取消", orderId };
+  }
+  if (activeOrder.payment_status === "paid") {
     return { success: true, message: "此訂單已完成付款", orderId };
   }
-  if (order.payment_method !== "linepay") {
+  if (activeOrder.payment_method !== "linepay") {
     return { success: false, error: "此訂單非使用 LINE Pay 付款" };
   }
 
-  if (String(order.payment_id) !== transactionId) {
+  if (String(activeOrder.payment_id) !== transactionId) {
     return { success: false, error: "交易 ID 不匹配，存疑請求" };
   }
 
@@ -37,7 +46,7 @@ export async function linePayConfirm(data: Record<string, unknown>) {
       "POST",
       `/v3/payments/${transactionId}/confirm`,
       {
-        amount: order.total,
+        amount: activeOrder.total,
         currency: "TWD",
       },
     );
@@ -56,6 +65,21 @@ export async function linePayConfirm(data: Record<string, unknown>) {
       }
       await notifyLinePayPaymentStatusChanged(orderId, "paid");
       return { success: true, message: "付款已確認", orderId };
+    }
+
+    if (String(confirmRes.returnCode || "").trim() === "1180") {
+      const updates = buildExpiredOnlinePaymentUpdates(activeOrder, new Date(), {
+        force: true,
+      }) || {
+        payment_status: "expired",
+        payment_last_checked_at: new Date().toISOString(),
+      };
+      await supabase.from("coffee_orders").update(updates).eq("id", orderId);
+      return {
+        success: false,
+        error: "付款期限已過，訂單已自動取消",
+        orderId,
+      };
     }
 
     await supabase.from("coffee_orders").update({
@@ -102,7 +126,7 @@ export async function linePayCancel(
 
   const { data: order, error: orderErr } = await supabase.from("coffee_orders")
     .select(
-      "payment_status, line_user_id, payment_method",
+      "payment_status, line_user_id, payment_method, payment_expires_at, status, cancel_reason, id, created_at",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -110,11 +134,16 @@ export async function linePayCancel(
   if (order && String(order.payment_method || "") !== "linepay") {
     return { success: false, error: "此訂單非使用 LINE Pay 付款" };
   }
+  const expiredOrderResult = await expireOnlinePaymentOrderIfNeeded(order);
+  const activeOrder = expiredOrderResult.order || order;
+  if (activeOrder && String(activeOrder.payment_status || "") === "expired") {
+    return { success: true, message: "付款已逾期，訂單已自動取消", orderId };
+  }
 
   let statusChanged = false;
-  if (order && order.payment_status === "pending") {
+  if (activeOrder && activeOrder.payment_status === "pending") {
     const canCancelByAuth = Boolean(
-      auth && (order.line_user_id === auth.userId || auth.isAdmin),
+      auth && (activeOrder.line_user_id === auth.userId || auth.isAdmin),
     );
     if (!signatureVerified && !canCancelByAuth) {
       return { success: false, error: "無權限取消此訂單" };

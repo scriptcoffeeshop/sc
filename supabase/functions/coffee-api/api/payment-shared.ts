@@ -8,6 +8,8 @@ import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
 
 export type LinePayStatus = "paid" | "cancelled";
+export const EXPIRED_PAYMENT_CANCEL_REASON = "付款期限已過，自動取消";
+const LINEPAY_PAYMENT_TIMEOUT_MS = 20 * 60 * 1000;
 
 interface EmailBranding {
   siteTitle: string;
@@ -131,6 +133,99 @@ export function isPaymentExpired(
   const deadline = parseIsoDate(paymentExpiresAt);
   if (!deadline) return false;
   return deadline.getTime() <= now.getTime();
+}
+
+function resolveOrderPaymentExpiresAt(order: Record<string, unknown>): string {
+  const explicit = String(order.payment_expires_at || "").trim();
+  if (explicit) return explicit;
+
+  if (String(order.payment_method || "").trim() !== "linepay") {
+    return "";
+  }
+
+  const createdAt = parseIsoDate(order.created_at);
+  if (!createdAt) return "";
+  return new Date(createdAt.getTime() + LINEPAY_PAYMENT_TIMEOUT_MS)
+    .toISOString();
+}
+
+export function buildExpiredOnlinePaymentUpdates(
+  order: Record<string, unknown> | null | undefined,
+  now: Date = new Date(),
+  options: { force?: boolean } = {},
+): Record<string, unknown> | null {
+  if (!order) return null;
+  const paymentMethod = String(order.payment_method || "").trim();
+  if (!["linepay", "jkopay"].includes(paymentMethod)) return null;
+
+  const paymentStatus = normalizePaymentStatus(order.payment_status);
+  if (["paid", "failed", "cancelled", "expired", "refunded"].includes(paymentStatus)) {
+    return null;
+  }
+
+  const resolvedPaymentExpiresAt = resolveOrderPaymentExpiresAt(order);
+  if (!options.force && !isPaymentExpired(resolvedPaymentExpiresAt, now)) {
+    return null;
+  }
+
+  const updates: Record<string, unknown> = {
+    payment_status: "expired",
+    payment_last_checked_at: now.toISOString(),
+  };
+  if (resolvedPaymentExpiresAt && !String(order.payment_expires_at || "").trim()) {
+    updates.payment_expires_at = resolvedPaymentExpiresAt;
+  }
+  if (String(order.status || "pending").trim() === "pending") {
+    updates.status = "cancelled";
+    updates.cancel_reason = EXPIRED_PAYMENT_CANCEL_REASON;
+  }
+  return updates;
+}
+
+export async function expireOnlinePaymentOrderIfNeeded(
+  order: Record<string, unknown> | null | undefined,
+  now: Date = new Date(),
+  options: { force?: boolean } = {},
+): Promise<{ changed: boolean; order: Record<string, unknown> | null }> {
+  if (!order) return { changed: false, order: null };
+  const updates = buildExpiredOnlinePaymentUpdates(order, now, options);
+  if (!updates) {
+    return { changed: false, order: { ...order } };
+  }
+
+  const orderId = String(order.id || "").trim();
+  if (orderId) {
+    const { error } = await supabase.from("coffee_orders").update(updates).eq(
+      "id",
+      orderId,
+    );
+    if (error) {
+      console.error(
+        `[payment-expiry] failed to persist expired order state: ${orderId} (${error.message})`,
+      );
+    }
+  }
+
+  return {
+    changed: true,
+    order: {
+      ...order,
+      ...updates,
+    },
+  };
+}
+
+export async function expireOnlinePaymentOrdersIfNeeded(
+  orders: Record<string, unknown>[],
+  now: Date = new Date(),
+): Promise<Record<string, unknown>[]> {
+  const rows = Array.isArray(orders) ? orders : [];
+  const normalizedRows: Record<string, unknown>[] = [];
+  for (const order of rows) {
+    const result = await expireOnlinePaymentOrderIfNeeded(order, now);
+    normalizedRows.push(result.order || { ...order });
+  }
+  return normalizedRows;
 }
 
 function resolveEmailLogoUrl(rawLogoUrl: unknown): string {

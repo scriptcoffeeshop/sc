@@ -531,6 +531,109 @@ Deno.test({
 });
 
 Deno.test({
+  name:
+    "Routing Integration - getMyOrders auto-cancels overdue LINE Pay and JKO orders",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_orders: [
+        {
+          id: "LINEPAY-EXPIRED-1",
+          line_user_id: "user-expired-payments",
+          created_at: "2026-04-18T11:30:00.000Z",
+          items: "LINE Pay 測試豆 x1",
+          items_json: [],
+          total: 220,
+          delivery_method: "delivery",
+          status: "pending",
+          city: "新竹市",
+          address: "測試路 8 號",
+          payment_method: "linepay",
+          payment_status: "pending",
+          cancel_reason: "",
+          payment_redirect_url: "https://pay.example/linepay/LINEPAY-EXPIRED-1",
+        },
+        {
+          id: "JKO-EXPIRED-1",
+          line_user_id: "user-expired-payments",
+          created_at: "2026-04-18T11:00:00.000Z",
+          items: "街口測試豆 x1",
+          items_json: [],
+          total: 220,
+          delivery_method: "delivery",
+          status: "pending",
+          city: "新竹市",
+          address: "測試路 9 號",
+          payment_method: "jkopay",
+          payment_status: "pending",
+          cancel_reason: "",
+          payment_expires_at: "2026-04-18T11:50:00.000Z",
+          payment_redirect_url: "https://pay.example/jko/JKO-EXPIRED-1",
+        },
+      ],
+    }, async (tables) => {
+      const realDate = Date;
+      const fakeNow = new realDate("2026-04-18T12:05:00.000Z");
+      globalThis.Date = class extends realDate {
+        constructor(value?: string | number | Date) {
+          super(value ?? fakeNow.toISOString());
+        }
+        static now() {
+          return fakeNow.getTime();
+        }
+        static parse(value: string) {
+          return realDate.parse(value);
+        }
+        static UTC(...args: Parameters<typeof realDate.UTC>) {
+          return realDate.UTC(...args);
+        }
+      } as DateConstructor;
+
+      try {
+        const token = await signJwt({ userId: "user-expired-payments" });
+        const response = await app.fetch(
+          buildActionRequest("getMyOrders", {
+            method: "GET",
+            headers: { authorization: `Bearer ${token}` },
+          }),
+        );
+        const payload = await response.json();
+
+        assertEquals(response.status, 200);
+        assertEquals(payload.success, true);
+
+        const orderById = Object.fromEntries(
+          payload.orders.map((order: Record<string, unknown>) => [
+            String(order.orderId || ""),
+            order,
+          ]),
+        );
+        assertEquals(orderById["LINEPAY-EXPIRED-1"].status, "cancelled");
+        assertEquals(orderById["LINEPAY-EXPIRED-1"].paymentStatus, "expired");
+        assertEquals(
+          orderById["LINEPAY-EXPIRED-1"].cancelReason,
+          "付款期限已過，自動取消",
+        );
+        assertEquals(orderById["JKO-EXPIRED-1"].status, "cancelled");
+        assertEquals(orderById["JKO-EXPIRED-1"].paymentStatus, "expired");
+        assertEquals(
+          orderById["JKO-EXPIRED-1"].cancelReason,
+          "付款期限已過，自動取消",
+        );
+
+        assertEquals(tables.coffee_orders[0].status, "cancelled");
+        assertEquals(tables.coffee_orders[0].payment_status, "expired");
+        assertEquals(tables.coffee_orders[1].status, "cancelled");
+        assertEquals(tables.coffee_orders[1].payment_status, "expired");
+      } finally {
+        globalThis.Date = realDate;
+      }
+    });
+  },
+});
+
+Deno.test({
   name: "Routing Integration - submitOrder quote errors do not create orders",
   sanitizeOps: false,
   sanitizeResources: false,

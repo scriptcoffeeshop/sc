@@ -1,4 +1,5 @@
 import {
+  EXPIRED_PAYMENT_CANCEL_REASON,
   getJkoCallbackTransaction,
   getJkoOrderIdFromPayload,
   getJkoStatusCodeFromPayload,
@@ -80,7 +81,7 @@ async function syncJkoPayOrderStatus(params: {
     "coffee_orders",
   )
     .select(
-      "id, payment_method, payment_status, payment_id, payment_expires_at, payment_confirmed_at, payment_last_checked_at, payment_provider_status_code",
+      "id, payment_method, payment_status, payment_id, payment_expires_at, payment_confirmed_at, payment_last_checked_at, payment_provider_status_code, status, cancel_reason",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -142,7 +143,9 @@ async function syncJkoPayOrderStatus(params: {
   const paymentExpired = isPaymentExpired(order.payment_expires_at, now);
 
   let nextPaymentStatus = currentPaymentStatus;
-  if (mappedPaymentStatus === "paid") {
+  if (terminalStatus.has(currentPaymentStatus)) {
+    nextPaymentStatus = currentPaymentStatus;
+  } else if (mappedPaymentStatus === "paid") {
     nextPaymentStatus = currentPaymentStatus === "refunded"
       ? "refunded"
       : "paid";
@@ -151,8 +154,6 @@ async function syncJkoPayOrderStatus(params: {
         currentPaymentStatus === "refunded")
       ? currentPaymentStatus
       : "failed";
-  } else if (terminalStatus.has(currentPaymentStatus)) {
-    nextPaymentStatus = currentPaymentStatus;
   } else if (paymentExpired) {
     nextPaymentStatus = "expired";
   } else if (
@@ -189,6 +190,13 @@ async function syncJkoPayOrderStatus(params: {
       .trim()
   ) {
     updates.payment_confirmed_at = nowIso;
+  }
+  if (
+    nextPaymentStatus === "expired" &&
+    String(order.status || "pending").trim() === "pending"
+  ) {
+    updates.status = "cancelled";
+    updates.cancel_reason = EXPIRED_PAYMENT_CANCEL_REASON;
   }
 
   if (Object.keys(updates).length > 0) {

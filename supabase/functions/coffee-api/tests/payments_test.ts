@@ -3,6 +3,7 @@ import {
   isPaymentExpired,
   jkoPayResult,
   linePayCancel,
+  linePayConfirm,
   normalizePaymentStatus,
   parseIsoDate,
   parseReceiptInfo,
@@ -363,6 +364,62 @@ t("金流回呼簽章邊界 - linePayCancel 允許合法簽章取消待付款訂
       typeof tables.coffee_orders[0].payment_last_checked_at,
       "string",
     );
+  });
+});
+
+t("LINE Pay - 逾期訂單確認付款時會自動取消並標記付款逾期", async () => {
+  const orderId = "C20260420-LINE-EXPIRED";
+
+  await withMockedSupabaseTables({
+    coffee_orders: [{
+      id: orderId,
+      payment_status: "pending",
+      payment_method: "linepay",
+      payment_id: "LINE-TX-EXPIRED",
+      payment_expires_at: "2026-04-18T12:00:00.000Z",
+      line_user_id: "user-linepay-expired",
+      status: "pending",
+      cancel_reason: "",
+      total: 220,
+      items: "測試豆 x 1",
+      note: "",
+      receipt_info: "",
+    }],
+  }, async (tables) => {
+    const realDate = Date;
+    const fakeNow = new realDate("2026-04-18T12:05:00.000Z");
+    globalThis.Date = class extends realDate {
+      constructor(value?: string | number | Date) {
+        super(value ?? fakeNow.toISOString());
+      }
+      static now() {
+        return fakeNow.getTime();
+      }
+      static parse(value: string) {
+        return realDate.parse(value);
+      }
+      static UTC(...args: Parameters<typeof realDate.UTC>) {
+        return realDate.UTC(...args);
+      }
+    } as DateConstructor;
+
+    try {
+      const result = await linePayConfirm({
+        transactionId: "LINE-TX-EXPIRED",
+        orderId,
+      });
+
+      assertEquals(result.success, false);
+      assertEquals(result.error, "付款期限已過，訂單已自動取消");
+      assertEquals(tables.coffee_orders[0].payment_status, "expired");
+      assertEquals(tables.coffee_orders[0].status, "cancelled");
+      assertEquals(
+        tables.coffee_orders[0].cancel_reason,
+        "付款期限已過，自動取消",
+      );
+    } finally {
+      globalThis.Date = realDate;
+    }
   });
 });
 

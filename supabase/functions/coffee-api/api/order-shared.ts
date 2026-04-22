@@ -404,3 +404,7 @@ export function resolveJkoPaymentExpiresAtIso(qrTimeoutRaw: unknown): string {
   }
   return new Date(Date.now() + 20 * 60 * 1000).toISOString();
 }
+
+export function resolveLinePayPaymentExpiresAtIso(now: Date = new Date()): string {
+  return new Date(now.getTime() + 20 * 60 * 1000).toISOString();
+}
