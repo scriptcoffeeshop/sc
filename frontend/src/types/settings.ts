@@ -54,8 +54,12 @@ export interface DashboardSettingsRecord {
 }
 
 export interface StorefrontUiSnapshot {
+  products?: Array<Record<string, unknown>>;
+  categories?: Array<Record<string, unknown>>;
+  settings?: DashboardSettingsRecord;
   deliveryConfig?: DeliveryOption[];
   paymentOptionConfig?: Record<string, PaymentOption>;
+  selectedDelivery?: string;
   selectedPayment?: string;
   bankAccounts?: BankAccount[];
   selectedBankAccountId?: string | number;

@@ -30,9 +30,11 @@ import {
   getPaymentIconFallbackKey,
   setIconElement,
 } from "./icons.js";
+import { normalizeStorefrontDeliveryConfig } from "./storefront-models.js";
 
 let currentDeliveryConfig = [];
 let currentPaymentOptionConfig = {};
+let currentSettings = {};
 function initMainDomBindings() {
   const deliveryCity = document.getElementById("delivery-city");
   if (deliveryCity) {
@@ -110,10 +112,18 @@ export async function initMainApp() {
 
 export function getStorefrontUiSnapshot() {
   return {
+    products: Array.isArray(state.products)
+      ? state.products.map((item) => ({ ...item }))
+      : [],
+    categories: Array.isArray(state.categories)
+      ? state.categories.map((item) => ({ ...item }))
+      : [],
+    settings: { ...currentSettings },
     deliveryConfig: Array.isArray(currentDeliveryConfig)
       ? currentDeliveryConfig.map((item) => ({ ...item }))
       : [],
     paymentOptionConfig: { ...currentPaymentOptionConfig },
+    selectedDelivery: String(state.selectedDelivery || ""),
     selectedPayment: String(state.selectedPayment || "cod"),
     bankAccounts: Array.isArray(state.bankAccounts)
       ? state.bankAccounts.map((account) => ({ ...account }))
@@ -518,6 +528,7 @@ async function loadInitData() {
 }
 
 function applySettings(s) {
+  currentSettings = { ...s };
   if (String(s.announcement_enabled) === "true" && s.announcement) {
     const announcementEl = document.getElementById("announcement-text");
     if (announcementEl) {
@@ -573,98 +584,7 @@ function applySettings(s) {
     });
   }
 
-  // 取出最新的物流選項
-  const deliveryConfigStr = window.appSettings.delivery_options_config || "";
-  let deliveryConfig = [];
-  if (deliveryConfigStr) {
-    try {
-      deliveryConfig = JSON.parse(deliveryConfigStr);
-    } catch (e) {}
-  }
-
-  // 如果尚未轉移格式，進行臨時轉換以保證前台正常運作
-  if (!deliveryConfig.length) {
-    const rStr = s.payment_routing_config || "";
-    let rConfig = {};
-    if (rStr) {
-      try {
-        rConfig = JSON.parse(rStr);
-      } catch (e) {}
-    } else {
-      const le = String(s.linepay_enabled) === "true";
-      const te = String(s.transfer_enabled) === "true";
-      rConfig = {
-        in_store: { cod: true, linepay: le, jkopay: le, transfer: te },
-        delivery: { cod: true, linepay: le, jkopay: le, transfer: te },
-        home_delivery: { cod: true, linepay: le, jkopay: le, transfer: te },
-        seven_eleven: {
-          cod: true,
-          linepay: false,
-          jkopay: false,
-          transfer: false,
-        },
-        family_mart: {
-          cod: true,
-          linepay: false,
-          jkopay: false,
-          transfer: false,
-        },
-      };
-    }
-    deliveryConfig = [
-      {
-        id: "in_store",
-        icon: "",
-        icon_url: "",
-        name: "來店自取",
-        description: "到店自取",
-        enabled: true,
-        payment: rConfig["in_store"] ||
-          { cod: true, linepay: false, jkopay: false, transfer: false },
-      },
-      {
-        id: "delivery",
-        icon: "",
-        icon_url: "",
-        name: "配送到府 (限新竹)",
-        description: "專人外送",
-        enabled: true,
-        payment: rConfig["delivery"] ||
-          { cod: true, linepay: false, jkopay: false, transfer: false },
-      },
-      {
-        id: "home_delivery",
-        icon: "",
-        icon_url: "",
-        name: "全台宅配",
-        description: "宅配到府",
-        enabled: true,
-        payment: rConfig["home_delivery"] ||
-          { cod: true, linepay: false, jkopay: false, transfer: false },
-      },
-      {
-        id: "seven_eleven",
-        icon: "",
-        icon_url: "",
-        name: "7-11 取件",
-        description: "超商門市",
-        enabled: true,
-        payment: rConfig["seven_eleven"] ||
-          { cod: true, linepay: false, jkopay: false, transfer: false },
-      },
-      {
-        id: "family_mart",
-        icon: "",
-        icon_url: "",
-        name: "全家取件",
-        description: "超商門市",
-        enabled: true,
-        payment: rConfig["family_mart"] ||
-          { cod: true, linepay: false, jkopay: false, transfer: false },
-      },
-    ];
-  }
-  currentDeliveryConfig = deliveryConfig.map((item) => ({
+  currentDeliveryConfig = normalizeStorefrontDeliveryConfig(s).map((item) => ({
     ...item,
     icon_url: item.icon_url || item.iconUrl || "",
     iconFallbackKey: getDeliveryIconFallbackKey(item.id),

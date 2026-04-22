@@ -51,6 +51,9 @@ export function createStorefrontLegacyBridge(options = {}) {
       },
       orderApi: { submitOrder },
     },
+    productsDeps: {
+      getStorefrontUiSnapshot,
+    },
     orderHistoryDeps: {
       authFetch,
       apiUrl: API_URL,

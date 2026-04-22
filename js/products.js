@@ -3,77 +3,22 @@
 // ============================================
 
 import { state } from "./state.js";
+import { buildStorefrontProductsViewModel } from "./storefront-models.js";
 
 function isVueManagedProductsContainer(container) {
   return container?.dataset?.vueManaged === "true";
 }
 
-function parseEnabledSpecs(product) {
-  let specs = [];
-  try {
-    specs = JSON.parse(product.specs || "[]");
-  } catch {
-    specs = [];
-  }
-
-  const enabled = specs.filter((spec) => spec && spec.enabled !== false);
-  if (enabled.length) {
-    return enabled.map((spec) => ({
-      key: String(spec.key || ""),
-      label: String(spec.label || ""),
-      price: Number(spec.price) || 0,
-    }));
-  }
-
-  return [
-    {
-      key: "default",
-      label: "預設",
-      price: Number(product.price) || 0,
-    },
-  ];
-}
-
 function buildProductsViewModel() {
-  const { products, categories } = state;
-  const grouped = {};
-
-  products.forEach((product) => {
-    const category = String(product.category || "未分類");
-    if (!grouped[category]) grouped[category] = [];
-    grouped[category].push({
-      id: Number(product.id),
-      name: String(product.name || ""),
-      description: String(product.description || ""),
-      roastLevel: String(product.roastLevel || ""),
-      specs: parseEnabledSpecs(product),
-    });
-  });
-
-  const categoryOrder = categories.map((category) => String(category.name || ""));
-  const orderedCategories = Object.keys(grouped).sort((a, b) => {
-    const indexA = categoryOrder.indexOf(a);
-    const indexB = categoryOrder.indexOf(b);
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-  });
+  const categories = buildStorefrontProductsViewModel(
+    state.products,
+    state.categories,
+  );
 
   return {
-    empty: products.length === 0,
-    categories: orderedCategories.map((categoryName) => ({
-      name: categoryName,
-      products: grouped[categoryName],
-    })),
+    empty: categories.length === 0,
+    categories,
   };
-}
-
-function emitProductsUpdated(viewModel) {
-  window.dispatchEvent(
-    new CustomEvent("coffee:products-updated", {
-      detail: viewModel,
-    }),
-  );
 }
 
 /** 供 Vue 元件讀取商品資料模型 */
@@ -87,7 +32,6 @@ export function renderProducts() {
   const viewModel = buildProductsViewModel();
 
   if (isVueManagedProductsContainer(container)) {
-    emitProductsUpdated(viewModel);
     return;
   }
 

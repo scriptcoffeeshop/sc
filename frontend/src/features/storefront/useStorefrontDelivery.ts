@@ -3,15 +3,35 @@ import {
   getDeliveryIconFallbackKey,
   getIconUrlFromConfig,
 } from "../../../../js/icons.js";
+import {
+  normalizeStorefrontDeliveryConfig,
+  normalizeStorefrontDeliveryOption,
+} from "../../../../js/storefront-models.js";
+import type { DashboardSettingsRecord } from "../../types/settings";
+
+interface StorefrontDeliveryPaymentConfig {
+  cod?: boolean;
+  linepay?: boolean;
+  jkopay?: boolean;
+  transfer?: boolean;
+}
 
 interface StorefrontDeliveryOption {
   id?: string;
   icon?: string;
+  icon_url?: string;
+  iconUrl?: string;
+  label?: string;
+  name?: string;
+  description?: string;
   enabled?: boolean;
+  payment?: StorefrontDeliveryPaymentConfig;
+  [key: string]: unknown;
 }
 
 interface StorefrontDeliverySnapshot {
   deliveryConfig?: StorefrontDeliveryOption[];
+  settings?: DashboardSettingsRecord;
 }
 
 interface StorefrontDeliveryDeps {
@@ -30,19 +50,24 @@ function resolveDeliveryIcon(option: StorefrontDeliveryOption = {}) {
   };
 }
 
+export { normalizeStorefrontDeliveryConfig };
+
 export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
   const deliveryOptions = ref<StorefrontDeliveryOption[]>([]);
 
-  function syncDeliveryState() {
-    const snapshot = deps.getStorefrontUiSnapshot?.() || {};
-    deliveryOptions.value = Array.isArray(snapshot.deliveryConfig)
-      ? snapshot.deliveryConfig.filter((item) => item && item.enabled !== false)
-      : [];
+  function syncDeliveryState(snapshot: StorefrontDeliverySnapshot = {}) {
+    const deliveryConfig = Array.isArray(snapshot.deliveryConfig) &&
+        snapshot.deliveryConfig.length
+      ? snapshot.deliveryConfig
+      : normalizeStorefrontDeliveryConfig(snapshot.settings || {});
+    deliveryOptions.value = deliveryConfig.map((option) =>
+      normalizeStorefrontDeliveryOption(option)
+    ).filter((item) => item && item.enabled !== false);
   }
 
   function handleSelectDelivery(method: string) {
     deps.selectDelivery?.(method);
-    syncDeliveryState();
+    syncDeliveryState(deps.getStorefrontUiSnapshot?.() || {});
   }
 
   function handleOpenStoreMap() {
@@ -53,10 +78,15 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     deps.clearSelectedStore?.();
   }
 
+  function refreshDeliveryState() {
+    syncDeliveryState(deps.getStorefrontUiSnapshot?.() || {});
+  }
+
   return {
     deliveryOptions,
     resolveDeliveryIcon,
     syncDeliveryState,
+    refreshDeliveryState,
     handleSelectDelivery,
     handleOpenStoreMap,
     handleClearSelectedStore,

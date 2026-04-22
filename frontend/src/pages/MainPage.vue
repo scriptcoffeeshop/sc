@@ -238,12 +238,12 @@ const {
 } = useStorefrontCart(storefrontBridge.cartDeps);
 const {
   productsCategories,
-  handleProductsUpdated,
-} = useStorefrontProducts();
+  refreshProductsState,
+} = useStorefrontProducts(storefrontBridge.productsDeps);
 const {
   deliveryOptions,
   resolveDeliveryIcon,
-  syncDeliveryState,
+  refreshDeliveryState,
   handleSelectDelivery,
   handleOpenStoreMap,
   handleClearSelectedStore,
@@ -271,7 +271,8 @@ const {
 });
 
 function syncStorefrontUiState() {
-  syncDeliveryState();
+  refreshProductsState();
+  refreshDeliveryState();
   syncPaymentState();
 }
 
@@ -283,7 +284,6 @@ function handleCartUpdated(event) {
 onMounted(() => {
   document.body.className = "p-4 md:p-6";
 
-  window.addEventListener("coffee:products-updated", handleProductsUpdated);
   window.addEventListener("coffee:cart-updated", handleCartUpdated);
 
   const productsContainer = document.getElementById("products-container");
@@ -299,7 +299,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("coffee:products-updated", handleProductsUpdated);
   window.removeEventListener("coffee:cart-updated", handleCartUpdated);
   document.body.className = originalBodyClass;
 });

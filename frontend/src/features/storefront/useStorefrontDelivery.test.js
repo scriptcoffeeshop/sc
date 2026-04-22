@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+let normalizeStorefrontDeliveryConfig;
 let useStorefrontDelivery;
 
 beforeAll(async () => {
@@ -7,10 +8,50 @@ beforeAll(async () => {
     mixin: vi.fn(() => ({ fire: vi.fn() })),
   });
 
-  ({ useStorefrontDelivery } = await import("./useStorefrontDelivery.ts"));
+  ({
+    normalizeStorefrontDeliveryConfig,
+    useStorefrontDelivery,
+  } = await import("./useStorefrontDelivery.ts"));
 });
 
 describe("useStorefrontDelivery", () => {
+  it("normalizes delivery config from legacy settings fallback", () => {
+    expect(normalizeStorefrontDeliveryConfig({
+      linepay_enabled: "true",
+      transfer_enabled: "false",
+    }).map((option) => ({
+      id: option.id,
+      enabled: option.enabled,
+      payment: option.payment,
+    }))).toEqual([
+      {
+        id: "in_store",
+        enabled: true,
+        payment: { cod: true, linepay: true, jkopay: true, transfer: false },
+      },
+      {
+        id: "delivery",
+        enabled: true,
+        payment: { cod: true, linepay: true, jkopay: true, transfer: false },
+      },
+      {
+        id: "home_delivery",
+        enabled: true,
+        payment: { cod: true, linepay: true, jkopay: true, transfer: false },
+      },
+      {
+        id: "seven_eleven",
+        enabled: true,
+        payment: { cod: true, linepay: false, jkopay: false, transfer: false },
+      },
+      {
+        id: "family_mart",
+        enabled: true,
+        payment: { cod: true, linepay: false, jkopay: false, transfer: false },
+      },
+    ]);
+  });
+
   it("syncs enabled delivery options and delegates delivery actions", () => {
     const deps = {
       getStorefrontUiSnapshot: vi.fn(() => ({
