@@ -1,6 +1,7 @@
 <template>
   <TabsRoot
     :model-value="activeTab"
+    activation-mode="manual"
     class="mb-6"
     @update:model-value="setActiveTab"
   >
