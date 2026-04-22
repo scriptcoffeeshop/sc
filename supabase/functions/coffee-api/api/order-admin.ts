@@ -21,8 +21,13 @@ import { supabase } from "../utils/supabase.ts";
 function resolveOrderEmailMode(
   modeInput: unknown,
   orderStatus: string,
-): "confirmation" | "processing" | "shipping" | "completed" | "cancelled" |
-  "failed" {
+):
+  | "confirmation"
+  | "processing"
+  | "shipping"
+  | "completed"
+  | "cancelled"
+  | "failed" {
   const mode = String(modeInput || "").trim();
   if (
     mode === "confirmation" || mode === "processing" || mode === "shipping" ||
