@@ -41,6 +41,8 @@ function createSettingsServices(overrides = {}) {
     },
   };
 
+  const normalizeIconPath = (url = "") => String(url || "").replace(/^\/+/, "");
+
   return {
     API_URL: "https://api.example",
     authFetch: vi.fn(),
@@ -53,13 +55,13 @@ function createSettingsServices(overrides = {}) {
     defaultDeliveryOptions,
     normalizePaymentOption: (method, option = {}) => ({
       icon: String(option?.icon || ""),
-      icon_url: String(option?.icon_url || ""),
+      icon_url: normalizeIconPath(option?.icon_url || ""),
       name: String(option?.name || method),
       description: String(option?.description || ""),
     }),
     getDefaultIconUrl: (key) => `icons/${key}.png`,
     sectionIconSettingKey: (section) => `${section}_section_icon_url`,
-    normalizeIconPath: (url = "") => String(url || "").replace(/^\/+/, ""),
+    normalizeIconPath,
     normalizeDeliveryOption: (option = {}) => ({
       id: String(option.id || ""),
       label: String(option.label || option.name || ""),

@@ -219,7 +219,11 @@ Deno.test({
         { key: "linepay_sandbox", value: "true" },
         {
           key: "delivery_options_config",
-          value: JSON.stringify([{ id: "delivery", label: "舊宅配", enabled: true }]),
+          value: JSON.stringify([{
+            id: "delivery",
+            label: "舊宅配",
+            enabled: true,
+          }]),
         },
         {
           key: "payment_options_config",
@@ -262,7 +266,8 @@ Deno.test({
       assertEquals(updatePayload.success, true);
 
       assertEquals(
-        tables.coffee_settings.filter((row) => row.key === "linepay_sandbox").length,
+        tables.coffee_settings.filter((row) => row.key === "linepay_sandbox")
+          .length,
         1,
       );
       assertEquals(
@@ -278,7 +283,9 @@ Deno.test({
         1,
       );
 
-      const publicGetResponse = await app.fetch(buildActionRequest("getSettings"));
+      const publicGetResponse = await app.fetch(
+        buildActionRequest("getSettings"),
+      );
       const publicGetPayload = await publicGetResponse.json();
 
       assertEquals(publicGetResponse.status, 200);
