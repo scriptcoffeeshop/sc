@@ -128,6 +128,7 @@
 - LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
 - storefront legacy 遷移續推：`MainPage.vue` 已移除對 `js/products.js` / `getProductsViewModel` 的直接 import，商品清單改只透過 `coffee:products-updated` 事件同步，降低 products legacy 模組與 Vue shell 的耦合。
 - storefront legacy bridge 已集中：`MainPage.vue`、`StorefrontDeliverySection`、`useStorefrontCart`、`useStorefrontOrderHistory` 不再靜態 import legacy `js/*.js`；products/delivery/cart/orders/main-app/icons/utils/auth/config/state glue 統一收斂於 `storefrontLegacyBridge.js`，page shell 只依賴 storefront feature/composable。
+- dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 
 ### 2026-04-21
 
