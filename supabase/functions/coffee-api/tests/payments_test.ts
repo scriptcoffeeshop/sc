@@ -392,13 +392,13 @@ t("LINE Pay - 逾期訂單確認付款時會自動取消並標記付款逾期", 
       constructor(value?: string | number | Date) {
         super(value ?? fakeNow.toISOString());
       }
-      static now() {
+      static override now() {
         return fakeNow.getTime();
       }
-      static parse(value: string) {
+      static override parse(value: string) {
         return realDate.parse(value);
       }
-      static UTC(...args: Parameters<typeof realDate.UTC>) {
+      static override UTC(...args: Parameters<typeof realDate.UTC>) {
         return realDate.UTC(...args);
       }
     } as DateConstructor;
