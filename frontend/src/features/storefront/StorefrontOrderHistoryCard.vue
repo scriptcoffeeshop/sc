@@ -84,27 +84,15 @@
       </div>
 
       <div
-        v-if="order.paymentDisplay.canResumePayment || order.paymentDisplay.actionType === 'refresh-jkopay'"
+        v-if="order.paymentDisplay.canResumePayment"
         class="mt-3 flex flex-wrap gap-2"
       >
         <a
-          v-if="order.paymentDisplay.canResumePayment"
           :href="order.paymentDisplay.paymentUrl"
           class="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100"
         >
           {{ order.paymentDisplay.resumePaymentLabel }}
         </a>
-        <button
-          v-if="order.paymentDisplay.actionType === 'refresh-jkopay'"
-          type="button"
-          :data-payment-action="order.paymentDisplay.actionType"
-          :data-order-id="order.orderId"
-          class="rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="refreshing"
-          @click="$emit('refresh-jkopay-status', order.orderId)"
-        >
-          {{ refreshing ? "更新中..." : order.paymentDisplay.actionLabel }}
-        </button>
       </div>
     </div>
 
@@ -134,11 +122,7 @@ defineProps({
     type: Object,
     required: true,
   },
-  refreshing: {
-    type: Boolean,
-    default: false,
-  },
 });
 
-defineEmits(["copy-tracking-number", "refresh-jkopay-status"]);
+defineEmits(["copy-tracking-number"]);
 </script>

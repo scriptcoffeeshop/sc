@@ -306,13 +306,12 @@ test.describe("smoke / storefront checkout", () => {
     await expect(page).not.toHaveURL(/jkopay_redirect=1/);
   });
 
-  test("storefront my orders shows online pay resume links and jkopay refresh action", async ({ page }) => {
+  test("storefront my orders shows online pay resume links without jkopay refresh action", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page, {
       payment: { cod: true, linepay: false, jkopay: true, transfer: false },
     });
 
-    let inquiryCalls = 0;
     let ordersState = [
       {
         orderId: "LINEPAY-PENDING-1",
@@ -388,25 +387,6 @@ test.describe("smoke / storefront checkout", () => {
       });
     });
 
-    await page.route(`${API_URL}?action=jkoPayInquiry**`, async (route) => {
-      inquiryCalls += 1;
-      ordersState = ordersState.map((order) =>
-        order.orderId === "JKO-PENDING-1"
-          ? {
-            ...order,
-            paymentStatus: "paid",
-            paymentConfirmedAt: "2026-04-21T01:20:00.000Z",
-            paymentLastCheckedAt: "2026-04-21T01:20:00.000Z",
-          }
-          : order
-      );
-      await fulfillJson(route, {
-        success: true,
-        orderId: "JKO-PENDING-1",
-        paymentStatus: "paid",
-      });
-    });
-
     await page.addInitScript(() => {
       localStorage.setItem(
         "coffee_user",
@@ -438,18 +418,9 @@ test.describe("smoke / storefront checkout", () => {
     await expect(
       page.getByRole("link", { name: "前往街口付款" }),
     ).toHaveAttribute("href", "https://pay.example/jko/JKO-PENDING-1");
-
-    const refreshButton = page.getByRole("button", {
-      name: "重新整理街口付款狀態",
-    });
-    await expect(refreshButton).toBeVisible();
-    await refreshButton.click();
-
-    await expect.poll(() => inquiryCalls).toBe(1);
-    await expect(ordersList).toContainText("付款狀態：已付款");
-    await expect(page.getByRole("link", { name: "前往街口付款" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", { name: "重新整理街口付款狀態" }),
+    ).toHaveCount(0);
     await expect(page.getByRole("link", { name: "前往 LINE Pay 付款" }))
       .toHaveCount(1);
   });

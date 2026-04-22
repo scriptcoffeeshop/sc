@@ -4,7 +4,6 @@ import { API_URL } from "../../../../js/config.js";
 import { authFetch } from "../../../../js/auth.js";
 import { Toast } from "../../../../js/utils.js";
 import {
-  buildPaymentStatusDialogOptions,
   formatDateTimeText,
   getCustomerPaymentDisplay,
 } from "../../../../js/orders.js";
@@ -116,9 +115,6 @@ export function useStorefrontOrderHistory(deps = {}) {
   const swal = deps.Swal || Swal;
   const toast = deps.Toast || Toast;
   const apiUrl = deps.apiUrl || API_URL;
-  const launchUrl = deps.launchUrl || ((url) => {
-    window.location.href = url;
-  });
   const getCurrentUser = deps.getCurrentUser || (() => state.currentUser);
   const writeClipboard = deps.writeClipboard || ((text) =>
     navigator.clipboard.writeText(text));
@@ -127,7 +123,6 @@ export function useStorefrontOrderHistory(deps = {}) {
   const isLoadingOrderHistory = ref(false);
   const orderHistoryError = ref("");
   const rawOrders = ref([]);
-  const refreshingOrderId = ref("");
 
   const ordersView = computed(() => rawOrders.value.map(buildOrderHistoryItem));
 
@@ -183,55 +178,15 @@ export function useStorefrontOrderHistory(deps = {}) {
     }
   }
 
-  async function refreshJkoPayStatus(orderId) {
-    if (!orderId) return;
-    refreshingOrderId.value = String(orderId);
-    try {
-      const response = await authFetchFn(
-        `${apiUrl}?action=jkoPayInquiry&orderId=${encodeURIComponent(orderId)}`,
-      );
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || "街口付款狀態更新失敗");
-      }
-      await loadMyOrders();
-      const dialogOptions = buildPaymentStatusDialogOptions({
-        orderId,
-        paymentMethod: "jkopay",
-        paymentStatus: result.paymentStatus,
-        paymentExpiresAt: result.paymentExpiresAt,
-        paymentConfirmedAt: result.paymentConfirmedAt,
-        paymentLastCheckedAt: result.paymentLastCheckedAt,
-        paymentUrl: result.paymentUrl,
-      });
-      const dialogResult = await swal.fire(dialogOptions);
-      if (dialogResult.isConfirmed && dialogOptions.paymentLaunchUrl) {
-        launchUrl(dialogOptions.paymentLaunchUrl);
-      }
-    } catch (error) {
-      await swal.fire(
-        "更新失敗",
-        error?.message || "街口付款狀態更新失敗",
-        "error",
-      );
-    } finally {
-      if (refreshingOrderId.value === String(orderId)) {
-        refreshingOrderId.value = "";
-      }
-    }
-  }
-
   return {
     isOrderHistoryOpen,
     isLoadingOrderHistory,
     orderHistoryError,
     orderHistoryState,
-    refreshingOrderId,
     ordersView,
     openOrderHistory,
     closeOrderHistory,
     loadMyOrders,
     copyTrackingNumber,
-    refreshJkoPayStatus,
   };
 }

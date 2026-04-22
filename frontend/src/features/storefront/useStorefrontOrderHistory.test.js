@@ -89,11 +89,11 @@ describe("useStorefrontOrderHistory", () => {
       resumePaymentLabel: "前往 LINE Pay 付款",
     });
     expect(history.ordersView.value[1].paymentDisplay).toMatchObject({
-      actionType: "refresh-jkopay",
-      actionLabel: "重新整理街口付款狀態",
       canResumePayment: true,
       resumePaymentLabel: "前往街口付款",
     });
+    expect(history.ordersView.value[1].paymentDisplay.actionType).toBe("");
+    expect(history.ordersView.value[1].paymentDisplay.actionLabel).toBe("");
     expect(history.ordersView.value[1].trackingUrl).toContain("postserv.post.gov.tw");
     expect(Swal.fire).not.toHaveBeenCalled();
   });
@@ -111,68 +111,6 @@ describe("useStorefrontOrderHistory", () => {
 
     expect(history.isOrderHistoryOpen.value).toBe(false);
     expect(Swal.fire).toHaveBeenCalledWith("請先登入", "", "info");
-  });
-
-  it("refreshes jkopay status, reloads orders, and relaunches payment when confirmed", async () => {
-    const authFetch = vi.fn(async (url) => {
-      if (String(url).includes("action=jkoPayInquiry")) {
-        return createSuccessResponse({
-          success: true,
-          paymentStatus: "processing",
-          paymentLastCheckedAt: "2026-04-21T03:00:00.000Z",
-          paymentUrl: "https://pay.example/jko/JKO-001",
-        });
-      }
-      if (String(url).includes("action=getMyOrders")) {
-        return createSuccessResponse({
-          success: true,
-          orders: [
-            {
-              orderId: "JKO-001",
-              deliveryMethod: "delivery",
-              status: "pending",
-              city: "新竹市",
-              address: "測試路 9 號",
-              items: "街口測試豆 x1",
-              total: 220,
-              paymentMethod: "jkopay",
-              paymentStatus: "processing",
-              paymentUrl: "https://pay.example/jko/JKO-001",
-            },
-          ],
-        });
-      }
-      throw new Error(`unexpected url: ${url}`);
-    });
-    const launchUrl = vi.fn();
-    const Swal = {
-      fire: vi.fn(async () => ({ isConfirmed: true })),
-    };
-    const history = useStorefrontOrderHistory({
-      authFetch,
-      Swal,
-      launchUrl,
-      getCurrentUser: () => ({ userId: "user-1" }),
-      writeClipboard: vi.fn(async () => undefined),
-    });
-
-    await history.refreshJkoPayStatus("JKO-001");
-
-    expect(authFetch).toHaveBeenCalledWith(
-      expect.stringContaining("action=jkoPayInquiry&orderId=JKO-001"),
-    );
-    expect(authFetch).toHaveBeenCalledWith(
-      expect.stringContaining("action=getMyOrders"),
-    );
-    expect(Swal.fire).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "街口付款確認中",
-        confirmButtonText: "前往街口付款",
-        paymentLaunchUrl: "https://pay.example/jko/JKO-001",
-      }),
-    );
-    expect(launchUrl).toHaveBeenCalledWith("https://pay.example/jko/JKO-001");
-    expect(history.refreshingOrderId.value).toBe("");
   });
 
   it("copies tracking numbers into the clipboard and shows toast feedback", async () => {

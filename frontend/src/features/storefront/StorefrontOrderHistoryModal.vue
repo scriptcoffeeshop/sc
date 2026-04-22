@@ -42,9 +42,7 @@
             v-for="order in orders"
             :key="order.orderId"
             :order="order"
-            :refreshing="refreshingOrderId === order.orderId"
             @copy-tracking-number="$emit('copy-tracking-number', $event)"
-            @refresh-jkopay-status="$emit('refresh-jkopay-status', $event)"
           />
         </template>
       </div>
@@ -73,11 +71,7 @@ defineProps({
     type: Array,
     default: () => [],
   },
-  refreshingOrderId: {
-    type: String,
-    default: "",
-  },
 });
 
-defineEmits(["close", "copy-tracking-number", "refresh-jkopay-status"]);
+defineEmits(["close", "copy-tracking-number"]);
 </script>

@@ -169,10 +169,8 @@
     :state="orderHistoryState"
     :error-text="orderHistoryError"
     :orders="ordersView"
-    :refreshing-order-id="refreshingOrderId"
     @close="handleCloseOrdersModal"
     @copy-tracking-number="copyTrackingNumber"
-    @refresh-jkopay-status="refreshJkoPayStatus"
   />
 </template>
 
@@ -239,12 +237,10 @@ const {
   isOrderHistoryOpen,
   orderHistoryError,
   orderHistoryState,
-  refreshingOrderId,
   ordersView,
   openOrderHistory,
   closeOrderHistory,
   copyTrackingNumber,
-  refreshJkoPayStatus,
 } = useStorefrontOrderHistory();
 const {
   productsCategories,

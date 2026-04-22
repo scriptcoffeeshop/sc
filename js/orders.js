@@ -120,8 +120,6 @@ function getPaymentActionGuide(paymentMethod, paymentStatus) {
         title: "街口付款確認中",
         description:
           "您已返回商店，系統正在同步街口付款結果，通常 1 到 2 分鐘內會更新。",
-        actionLabel: "重新整理街口付款狀態",
-        actionType: "refresh-jkopay",
       };
     }
     if (paymentStatus === "failed") {
@@ -157,9 +155,7 @@ function getPaymentActionGuide(paymentMethod, paymentStatus) {
       tone: "warning",
       title: "街口支付待付款",
       description:
-        "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結或更新付款狀態。",
-      actionLabel: "重新整理街口付款狀態",
-      actionType: "refresh-jkopay",
+        "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
     };
   }
 
@@ -550,46 +546,6 @@ function appendPaymentMetaLine(parent, label, value, addTopMargin) {
   parent.appendChild(row);
 }
 
-async function refreshJkoPayStatus(orderId, triggerButton) {
-  if (!orderId) return;
-  const button = triggerButton instanceof HTMLButtonElement ? triggerButton : null;
-  const originalText = button?.textContent || "";
-  if (button) {
-    button.disabled = true;
-    button.textContent = "更新中...";
-  }
-  try {
-    const response = await authFetch(
-      `${API_URL}?action=jkoPayInquiry&orderId=${encodeURIComponent(orderId)}`,
-    );
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || "街口付款狀態更新失敗");
-    }
-    await showMyOrders();
-    const dialogOptions = buildPaymentStatusDialogOptions({
-      orderId,
-      paymentMethod: "jkopay",
-      paymentStatus: result.paymentStatus,
-      paymentExpiresAt: result.paymentExpiresAt,
-      paymentConfirmedAt: result.paymentConfirmedAt,
-      paymentLastCheckedAt: result.paymentLastCheckedAt,
-      paymentUrl: result.paymentUrl,
-    });
-    const dialogResult = await Swal.fire(dialogOptions);
-    if (dialogResult.isConfirmed && dialogOptions.paymentLaunchUrl) {
-      window.location.href = dialogOptions.paymentLaunchUrl;
-    }
-  } catch (error) {
-    Swal.fire("更新失敗", error.message || "街口付款狀態更新失敗", "error");
-  } finally {
-    if (button) {
-      button.disabled = false;
-      button.textContent = originalText;
-    }
-  }
-}
-
 function createPaymentMetaElement(order, paymentStatus) {
   const display = getCustomerPaymentDisplay({
     ...order,
@@ -644,32 +600,17 @@ function createPaymentMetaElement(order, paymentStatus) {
   );
   wrapper.appendChild(meta);
 
-  if (display.canResumePayment || display.actionType === "refresh-jkopay") {
+  if (display.canResumePayment) {
     const actionRow = document.createElement("div");
     actionRow.className = "mt-3 flex flex-wrap gap-2";
 
-    if (display.canResumePayment) {
-      const payLink = document.createElement("a");
-      payLink.href = display.paymentUrl;
-      payLink.className =
-        "rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100";
-      payLink.textContent = display.resumePaymentLabel;
-      actionRow.appendChild(payLink);
-    }
+    const payLink = document.createElement("a");
+    payLink.href = display.paymentUrl;
+    payLink.className =
+      "rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-100";
+    payLink.textContent = display.resumePaymentLabel;
+    actionRow.appendChild(payLink);
 
-    if (display.actionType === "refresh-jkopay") {
-      const actionButton = document.createElement("button");
-      actionButton.type = "button";
-      actionButton.dataset.paymentAction = display.actionType;
-      actionButton.dataset.orderId = String(order.orderId || "");
-      actionButton.className =
-        "rounded-lg border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60";
-      actionButton.textContent = display.actionLabel;
-      actionButton.addEventListener("click", () => {
-        void refreshJkoPayStatus(String(order.orderId || ""), actionButton);
-      });
-      actionRow.appendChild(actionButton);
-    }
     wrapper.appendChild(actionRow);
   }
 
