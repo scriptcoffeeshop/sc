@@ -19,8 +19,6 @@ LEGACY_JS_COMPOSABLE_ALLOWLIST = {
     "frontend/src/features/dashboard/useDashboardSettings.js",
     "frontend/src/features/dashboard/useDashboardSettingsIcons.js",
     "frontend/src/features/dashboard/useDashboardUsers.js",
-    "frontend/src/features/storefront/useStorefrontCart.js",
-    "frontend/src/features/storefront/useStorefrontShell.js",
 }
 
 

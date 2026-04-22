@@ -1,4 +1,13 @@
-export function useStorefrontShell(deps = {}) {
+interface StorefrontShellDeps {
+  document?: Document;
+  startMainLogin?: () => Promise<unknown> | unknown;
+  logoutCurrentUser?: () => void;
+  showProfileModal?: () => Promise<unknown> | unknown;
+  showMyOrders?: () => Promise<unknown> | unknown;
+  closeOrderHistory?: () => void;
+}
+
+export function useStorefrontShell(deps: StorefrontShellDeps = {}) {
   function handleCloseAnnouncement() {
     deps.document?.getElementById?.("announcement-banner")?.classList.add(
       "hidden",

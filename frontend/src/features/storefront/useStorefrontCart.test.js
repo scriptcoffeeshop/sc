@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { useStorefrontCart } from "./useStorefrontCart.js";
+import { useStorefrontCart } from "./useStorefrontCart.ts";
 
 function createCartApi(snapshot = []) {
   return {

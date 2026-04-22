@@ -1,6 +1,63 @@
 import { computed, ref } from "vue";
 
-const defaultCartSummary = {
+interface StorefrontCartItem {
+  productId?: number | string;
+  specKey?: string;
+  productName?: string;
+  qty?: number | string;
+  unitPrice?: number | string;
+}
+
+interface StorefrontCartSummary {
+  subtotal?: number;
+  appliedPromos?: Array<{ name?: string; amount?: number; discount?: number }>;
+  totalDiscount?: number;
+  discountedItemKeys?: string[] | Set<string>;
+  afterDiscount?: number;
+  totalAfterDiscount?: number;
+  shippingFee?: number;
+  finalTotal?: number;
+  quoteAvailable?: boolean;
+}
+
+interface StorefrontShippingConfig {
+  fee?: number | string;
+  freeThreshold?: number | string;
+}
+
+interface StorefrontCartApi {
+  addToCart: (productId: unknown, specKey: unknown) => void;
+  getCartSnapshot: () => StorefrontCartItem[];
+  removeCartItem: (index: number) => void;
+  toggleCart: () => void;
+  updateCartItemQty: (index: number, delta: number) => void;
+  updateCartItemQtyByKeys: (
+    productId: unknown,
+    specKey: unknown,
+    delta: number,
+  ) => void;
+}
+
+interface StorefrontOrderApi {
+  submitOrder: () => Promise<unknown> | unknown;
+}
+
+interface StorefrontCartDeps {
+  cartApi?: Partial<StorefrontCartApi>;
+  orderApi?: Partial<StorefrontOrderApi>;
+}
+
+interface StorefrontCartUpdatedEvent {
+  detail?: {
+    items?: StorefrontCartItem[];
+    selectedDelivery?: string;
+    deliveryName?: string;
+    shippingConfig?: StorefrontShippingConfig | null;
+    summary?: StorefrontCartSummary;
+  };
+}
+
+const defaultCartSummary: Required<StorefrontCartSummary> = {
   subtotal: 0,
   appliedPromos: [],
   totalDiscount: 0,
@@ -12,11 +69,11 @@ const defaultCartSummary = {
   quoteAvailable: false,
 };
 
-function itemKey(productId, specKey = "") {
+function itemKey(productId: unknown, specKey: unknown = "") {
   return `${Number(productId)}-${String(specKey || "")}`;
 }
 
-const defaultCartApi = {
+const defaultCartApi: StorefrontCartApi = {
   addToCart: () => {},
   getCartSnapshot: () => [],
   removeCartItem: () => {},
@@ -25,15 +82,27 @@ const defaultCartApi = {
   updateCartItemQtyByKeys: () => {},
 };
 
-export function useStorefrontCart(deps = {}) {
-  const cartApi = deps.cartApi || defaultCartApi;
-  const orderApi = deps.orderApi || { submitOrder: () => {} };
+const defaultOrderApi: StorefrontOrderApi = {
+  submitOrder: () => {},
+};
 
-  const cartItems = ref([]);
+export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
+  const cartApi: StorefrontCartApi = {
+    ...defaultCartApi,
+    ...(deps.cartApi || {}),
+  };
+  const orderApi: StorefrontOrderApi = {
+    ...defaultOrderApi,
+    ...(deps.orderApi || {}),
+  };
+
+  const cartItems = ref<StorefrontCartItem[]>([]);
   const selectedDelivery = ref("");
   const deliveryName = ref("該配送方式");
-  const shippingConfig = ref(null);
-  const cartSummary = ref({ ...defaultCartSummary });
+  const shippingConfig = ref<StorefrontShippingConfig | null>(null);
+  const cartSummary = ref<Required<StorefrontCartSummary>>({
+    ...defaultCartSummary,
+  });
 
   const discountedItemKeySet = computed(() =>
     new Set(Array.isArray(cartSummary.value.discountedItemKeys)
@@ -122,11 +191,11 @@ export function useStorefrontCart(deps = {}) {
     ),
   );
 
-  function getSpecQty(productId, specKey) {
+  function getSpecQty(productId: unknown, specKey: unknown) {
     return cartQtyMap.value.get(itemKey(productId, specKey)) || 0;
   }
 
-  function changeSpecQty(productId, specKey, delta) {
+  function changeSpecQty(productId: unknown, specKey: unknown, delta: number) {
     if (delta > 0 && getSpecQty(productId, specKey) <= 0) {
       cartApi.addToCart(productId, specKey);
       return;
@@ -134,11 +203,11 @@ export function useStorefrontCart(deps = {}) {
     cartApi.updateCartItemQtyByKeys(productId, specKey, delta);
   }
 
-  function changeCartItemQty(index, delta) {
+  function changeCartItemQty(index: number, delta: number) {
     cartApi.updateCartItemQty(index, delta);
   }
 
-  function removeCartIndex(index) {
+  function removeCartIndex(index: number) {
     cartApi.removeCartItem(index);
   }
 
@@ -155,7 +224,7 @@ export function useStorefrontCart(deps = {}) {
     cartItems.value = cartApi.getCartSnapshot();
   }
 
-  function handleCartUpdated(event) {
+  function handleCartUpdated(event?: StorefrontCartUpdatedEvent) {
     const detail = event?.detail || {};
     cartItems.value = Array.isArray(detail.items) ? detail.items : [];
     selectedDelivery.value = String(detail.selectedDelivery || "");

@@ -187,12 +187,12 @@ import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderH
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { createStorefrontLegacyBridge } from "../features/storefront/storefrontLegacyBridge.js";
-import { useStorefrontCart } from "../features/storefront/useStorefrontCart.js";
+import { useStorefrontCart } from "../features/storefront/useStorefrontCart.ts";
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
-import { useStorefrontShell } from "../features/storefront/useStorefrontShell.js";
+import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
 import { getDefaultIconUrl } from "../../../js/icons.js";
 
 const originalBodyClass = document.body.className;

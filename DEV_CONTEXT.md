@@ -58,6 +58,7 @@
 - 前台 `MainPage.vue` 已存在，根目錄 `main.html` 已瘦身為本機 compat redirect；`js/main-app.js` 仍保留作為 Vite bundle 內的相容層。storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
 - `MainPage.vue` 已是 storefront 組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
 - storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
+- `useStorefrontCart.js`、`useStorefrontShell.js` 已轉為 `useStorefrontCart.ts`、`useStorefrontShell.ts`；目前 storefront 仍留在 JS 的 composable 已再縮減。
 - `storefrontLegacyBridge.js` 已移除 icons、delivery、payment 的通用 shell export，改分成 `deliveryDeps`、`paymentDeps`、`shellDeps`；目前主要仍承接 cart、order history、main-app 初始化與 auth/config/state glue，下一步再處理 `cart.js`、`orders.js`、`main-app.js` 的高風險切面。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` / `renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
 - storefront「我的訂單」列表已改成 DOM API 安全渲染，`js/orders.js` 不再以 `innerHTML` 拼接後端訂單資料。
@@ -137,6 +138,7 @@
 - backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
 - frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useStorefrontOrderHistory` 轉為 `.ts`。
 - 新增 `scripts/check_new_composables_ts.py`，`guardrails` 會阻擋新增 `frontend/src/features/**/use*.js`（既有 allowlist 除外）。
+- `scripts/check_new_composables_ts.py` 的 storefront allowlist 已移除 `useStorefrontCart.js`、`useStorefrontShell.js`，避免後續又把這兩支退回 JS。
 - 根目錄 `main.html` / `dashboard.html` 已瘦身為本機 compat redirect，不再保留大量 legacy 前後台靜態結構。
 - `npm run ci-local` 已納入 `npm run test:unit`，讓 frontend composable unit test 成為日常守門，而不是只在 `health` 才執行。
 

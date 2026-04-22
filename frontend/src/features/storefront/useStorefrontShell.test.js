@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { useStorefrontShell } from "./useStorefrontShell.js";
+import { useStorefrontShell } from "./useStorefrontShell.ts";
 
 function createClassList() {
   return { add: vi.fn() };
