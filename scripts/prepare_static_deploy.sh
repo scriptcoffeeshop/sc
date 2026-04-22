@@ -86,3 +86,39 @@ ASSET_VERSION="$(resolve_frontend_asset_version)"
 inject_frontend_asset_version "$ASSET_VERSION"
 
 copy_if_exists "$DIST_DIR/main.html" "$DIST_DIR/index.html"
+
+write_legacy_dist_redirect() {
+  local output_name="$1"
+  local target_name="$2"
+  local title="$3"
+  local output_path="$DIST_DIR/frontend/dist/$output_name"
+  local target_path="../../$target_name"
+
+  mkdir -p "$(dirname "$output_path")"
+  cat > "$output_path" <<HTML
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>$title</title>
+    <meta http-equiv="refresh" content="0; url=$target_path" />
+    <script>
+      window.location.replace(
+        new URL("$target_path", window.location.href).toString(),
+      );
+    </script>
+  </head>
+  <body>
+    <p>如果您沒有被自動重新導向，請點擊 <a href="$target_path">這裡</a>。</p>
+  </body>
+</html>
+HTML
+}
+
+rm -rf "$DIST_DIR/frontend/dist"
+write_legacy_dist_redirect "index.html" "main.html" "Script Coffee"
+write_legacy_dist_redirect "main.html" "main.html" "Script Coffee"
+write_legacy_dist_redirect "dashboard.html" "dashboard.html" "管理後台 | Script Coffee"
+write_legacy_dist_redirect "policy.html" "policy.html" "服務條款與政策 | Script Coffee"
+write_legacy_dist_redirect "copy-tracking.html" "copy-tracking.html" "複製物流單號 | Script Coffee"
