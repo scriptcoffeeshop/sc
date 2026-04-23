@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
+let buildOrderHistoryItem;
 let useStorefrontOrderHistory;
 
 beforeAll(async () => {
@@ -17,7 +18,9 @@ beforeAll(async () => {
     },
   });
 
-  ({ useStorefrontOrderHistory } = await import("./useStorefrontOrderHistory.ts"));
+  ({ buildOrderHistoryItem, useStorefrontOrderHistory } = await import(
+    "./useStorefrontOrderHistory.ts"
+  ));
 });
 
 function createSuccessResponse(payload) {
@@ -101,7 +104,7 @@ describe("useStorefrontOrderHistory", () => {
             {
               orderId: "JKO-001",
               deliveryMethod: "home_delivery",
-              status: "processing",
+              status: "shipped",
               city: "新竹市",
               address: "測試路 2 號",
               items: "街口測試豆 x1",
@@ -155,6 +158,37 @@ describe("useStorefrontOrderHistory", () => {
       .not.toContain("我的訂單");
     expect(history.ordersView.value[1].trackingUrl).toContain("postserv.post.gov.tw");
     expect(Swal.fire).not.toHaveBeenCalled();
+  });
+
+  it("hides宅配 tracking links before shipment is confirmed", () => {
+    const pendingHomeDelivery = buildOrderHistoryItem({
+      orderId: "HOME-PENDING-001",
+      deliveryMethod: "home_delivery",
+      status: "pending",
+      city: "基隆市",
+      address: "123",
+      items: "測試豆 x1",
+      total: 220,
+      paymentMethod: "transfer",
+      paymentStatus: "pending",
+    }, createOrderHistoryDeps());
+
+    const shippedHomeDelivery = buildOrderHistoryItem({
+      orderId: "HOME-SHIPPED-001",
+      deliveryMethod: "home_delivery",
+      status: "shipped",
+      city: "基隆市",
+      address: "123",
+      items: "測試豆 x1",
+      total: 220,
+      paymentMethod: "transfer",
+      paymentStatus: "paid",
+    }, createOrderHistoryDeps());
+
+    expect(pendingHomeDelivery.trackingUrl).toBe("");
+    expect(pendingHomeDelivery.hasShippingInfo).toBe(false);
+    expect(shippedHomeDelivery.trackingUrl).toContain("postserv.post.gov.tw");
+    expect(shippedHomeDelivery.hasShippingInfo).toBe(true);
   });
 
   it("shows login prompt when user opens my orders without authentication", async () => {

@@ -128,6 +128,16 @@ function getDefaultTrackingUrl(deliveryMethod: unknown) {
   return "";
 }
 
+function canShowTrackingUrl(order: Pick<Order, "deliveryMethod" | "status">) {
+  const deliveryMethod = String(order.deliveryMethod || "").trim();
+  if (deliveryMethod !== "delivery" && deliveryMethod !== "home_delivery") {
+    return true;
+  }
+
+  const status = String(order.status || "").trim().toLowerCase();
+  return status === "shipped" || status === "completed";
+}
+
 function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
 
@@ -198,8 +208,13 @@ export function buildOrderHistoryItem(
     context: "orderHistory",
   });
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
-  const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
-  const defaultTrackingUrl = getDefaultTrackingUrl(order.deliveryMethod);
+  const shouldShowTrackingUrl = canShowTrackingUrl(order);
+  const customTrackingUrl = shouldShowTrackingUrl
+    ? normalizeTrackingUrl(order.trackingUrl || "")
+    : "";
+  const defaultTrackingUrl = shouldShowTrackingUrl
+    ? getDefaultTrackingUrl(order.deliveryMethod)
+    : "";
   const trackingUrl = customTrackingUrl || defaultTrackingUrl;
   const locationText = order.storeName
     ? String(order.storeName)

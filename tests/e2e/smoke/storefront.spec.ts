@@ -456,6 +456,53 @@ test.describe("smoke / storefront", () => {
     ).toBe("AB123456789");
   });
 
+  test("storefront my orders hides宅配 tracking link before shipment", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.route(`${API_URL}?action=getMyOrders**`, async (route) => {
+      await fulfillJson(route, {
+        success: true,
+        orders: [
+          {
+            orderId: "HOME-PENDING-001",
+            timestamp: "2026-04-23T00:00:00.000Z",
+            deliveryMethod: "home_delivery",
+            status: "pending",
+            lineName: "測試客戶",
+            city: "基隆市",
+            address: "123",
+            items: "測試豆 x1",
+            total: 220,
+            paymentMethod: "transfer",
+            paymentStatus: "pending",
+          },
+        ],
+      });
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_user",
+        JSON.stringify({
+          userId: "user-1",
+          displayName: "測試客戶",
+          pictureUrl: "",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/main.html");
+    await page.getByRole("button", { name: "我的訂單" }).click();
+
+    await expect(page.locator("#my-orders-modal")).toBeVisible();
+    await expect(page.locator("#my-orders-list")).toContainText("HOME-PENDING-001");
+    await expect(
+      page.locator('#my-orders-list a:has-text("物流追蹤頁面")'),
+    ).toHaveCount(0);
+  });
+
   test("storefront my orders renders API content as text", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
