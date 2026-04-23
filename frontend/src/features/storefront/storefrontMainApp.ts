@@ -2,10 +2,10 @@
 // storefrontMainApp.ts — 訂購頁初始化入口
 // ============================================
 
-import { API_URL, LINE_REDIRECT } from "../../../../js/config.js";
-import { escapeHtml, isValidEmail } from "../../../../js/utils.js";
-import { loginWithLine } from "../../../../js/auth.js";
-import { state } from "../../../../js/state.js";
+import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
+import { escapeHtml, isValidEmail } from "../../lib/sharedUtils.ts";
+import { loginWithLine } from "../../lib/auth.ts";
+import { state } from "../../lib/appState.ts";
 import {
   cart,
   loadCart,
@@ -27,7 +27,7 @@ import {
   applyBranding,
   renderDynamicFields,
 } from "./storefrontFormRenderer.ts";
-import { authFetch } from "../../../../js/auth.js";
+import { authFetch } from "../../lib/auth.ts";
 import {
   getDeliveryIconFallbackKey,
   getPaymentIconFallbackKey,

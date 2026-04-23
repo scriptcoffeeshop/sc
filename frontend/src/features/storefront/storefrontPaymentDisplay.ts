@@ -1,4 +1,4 @@
-import { escapeHtml } from "../../../../js/utils.js";
+import { escapeHtml } from "../../lib/sharedUtils.ts";
 import type {
   CustomerPaymentDisplay,
   PaymentActionGuide,

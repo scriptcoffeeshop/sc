@@ -2,7 +2,7 @@
 // form-renderer.js — 動態表單欄位收集與品牌套用
 // ============================================
 
-import { isValidEmail } from "../../../../js/utils.js";
+import { isValidEmail } from "../../lib/sharedUtils.ts";
 import {
   getDefaultIconUrl,
   resolveAssetUrl,

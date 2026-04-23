@@ -1,4 +1,4 @@
-import { state } from "../../../../js/state.js";
+import { state } from "../../lib/appState.ts";
 import type { SessionUser } from "../../types/session";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { Product } from "../../types/core";

@@ -1,8 +1,8 @@
-import { API_URL, LINE_REDIRECT } from "../../../../js/config.js";
+import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
 import Sortable from "sortablejs";
 import Swal from "../../lib/swal.js";
-import { esc, Toast } from "../../../../js/utils.js";
-import { authFetch, loginWithLine } from "../../../../js/auth.js";
+import { esc, Toast } from "../../lib/sharedUtils.ts";
+import { authFetch, loginWithLine } from "../../lib/auth.ts";
 import {
   getDefaultIconUrl,
   normalizeIconPath,
@@ -15,13 +15,13 @@ import {
   orderStatusLabel,
   normalizeReceiptInfo,
   normalizeTrackingUrl,
-} from "../../../../js/dashboard/modules/order-shared.js";
+} from "./orderShared.ts";
 import { createOrderStatusController } from "./dashboardOrderStatusController.ts";
 import { createOrderNotificationsController } from "./dashboardOrderNotifications.ts";
 import {
   createDashboardBrandingController,
   parseBooleanSetting,
-} from "../../../../js/dashboard/modules/dashboard-branding.js";
+} from "./dashboardBranding.ts";
 import {
   DEFAULT_DELIVERY_OPTIONS,
   normalizeDeliveryOption,

@@ -199,8 +199,8 @@ import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontO
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
-import { authFetch } from "../../../js/auth.js";
-import { API_URL } from "../../../js/config.js";
+import { authFetch } from "../lib/auth.ts";
+import { API_URL } from "../lib/appConfig.ts";
 import { getDefaultIconUrl } from "../lib/icons.ts";
 import {
   clearSelectedStore,
@@ -220,8 +220,8 @@ import {
   getCustomerPaymentDisplay,
   submitOrder,
 } from "../features/storefront/storefrontOrderActions.ts";
-import { state } from "../../../js/state.js";
-import { Toast } from "../../../js/utils.js";
+import { state } from "../lib/appState.ts";
+import { Toast } from "../lib/sharedUtils.ts";
 
 const originalBodyClass = document.body.className;
 const {

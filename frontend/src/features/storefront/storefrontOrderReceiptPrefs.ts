@@ -1,4 +1,4 @@
-import { state } from "../../../../js/state.js";
+import { state } from "../../lib/appState.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import type { PaymentMethod, ReceiptInfo } from "../../types";
 

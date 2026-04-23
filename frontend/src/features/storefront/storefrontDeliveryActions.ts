@@ -2,9 +2,9 @@
 // storefrontDeliveryActions.ts — 配送方式、地址、門市選擇
 // ============================================
 
-import { API_URL, districtData } from "../../../../js/config.js";
-import { Toast } from "../../../../js/utils.js";
-import { state } from "../../../../js/state.js";
+import { API_URL, districtData } from "../../lib/appConfig.ts";
+import { Toast } from "../../lib/sharedUtils.ts";
+import { state } from "../../lib/appState.ts";
 import TwCitySelector from "../../lib/twCitySelector.js";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 

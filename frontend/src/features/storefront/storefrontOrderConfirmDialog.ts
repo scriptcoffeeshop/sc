@@ -1,4 +1,4 @@
-import { escapeHtml } from "../../../../js/utils.js";
+import { escapeHtml } from "../../lib/sharedUtils.ts";
 import { SUBMIT_DELIVERY_METHOD_TEXT } from "./storefrontOrderDeliveryInfo.ts";
 import { PAYMENT_METHOD_TEXT } from "./storefrontPaymentDisplay.ts";
 import Swal from "../../lib/swal.js";

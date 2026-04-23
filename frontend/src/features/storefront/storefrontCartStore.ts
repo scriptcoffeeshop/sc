@@ -2,7 +2,7 @@
 // storefrontCartStore.ts — 購物車 CRUD & UI
 // ============================================
 
-import { state } from "../../../../js/state.js";
+import { state } from "../../lib/appState.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */

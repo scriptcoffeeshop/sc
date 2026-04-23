@@ -1,17 +1,2 @@
-// ============================================
-// state.js — 訂購頁共享狀態 (避免循環依賴)
-// ============================================
-
-export const state = {
-  products: [],
-  categories: [],
-  formFields: [],
-  currentUser: null,
-  selectedDelivery: "",
-  isStoreOpen: true,
-  selectedPayment: "cod",
-  selectedBankAccountId: "",
-  bankAccounts: [],
-  orderQuote: null,
-  quoteError: "",
-};
+// 相容殼：實作已搬到 Vite 前端 shared lib。
+export * from "../frontend/src/lib/appState.ts";

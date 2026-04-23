@@ -8,7 +8,7 @@ import {
   orderPayStatusLabel,
   orderStatusLabel,
   orderStatusOptions,
-} from "../../../../js/dashboard/modules/order-shared.js";
+} from "./orderShared.ts";
 
 type DashboardOrderServices = Record<string, any>;
 

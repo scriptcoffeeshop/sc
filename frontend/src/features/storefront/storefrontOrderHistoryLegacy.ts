@@ -1,8 +1,8 @@
 import { createApp } from "vue";
-import { API_URL } from "../../../../js/config.js";
-import { authFetch } from "../../../../js/auth.js";
-import { Toast } from "../../../../js/utils.js";
-import { state } from "../../../../js/state.js";
+import { API_URL } from "../../lib/appConfig.ts";
+import { authFetch } from "../../lib/auth.ts";
+import { Toast } from "../../lib/sharedUtils.ts";
+import { state } from "../../lib/appState.ts";
 import StorefrontOrderHistoryCard from "./StorefrontOrderHistoryCard.vue";
 import { buildOrderHistoryItem } from "./useStorefrontOrderHistory.ts";
 import {
