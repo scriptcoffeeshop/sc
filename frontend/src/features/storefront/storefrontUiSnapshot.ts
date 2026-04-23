@@ -73,10 +73,7 @@ function getRuntimeSettings(): DashboardSettingsRecord {
 }
 
 function getRuntimeDeliveryConfig(): StorefrontDeliveryOption[] {
-  if (
-    Array.isArray(storefrontRuntime.currentDeliveryConfig) &&
-    storefrontRuntime.currentDeliveryConfig.length
-  ) {
+  if (Array.isArray(storefrontRuntime.currentDeliveryConfig)) {
     return cloneArrayItems<StorefrontDeliveryOption>(
       storefrontRuntime.currentDeliveryConfig,
     );

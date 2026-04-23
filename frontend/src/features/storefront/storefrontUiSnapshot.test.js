@@ -18,6 +18,10 @@ describe("getStorefrontUiSnapshot", () => {
     state.selectedBankAccountId = "";
     setStorefrontAppSettings(null);
     setStorefrontDeliveryConfig([]);
+    delete globalThis.currentDeliveryConfig;
+    if (globalThis.window) {
+      delete globalThis.window.currentDeliveryConfig;
+    }
   });
 
   it("reads delivery labels from storefront runtime settings/config", () => {
@@ -40,5 +44,20 @@ describe("getStorefrontUiSnapshot", () => {
       JSON.stringify(deliveryOptions),
     );
     expect(snapshot.deliveryConfig).toEqual(deliveryOptions);
+  });
+
+  it("keeps an explicit empty runtime delivery config instead of stale globals", () => {
+    globalThis.currentDeliveryConfig = [
+      {
+        id: "delivery",
+        name: "舊全域配送名稱",
+        enabled: true,
+      },
+    ];
+    setStorefrontDeliveryConfig([]);
+
+    const snapshot = getStorefrontUiSnapshot();
+
+    expect(snapshot.deliveryConfig).toEqual([]);
   });
 });
