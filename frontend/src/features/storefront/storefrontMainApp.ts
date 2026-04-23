@@ -7,6 +7,13 @@ import { escapeHtml, isValidEmail } from "../../lib/sharedUtils.ts";
 import { loginWithLine } from "../../lib/auth.ts";
 import { state } from "../../lib/appState.ts";
 import {
+  closeDialog,
+  showDialog,
+  showError,
+  showLoading,
+  showValidationMessage,
+} from "../../lib/swalDialogs.ts";
+import {
   cart,
   loadCart,
   updateCartUI,
@@ -42,6 +49,12 @@ import {
 } from "./storefrontRuntime.ts";
 
 let currentDeliveryConfig = [];
+
+function getErrorMessage(error, fallback = "發生未知錯誤") {
+  if (error instanceof Error) return error.message || fallback;
+  return String(error || fallback);
+}
+
 function initMainDomBindings() {
   const deliveryCity = document.getElementById("delivery-city");
   if (deliveryCity) {
@@ -69,14 +82,6 @@ registerStorefrontRuntime({
   refreshQuote,
   updatePaymentOptionsState,
 });
-window.selectPayment = selectPayment;
-window.updateCartUI = updateCartUI;
-window.updateFormState = updateFormState;
-window.rerenderFormFields = rerenderFormFields;
-window.updateDistricts = updateDistricts;
-window.scheduleQuoteRefresh = scheduleQuoteRefresh;
-window.refreshQuote = refreshQuote;
-window.updatePaymentOptionsState = updatePaymentOptionsState;
 
 // ============ 初始化 ============
 let mainAppInitialized = false;
@@ -153,15 +158,11 @@ async function handleLineCallback(code, stateParam) {
   const saved = localStorage.getItem("coffee_line_state");
   localStorage.removeItem("coffee_line_state");
   if (!saved || stateParam !== saved) {
-    Swal.fire("驗證失敗", "請重新登入", "error");
+    showError("驗證失敗", "請重新登入");
     history.replaceState({}, "", "main.html");
     return;
   }
-  Swal.fire({
-    title: "登入中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
+  showLoading("登入中...");
   try {
     const res = await fetch(
       `${API_URL}?action=customerLineLogin`,
@@ -183,10 +184,10 @@ async function handleLineCallback(code, stateParam) {
         localStorage.setItem("coffee_jwt", result.token);
       }
       showUserInfo();
-      Swal.close();
+      closeDialog();
     } else throw new Error(result.error || "登入失敗");
   } catch (e) {
-    Swal.fire("登入失敗", e.message, "error");
+    showError("登入失敗", getErrorMessage(e));
   }
 }
 
@@ -316,7 +317,7 @@ export async function showProfileModal() {
     }
   }
 
-  const { value: confirmed } = await Swal.fire({
+  const { value: confirmed } = await showDialog({
     title: "會員資料",
     html:
       `<div style="text-align:left;max-height:60vh;overflow-y:auto;padding:4px">
@@ -334,7 +335,7 @@ export async function showProfileModal() {
       const emailEl = document.getElementById("profile-email");
       const email = emailEl ? emailEl.value.trim() : "";
       if (email && !isValidEmail(email)) {
-        Swal.showValidationMessage("請填寫正確的電子郵件格式");
+        showValidationMessage("請填寫正確的電子郵件格式");
         return false;
       }
       return true;
@@ -358,11 +359,7 @@ export async function showProfileModal() {
 
   // 呼叫 API 儲存
   try {
-    Swal.fire({
-      title: "儲存中...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
+    showLoading("儲存中...");
     const r = await authFetch(`${API_URL}?action=updateUserProfile`, {
       method: "POST",
       body: JSON.stringify(profileData),
@@ -376,10 +373,10 @@ export async function showProfileModal() {
       prefillUserFields();
       Toast.fire({ icon: "success", title: "會員資料已儲存" });
     } else {
-      Swal.fire("錯誤", d.error || "儲存失敗", "error");
+      showError("錯誤", d.error || "儲存失敗");
     }
   } catch (e) {
-    Swal.fire("錯誤", e.message, "error");
+    showError("錯誤", getErrorMessage(e));
   }
 }
 
@@ -448,7 +445,7 @@ async function refreshQuote(options = {}) {
     if (!result.success || !result.quote) {
       state.orderQuote = null;
       state.quoteError = result.error || "計價失敗";
-      if (!silent) Swal.fire("錯誤", state.quoteError, "error");
+      if (!silent) showError("錯誤", state.quoteError);
       updatePaymentOptionsState(storefrontRuntime.currentDeliveryConfig || []);
       updateCartUI();
       return result;
@@ -464,8 +461,8 @@ async function refreshQuote(options = {}) {
       return { success: false, error: String(e) };
     }
     state.orderQuote = null;
-    state.quoteError = e.message || "計價請求失敗";
-    if (!silent) Swal.fire("錯誤", state.quoteError, "error");
+    state.quoteError = getErrorMessage(e, "計價請求失敗");
+    if (!silent) showError("錯誤", state.quoteError);
     updatePaymentOptionsState(storefrontRuntime.currentDeliveryConfig || []);
     updateCartUI();
     return { success: false, error: state.quoteError };
@@ -891,28 +888,24 @@ async function handleLinePayCallback(lpAction, params) {
   const callbackSig = params.get("sig") || "";
 
   if (lpAction === "confirm" && transactionId && orderId) {
-    Swal.fire({
-      title: "確認付款中...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
+    showLoading("確認付款中...");
     try {
       const res = await fetch(
         `${API_URL}?action=linePayConfirm&transactionId=${transactionId}&orderId=${orderId}`,
       );
       const result = await res.json();
       if (result.success) {
-        Swal.fire({
+        showDialog({
           icon: "success",
           title: "付款成功！",
           text: `訂單編號：${orderId}`,
           confirmButtonColor: "#3C2415",
         });
       } else {
-        Swal.fire("付款失敗", result.error || "請聯繫店家", "error");
+        showError("付款失敗", result.error || "請聯繫店家");
       }
     } catch (e) {
-      Swal.fire("錯誤", "付款確認失敗: " + e.message, "error");
+      showError("錯誤", "付款確認失敗: " + getErrorMessage(e));
     }
   } else if (lpAction === "cancel") {
     if (orderId) {
@@ -934,7 +927,7 @@ async function handleLinePayCallback(lpAction, params) {
         console.warn("[linepay-cancel] failed to notify backend:", error);
       }
     }
-    Swal.fire({
+    showDialog({
       icon: "info",
       title: "付款已取消",
       text: "您已取消 LINE Pay 付款",
@@ -945,11 +938,7 @@ async function handleLinePayCallback(lpAction, params) {
 
 async function handleJkoPayReturn(orderId) {
   if (!orderId) return;
-  Swal.fire({
-    title: "確認付款狀態中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
+  showLoading("確認付款狀態中...");
 
   try {
     const response = await authFetch(
@@ -966,13 +955,13 @@ async function handleJkoPayReturn(orderId) {
         paymentLastCheckedAt: result.paymentLastCheckedAt,
         paymentUrl: result.paymentUrl,
       });
-      const dialogResult = await Swal.fire(dialogOptions);
+      const dialogResult = await showDialog(dialogOptions);
       if (dialogResult.isConfirmed && dialogOptions.paymentLaunchUrl) {
         location.href = dialogOptions.paymentLaunchUrl;
       }
       return;
     }
-    Swal.fire(
+    showDialog(
       buildPaymentStatusDialogOptions({
         orderId,
         paymentMethod: "jkopay",
@@ -981,7 +970,7 @@ async function handleJkoPayReturn(orderId) {
       }),
     );
   } catch (_error) {
-    Swal.fire(
+    showDialog(
       buildPaymentStatusDialogOptions({
         orderId,
         paymentMethod: "jkopay",

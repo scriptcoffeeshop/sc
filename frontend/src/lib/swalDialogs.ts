@@ -10,6 +10,7 @@ export interface SwalDialogResult {
 }
 
 export type SwalDialogPromise = Promise<SwalDialogResult>;
+export type SwalDialogOptions = Record<string, unknown>;
 
 export function showAlert(
   title: string,
@@ -27,8 +28,16 @@ export function showWarning(title: string, text = ""): SwalDialogPromise {
   return showAlert(title, text, "warning");
 }
 
+export function showInfo(title: string, text = ""): SwalDialogPromise {
+  return showAlert(title, text, "info");
+}
+
 export function showSuccess(title: string, text = ""): SwalDialogPromise {
   return showAlert(title, text, "success");
+}
+
+export function showDialog(options: SwalDialogOptions): SwalDialogPromise {
+  return Swal.fire(options);
 }
 
 export function showLoading(title: string): SwalDialogPromise {
@@ -52,4 +61,12 @@ export function confirmWarning(options: {
     showCancelButton: true,
     confirmButtonColor: options.confirmButtonColor || "#3C2415",
   });
+}
+
+export function closeDialog(): void {
+  Swal.close?.();
+}
+
+export function showValidationMessage(message: string): void {
+  Swal.showValidationMessage?.(message);
 }
