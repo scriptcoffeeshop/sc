@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 
 BLOCKED_PREFIXES = (
@@ -16,6 +16,19 @@ ALLOWED_ENV_SUFFIXES = (
     ".example",
     ".sample",
     ".template",
+)
+
+PRODUCTION_TS_IGNORE_PREFIXES = (
+    "frontend/src/",
+    "supabase/functions/coffee-api/",
+)
+
+SOURCE_SUFFIXES = (
+    ".js",
+    ".jsx",
+    ".ts",
+    ".tsx",
+    ".vue",
 )
 
 
@@ -40,6 +53,28 @@ def is_disallowed_env_file(path: str) -> bool:
     return not path.endswith(ALLOWED_ENV_SUFFIXES)
 
 
+def is_production_source_file(path: str) -> bool:
+    return path.startswith(PRODUCTION_TS_IGNORE_PREFIXES) and path.endswith(
+        SOURCE_SUFFIXES
+    )
+
+
+def find_ts_ignore_violations(path: str) -> list[str]:
+    if not is_production_source_file(path):
+        return []
+
+    try:
+        lines = Path(path).read_text(encoding="utf-8").splitlines()
+    except UnicodeDecodeError:
+        return [f"無法以 UTF-8 讀取 production source：{path}"]
+
+    return [
+        f"禁止在 production source 使用 @ts-ignore：{path}:{line_no}"
+        for line_no, line in enumerate(lines, start=1)
+        if "@ts-ignore" in line
+    ]
+
+
 def main() -> int:
     tracked_files = git_ls_files()
     violations: list[str] = []
@@ -53,6 +88,8 @@ def main() -> int:
 
         if is_disallowed_env_file(path):
             violations.append(f"禁止追蹤敏感 env 檔案：{path}")
+
+        violations.extend(find_ts_ignore_violations(path))
 
     if violations:
         print("[repo-hygiene] 發現違規檔案：", file=sys.stderr)

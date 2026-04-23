@@ -88,6 +88,7 @@
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
+- `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`，避免型別錯誤被靜音。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
 - 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
@@ -133,6 +134,7 @@
 ### 2026-04-23
 
 - 修正資料庫 schema 與後端訂單狀態白名單漂移：新增 `202604232050_allow_failed_order_status.sql`，讓 `coffee_orders.status` CHECK 接受 `failed`，並同步 `schema_full.sql`；`guardrails` 新增 `scripts/check_order_status_schema.py`，避免 `VALID_ORDER_STATUSES` 和完整 schema 再次不一致。
+- 清除 production source 最後 3 處 `@ts-ignore`：Deno import 已改回依賴 import map / `@deno-types` 正常解析，並把 `repo_hygiene_check.py` 擴充為 production source `@ts-ignore` 守門。
 - 依健康度檢查處理第一段 npm audit：`sweetalert2` 已由 `^11.10.6` 更新到 `^11.26.24`，對應 advisory 已消失；剩餘 audit 風險集中在 `tw-city-selector@2.1.2` 連帶的 `docsify/marked/vue2`，不建議用 `npm audit fix --force` 降版，後續應以替換或 vendor runtime 方式處理。
 - 完成 `tw-city-selector` audit 收斂：已移除 npm dependency，改用本地 `frontend/src/lib/twCitySelector.js` 與 `taiwanCityData.js`，資料取自原 runtime 的繁中縣市/區域/郵遞區號以維持全台宅配行為；新增 `twCitySelector.test.js` 保護縣市、區域、郵遞區號與 `setValue()`。`npm audit --omit=dev` 目前為 0 vulnerabilities。
 - 前端型別守門已完成升級：`npm run typecheck` 現在直接執行完整 `frontend/tsconfig.json`，並已串入 `ci-local`；補齊 dashboard products、storefront cart/delivery/form/main app/order submit/order history 等型別邊界與相容全域宣告後，`npm run typecheck:full` 目前可通過。

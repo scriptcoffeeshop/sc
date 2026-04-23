@@ -1,4 +1,3 @@
-// @ts-ignore: 取消 Deno import 在 IDE 找不到模組的問題
 import { z } from "zod";
 
 const positiveIdSchema = z.coerce.number().int().positive("ID 必須為正整數");
