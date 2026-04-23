@@ -30,7 +30,7 @@ This creates three concrete problems:
 2. Payment, order, and admin flows can drift out of sync.
 3. Remaining large dashboard sections can still become difficult to review if they are allowed to grow back into monoliths.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.js`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and `order-notifications-controller.js` is now only a 29-line orchestrator backed by smaller notification modules.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.ts`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and `order-notifications-controller.js` is now only a 29-line orchestrator backed by smaller notification modules.
 
 Storefront legacy rendering is also moving into maintenance-only mode more aggressively now: the remaining `innerHTML` renderers in `js/*.js` have been reduced to zero, and smoke coverage now blocks regression on the core storefront containers.
 

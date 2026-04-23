@@ -9,14 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FEATURES_DIR = ROOT / "frontend" / "src" / "features"
-LEGACY_JS_COMPOSABLE_ALLOWLIST = {
-    "frontend/src/features/dashboard/useDashboardBankAccounts.js",
-    "frontend/src/features/dashboard/useDashboardCategories.js",
-    "frontend/src/features/dashboard/useDashboardProducts.js",
-    "frontend/src/features/dashboard/useDashboardPromotions.js",
-    "frontend/src/features/dashboard/useDashboardSettingsIcons.js",
-    "frontend/src/features/dashboard/useDashboardUsers.js",
-}
+LEGACY_JS_COMPOSABLE_ALLOWLIST: set[str] = set()
 
 
 def main() -> int:

@@ -63,7 +63,7 @@ async function loadSettingsIconsModule() {
     sectionIconSettingKey: (section) => `${section}_section_icon_url`,
   }));
 
-  const module = await import("./useDashboardSettingsIcons.js");
+  const module = await import("./useDashboardSettingsIcons.ts");
   return { module, dashboardSettingsState };
 }
 

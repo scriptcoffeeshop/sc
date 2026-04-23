@@ -44,7 +44,7 @@ import {
   configureDashboardCategoriesServices,
   dashboardCategoriesActions,
   getDashboardCategories,
-} from "./useDashboardCategories.js";
+} from "./useDashboardCategories.ts";
 import {
   configureDashboardFormFieldsServices,
   dashboardFormFieldsActions,
@@ -52,11 +52,11 @@ import {
 import {
   configureDashboardBankAccountsServices,
   dashboardBankAccountsActions,
-} from "./useDashboardBankAccounts.js";
+} from "./useDashboardBankAccounts.ts";
 import {
   configureDashboardPromotionsServices,
   dashboardPromotionsActions,
-} from "./useDashboardPromotions.js";
+} from "./useDashboardPromotions.ts";
 import {
   configureDashboardSessionServices,
   dashboardSessionActions,
@@ -68,11 +68,11 @@ import {
 } from "./useDashboardSettings.ts";
 import {
   configureDashboardSettingsIconServices,
-} from "./useDashboardSettingsIcons.js";
+} from "./useDashboardSettingsIcons.ts";
 import {
   configureDashboardUsersServices,
   dashboardUsersActions,
-} from "./useDashboardUsers.js";
+} from "./useDashboardUsers.ts";
 import {
   configureDashboardOrdersServices,
   dashboardOrdersActions,
@@ -82,7 +82,7 @@ import {
   configureDashboardProductsServices,
   dashboardProductsActions,
   getDashboardProducts,
-} from "./useDashboardProducts.js";
+} from "./useDashboardProducts.ts";
 
 let dashboardTabLoaders = {};
 let loadInitialDashboardData = async () => {};

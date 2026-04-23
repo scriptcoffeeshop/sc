@@ -65,7 +65,7 @@ import { onMounted, ref, watch } from "vue";
 import {
   dashboardCategoriesActions,
   useDashboardCategories,
-} from "./useDashboardCategories.js";
+} from "./useDashboardCategories.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { categoriesView, newCategoryName } = useDashboardCategories();

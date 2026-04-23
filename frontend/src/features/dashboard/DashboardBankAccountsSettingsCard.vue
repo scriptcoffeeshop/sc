@@ -77,7 +77,7 @@
 import {
   dashboardBankAccountsActions,
   useDashboardBankAccounts,
-} from "./useDashboardBankAccounts.js";
+} from "./useDashboardBankAccounts.ts";
 
 const { bankAccounts } = useDashboardBankAccounts();
 

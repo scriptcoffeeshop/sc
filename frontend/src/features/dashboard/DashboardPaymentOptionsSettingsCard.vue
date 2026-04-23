@@ -94,7 +94,7 @@
 import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,
-} from "./useDashboardSettingsIcons.js";
+} from "./useDashboardSettingsIcons.ts";
 import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const { paymentOptions, paymentMethodOrder } = useDashboardSettings();

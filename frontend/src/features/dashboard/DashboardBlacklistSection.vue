@@ -60,7 +60,7 @@
 import {
   dashboardUsersActions,
   useDashboardUsers,
-} from "./useDashboardUsers.js";
+} from "./useDashboardUsers.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { blacklistView } = useDashboardUsers();

@@ -180,7 +180,7 @@ import UiSelect from "../../components/ui/select/Select.vue";
 import {
   dashboardPromotionsActions,
   useDashboardPromotions,
-} from "./useDashboardPromotions.js";
+} from "./useDashboardPromotions.ts";
 
 const {
   isPromotionModalOpen,

@@ -6,7 +6,7 @@ function jsonResponse(payload) {
 
 async function loadProductsModule() {
   vi.resetModules();
-  return await import("./useDashboardProducts.js");
+  return await import("./useDashboardProducts.ts");
 }
 
 describe("useDashboardProducts", () => {

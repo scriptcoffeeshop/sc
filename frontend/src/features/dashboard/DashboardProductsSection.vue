@@ -113,7 +113,7 @@ import { onMounted, ref, watch } from "vue";
 import {
   dashboardProductsActions,
   useDashboardProducts,
-} from "./useDashboardProducts.js";
+} from "./useDashboardProducts.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { productsGroupsView } = useDashboardProducts();

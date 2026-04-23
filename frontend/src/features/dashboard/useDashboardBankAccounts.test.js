@@ -6,7 +6,7 @@ function jsonResponse(payload) {
 
 async function loadBankAccountsModule() {
   vi.resetModules();
-  return await import("./useDashboardBankAccounts.js");
+  return await import("./useDashboardBankAccounts.ts");
 }
 
 describe("useDashboardBankAccounts", () => {

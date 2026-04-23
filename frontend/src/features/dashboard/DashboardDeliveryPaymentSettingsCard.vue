@@ -210,7 +210,7 @@
 import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,
-} from "./useDashboardSettingsIcons.js";
+} from "./useDashboardSettingsIcons.ts";
 import {
   dashboardSettingsActions,
   useDashboardSettings,

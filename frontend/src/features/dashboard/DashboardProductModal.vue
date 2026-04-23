@@ -149,7 +149,7 @@ import UiSelect from "../../components/ui/select/Select.vue";
 import {
   dashboardProductsActions,
   useDashboardProducts,
-} from "./useDashboardProducts.js";
+} from "./useDashboardProducts.ts";
 
 const {
   isProductModalOpen,

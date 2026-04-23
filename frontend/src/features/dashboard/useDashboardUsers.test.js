@@ -9,7 +9,7 @@ async function loadUsersModule(activeTab = "orders") {
   vi.doMock("./useDashboardSession.ts", () => ({
     getDashboardActiveTab: () => activeTab,
   }));
-  return await import("./useDashboardUsers.js");
+  return await import("./useDashboardUsers.ts");
 }
 
 describe("useDashboardUsers", () => {

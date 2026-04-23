@@ -6,7 +6,7 @@ function jsonResponse(payload) {
 
 async function loadPromotionsModule() {
   vi.resetModules();
-  return await import("./useDashboardPromotions.js");
+  return await import("./useDashboardPromotions.ts");
 }
 
 describe("useDashboardPromotions", () => {

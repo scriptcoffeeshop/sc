@@ -102,7 +102,7 @@ import { onMounted, ref, watch } from "vue";
 import {
   dashboardPromotionsActions,
   useDashboardPromotions,
-} from "./useDashboardPromotions.js";
+} from "./useDashboardPromotions.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { promotionsView } = useDashboardPromotions();
