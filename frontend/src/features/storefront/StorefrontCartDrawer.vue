@@ -7,7 +7,7 @@
   </div>
   <div
     id="cart-drawer"
-    class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-2xl z-[61] transform translate-x-full transition-transform duration-300 flex flex-col"
+    class="fixed inset-y-0 right-0 h-dvh max-h-dvh w-full max-w-md overflow-hidden bg-white shadow-2xl z-[61] transform translate-x-full transition-transform duration-300 flex flex-col"
   >
     <div
       class="p-4 border-b flex justify-between items-center"
@@ -23,7 +23,7 @@
         &times;
       </button>
     </div>
-    <div id="cart-items" data-vue-managed="true" class="flex-1 overflow-y-auto p-4">
+    <div id="cart-items" data-vue-managed="true" class="min-h-0 flex-1 overflow-y-auto p-4">
       <p v-if="cartItems.length === 0" class="text-center text-gray-400 py-8">
         購物車是空的
       </p>
@@ -78,7 +78,7 @@
       </template>
     </div>
     <div
-      class="p-4 border-t"
+      class="cart-drawer-footer shrink-0 p-4 border-t"
       style="border-color: #f0e6db; background: #faf6f2"
     >
       <div

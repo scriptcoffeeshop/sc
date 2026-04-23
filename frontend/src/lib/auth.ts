@@ -1,6 +1,6 @@
 // LINE Login 與帶 JWT 的 fetch。legacy `js/auth.js` 只保留 re-export。
 
-import Swal from "./swal.js";
+import Swal from "./swal.ts";
 import { API_URL } from "./appConfig.ts";
 
 /**

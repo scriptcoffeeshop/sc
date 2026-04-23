@@ -1,6 +1,6 @@
 import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
 import Sortable from "sortablejs";
-import Swal from "../../lib/swal.js";
+import Swal from "../../lib/swal.ts";
 import { esc, Toast } from "../../lib/sharedUtils.ts";
 import { authFetch, loginWithLine } from "../../lib/auth.ts";
 import {

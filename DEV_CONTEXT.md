@@ -89,6 +89,7 @@
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`，避免型別錯誤被靜音。
+- `repo_hygiene_check.py` 已禁止新增 frontend production JS；目前 `frontend/src/` 只允許 `twCitySelector.js` / `taiwanCityData.js` 作為 vendor/data 邊界，entry、Swal wrapper、UI helper 已轉 TypeScript。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
 - 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
@@ -119,7 +120,7 @@
 ### 自動部署限制
 
 - 前端自動部署已正常。
-- 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過 setup / db push / function deploy，但整體 job 仍可能顯示成功；後端 function 變更需確認 deploy step 真的有跑，或用本機已登入的 Supabase CLI 手動 `rtk npm run supabase:deploy`。
+- 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過 setup / db push / function deploy，並在 Actions summary 寫出「Supabase deployment skipped」；後端 function 變更仍需確認 deploy step 真的有跑，或用本機已登入的 Supabase CLI 手動 `rtk npm run supabase:deploy`。
 - 街口正式環境要求的來源 IP 白名單不在 repo 內管理；若使用 Cloudflare、主機防火牆或其他 WAF，需在外部平台另行設定。
 
 ### 遷移未完成區
@@ -135,6 +136,10 @@
 
 - 修正資料庫 schema 與後端訂單狀態白名單漂移：新增 `202604232050_allow_failed_order_status.sql`，讓 `coffee_orders.status` CHECK 接受 `failed`，並同步 `schema_full.sql`；`guardrails` 新增 `scripts/check_order_status_schema.py`，避免 `VALID_ORDER_STATUSES` 和完整 schema 再次不一致。
 - 清除 production source 最後 3 處 `@ts-ignore`：Deno import 已改回依賴 import map / `@deno-types` 正常解析，並把 `repo_hygiene_check.py` 擴充為 production source `@ts-ignore` 守門。
+- 完成健康度建議 1-6 的一次性推進：前端 entry / Swal wrapper / UI `cn` helper 轉 TypeScript，`storefrontModels`、`dashboardSettingsShared`、icon helper、LINE Pay 回傳與付款彈窗選項補明確型別；`repo_hygiene_check.py` 新增 production JS allowlist 守門。
+- 依賴已升級至 Vue `3.5.33`、Reka UI `2.9.6`、SortableJS `1.15.7`、Vitest `4.1.5`、`@vitejs/plugin-vue 6.0.6`、Vite `8.0.10`、Tailwind CSS `4.2.4`，並新增 `@tailwindcss/postcss`；Tailwind 4 讓部分舊 utility 產出策略不同，已把購物車抽屜與我的訂單 modal 的 viewport 高度、圓角、捲動與 overlay 轉為顯式 CSS guard。
+- 品牌 logo 已從 4168px / 約 829.7KB 壓縮為 1024px / 約 82.6KB，建置後 `assets/logo.png` 約 84.6KB。
+- GitHub Actions Supabase deploy skipped 情境已補 summary / notice，避免 secrets 缺失時只靠 warning 追查。
 - 依健康度檢查處理第一段 npm audit：`sweetalert2` 已由 `^11.10.6` 更新到 `^11.26.24`，對應 advisory 已消失；剩餘 audit 風險集中在 `tw-city-selector@2.1.2` 連帶的 `docsify/marked/vue2`，不建議用 `npm audit fix --force` 降版，後續應以替換或 vendor runtime 方式處理。
 - 完成 `tw-city-selector` audit 收斂：已移除 npm dependency，改用本地 `frontend/src/lib/twCitySelector.js` 與 `taiwanCityData.js`，資料取自原 runtime 的繁中縣市/區域/郵遞區號以維持全台宅配行為；新增 `twCitySelector.test.js` 保護縣市、區域、郵遞區號與 `setValue()`。`npm audit --omit=dev` 目前為 0 vulnerabilities。
 - 前端型別守門已完成升級：`npm run typecheck` 現在直接執行完整 `frontend/tsconfig.json`，並已串入 `ci-local`；補齊 dashboard products、storefront cart/delivery/form/main app/order submit/order history 等型別邊界與相容全域宣告後，`npm run typecheck:full` 目前可通過。

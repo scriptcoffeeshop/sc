@@ -1,4 +1,4 @@
-import Swal from "./swal.js";
+import Swal from "./swal.ts";
 
 type SwalIcon = "success" | "error" | "warning" | "info" | "question";
 

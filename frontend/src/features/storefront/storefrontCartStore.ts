@@ -3,7 +3,7 @@
 // ============================================
 
 import { state } from "../../lib/appState.ts";
-import Swal from "../../lib/swal.js";
+import Swal from "../../lib/swal.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */

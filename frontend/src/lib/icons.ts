@@ -88,6 +88,12 @@ const ICON_META_MAP: Record<string, { label: string; category: string }> = {
   section: { label: "區塊", category: "商店" },
 };
 
+interface IconConfig {
+  icon?: unknown;
+  icon_url?: unknown;
+  iconUrl?: unknown;
+}
+
 export const ICON_CATALOG = Object.entries(ICON_FILE_MAP).map(([key, path]) => ({
   key,
   path,
@@ -187,7 +193,10 @@ function isLikelyImageUrl(value = "") {
   return /\.(?:png|jpe?g|webp|gif|svg)(?:$|\?)/i.test(raw);
 }
 
-export function getIconUrlFromConfig(option: any = {}, fallbackKey = "") {
+export function getIconUrlFromConfig(
+  option: IconConfig = {},
+  fallbackKey = "",
+): string {
   if (!option || typeof option !== "object") {
     return getDefaultIconUrl(fallbackKey);
   }
@@ -201,7 +210,11 @@ export function getIconUrlFromConfig(option: any = {}, fallbackKey = "") {
   return getDefaultIconUrl(fallbackKey);
 }
 
-export function renderIconMarkup(option: any = {}, fallbackKey = "", alt = "") {
+export function renderIconMarkup(
+  option: IconConfig = {},
+  fallbackKey = "",
+  alt = "",
+): string {
   const url = getIconUrlFromConfig(option, fallbackKey);
   if (url) {
     return `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" class="ui-icon-img">`;
@@ -218,11 +231,11 @@ export function renderIconMarkup(option: any = {}, fallbackKey = "", alt = "") {
 }
 
 export function setIconElement(
-  element: any,
-  option: any = {},
+  element: Element | null | undefined,
+  option: IconConfig = {},
   fallbackKey = "",
   alt = "",
-) {
+): string {
   if (!element) return "";
 
   const url = getIconUrlFromConfig(option, fallbackKey);

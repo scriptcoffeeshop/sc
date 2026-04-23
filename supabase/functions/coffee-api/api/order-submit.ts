@@ -28,6 +28,18 @@ import { requestLinePayAPI } from "../utils/linepay.ts";
 import { supabase } from "../utils/supabase.ts";
 import { registerOrUpdateUser } from "../utils/users.ts";
 
+interface LinePayRequestResponse {
+  returnCode?: string;
+  returnMessage?: string;
+  info?: {
+    transactionId?: string | number;
+    paymentUrl?: {
+      web?: string;
+      app?: string;
+    };
+  };
+}
+
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
@@ -303,8 +315,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         redirectUrls: { confirmUrl, cancelUrl },
       };
 
-      // deno-lint-ignore no-explicit-any
-      const lpRes: any = await requestLinePayAPI(
+      const lpRes = await requestLinePayAPI<LinePayRequestResponse>(
         "POST",
         "/v3/payments/request",
         reqBody,

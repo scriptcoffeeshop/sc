@@ -271,6 +271,82 @@ select.input-field {
   border-radius: 16px;
 }
 
+#cart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(0 0 0 / 50%);
+}
+
+#cart-overlay.hidden {
+  display: none;
+}
+
+#cart-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 28rem;
+  height: 100dvh;
+  max-height: 100dvh;
+  background: #fff;
+  box-shadow: 0 24px 64px rgb(60 36 21 / 28%);
+  transition: transform 0.3s ease;
+  transform: translateX(0);
+  overflow: hidden;
+}
+
+#cart-drawer.translate-x-full {
+  transform: translateX(100%);
+}
+
+#cart-items {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cart-drawer-footer {
+  flex-shrink: 0;
+}
+
+#my-orders-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 50%);
+}
+
+#my-orders-modal.hidden {
+  display: none;
+}
+
+.storefront-orders-dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 48rem;
+  max-height: min(85dvh, 760px);
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgb(60 36 21 / 24%);
+  overflow: hidden;
+}
+
+.storefront-orders-list {
+  min-height: 0;
+  overflow-y: auto;
+}
+
 @media (max-width: 639px) {
   body {
     padding: 8px !important;

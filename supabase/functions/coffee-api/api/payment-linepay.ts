@@ -8,6 +8,18 @@ import { extractAuth, requireAdmin } from "../utils/auth.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
 import { supabase } from "../utils/supabase.ts";
 
+interface LinePayApiResponse {
+  returnCode?: string;
+  returnMessage?: string;
+  info?: Record<string, unknown>;
+}
+
+interface LinePayRefundResponse extends LinePayApiResponse {
+  info?: {
+    refundTransactionId?: string;
+  };
+}
+
 export async function linePayConfirm(data: Record<string, unknown>) {
   const transactionId = String(data.transactionId || "");
   const orderId = String(data.orderId || "");
@@ -45,8 +57,7 @@ export async function linePayConfirm(data: Record<string, unknown>) {
   }
 
   try {
-    // deno-lint-ignore no-explicit-any
-    const confirmRes: any = await requestLinePayAPI(
+    const confirmRes = await requestLinePayAPI<LinePayApiResponse>(
       "POST",
       `/v3/payments/${transactionId}/confirm`,
       {
@@ -201,8 +212,7 @@ export async function linePayRefund(
 
   try {
     const refundBody = refundAmount > 0 ? { refundAmount } : null;
-    // deno-lint-ignore no-explicit-any
-    const refundRes: any = await requestLinePayAPI(
+    const refundRes = await requestLinePayAPI<LinePayRefundResponse>(
       "POST",
       `/v3/payments/${transactionId}/refund`,
       refundBody,

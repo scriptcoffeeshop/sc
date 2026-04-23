@@ -1,6 +1,41 @@
 import { getDefaultIconUrl, normalizeIconPath } from "../../lib/icons.ts";
 
-export const DEFAULT_DELIVERY_OPTIONS: Record<string, any> = {
+type SettingsRecord = Record<string, unknown>;
+
+export interface DashboardPaymentRouting {
+  cod: boolean;
+  linepay: boolean;
+  jkopay: boolean;
+  transfer: boolean;
+}
+
+export interface DashboardDeliveryOption extends SettingsRecord {
+  id: string;
+  icon: string;
+  icon_url: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  label?: string;
+  fee?: number;
+  free_threshold?: number;
+  payment?: DashboardPaymentRouting;
+}
+
+export interface DashboardPaymentOption extends SettingsRecord {
+  icon: string;
+  icon_url: string;
+  name: string;
+  description: string;
+}
+
+function asRecord(value: unknown): SettingsRecord {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as SettingsRecord
+    : {};
+}
+
+export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> = {
   in_store: {
     id: "in_store",
     icon: "",
@@ -43,7 +78,7 @@ export const DEFAULT_DELIVERY_OPTIONS: Record<string, any> = {
   },
 };
 
-export const DEFAULT_PAYMENT_OPTIONS: Record<string, any> = {
+export const DEFAULT_PAYMENT_OPTIONS: Record<string, DashboardPaymentOption> = {
   cod: {
     icon: "",
     icon_url: getDefaultIconUrl("cod"),
@@ -70,7 +105,9 @@ export const DEFAULT_PAYMENT_OPTIONS: Record<string, any> = {
   },
 };
 
-export function normalizeDeliveryOption(item: any = {}) {
+export function normalizeDeliveryOption(
+  item: SettingsRecord = {},
+): DashboardDeliveryOption {
   const id = String(item.id || "").trim();
   const defaults = DEFAULT_DELIVERY_OPTIONS[id] || {
     id: id || `custom_${Date.now()}`,
@@ -80,14 +117,15 @@ export function normalizeDeliveryOption(item: any = {}) {
     description: "設定敘述",
     enabled: true,
   };
+  const payment = asRecord(item.payment);
 
   const hasJkoPayInConfig = Object.prototype.hasOwnProperty.call(
-    item.payment || {},
+    payment,
     "jkopay",
   );
   const inferredJkoPay = hasJkoPayInConfig
-    ? !!item.payment?.jkopay
-    : !!item.payment?.linepay;
+    ? !!payment.jkopay
+    : !!payment.linepay;
 
   return {
     ...defaults,
@@ -95,7 +133,7 @@ export function normalizeDeliveryOption(item: any = {}) {
     id: id || defaults.id,
     icon: String(item.icon ?? defaults.icon ?? ""),
     icon_url: normalizeIconPath(
-      item.icon_url ?? item.iconUrl ?? defaults.icon_url ?? "",
+      String(item.icon_url ?? item.iconUrl ?? defaults.icon_url ?? ""),
     ),
     name: String(item.name ?? defaults.name ?? ""),
     description: String(item.description ?? defaults.description ?? ""),
@@ -105,27 +143,32 @@ export function normalizeDeliveryOption(item: any = {}) {
       ? Number(item.free_threshold)
       : 0,
     payment: {
-      cod: item.payment?.cod !== false,
-      linepay: !!item.payment?.linepay,
+      cod: payment.cod !== false,
+      linepay: !!payment.linepay,
       jkopay: inferredJkoPay,
-      transfer: !!item.payment?.transfer,
+      transfer: !!payment.transfer,
     },
   };
 }
 
-export function normalizePaymentOption(method: string, option: any = {}) {
+export function normalizePaymentOption(
+  method: string,
+  option: SettingsRecord = {},
+): DashboardPaymentOption {
   const defaults = DEFAULT_PAYMENT_OPTIONS[method] || DEFAULT_PAYMENT_OPTIONS.cod;
   return {
     ...defaults,
     ...option,
     icon: String(option.icon ?? defaults.icon ?? ""),
-    icon_url: normalizeIconPath(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
+    icon_url: normalizeIconPath(
+      String(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
+    ),
     name: String(option.name ?? defaults.name ?? ""),
     description: String(option.description ?? defaults.description ?? ""),
   };
 }
 
-export function sectionIconSettingKey(section) {
+export function sectionIconSettingKey(section: unknown): string {
   const normalized = String(section || "").trim();
   if (!normalized) return "";
   return `${normalized}_section_icon_url`;

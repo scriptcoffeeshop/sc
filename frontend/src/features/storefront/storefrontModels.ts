@@ -1,9 +1,80 @@
-export function parseEnabledProductSpecs(product: any = {}) {
-  let specs = [];
+type JsonRecord = Record<string, unknown>;
+
+interface StorefrontProductInput {
+  id?: unknown;
+  category?: unknown;
+  name?: unknown;
+  description?: unknown;
+  roastLevel?: unknown;
+  price?: unknown;
+  specs?: unknown;
+}
+
+interface StorefrontCategoryInput {
+  name?: unknown;
+}
+
+interface StorefrontProductSpecInput {
+  key?: unknown;
+  label?: unknown;
+  price?: unknown;
+  enabled?: unknown;
+}
+
+export interface StorefrontProductSpec {
+  key: string;
+  label: string;
+  price: number;
+}
+
+export interface StorefrontProductViewModel {
+  id: number;
+  name: string;
+  description: string;
+  roastLevel: string;
+  specs: StorefrontProductSpec[];
+}
+
+export interface StorefrontCategoryViewModel {
+  name: string;
+  products: StorefrontProductViewModel[];
+}
+
+export interface StorefrontPaymentConfig {
+  cod: boolean;
+  linepay: boolean;
+  jkopay: boolean;
+  transfer: boolean;
+}
+
+export interface StorefrontDeliveryOption extends JsonRecord {
+  id: string;
+  icon: string;
+  icon_url: string;
+  label: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  payment: StorefrontPaymentConfig;
+}
+
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as JsonRecord
+    : {};
+}
+
+export function parseEnabledProductSpecs(
+  product: StorefrontProductInput = {},
+): StorefrontProductSpec[] {
+  let specs: StorefrontProductSpecInput[] = [];
   try {
-    specs = Array.isArray(product.specs)
+    const parsed = Array.isArray(product.specs)
       ? product.specs
       : JSON.parse(String(product.specs || "[]"));
+    specs = Array.isArray(parsed)
+      ? parsed.map((spec) => asRecord(spec) as StorefrontProductSpecInput)
+      : [];
   } catch {
     specs = [];
   }
@@ -25,10 +96,10 @@ export function parseEnabledProductSpecs(product: any = {}) {
 }
 
 export function buildStorefrontProductsViewModel(
-  products: any[] = [],
-  categories: any[] = [],
-) {
-  const grouped: Record<string, any[]> = {};
+  products: StorefrontProductInput[] = [],
+  categories: StorefrontCategoryInput[] = [],
+): StorefrontCategoryViewModel[] {
+  const grouped: Record<string, StorefrontProductViewModel[]> = {};
 
   products.forEach((product) => {
     const categoryName = String(product.category || "未分類");
@@ -58,7 +129,7 @@ export function buildStorefrontProductsViewModel(
   }));
 }
 
-function parseJsonArray(value) {
+function parseJsonArray(value: unknown): unknown[] {
   const raw = String(value || "").trim();
   if (!raw) return [];
   try {
@@ -69,7 +140,7 @@ function parseJsonArray(value) {
   }
 }
 
-function parseJsonObject(value) {
+function parseJsonObject(value: unknown): JsonRecord {
   const raw = String(value || "").trim();
   if (!raw) return {};
   try {
@@ -82,7 +153,9 @@ function parseJsonObject(value) {
   }
 }
 
-function normalizeDeliveryPaymentConfig(payment: any = {}) {
+function normalizeDeliveryPaymentConfig(
+  payment: JsonRecord = {},
+): StorefrontPaymentConfig {
   const hasJkoPay = Object.prototype.hasOwnProperty.call(payment, "jkopay");
   return {
     cod: Boolean(payment.cod),
@@ -92,7 +165,10 @@ function normalizeDeliveryPaymentConfig(payment: any = {}) {
   };
 }
 
-export function normalizeStorefrontDeliveryOption(option: any = {}) {
+export function normalizeStorefrontDeliveryOption(
+  option: JsonRecord = {},
+): StorefrontDeliveryOption {
+  const payment = asRecord(option.payment);
   return {
     ...option,
     id: String(option.id || ""),
@@ -102,19 +178,23 @@ export function normalizeStorefrontDeliveryOption(option: any = {}) {
     name: String(option.name || option.label || ""),
     description: String(option.description || ""),
     enabled: option.enabled !== false,
-    payment: normalizeDeliveryPaymentConfig(option.payment || {}),
+    payment: normalizeDeliveryPaymentConfig(payment),
   };
 }
 
-export function normalizeStorefrontDeliveryConfig(settings: any = {}) {
+export function normalizeStorefrontDeliveryConfig(
+  settings: JsonRecord = {},
+): StorefrontDeliveryOption[] {
   const configuredDeliveryOptions = parseJsonArray(settings.delivery_options_config);
   if (configuredDeliveryOptions.length) {
     return configuredDeliveryOptions.map((option) =>
-      normalizeStorefrontDeliveryOption(option)
+      normalizeStorefrontDeliveryOption(asRecord(option))
     );
   }
 
-  let paymentRoutingConfig = parseJsonObject(settings.payment_routing_config);
+  let paymentRoutingConfig = parseJsonObject(
+    settings.payment_routing_config,
+  ) as Record<string, JsonRecord>;
   if (!Object.keys(paymentRoutingConfig).length) {
     const linePayEnabled = String(settings.linepay_enabled) === "true";
     const transferEnabled = String(settings.transfer_enabled) === "true";

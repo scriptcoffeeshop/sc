@@ -4,7 +4,7 @@
 
 import { API_URL, districtData } from "../../lib/appConfig.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
-import Swal from "../../lib/swal.js";
+import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
 import TwCitySelector from "../../lib/twCitySelector.js";
 import { storefrontRuntime } from "./storefrontRuntime.ts";

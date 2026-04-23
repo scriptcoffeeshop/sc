@@ -24,6 +24,18 @@ export const PAYMENT_STATUS_TEXT: Record<string, string> = {
   refunded: "已退款",
 };
 
+export interface PaymentDialogOptions extends Record<string, unknown> {
+  icon: "success" | "error" | "warning" | "info";
+  title: string;
+  html: string;
+  confirmButtonColor: string;
+  confirmButtonText: string;
+  showCancelButton?: boolean;
+  cancelButtonText?: string;
+  cancelButtonColor?: string;
+  paymentLaunchUrl?: string;
+}
+
 export function formatDateTimeText(value: unknown): string {
   const raw = String(value || "").trim();
   if (!raw) return "";
@@ -311,7 +323,7 @@ export function getCustomerPaymentDisplay(
 
 export function buildPaymentStatusDialogOptions(
   params: PaymentDisplayInput = {},
-): Record<string, any> {
+): PaymentDialogOptions {
   const display = getCustomerPaymentDisplay(params);
   const orderId = escapeHtml(String(params?.orderId || ""));
   const detailLines = [
@@ -350,7 +362,7 @@ export function buildPaymentStatusDialogOptions(
     ? "warning"
     : "info";
 
-  const dialogOptions: Record<string, any> = {
+  const dialogOptions: PaymentDialogOptions = {
     icon,
     title: display.guideTitle,
     html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
@@ -372,7 +384,7 @@ export function buildPaymentStatusDialogOptions(
 
 export function buildPaymentLaunchDialogOptions(
   params: PaymentDisplayInput = {},
-): Record<string, any> {
+): PaymentDialogOptions {
   const display = getCustomerPaymentDisplay({
     paymentMethod: params?.paymentMethod,
     paymentStatus: "pending",

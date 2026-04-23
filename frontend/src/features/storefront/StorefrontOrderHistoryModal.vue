@@ -4,7 +4,7 @@
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
     :class="{ hidden: !isOpen }"
   >
-    <div class="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+    <div class="storefront-orders-dialog bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
       <div class="p-4 border-b flex justify-between items-center">
         <h3 class="text-lg font-bold" style="color: var(--primary)">
           <span class="tab-with-icon"><ListOrdered class="ui-action-icon" aria-hidden="true" />我的訂單</span>
@@ -18,7 +18,7 @@
           &times;
         </button>
       </div>
-      <div id="my-orders-list" class="flex-1 overflow-y-auto p-4">
+      <div id="my-orders-list" class="storefront-orders-list flex-1 overflow-y-auto p-4">
         <p
           v-if="state === 'loading'"
           class="text-center text-gray-500 py-8"

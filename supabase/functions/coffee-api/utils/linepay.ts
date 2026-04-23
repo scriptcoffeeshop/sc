@@ -26,8 +26,18 @@ export async function linePaySign(
 export async function requestLinePayAPI(
   method: string,
   apiPath: string,
+  data?: unknown,
+): Promise<unknown>;
+export async function requestLinePayAPI<T>(
+  method: string,
+  apiPath: string,
+  data?: unknown,
+): Promise<T>;
+export async function requestLinePayAPI<T = unknown>(
+  method: string,
+  apiPath: string,
   data: unknown = null,
-): Promise<unknown> {
+): Promise<T> {
   const { data: sandboxSetting } = await supabase.from("coffee_settings")
     .select("value").eq("key", "linepay_sandbox").maybeSingle();
   const isSandbox = !sandboxSetting || String(sandboxSetting.value) !== "false";
@@ -74,7 +84,7 @@ export async function requestLinePayAPI(
         /("transactionId"\s*:\s*)(\d+)/g,
         '$1"$2"',
       );
-      return JSON.parse(processed);
+      return JSON.parse(processed) as T;
     } catch (err: unknown) {
       attempt++;
       if (attempt > maxRetries) {
@@ -90,5 +100,5 @@ export async function requestLinePayAPI(
     }
   }
 
-  return { success: false, error: "LINE Pay 網路異常" };
+  return { success: false, error: "LINE Pay 網路異常" } as T;
 }

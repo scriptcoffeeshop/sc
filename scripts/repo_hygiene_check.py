@@ -23,6 +23,11 @@ PRODUCTION_TS_IGNORE_PREFIXES = (
     "supabase/functions/coffee-api/",
 )
 
+ALLOWED_FRONTEND_SOURCE_JS = {
+    "frontend/src/lib/taiwanCityData.js",
+    "frontend/src/lib/twCitySelector.js",
+}
+
 SOURCE_SUFFIXES = (
     ".js",
     ".jsx",
@@ -63,6 +68,9 @@ def find_ts_ignore_violations(path: str) -> list[str]:
     if not is_production_source_file(path):
         return []
 
+    if not Path(path).exists():
+        return []
+
     try:
         lines = Path(path).read_text(encoding="utf-8").splitlines()
     except UnicodeDecodeError:
@@ -72,6 +80,27 @@ def find_ts_ignore_violations(path: str) -> list[str]:
         f"禁止在 production source 使用 @ts-ignore：{path}:{line_no}"
         for line_no, line in enumerate(lines, start=1)
         if "@ts-ignore" in line
+    ]
+
+
+def is_frontend_production_js(path: str) -> bool:
+    return (
+        path.startswith("frontend/src/")
+        and path.endswith(".js")
+        and not path.endswith(".test.js")
+    )
+
+
+def find_frontend_js_violations(path: str) -> list[str]:
+    if not is_frontend_production_js(path):
+        return []
+    if not Path(path).exists():
+        return []
+    if path in ALLOWED_FRONTEND_SOURCE_JS:
+        return []
+    return [
+        "禁止新增 frontend/src production JS，請改用 TypeScript；"
+        f"若是 vendor/data 邊界，需加入 allowlist：{path}"
     ]
 
 
@@ -90,6 +119,7 @@ def main() -> int:
             violations.append(f"禁止追蹤敏感 env 檔案：{path}")
 
         violations.extend(find_ts_ignore_violations(path))
+        violations.extend(find_frontend_js_violations(path))
 
     if violations:
         print("[repo-hygiene] 發現違規檔案：", file=sys.stderr)

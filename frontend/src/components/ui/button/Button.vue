@@ -1,7 +1,7 @@
 <script setup>
 import { computed, useAttrs } from "vue";
 import { cva } from "class-variance-authority";
-import { cn } from "../../../lib/utils.js";
+import { cn } from "../../../lib/utils.ts";
 
 defineOptions({
   inheritAttrs: false,

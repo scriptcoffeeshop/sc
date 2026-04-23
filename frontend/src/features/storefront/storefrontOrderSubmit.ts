@@ -4,7 +4,7 @@ import { escapeHtml, isValidEmail } from "../../lib/sharedUtils.ts";
 import { state } from "../../lib/appState.ts";
 import { cart, clearCart } from "./storefrontCartStore.ts";
 import { collectDynamicFields } from "./storefrontFormRenderer.ts";
-import Swal from "../../lib/swal.js";
+import Swal from "../../lib/swal.ts";
 import {
   buildSubmitDeliveryInfo,
   collectSubmitDeliveryInfo,

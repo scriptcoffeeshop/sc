@@ -1,6 +1,6 @@
-// 前後台共用工具。UI class helper 仍保留在 `frontend/src/lib/utils.js`。
+// 前後台共用工具。UI class helper 仍保留在 `frontend/src/lib/utils.ts`。
 
-import Swal from "./swal.js";
+import Swal from "./swal.ts";
 
 /** HTML 特殊字元跳脫 */
 export function escapeHtml(s: unknown): string {

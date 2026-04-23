@@ -50,7 +50,7 @@ import {
 
 let currentDeliveryConfig = [];
 
-type StringRecord = Record<string, any>;
+type StringRecord = Record<string, unknown>;
 
 function getInputElement(id: string): HTMLInputElement | null {
   const element = document.getElementById(id);

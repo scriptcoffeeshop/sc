@@ -145,6 +145,19 @@ jobs:
           fi
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
+      - name: Report skipped Supabase deployment
+        if: steps.deploy_secrets.outputs.ready != 'true'
+        run: |
+          echo "::notice::Supabase deployment was skipped because required deploy secrets are missing."
+          {
+            echo "## Supabase deployment skipped"
+            echo ""
+            echo "Backend deployment did not run because one or more required secrets are missing:"
+            echo ""
+            echo "- SUPABASE_ACCESS_TOKEN"
+            echo "- SUPABASE_DB_PASSWORD"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Setup Supabase CLI
         if: steps.deploy_secrets.outputs.ready == 'true'
         uses: supabase/setup-cli@v1
