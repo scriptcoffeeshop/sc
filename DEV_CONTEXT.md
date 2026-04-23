@@ -2,14 +2,14 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。
 
-最後更新：2026-04-22
+最後更新：2026-04-23
 
 ---
 
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. legacy `js/*.js` 的 cache busting 由 `.frontend-version` 管理；根目錄 `main.html` / `dashboard.html` 已改成瘦身的本機 compat redirect，不再承載實際前後台靜態 DOM。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+2. legacy `js/*.js` 的 cache busting 由 `.frontend-version` 管理；正式站入口應是根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物。若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy / main / root`，請先到 GitHub Pages 設定修正。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
 3. 目前專案流程：修改程式碼後預設不跑本地驗證以節省 token，先 commit/push 並等待 CI；只有 CI 報錯、使用者明確要求，或需要釐清高風險問題時才跑本地 `guardrails` / tests。
 4. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
 5. 專案溝通、註解、commit message 以繁體中文為主。
@@ -26,14 +26,15 @@
 
 - 專案：Script Coffee（前台訂購 + 後台管理）
 - 主要分支：`main`
-- 前端：`Vite + Vue 3`；實際 deploy 入口為 `frontend/main.html` / `frontend/dashboard.html`，根目錄 `main.html` / `dashboard.html` 僅保留本機 compat redirect
+- 前端：`Vite + Vue 3`；正式站 deploy 入口為根目錄 `/main.html` / `/dashboard.html`（由 GitHub Pages workflow artifact 提供）
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端 legacy 版號來源：`.frontend-version`
 - 目前前端版號：`130`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
-  - GitHub Pages 會自動部署前端
+  - GitHub Pages 會以 `workflow` 模式自動部署前端
   - Supabase `db push` / `coffee-api` deploy 需 repo secrets 已設好
+  - 2026-04-23 已確認並修正 GitHub Pages source：從 `legacy / main / root` 切回 `workflow`，並重跑成功 workflow `24798560081` 讓正式站重新指向 build artifact
 
 必要 secrets：
 
