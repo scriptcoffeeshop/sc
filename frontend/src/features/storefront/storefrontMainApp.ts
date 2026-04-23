@@ -3,7 +3,7 @@
 // ============================================
 
 import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
-import { escapeHtml, isValidEmail } from "../../lib/sharedUtils.ts";
+import { escapeHtml, isValidEmail, Toast } from "../../lib/sharedUtils.ts";
 import { loginWithLine } from "../../lib/auth.ts";
 import { state } from "../../lib/appState.ts";
 import {
@@ -49,6 +49,25 @@ import {
 } from "./storefrontRuntime.ts";
 
 let currentDeliveryConfig = [];
+
+type StringRecord = Record<string, any>;
+
+function getInputElement(id: string): HTMLInputElement | null {
+  const element = document.getElementById(id);
+  return element instanceof HTMLInputElement ? element : null;
+}
+
+function getFormControlValue(id: string): string {
+  const element = document.getElementById(id);
+  if (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLSelectElement
+  ) {
+    return element.value.trim();
+  }
+  return "";
+}
 
 function getErrorMessage(error, fallback = "發生未知錯誤") {
   if (error instanceof Error) return error.message || fallback;
@@ -212,11 +231,20 @@ function showUserInfo() {
   document.getElementById("login-prompt").classList.add("hidden");
   document.getElementById("user-info").classList.remove("hidden");
   document.getElementById("user-display-name").textContent =
-    state.currentUser.displayName || state.currentUser.display_name;
-  document.getElementById("user-avatar").src = state.currentUser.pictureUrl ||
-    state.currentUser.picture_url || "https://via.placeholder.com/48";
-  document.getElementById("line-name").value = state.currentUser.displayName ||
-    state.currentUser.display_name;
+    String(state.currentUser.displayName || state.currentUser.display_name || "");
+  const avatar = document.getElementById("user-avatar");
+  if (avatar instanceof HTMLImageElement) {
+    avatar.src = String(
+      state.currentUser.pictureUrl ||
+        state.currentUser.picture_url || "https://via.placeholder.com/48",
+    );
+  }
+  const lineNameInput = getInputElement("line-name");
+  if (lineNameInput) {
+    lineNameInput.value = String(
+      state.currentUser.displayName || state.currentUser.display_name || "",
+    );
+  }
   // 回填所有動態表單欄位
   prefillUserFields();
   applySavedOrderFormPrefs();
@@ -232,12 +260,12 @@ function prefillUserFields() {
   if (!state.currentUser) return;
   const u = state.currentUser;
   // phone / email
-  const phoneEl = document.getElementById("field-phone");
-  const emailEl = document.getElementById("field-email");
-  if (phoneEl && u.phone) phoneEl.value = u.phone;
-  if (emailEl && u.email) emailEl.value = u.email;
+  const phoneEl = getInputElement("field-phone");
+  const emailEl = getInputElement("field-email");
+  if (phoneEl && u.phone) phoneEl.value = String(u.phone);
+  if (emailEl && u.email) emailEl.value = String(u.email);
   // 自訂欄位
-  let customDefaults = {};
+  let customDefaults: StringRecord = {};
   if (u.defaultCustomFields) {
     try {
       customDefaults = typeof u.defaultCustomFields === "string"
@@ -247,7 +275,14 @@ function prefillUserFields() {
   }
   for (const [key, val] of Object.entries(customDefaults)) {
     const el = document.getElementById(`field-${key}`);
-    if (el && val) el.value = val;
+    if (
+      val &&
+      (el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        el instanceof HTMLSelectElement)
+    ) {
+      el.value = String(val);
+    }
   }
 }
 
@@ -262,7 +297,7 @@ export async function showProfileModal() {
   );
 
   // 準備現有預設值
-  let customDefaults = {};
+  let customDefaults: StringRecord = {};
   if (u.defaultCustomFields) {
     try {
       customDefaults = typeof u.defaultCustomFields === "string"
@@ -276,9 +311,9 @@ export async function showProfileModal() {
   for (const f of fields) {
     const key = f.field_key;
     let currentVal = "";
-    if (key === "phone") currentVal = u.phone || "";
-    else if (key === "email") currentVal = u.email || "";
-    else currentVal = customDefaults[key] || "";
+    if (key === "phone") currentVal = String(u.phone || "");
+    else if (key === "email") currentVal = String(u.email || "");
+    else currentVal = String(customDefaults[key] || "");
 
     const escapedVal = escapeHtml(currentVal);
     const escapedLabel = escapeHtml(f.label);
@@ -287,7 +322,7 @@ export async function showProfileModal() {
     if (f.field_type === "select") {
       let opts = [];
       try {
-        opts = JSON.parse(f.options || "[]");
+        opts = JSON.parse(String(f.options || "[]"));
       } catch {}
       fieldsHtml += `<div style="margin-bottom:12px">
                 <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
@@ -332,8 +367,7 @@ export async function showProfileModal() {
       popup: "storefront-profile-popup",
     },
     preConfirm: () => {
-      const emailEl = document.getElementById("profile-email");
-      const email = emailEl ? emailEl.value.trim() : "";
+      const email = getFormControlValue("profile-email");
       if (email && !isValidEmail(email)) {
         showValidationMessage("請填寫正確的電子郵件格式");
         return false;
@@ -345,12 +379,11 @@ export async function showProfileModal() {
   if (!confirmed) return;
 
   // 收集資料
-  const profileData = {};
-  const customFieldsData = {};
+  const profileData: StringRecord = {};
+  const customFieldsData: StringRecord = {};
   for (const f of fields) {
     const key = f.field_key;
-    const el = document.getElementById(`profile-${key}`);
-    const val = el ? el.value.trim() : "";
+    const val = getFormControlValue(`profile-${key}`);
     if (key === "phone") profileData.phone = val;
     else if (key === "email") profileData.email = val;
     else if (val) customFieldsData[key] = val;
@@ -386,10 +419,11 @@ export function logoutCurrentUser() {
   localStorage.removeItem("coffee_jwt");
   document.getElementById("login-prompt").classList.remove("hidden");
   document.getElementById("user-info").classList.add("hidden");
-  document.getElementById("line-name").value = "";
+  const lineNameInput = getInputElement("line-name");
+  if (lineNameInput) lineNameInput.value = "";
   // 清除動態欄位
-  const phoneEl = document.getElementById("field-phone");
-  const emailEl = document.getElementById("field-email");
+  const phoneEl = getInputElement("field-phone");
+  const emailEl = getInputElement("field-email");
   if (phoneEl) phoneEl.value = "";
   if (emailEl) emailEl.value = "";
   updateFormState();
@@ -410,14 +444,14 @@ function getQuoteRequestItems() {
   }));
 }
 
-function scheduleQuoteRefresh(options = {}) {
+function scheduleQuoteRefresh(options: { silent?: boolean } = {}) {
   if (quoteRefreshTimer) clearTimeout(quoteRefreshTimer);
   quoteRefreshTimer = setTimeout(() => {
     refreshQuote(options);
   }, 120);
 }
 
-async function refreshQuote(options = {}) {
+async function refreshQuote(options: { silent?: boolean } = {}) {
   const silent = options.silent !== false;
   const items = getQuoteRequestItems();
 
@@ -430,7 +464,7 @@ async function refreshQuote(options = {}) {
   }
 
   const requestId = ++latestQuoteRequestId;
-  const payload = { items };
+  const payload: { items: ReturnType<typeof getQuoteRequestItems>; deliveryMethod?: string } = { items };
   if (state.selectedDelivery) payload.deliveryMethod = state.selectedDelivery;
 
   try {
@@ -499,7 +533,7 @@ async function loadInitData() {
     if (productsContainer) {
       const message = document.createElement("p");
       message.className = "p-8 text-center text-red-600";
-      message.append(`載入資料失敗: ${e.message}`);
+      message.append(`載入資料失敗: ${getErrorMessage(e)}`);
       message.appendChild(document.createElement("br"));
       const retryButton = document.createElement("button");
       retryButton.type = "button";
@@ -674,9 +708,11 @@ function updateFormState() {
   const loggedIn = !!state.currentUser;
   const open = state.isStoreOpen;
   const submitBtn = document.getElementById("submit-btn");
-  if (submitBtn) submitBtn.disabled = !loggedIn || !open;
+  if (submitBtn instanceof HTMLButtonElement) {
+    submitBtn.disabled = !loggedIn || !open;
+  }
   const cartSubmitBtn = document.getElementById("cart-submit-btn");
-  if (cartSubmitBtn) {
+  if (cartSubmitBtn instanceof HTMLButtonElement) {
     const hasItems = cart.length > 0;
     cartSubmitBtn.disabled = !loggedIn || !open || !hasItems;
     // 根據禁用原因顯示對應的按鈕文字提示
@@ -693,7 +729,7 @@ function updateFormState() {
 }
 
 // ============ 付款方式選擇 ============
-export function selectPayment(method, options = {}) {
+export function selectPayment(method, options: { skipQuote?: boolean } = {}) {
   state.selectedPayment = method;
   document.querySelectorAll(".payment-option").forEach((el) =>
     el.classList.remove("active")
@@ -816,6 +852,7 @@ function renderBankAccounts() {
   container.replaceChildren(fragment);
 
   container.querySelectorAll("[data-bank-card]").forEach((card) => {
+    if (!(card instanceof HTMLElement)) return;
     card.addEventListener("click", () => {
       selectBankAccount(card.dataset.bankId);
     });
@@ -823,6 +860,7 @@ function renderBankAccounts() {
 
   container.querySelectorAll('input[name="bank_account_selection"]').forEach(
     (radio) => {
+      if (!(radio instanceof HTMLInputElement)) return;
       radio.addEventListener("click", (event) => {
         event.stopPropagation();
         selectBankAccount(radio.value);
@@ -831,6 +869,7 @@ function renderBankAccounts() {
   );
 
   container.querySelectorAll("[data-copy-account]").forEach((button) => {
+    if (!(button instanceof HTMLElement)) return;
     button.addEventListener("click", (event) => {
       event.stopPropagation();
       copyTransferAccount(button, button.dataset.account || "");

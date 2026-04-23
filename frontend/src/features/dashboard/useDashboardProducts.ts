@@ -180,7 +180,11 @@ async function syncProductSortables() {
       onEnd: async (event) => {
         if (event.oldIndex === event.newIndex) return;
         const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
-          .map((row) => Number.parseInt(row.dataset.id || "", 10))
+          .map((row) =>
+            row instanceof HTMLElement
+              ? Number.parseInt(row.dataset.id || "", 10)
+              : NaN
+          )
           .filter((id) => !Number.isNaN(id));
         try {
           await updateProductOrders(ids);
@@ -318,7 +322,7 @@ async function saveProduct(event) {
     return;
   }
 
-  const payload = {
+  const payload: Record<string, any> = {
     userId: getAuthUserId(),
     category: productForm.category,
     name: productForm.name,

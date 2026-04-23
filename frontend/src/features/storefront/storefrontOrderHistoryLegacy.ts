@@ -2,6 +2,7 @@ import { createApp } from "vue";
 import { API_URL } from "../../lib/appConfig.ts";
 import { authFetch } from "../../lib/auth.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
+import Swal from "../../lib/swal.js";
 import { state } from "../../lib/appState.ts";
 import StorefrontOrderHistoryCard from "./StorefrontOrderHistoryCard.vue";
 import { buildOrderHistoryItem } from "./useStorefrontOrderHistory.ts";

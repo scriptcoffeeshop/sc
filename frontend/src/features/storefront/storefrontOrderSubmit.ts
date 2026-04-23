@@ -54,8 +54,9 @@ export async function submitOrder(): Promise<void> {
   }
 
   // 從動態欄位取值（相容舊的 phone / email）
-  const phone = fieldsResult.data.phone || "";
-  const email = fieldsResult.data.email || "";
+  const dynamicFieldData = fieldsResult.data as Record<string, unknown>;
+  const phone = String(dynamicFieldData.phone || "");
+  const email = String(dynamicFieldData.email || "");
 
   if (!state.selectedDelivery) {
     showError("錯誤", "請選擇配送方式");
@@ -164,7 +165,7 @@ export async function submitOrder(): Promise<void> {
 
   // 組合自訂欄位（排除 phone / email，轉為 JSON）
   const customFieldsData: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(fieldsResult.data)) {
+  for (const [k, v] of Object.entries(dynamicFieldData)) {
     if (k !== "phone" && k !== "email") {
       customFieldsData[k] = v;
     }
@@ -319,9 +320,7 @@ export async function submitOrder(): Promise<void> {
           return;
         }
 
-        const providerLabel = paymentMethod === "linepay"
-          ? "LINE Pay"
-          : "線上付款";
+        const providerLabel = "線上付款";
         Swal.fire({
           icon: "info",
           title: `跳轉至${providerLabel}`,

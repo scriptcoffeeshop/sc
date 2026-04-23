@@ -12,7 +12,7 @@
     "check": "cd supabase/functions/coffee-api && deno check index.ts",
     "test": "cd supabase/functions/coffee-api && JWT_SECRET=mock SUPABASE_URL=https://mock.supabase.co SUPABASE_SERVICE_ROLE_KEY=mock deno test --allow-env --allow-net --allow-read tests/",
     "test:unit": "vitest run --config frontend/vite.config.js",
-    "typecheck": "vue-tsc --noEmit -p frontend/tsconfig.typecheck.json",
+    "typecheck": "vue-tsc --noEmit -p frontend/tsconfig.json",
     "typecheck:full": "vue-tsc --noEmit -p frontend/tsconfig.json",
     "e2e": "npx playwright test --config=playwright.config.ts",
     "e2e:smoke": "npx playwright test tests/e2e/smoke --config=playwright.config.ts",

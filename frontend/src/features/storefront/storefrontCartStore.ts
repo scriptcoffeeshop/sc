@@ -3,6 +3,7 @@
 // ============================================
 
 import { state } from "../../lib/appState.ts";
+import Swal from "../../lib/swal.js";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
@@ -350,7 +351,10 @@ export function addToCart(productId, specKey) {
   if (!p) return;
   let specs = [];
   try {
-    specs = JSON.parse(p.specs || "[]");
+    const specsSource = typeof p.specs === "string"
+      ? p.specs
+      : JSON.stringify(p.specs || []);
+    specs = JSON.parse(specsSource);
   } catch {}
   const spec = specs.find((s) => s.key === specKey) ||
     (specKey === "default"
@@ -439,6 +443,7 @@ export function updateCartUI() {
   // 更新前台商品卡片：In-line Stepper 顯示邏輯
   if (!isVueManagedProducts()) {
     document.querySelectorAll(".spec-container").forEach((container) => {
+      if (!(container instanceof HTMLElement)) return;
       const pid = parseInt(container.dataset.pid);
       const specKey = container.dataset.spec;
       const cartItem = cart.find((c) =>

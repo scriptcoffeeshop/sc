@@ -49,9 +49,15 @@ export function collectDynamicFields(fields) {
 
     let value;
     if (f.field_type === "checkbox") {
-      value = el.checked ? "是" : "否";
-    } else {
+      value = el instanceof HTMLInputElement && el.checked ? "是" : "否";
+    } else if (
+      el instanceof HTMLInputElement ||
+      el instanceof HTMLTextAreaElement ||
+      el instanceof HTMLSelectElement
+    ) {
       value = el.value.trim();
+    } else {
+      value = "";
     }
 
     // 驗證必填
@@ -118,12 +124,15 @@ export function applyBranding(settings) {
     : getDefaultIconUrl("brand");
   if (faviconUrl) {
     if (!favicon) {
-      favicon = document.createElement("link");
-      favicon.id = "dynamic-favicon";
-      favicon.rel = "icon";
-      document.head.appendChild(favicon);
+      const link = document.createElement("link");
+      link.id = "dynamic-favicon";
+      link.rel = "icon";
+      document.head.appendChild(link);
+      favicon = link;
     }
-    favicon.href = faviconUrl;
+    if (favicon instanceof HTMLLinkElement) {
+      favicon.href = faviconUrl;
+    }
   }
 
   if (typeof window !== "undefined" && window.localStorage) {

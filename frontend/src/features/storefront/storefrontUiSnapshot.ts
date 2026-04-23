@@ -53,8 +53,9 @@ function cloneArrayItems<T extends Record<string, unknown>>(items: unknown): T[]
 }
 
 function readWindowValue<T>(key: string, fallback: T): T {
-  const runtimeWindow = globalThis.window as (Window & Record<string, unknown>) |
-    undefined;
+  const runtimeWindow = globalThis.window as unknown as
+    | (Window & Record<string, unknown>)
+    | undefined;
   const value = runtimeWindow?.[key] ?? (globalThis as Record<string, unknown>)[key];
   return (value ?? fallback) as T;
 }

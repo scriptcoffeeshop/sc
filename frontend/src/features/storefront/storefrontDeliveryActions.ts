@@ -4,6 +4,7 @@
 
 import { API_URL, districtData } from "../../lib/appConfig.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
+import Swal from "../../lib/swal.js";
 import { state } from "../../lib/appState.ts";
 import TwCitySelector from "../../lib/twCitySelector.js";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
@@ -11,6 +12,32 @@ import { storefrontRuntime } from "./storefrontRuntime.ts";
 let allStores = [];
 let storeListLoaded = false;
 let citySelectorInstance = null; // 用來儲存 tw-city-selector 實體
+
+type DeliveryPrefs = Record<string, any>;
+
+function getInputElement(id: string): HTMLInputElement | null {
+  const element = document.getElementById(id);
+  return element instanceof HTMLInputElement ? element : null;
+}
+
+function getSelectElement(id: string): HTMLSelectElement | null {
+  const element = document.getElementById(id);
+  return element instanceof HTMLSelectElement ? element : null;
+}
+
+function getSelectValue(id: string): string {
+  return getSelectElement(id)?.value || "";
+}
+
+function setInputValue(id: string, value: unknown) {
+  const input = getInputElement(id);
+  if (input) input.value = String(value || "");
+}
+
+function setElementText(id: string, value: unknown) {
+  const element = document.getElementById(id);
+  if (element) element.textContent = String(value || "");
+}
 
 function initCitySelector() {
   if (TwCitySelector && !citySelectorInstance) {
@@ -36,7 +63,7 @@ export function renderDeliveryOptions(config) {
 }
 
 /** 選擇配送方式 */
-export function selectDelivery(method, e, options = {}) {
+export function selectDelivery(method, e = null, options: { skipQuote?: boolean } = {}) {
   state.selectedDelivery = method;
   state.orderQuote = null;
   state.quoteError = "";
@@ -110,8 +137,9 @@ if (typeof window !== "undefined") {
 
 /** 更新地區下拉 (限新竹使用) */
 export function updateDistricts() {
-  const city = document.getElementById("delivery-city").value;
-  const distSelect = document.getElementById("delivery-district");
+  const city = getSelectValue("delivery-city");
+  const distSelect = getSelectElement("delivery-district");
+  if (!distSelect) return;
   distSelect.replaceChildren();
   const placeholderOption = document.createElement("option");
   placeholderOption.value = "";
@@ -133,24 +161,22 @@ export const populateDistricts = updateDistricts;
 /** 清除已選門市 */
 export function clearSelectedStore() {
   document.getElementById("store-selected-info").classList.add("hidden");
-  document.getElementById("store-name-input").value = "";
-  document.getElementById("store-address-input").value = "";
-  document.getElementById("store-id-input").value = "";
-  document.getElementById("selected-store-name").textContent = "";
-  document.getElementById("selected-store-address").textContent = "";
-  document.getElementById("selected-store-id").textContent = "";
+  setInputValue("store-name-input", "");
+  setInputValue("store-address-input", "");
+  setInputValue("store-id-input", "");
+  setElementText("selected-store-name", "");
+  setElementText("selected-store-address", "");
+  setElementText("selected-store-id", "");
 }
 
 /** 套用門市選擇結果 */
 export function applyStoreSelection(data) {
-  document.getElementById("selected-store-name").textContent = data.storeName;
-  document.getElementById("selected-store-address").textContent =
-    data.storeAddress;
-  document.getElementById("selected-store-id").textContent = "門市代號：" +
-    data.storeId;
-  document.getElementById("store-name-input").value = data.storeName;
-  document.getElementById("store-address-input").value = data.storeAddress;
-  document.getElementById("store-id-input").value = data.storeId;
+  setElementText("selected-store-name", data.storeName);
+  setElementText("selected-store-address", data.storeAddress);
+  setElementText("selected-store-id", "門市代號：" + String(data.storeId || ""));
+  setInputValue("store-name-input", data.storeName);
+  setInputValue("store-address-input", data.storeAddress);
+  setInputValue("store-id-input", data.storeId);
   document.getElementById("store-selected-info").classList.remove("hidden");
   Toast.fire({ icon: "success", title: "已選擇門市：" + data.storeName });
 }
@@ -180,7 +206,7 @@ export async function checkStoreToken(token) {
       const btn = document.querySelector(
         `.delivery-option[data-id="${method}"]`,
       );
-      if (btn) btn.click();
+      if (btn instanceof HTMLElement) btn.click();
       else {
         selectDelivery(method, {
           currentTarget: { classList: { add: () => {} } },
@@ -248,7 +274,7 @@ export async function openStoreMap() {
         const input = document.createElement("input");
         input.type = "hidden";
         input.name = k;
-        input.value = v;
+        input.value = String(v || "");
         form.appendChild(input);
       });
       document.body.appendChild(form);
@@ -292,7 +318,7 @@ export async function openStoreMap() {
       const input = document.createElement("input");
       input.type = "hidden";
       input.name = k;
-      input.value = v;
+      input.value = String(v || "");
       form.appendChild(input);
     });
     document.body.appendChild(form);
@@ -354,6 +380,13 @@ export async function openStoreSearchModal() {
       const searchInput = document.getElementById("store-search-input");
       const resultsDiv = document.getElementById("store-search-results");
       const hintP = document.getElementById("store-search-hint");
+      if (
+        !(searchInput instanceof HTMLInputElement) ||
+        !resultsDiv ||
+        !hintP
+      ) {
+        return;
+      }
       searchInput.focus();
       searchInput.addEventListener("input", () => {
         const kw = searchInput.value.trim().toLowerCase();
@@ -417,8 +450,8 @@ export async function openStoreSearchModal() {
 /** 載入配送偏好 */
 export function loadDeliveryPrefs() {
   try {
-    let prefs = {};
-    let localPrefs = {};
+    let prefs: DeliveryPrefs = {};
+    let localPrefs: DeliveryPrefs = {};
     const prefsStr = localStorage.getItem("coffee_delivery_prefs");
     if (prefsStr) {
       try {
@@ -459,18 +492,19 @@ export function loadDeliveryPrefs() {
 
       if (method === "delivery") {
         if (prefs.city) {
-          document.getElementById("delivery-city").value = prefs.city;
+          const cityEl = getSelectElement("delivery-city");
+          if (cityEl) cityEl.value = String(prefs.city || "");
           populateDistricts();
           if (prefs.district) {
-            document.getElementById("delivery-district").value = prefs.district;
+            const districtEl = getSelectElement("delivery-district");
+            if (districtEl) districtEl.value = String(prefs.district || "");
           }
         }
         if (prefs.address) {
-          document.getElementById("delivery-detail-address").value =
-            prefs.address;
+          setInputValue("delivery-detail-address", prefs.address);
         }
         const deliveryCompanyEl = document.getElementById("delivery-company");
-        if (deliveryCompanyEl) {
+        if (deliveryCompanyEl instanceof HTMLInputElement) {
           deliveryCompanyEl.value = String(prefs.companyOrBuilding || "").trim();
         }
       } else if (method === "home_delivery") {
@@ -482,20 +516,19 @@ export function loadDeliveryPrefs() {
         const districtText = rawDistrict.replace(/^\d{3}\s*/, "");
         const zipMatch = rawDistrict.match(/^(\d{3})/);
 
-        if (countyEl && prefs.city) {
+        if (countyEl instanceof HTMLSelectElement && prefs.city) {
           countyEl.value = prefs.city;
           countyEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
-        if (districtEl && districtText) {
+        if (districtEl instanceof HTMLSelectElement && districtText) {
           districtEl.value = districtText;
           districtEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
-        if (zipEl && zipMatch) {
+        if (zipEl instanceof HTMLInputElement && zipMatch) {
           zipEl.value = zipMatch[1];
         }
         if (prefs.address) {
-          const homeAddrEl = document.getElementById("home-delivery-detail");
-          if (homeAddrEl) homeAddrEl.value = prefs.address;
+          setInputValue("home-delivery-detail", prefs.address);
         }
       } else if (method === "seven_eleven" || method === "family_mart") {
         if (prefs.storeId) {
