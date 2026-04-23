@@ -144,7 +144,10 @@ export function createOrderStatusController(deps) {
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) {
+        if (result.statusUpdated) await deps.loadOrders();
+        throw new Error(result.error);
+      }
 
       deps.Toast.fire({ icon: "success", title: "狀態已更新" });
 
@@ -163,7 +166,12 @@ export function createOrderStatusController(deps) {
       }
 
       await deps.loadOrders();
-      if (deps.previewOrderStatusNotification) {
+      const lineNotificationWasSentByServer = Boolean(
+        result.notifications?.line?.attempted,
+      );
+      if (
+        deps.previewOrderStatusNotification && !lineNotificationWasSentByServer
+      ) {
         await deps.previewOrderStatusNotification(flexOrder, status);
       }
     } catch (error) {
