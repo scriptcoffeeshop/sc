@@ -19,7 +19,10 @@ DASHBOARD_TEMPLATE = ROOT / "frontend" / "src" / "pages" / "DashboardPage.vue"
 DASHBOARD_APP = ROOT / "js" / "dashboard-app.js"
 DASHBOARD_MODULES = list((ROOT / "js" / "dashboard" / "modules").glob("*.js"))
 DASHBOARD_EVENTS = ROOT / "js" / "dashboard" / "events.js"
-TARGETS = [DASHBOARD_TEMPLATE, DASHBOARD_APP, DASHBOARD_EVENTS] + DASHBOARD_MODULES
+TARGETS = [
+    path for path in [DASHBOARD_TEMPLATE, DASHBOARD_APP, DASHBOARD_EVENTS, *DASHBOARD_MODULES]
+    if path.exists()
+]
 
 INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')

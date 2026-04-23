@@ -32,7 +32,8 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   line_user_id TEXT DEFAULT '',
   line_name TEXT NOT NULL,
   phone TEXT NOT NULL,
-  items TEXT NOT NULL,
+  items TEXT NOT NULL,                  -- 人類可讀的訂單摘要
+  items_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   total INT NOT NULL DEFAULT 0,
   delivery_method TEXT NOT NULL DEFAULT 'delivery',
   -- 配送相關
@@ -47,11 +48,16 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   -- 訂單狀態 (白名單: pending/processing/shipped/completed/cancelled)
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'shipped', 'completed', 'cancelled')),
   note TEXT DEFAULT '',
+  cancel_reason TEXT DEFAULT '',
   email TEXT DEFAULT '',
-  custom_fields TEXT DEFAULT '',
-  receipt_info TEXT DEFAULT '',
+  custom_fields JSONB DEFAULT '{}'::jsonb,
+  receipt_info JSONB DEFAULT 'null'::jsonb,
   payment_status TEXT DEFAULT '',
   payment_id TEXT DEFAULT '',
+  payment_expires_at TIMESTAMPTZ,
+  payment_confirmed_at TIMESTAMPTZ,
+  payment_last_checked_at TIMESTAMPTZ,
+  payment_provider_status_code TEXT DEFAULT '',
   payment_method TEXT DEFAULT 'cod',
   transfer_account_last5 TEXT DEFAULT '',
   tracking_number TEXT DEFAULT '',
@@ -70,6 +76,7 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('is_open', 'true'),
   ('announcement', ''),
   ('announcement_enabled', 'false'),
+  ('order_confirmation_auto_email_enabled', 'true'),
   ('store_name', '咖啡訂購'),
   ('delivery_pricing_rules', '[]'),
   ('site_title', '咖啡豆訂購'),
@@ -110,6 +117,9 @@ CREATE TABLE IF NOT EXISTS coffee_users (
   default_store_id TEXT DEFAULT '',
   default_store_name TEXT DEFAULT '',
   default_store_address TEXT DEFAULT '',
+  default_payment_method TEXT DEFAULT '',
+  default_transfer_account_last5 TEXT DEFAULT '',
+  default_receipt_info TEXT DEFAULT '',
   email TEXT DEFAULT '',
   blacklist_reason TEXT DEFAULT '',
   blocked_at TIMESTAMPTZ,
@@ -186,6 +196,8 @@ CREATE INDEX IF NOT EXISTS idx_coffee_products_enabled ON coffee_products(enable
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_line_user_id ON coffee_orders(line_user_id);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_created_at ON coffee_orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_status ON coffee_orders(status);
+CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_status ON coffee_orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_expires_at ON coffee_orders(payment_expires_at);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_delivery ON coffee_orders(delivery_method);
 CREATE INDEX IF NOT EXISTS idx_store_selections_created ON coffee_store_selections(created_at);
 

@@ -18,10 +18,14 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: resolve(root, "index.html"),
         main: resolve(root, "main.html"),
         dashboard: resolve(root, "dashboard.html"),
         policy: resolve(root, "policy.html"),
+      },
+      output: {
+        entryFileNames: "assets/[name].js",
+        chunkFileNames: "assets/[name].js",
+        assetFileNames: "assets/[name][extname]",
       },
     },
   },

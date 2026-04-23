@@ -15,9 +15,21 @@ export const updateUserProfileSchema = z.object({
   defaultStoreId: optionalTrimmed,
   defaultStoreName: optionalTrimmed,
   defaultStoreAddress: optionalTrimmed,
+  defaultPaymentMethod: z.union([
+    z.enum(["cod", "linepay", "jkopay", "transfer"]),
+    z.literal(""),
+  ]).optional(),
+  defaultTransferAccountLast5: z.union([
+    z.string().regex(/^\d{5}$/, "匯款帳號末五碼格式不正確"),
+    z.literal(""),
+  ]).optional(),
   defaultCustomFields: z.union([
     z.string(),
-    z.record(z.unknown()),
+    z.record(z.string(), z.unknown()),
+  ]).optional(),
+  defaultReceiptInfo: z.union([
+    z.string(),
+    z.record(z.string(), z.unknown()),
   ]).optional(),
 }).refine((data: Record<string, unknown>) => Object.keys(data).length > 0, {
   message: "沒有提供要更新的欄位",

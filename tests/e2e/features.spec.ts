@@ -56,46 +56,193 @@ async function installGlobalStubs(page: Page) {
   });
 }
 
+async function installStorefrontFeatureRoutes(page: Page) {
+  await page.route(
+    `${SUPABASE_REST_PREFIX}**`,
+    async (route) => route.abort(),
+  );
+
+  await page.route(`${API_URL}**`, async (route) => {
+    const request = route.request();
+    if (request.method() === "OPTIONS") return fulfillJson(route, {});
+
+    const action = new URL(request.url()).searchParams.get("action");
+    if (action === "getInitData") {
+      return fulfillJson(route, {
+        success: true,
+        products: [{
+          id: 101,
+          category: "測試分類",
+          name: "測試豆",
+          description: "feature e2e",
+          price: 220,
+          roastLevel: "中焙",
+          specs: JSON.stringify([
+            { key: "quarter", label: "1/4磅", price: 220, enabled: true },
+          ]),
+          enabled: true,
+        }],
+        categories: [{ id: 1, name: "測試分類" }],
+        formFields: [],
+        bankAccounts: [],
+        promotions: [],
+        settings: {
+          is_open: "true",
+          delivery_options_config: JSON.stringify([
+            {
+              id: "family_mart",
+              name: "全家取貨",
+              description: "全家門市取貨",
+              enabled: true,
+              payment: { cod: true, linepay: false, transfer: false },
+            },
+          ]),
+          payment_options_config: JSON.stringify({
+            cod: { icon: "", name: "貨到付款", description: "到付" },
+          }),
+        },
+      });
+    }
+    if (action === "createStoreMapSession") {
+      return fulfillJson(route, {
+        success: true,
+        mapUrl: "/mock-ecpay-map.html",
+        params: { MerchantID: "123456", LogisticsType: "CVS" },
+      });
+    }
+    return fulfillJson(route, { success: true });
+  });
+}
+
+type DashboardFeatureRouteOptions = {
+  onAddToBlacklist?: (payload: Record<string, unknown>) => void;
+  onUpdateOrderStatus?: (payload: Record<string, unknown>) => void;
+  orders?: Array<Record<string, unknown>>;
+  users?: Array<Record<string, unknown>>;
+  blacklist?: Array<Record<string, unknown>>;
+};
+
+async function installDashboardFeatureRoutes(
+  page: Page,
+  options: DashboardFeatureRouteOptions = {},
+) {
+  const ordersState = Array.isArray(options.orders)
+    ? options.orders.map((order) => ({ ...order }))
+    : [];
+  const usersState = Array.isArray(options.users)
+    ? options.users.map((user) => ({ ...user }))
+    : [];
+  let blacklistState = Array.isArray(options.blacklist)
+    ? options.blacklist.map((entry) => ({ ...entry }))
+    : [];
+
+  await page.route(`${API_URL}**`, async (route) => {
+    const request = route.request();
+    if (request.method() === "OPTIONS") return fulfillJson(route, {});
+
+    const action = new URL(request.url()).searchParams.get("action");
+    if (action === "getOrders") {
+      return fulfillJson(route, { success: true, orders: ordersState });
+    }
+    if (action === "getUsers") {
+      return fulfillJson(route, { success: true, users: usersState });
+    }
+    if (action === "getBlacklist") {
+      return fulfillJson(route, { success: true, blacklist: blacklistState });
+    }
+    if (action === "getProducts") {
+      return fulfillJson(route, { success: true, products: [] });
+    }
+    if (action === "getCategories") {
+      return fulfillJson(route, { success: true, categories: [] });
+    }
+    if (action === "getPromotions") {
+      return fulfillJson(route, { success: true, promotions: [] });
+    }
+    if (action === "getFormFieldsAdmin") {
+      return fulfillJson(route, { success: true, fields: [] });
+    }
+    if (action === "getBankAccounts") {
+      return fulfillJson(route, { success: true, accounts: [] });
+    }
+    if (action === "getSettings") {
+      return fulfillJson(route, {
+        success: true,
+        settings: {
+          site_title: "Script Coffee",
+          site_subtitle: "咖啡豆｜耳掛",
+          site_icon_emoji: "☕",
+          site_icon_url: "",
+          announcement_enabled: "false",
+          announcement: "",
+          order_confirmation_auto_email_enabled: "true",
+          is_open: "true",
+          products_section_title: "咖啡豆選購",
+          products_section_color: "#268BD2",
+          products_section_size: "text-lg",
+          products_section_bold: "true",
+          delivery_section_title: "配送方式",
+          delivery_section_color: "#268BD2",
+          delivery_section_size: "text-lg",
+          delivery_section_bold: "true",
+          notes_section_title: "訂單備註",
+          notes_section_color: "#268BD2",
+          notes_section_size: "text-base",
+          notes_section_bold: "true",
+          linepay_sandbox: "true",
+          delivery_options_config: JSON.stringify([]),
+          payment_options_config: JSON.stringify({
+            cod: { icon: "", icon_url: "", name: "貨到/取貨付款", description: "到付" },
+            linepay: { icon: "", icon_url: "", name: "LINE Pay", description: "線上安全付款" },
+            jkopay: { icon: "", icon_url: "", name: "街口支付", description: "街口支付線上付款" },
+            transfer: { icon: "", icon_url: "", name: "線上轉帳", description: "ATM / 網銀匯款" },
+          }),
+        },
+      });
+    }
+    if (action === "addToBlacklist") {
+      const payload = request.postDataJSON() as Record<string, unknown>;
+      options.onAddToBlacklist?.(payload);
+      const targetUserId = String(payload.targetUserId || "");
+      const targetUser = usersState.find((user) =>
+        String(user.userId || "") === targetUserId
+      );
+      blacklistState = [
+        ...blacklistState.filter((entry) =>
+          String(entry.lineUserId || "") !== targetUserId
+        ),
+        {
+          lineUserId: targetUserId,
+          displayName: String(targetUser?.displayName || ""),
+          blockedAt: "2026-04-21T01:00:00.000Z",
+          reason: String(payload.reason || ""),
+        },
+      ];
+      return fulfillJson(route, { success: true });
+    }
+    if (action === "updateOrderStatus") {
+      const payload = request.postDataJSON() as Record<string, unknown>;
+      options.onUpdateOrderStatus?.(payload);
+      return fulfillJson(route, { success: true });
+    }
+    return fulfillJson(route, { success: true });
+  });
+}
+
+async function seedAdminSession(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "coffee_admin",
+      JSON.stringify({ userId: "admin-1", role: "SUPER_ADMIN" }),
+    );
+    localStorage.setItem("coffee_jwt", "mock-token");
+  });
+}
+
 test.describe("Features E2E", () => {
   test("ECPay map integration triggers correctly payload", async ({ page }) => {
     await installGlobalStubs(page);
-
-    await page.route(
-      `${SUPABASE_REST_PREFIX}**`,
-      async (route) => route.abort(),
-    );
-
-    await page.route(`${API_URL}**`, async (route) => {
-      const request = route.request();
-      if (request.method() === "OPTIONS") return fulfillJson(route, {});
-      const action = new URL(request.url()).searchParams.get("action");
-      if (action === "getInitData") {
-        return fulfillJson(route, {
-          success: true,
-          products: [],
-          categories: [],
-          settings: {
-            is_open: "true",
-            delivery_options_config: JSON.stringify([
-              {
-                id: "family_mart",
-                name: "全家取貨",
-                enabled: true,
-                payment: { cod: true },
-              },
-            ]),
-          },
-        });
-      }
-      if (action === "createStoreMapSession") {
-        return fulfillJson(route, {
-          success: true,
-          mapUrl: "/mock-ecpay-map.html",
-          params: { MerchantID: "123456", LogisticsType: "CVS" },
-        });
-      }
-      return fulfillJson(route, { success: true });
-    });
+    await installStorefrontFeatureRoutes(page);
 
     await page.route("**/mock-ecpay-map.html", (route) => {
       route.fulfill({
@@ -107,144 +254,104 @@ test.describe("Features E2E", () => {
 
     await page.goto("/main.html");
 
-    // Click delivery
-    await page.locator(
-      '[data-action="select-delivery"][data-method="family_mart"]',
-    ).click();
+    const deliveryOption = page.locator('.delivery-option[data-id="family_mart"]');
+    await expect(deliveryOption).toBeVisible();
+    await deliveryOption.click();
 
-    // Click map
-    let mapUrls: string[] = [];
-    page.on("request", (request) => {
-      if (request.url().includes("mock-ecpay-map.html")) {
-        mapUrls.push(request.url());
-      }
-    });
-
-    // Because openStoreMap is a form submission it might navigate away
-    // we use Promise.all to wait for navigation
+    const storeSelectButton = page.locator(".store-select-btn");
+    await expect(storeSelectButton).toBeVisible();
     await Promise.all([
       page.waitForNavigation({ url: /mock-ecpay-map/ }),
-      page.locator('[data-action="open-store-map"]').click(),
+      storeSelectButton.click(),
     ]);
 
     expect(page.url()).toContain("mock-ecpay-map.html");
+    await expect(page.locator("body")).toContainText("ECPAY MAP OK");
   });
 
   test("Admin export orders triggers download", async ({ page }) => {
-    page.on("console", (msg) => console.log("BROWSER CONSOLE:", msg.text()));
     await installGlobalStubs(page);
-    await page.route(`${API_URL}**`, async (route) => {
-      const request = route.request();
-      if (request.method() === "OPTIONS") return fulfillJson(route, {});
-      const action = new URL(request.url()).searchParams.get("action");
-      if (action === "getOrders") {
-        return fulfillJson(route, {
-          success: true,
-          orders: [{
-            orderId: "ORD-EXPORT-1",
-            total: 100,
-            timestamp: "2026-03-09T00:00:00.000Z",
-            deliveryMethod: "delivery",
-            status: "pending",
-            paymentMethod: "cod",
-            paymentStatus: "pending",
-          }],
-          pagination: { totalCount: 1, totalPages: 1, page: 1, pageSize: 50 },
-        });
-      }
-      if (action === "getProducts") {
-        return fulfillJson(route, { success: true, products: [] });
-      }
-      if (action === "getCategories") {
-        return fulfillJson(route, { success: true, categories: [] });
-      }
-      if (action === "getSettings") {
-        return fulfillJson(route, { success: true, settings: {} });
-      }
-      // Mock the blob export API
-      if (action === "exportOrdersCSV") {
-        return route.fulfill({
-          status: 200,
-          headers: {
-            "Content-Type": "text/csv; charset=utf-8",
-            "Content-Disposition": 'attachment; filename="export.csv"',
-          },
-          body: "\ufefforderId,total\nORD-EXPORT-1,100",
-        });
-      }
-      return fulfillJson(route, { success: true });
+    await installDashboardFeatureRoutes(page, {
+      orders: [{
+        orderId: "ORD-EXPORT-1",
+        total: 100,
+        timestamp: "2026-03-09T00:00:00.000Z",
+        deliveryMethod: "delivery",
+        city: "新竹市",
+        district: "東區",
+        address: "測試路 1 號",
+        status: "pending",
+        paymentMethod: "cod",
+        paymentStatus: "pending",
+        lineName: "匯出測試客戶",
+      }],
     });
-
     await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({ userId: "admin-1", role: "SUPER_ADMIN" }),
-      );
-      localStorage.setItem("coffee_jwt", "mock");
+      const blobStore = new Map<string, Blob>();
+      const downloads: Array<{ href: string; download: string; text: string }> =
+        [];
+      (window as any).__dashboardDownloads = downloads;
+      URL.createObjectURL = ((blob: Blob) => {
+        const href = `blob:mock-${downloads.length + blobStore.size + 1}`;
+        blobStore.set(href, blob);
+        return href;
+      }) as typeof URL.createObjectURL;
+      URL.revokeObjectURL = ((href: string) => {
+        blobStore.delete(href);
+      }) as typeof URL.revokeObjectURL;
+      HTMLAnchorElement.prototype.click = function () {
+        const record = {
+          href: this.href,
+          download: this.download,
+          text: "",
+        };
+        downloads.push(record);
+        const blob = blobStore.get(this.href);
+        if (blob) {
+          void blob.text().then((text) => {
+            record.text = text;
+          });
+        }
+      };
     });
+    await seedAdminSession(page);
 
     await page.goto("/dashboard.html");
 
-    const [download] = await Promise.all([
-      page.waitForEvent("download"),
-      page.locator('[data-action="export-orders-csv"]').click(),
-    ]);
+    await page.getByRole("button", { name: "匯出篩選 CSV" }).click();
 
-    expect(download.suggestedFilename()).toMatch(/^orders-filtered-.*\.csv$/);
+    await expect.poll(async () =>
+      await page.evaluate(() => (window as any).__dashboardDownloads.length)
+    ).toBe(1);
+    await expect.poll(async () =>
+      await page.evaluate(() => (window as any).__dashboardDownloads[0]?.text || "")
+    ).toContain("ORD-EXPORT-1");
+    const download = await page.evaluate(() =>
+      (window as any).__dashboardDownloads[0]
+    );
+    expect(download.download).toMatch(/^orders-filtered-.*\.csv$/);
   });
 
   test("Admin can add user to blacklist", async ({ page }) => {
-    page.on("console", (msg) => console.log("BROWSER CONSOLE:", msg.text()));
     await installGlobalStubs(page);
 
-    let blacklistPayload: any = null;
-    await page.route(`${API_URL}**`, async (route) => {
-      const request = route.request();
-      if (request.method() === "OPTIONS") return fulfillJson(route, {});
-      const action = new URL(request.url()).searchParams.get("action");
-      if (action === "getUsers") {
-        return fulfillJson(route, {
-          success: true,
-          users: [{
-            userId: "U123",
-            displayName: "BadUser",
-            status: "ACTIVE",
-            lastLogin: "2026-03-09T00:00:00.000Z",
-          }],
-          pagination: { totalCount: 1, totalPages: 1, page: 1, pageSize: 50 },
-          roles: { "U123": "USER" },
-        });
-      }
-      if (action === "addToBlacklist") {
-        blacklistPayload = request.postDataJSON();
-        return fulfillJson(route, { success: true });
-      }
-      if (action === "getProducts") {
-        return fulfillJson(route, { success: true, products: [] });
-      }
-      if (action === "getCategories") {
-        return fulfillJson(route, { success: true, categories: [] });
-      }
-      if (action === "getSettings") {
-        return fulfillJson(route, { success: true, settings: {} });
-      }
-      if (action === "getOrders") {
-        return fulfillJson(route, {
-          success: true,
-          orders: [],
-          pagination: { totalCount: 0, totalPages: 1, page: 1, pageSize: 50 },
-        });
-      }
-      return fulfillJson(route, { success: true, blacklist: [] });
+    let blacklistPayload: Record<string, unknown> | null = null;
+    await installDashboardFeatureRoutes(page, {
+      users: [{
+        userId: "U123",
+        displayName: "BadUser",
+        status: "ACTIVE",
+        email: "bad@example.com",
+        phone: "0912000111",
+        lastLogin: "2026-03-09T00:00:00.000Z",
+        role: "USER",
+      }],
+      onAddToBlacklist: (payload) => {
+        blacklistPayload = payload;
+      },
     });
 
     await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({ userId: "admin-1", role: "SUPER_ADMIN" }),
-      );
-      localStorage.setItem("coffee_jwt", "mock");
-      // Pre-mock sweetalert — must keep close/showLoading/mixin or showAdmin() hangs
       const noop = () => {};
       (window as any).Swal = {
         fire: async () => ({ isConfirmed: true, value: "Violation rule" }),
@@ -253,61 +360,53 @@ test.describe("Features E2E", () => {
         mixin: () => ({ fire: async () => ({}) }),
       };
     });
+    await seedAdminSession(page);
 
     await page.goto("/dashboard.html");
     await page.locator("#tab-users").click();
-    await page.waitForTimeout(300); // UI render
 
-    const blacklistBtn = page.locator(
-      '[data-action="toggle-user-blacklist"][data-user-id="U123"]',
-    );
+    const userRow = page.locator("#users-table tr").filter({ hasText: "BadUser" });
+    const blacklistBtn = userRow.getByRole("button", { name: "封鎖" });
     await expect(blacklistBtn).toBeVisible();
     await blacklistBtn.click();
 
     await expect.poll(() => blacklistPayload).toBeTruthy();
-    expect(blacklistPayload.targetUserId).toBe("U123");
-    expect(blacklistPayload.reason).toBe("Violation rule");
+    expect(blacklistPayload?.targetUserId).toBe("U123");
+    expect(blacklistPayload?.reason).toBe("Violation rule");
   });
 
   test("Admin status change triggers API update correctly", async ({ page }) => {
     await installGlobalStubs(page);
 
-    let updatePayload: any = null;
-    await page.route(`${API_URL}**`, async (route) => {
-      const request = route.request();
-      if (request.method() === "OPTIONS") return fulfillJson(route, {});
-      const action = new URL(request.url()).searchParams.get("action");
-      if (action === "getOrders") {
-        return fulfillJson(route, {
-          success: true,
-          orders: [{ orderId: "ORD2", status: "processing", lineName: "C1" }],
-        });
-      }
-      if (action === "updateOrderStatus") {
-        updatePayload = request.postDataJSON();
-        return fulfillJson(route, { success: true });
-      }
-      return fulfillJson(route, { success: true });
+    let updatePayload: Record<string, unknown> | null = null;
+    await installDashboardFeatureRoutes(page, {
+      orders: [{
+        orderId: "ORD2",
+        timestamp: "2026-03-09T00:00:00.000Z",
+        deliveryMethod: "in_store",
+        status: "processing",
+        lineName: "C1",
+        phone: "0912000222",
+        email: "c1@example.com",
+        items: "測試豆 x1",
+        total: 180,
+        paymentMethod: "cod",
+        paymentStatus: "",
+      }],
+      onUpdateOrderStatus: (payload) => {
+        updatePayload = payload;
+      },
     });
-
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({ userId: "1", role: "SUPER_ADMIN" }),
-      );
-      localStorage.setItem("coffee_jwt", "mock");
-    });
+    await seedAdminSession(page);
 
     await page.goto("/dashboard.html");
-    await page.waitForTimeout(300); // wait list
-
-    const select = page.locator(
-      'select[data-action="change-order-status"][data-order-id="ORD2"]',
-    );
+    const orderCard = page.locator("#orders-list > div").filter({ hasText: "ORD2" });
+    const select = orderCard.locator("select");
     await select.selectOption("shipped");
+    await orderCard.getByRole("button", { name: "確認" }).click();
 
     await expect.poll(() => updatePayload).toBeTruthy();
-    expect(updatePayload.orderId).toBe("ORD2");
-    expect(updatePayload.status).toBe("shipped");
+    expect(updatePayload?.orderId).toBe("ORD2");
+    expect(updatePayload?.status).toBe("shipped");
   });
 });

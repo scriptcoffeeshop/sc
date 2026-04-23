@@ -17,10 +17,10 @@ from typing import Callable
 from PIL import Image, ImageDraw, ImageFont
 
 SIZE = 128
-FG = (246, 250, 255, 255)
-STROKE = 5
+FG = (51, 65, 85, 255)
+STROKE = 7
 ROUND_RADIUS = 28
-GLYPH_SCALE = 1.28
+GLYPH_SCALE = 1.2
 
 
 def hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
@@ -43,18 +43,7 @@ def darken(color: tuple[int, int, int], amount: int) -> tuple[int, int, int]:
 
 
 def make_background(top_hex: str, bottom_hex: str) -> Image.Image:
-    canvas = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
-    base = hex_to_rgb(top_hex)
-    border = darken(base, 22)
-    draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle(
-        (8, 8, SIZE - 8, SIZE - 8),
-        radius=ROUND_RADIUS,
-        fill=(*base, 255),
-        outline=(*border, 255),
-        width=2,
-    )
-    return canvas
+    return Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
 
 
 def draw_list_icon(d: ImageDraw.ImageDraw) -> None:
@@ -138,12 +127,15 @@ def draw_truck_icon(d: ImageDraw.ImageDraw) -> None:
 
 
 def draw_scooter_icon(d: ImageDraw.ImageDraw) -> None:
-    d.line((34, 72, 52, 72), fill=FG, width=STROKE)
-    d.line((52, 72, 70, 60), fill=FG, width=STROKE)
-    d.line((64, 60, 78, 60), fill=FG, width=STROKE)
-    d.line((74, 60, 82, 68), fill=FG, width=STROKE)
-    d.ellipse((30, 68, 42, 80), outline=FG, width=4)
-    d.ellipse((66, 68, 78, 80), outline=FG, width=4)
+    d.ellipse((22, 72, 44, 94), outline=FG, width=5)
+    d.ellipse((80, 72, 102, 94), outline=FG, width=5)
+    d.line((34, 82, 54, 82), fill=FG, width=STROKE)
+    d.line((54, 82, 72, 66), fill=FG, width=STROKE)
+    d.line((72, 66, 86, 66), fill=FG, width=STROKE)
+    d.line((86, 66, 96, 78), fill=FG, width=STROKE)
+    d.line((62, 82, 84, 82), fill=FG, width=5)
+    d.line((70, 66, 70, 56), fill=FG, width=5)
+    d.line((66, 56, 80, 56), fill=FG, width=5)
 
 
 def draw_note_icon(d: ImageDraw.ImageDraw) -> None:
@@ -191,6 +183,17 @@ def draw_linepay_icon(d: ImageDraw.ImageDraw) -> None:
     d.polygon([(52, 84), (58, 96), (66, 84)], fill=FG)
     font = get_font(18)
     text = "LINE"
+    bbox = d.textbbox((0, 0), text, font=font)
+    tw = bbox[2] - bbox[0]
+    th = bbox[3] - bbox[1]
+    d.text((64 - tw / 2, 58 - th / 2), text, fill=FG, font=font)
+
+
+def draw_jkopay_icon(d: ImageDraw.ImageDraw) -> None:
+    d.rounded_rectangle((30, 40, 98, 84), radius=12, outline=FG, width=STROKE)
+    d.polygon([(54, 84), (62, 96), (70, 84)], fill=FG)
+    font = get_font(18)
+    text = "JKO"
     bbox = d.textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
@@ -318,6 +321,7 @@ DRAWERS: dict[str, Drawer] = {
     "card": draw_card_icon,
     "cash": draw_cash_icon,
     "linepay": draw_linepay_icon,
+    "jkopay": draw_jkopay_icon,
     "bank": draw_bank_icon,
     "cart": draw_cart_icon,
     "bell": draw_bell_icon,
@@ -354,6 +358,7 @@ ICON_SPECS: dict[str, tuple[str, str]] = {
     "payment-card.png": ("payment", "card"),
     "payment-cash.png": ("payment", "cash"),
     "payment-linepay.png": ("payment", "linepay"),
+    "payment-jkopay.png": ("payment", "jkopay"),
     "products-beans.png": ("brand", "beans"),
     "profile-user.png": ("accent", "profile"),
     "promotions-gift.png": ("danger", "gift"),

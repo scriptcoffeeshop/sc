@@ -3,7 +3,7 @@ import { z } from "zod";
 export const updateUserRoleSchema = z.object({
   targetUserId: z.string().trim().min(1, "缺少 targetUserId"),
   newRole: z.enum(["USER", "ADMIN"], {
-    errorMap: () => ({ message: "newRole 只能是 USER 或 ADMIN" }),
+    error: "newRole 只能是 USER 或 ADMIN",
   }),
 });
 

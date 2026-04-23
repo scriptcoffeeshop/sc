@@ -76,30 +76,42 @@ export interface AuthResult {
   isAdmin: boolean;
 }
 
-export async function extractAuth(req: Request): Promise<AuthResult | null> {
-  const authHeader = req.headers.get("authorization") || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  if (!token) return null;
-  const payload = await verifyJwt(token);
-  if (!payload || !payload.userId) return null;
-  const userId = String(payload.userId);
+const authRequestCache = new WeakMap<Request, Promise<AuthResult | null>>();
 
-  if (userId === LINE_ADMIN_USER_ID) {
-    return { userId, role: "SUPER_ADMIN", isAdmin: true };
-  }
-  try {
-    const { data } = await supabase.from("coffee_users").select("role, status")
-      .eq("line_user_id", userId).single();
-    if (data?.status === "BLACKLISTED") return null;
-    const role = data?.role || "USER";
-    return {
-      userId,
-      role,
-      isAdmin: role === "ADMIN" || role === "SUPER_ADMIN",
-    };
-  } catch {
-    return { userId, role: "USER", isAdmin: false };
-  }
+export async function extractAuth(req: Request): Promise<AuthResult | null> {
+  const cached = authRequestCache.get(req);
+  if (cached) return await cached;
+
+  const pending = (async () => {
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+    if (!token) return null;
+    const payload = await verifyJwt(token);
+    if (!payload || !payload.userId) return null;
+    const userId = String(payload.userId);
+
+    if (userId === LINE_ADMIN_USER_ID) {
+      return { userId, role: "SUPER_ADMIN", isAdmin: true };
+    }
+    try {
+      const { data } = await supabase.from("coffee_users").select(
+        "role, status",
+      )
+        .eq("line_user_id", userId).single();
+      if (data?.status === "BLACKLISTED") return null;
+      const role = data?.role || "USER";
+      return {
+        userId,
+        role,
+        isAdmin: role === "ADMIN" || role === "SUPER_ADMIN",
+      };
+    } catch {
+      return { userId, role: "USER", isAdmin: false };
+    }
+  })();
+
+  authRequestCache.set(req, pending);
+  return await pending;
 }
 
 export async function requireAuth(req: Request): Promise<AuthResult> {

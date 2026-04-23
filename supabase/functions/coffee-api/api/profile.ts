@@ -33,6 +33,9 @@ export async function getUserProfile(
       defaultStoreName: user.default_store_name || "",
       defaultStoreAddress: user.default_store_address || "",
       defaultCustomFields: user.default_custom_fields || "{}",
+      defaultPaymentMethod: user.default_payment_method || "",
+      defaultTransferAccountLast5: user.default_transfer_account_last5 || "",
+      defaultReceiptInfo: user.default_receipt_info || "",
     },
   };
 }
@@ -73,6 +76,19 @@ export async function updateUserProfile(
     updates.default_custom_fields = typeof data.defaultCustomFields === "string"
       ? data.defaultCustomFields
       : JSON.stringify(data.defaultCustomFields);
+  }
+  if (data.defaultPaymentMethod !== undefined) {
+    updates.default_payment_method = String(data.defaultPaymentMethod);
+  }
+  if (data.defaultTransferAccountLast5 !== undefined) {
+    updates.default_transfer_account_last5 = String(
+      data.defaultTransferAccountLast5,
+    );
+  }
+  if (data.defaultReceiptInfo !== undefined) {
+    updates.default_receipt_info = typeof data.defaultReceiptInfo === "string"
+      ? data.defaultReceiptInfo
+      : JSON.stringify(data.defaultReceiptInfo);
   }
 
   if (Object.keys(updates).length === 0) {

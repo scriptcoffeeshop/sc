@@ -1,14 +1,21 @@
-import { assertEquals } from "std/testing/asserts";
+import { assertEquals } from "@std/assert";
 import {
   calcPercentDiscountAmount,
   isPromotionActive,
   normalizeDiscountRate,
 } from "../utils/promotion.ts";
 
-Deno.test("normalizeDiscountRate 支援 0.9 / 9 / 90 格式", () => {
-  assertEquals(normalizeDiscountRate(0.9), 0.9);
-  assertEquals(normalizeDiscountRate(9), 0.9);
-  assertEquals(normalizeDiscountRate(90), 0.9);
+// 由於 Supabase JS client 在 module 載入時會產生一個 timer，
+// 第一個測試需關閉 sanitizer 以避免 false-positive leak 偵測。
+Deno.test({
+  name: "normalizeDiscountRate 支援 0.9 / 9 / 90 格式",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    assertEquals(normalizeDiscountRate(0.9), 0.9);
+    assertEquals(normalizeDiscountRate(9), 0.9);
+    assertEquals(normalizeDiscountRate(90), 0.9);
+  },
 });
 
 Deno.test("calcPercentDiscountAmount 正確計算折扣金額", () => {

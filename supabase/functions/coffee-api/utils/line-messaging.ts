@@ -36,13 +36,16 @@ function buildLineApiError(status: number, responseText: string): string {
 export async function pushLineFlexMessage(
   to: string,
   flexMessage: Record<string, unknown>,
+  accessTokenOverride?: string,
 ): Promise<PushMessageResult> {
-  const token = LINE_MESSAGING_CHANNEL_ACCESS_TOKEN.trim();
+  const token = String(
+    accessTokenOverride || LINE_MESSAGING_CHANNEL_ACCESS_TOKEN,
+  ).trim();
   if (!token) {
     return {
       success: false,
       error:
-        "尚未設定 LINE Messaging Channel Access Token（LINE_MESSAGING_CHANNEL_ACCESS_TOKEN）",
+        "尚未設定 LINE Messaging Channel Access Token（LINE_MESSAGING_CHANNEL_ACCESS_TOKEN / 覆寫 token）",
     };
   }
 

@@ -25,8 +25,23 @@ const boolLikeOptionalSchema = z.union([z.boolean(), z.string(), z.number()])
 const lineFlexMessageSchema = z.object({
   type: z.literal("flex"),
   altText: z.string().trim().min(1, "Flex altText 不能為空"),
-  contents: z.record(z.unknown()),
+  contents: z.record(z.string(), z.unknown()),
 });
+
+const paymentStatusValues = [
+  "pending",
+  "processing",
+  "paid",
+  "failed",
+  "cancelled",
+  "expired",
+  "refunded",
+] as const;
+
+const paymentStatusSchema = z.union([
+  z.enum(paymentStatusValues),
+  z.literal(""),
+]);
 
 export const submitOrderSchema = z.object({
   lineName: z.string().min(1, "姓名不能為空"),
@@ -40,7 +55,7 @@ export const submitOrderSchema = z.object({
     "family_mart",
     "in_store",
   ]),
-  paymentMethod: z.enum(["cod", "linepay", "transfer"]),
+  paymentMethod: z.enum(["cod", "linepay", "jkopay", "transfer"]),
   city: z.string().optional(),
   district: z.string().optional(),
   address: z.string().optional(),
@@ -66,7 +81,7 @@ export const quoteOrderSchema = z.object({
     "family_mart",
     "in_store",
   ]).optional(),
-  paymentMethod: z.enum(["cod", "linepay", "transfer"]).optional(),
+  paymentMethod: z.enum(["cod", "linepay", "jkopay", "transfer"]).optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
@@ -76,9 +91,11 @@ export const updateOrderStatusSchema = z.object({
     "processing",
     "shipped",
     "completed",
+    "failed",
     "cancelled",
   ]),
-  paymentStatus: z.string().optional(),
+  cancelReason: z.string().optional(),
+  paymentStatus: paymentStatusSchema.optional(),
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
   trackingUrl: z.string().optional(),
@@ -99,9 +116,10 @@ export const batchUpdateOrderStatusSchema = z.object({
     "processing",
     "shipped",
     "completed",
+    "failed",
     "cancelled",
   ]),
-  paymentStatus: z.string().optional(),
+  paymentStatus: paymentStatusSchema.optional(),
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
   trackingUrl: z.string().optional(),
@@ -124,5 +142,13 @@ export const sendLineFlexMessageSchema = z.object({
 
 export const sendOrderEmailSchema = z.object({
   orderId: z.string().trim().min(1, "缺少訂單編號"),
-  mode: z.enum(["confirmation", "shipping", "completed"]).optional(),
+  mode: z.enum([
+    "confirmation",
+    "processing",
+    "shipping",
+    "completed",
+    "failed",
+    "cancelled",
+  ])
+    .optional(),
 });

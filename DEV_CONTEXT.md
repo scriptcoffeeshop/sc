@@ -1,60 +1,250 @@
 # DEV_CONTEXT — 咖啡訂購系統
 
-本文件用於交接與維運，目標是讓下一位接手者（人或 AI）在 3-5 分鐘內掌握現況。
+本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。
+
+最後更新：2026-04-23
 
 ---
 
-## 1) 協作規範（必讀）
+## 1) 必讀規則
 
-1. 快取版號規則：只要變更任何前端 JS/CSS/HTML，必須同步更新 `?v=` 版號（透過 `python3 scripts/sync_frontend_version.py <version>`）。
-2. 事件處理規則：前後台互動統一採用 `data-action` + 事件代理；禁止新增 inline `onclick/onchange`。
-3. 語言規則：專案溝通、註解、commit message 以繁體中文為主。
-4. SRI 與 E2E：若測試攔截 CDN 腳本，需注意 SRI hash 驗證衝突（測試中需移除 `integrity/crossorigin`）。
-5. Deno 依賴規則：依賴須放在 `deno.json` imports，程式碼直接使用別名。
-6. 逐筆提交規則：`main` 分支變更需保留逐筆 commit 記錄，不做「本週摘要」合併敘述。
-7. 受保護檔案：`google6cb7aa3783369937.html` 不可刪除或修改。
-8. 專案命令規則：本工作區命令統一用 `rtk <cmd>`。
+1. 所有工作區命令一律用 `rtk <cmd>`。
+2. legacy `js/*.js` 的 cache busting 由 `.frontend-version` 管理；正式站入口應是根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物。若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy / main / root`，請先到 GitHub Pages 設定修正。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+3. 目前專案流程：修改程式碼後預設不跑本地驗證以節省 token，先 commit/push 並等待 CI；只有 CI 報錯、使用者明確要求，或需要釐清高風險問題時才跑本地 `guardrails` / tests。
+4. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
+5. 專案溝通、註解、commit message 以繁體中文為主。
+6. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
+7. E2E 若攔截 CDN 腳本，需留意 `integrity/crossorigin` 的 SRI 驗證衝突。
+8. `google6cb7aa3783369937.html` 為受保護檔案，不可刪除或修改。
+9. `.env*` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；只有 `.example` / `.sample` / `.template` 類範本可入版控。
+10. 金流正式金鑰只放在 Supabase / GitHub secrets，不寫入 repo、文件或測試 fixture。
+11. `frontend/src/types/` 是共享型別來源；新的 composable 請直接用 `.ts`，`guardrails` 會跑 `scripts/check_new_composables_ts.py` 阻擋新增 `use*.js`。
 
 ---
 
-## 2) 專案現況快照
+## 2) 專案快照
 
 - 專案：Script Coffee（前台訂購 + 後台管理）
-- 前端：Vite + Vue 3（保留 legacy 相容入口）
-- 後端：Supabase Edge Functions（Deno/Hono）
-- 目前主要分支：`main`
-- 前端版號來源：`.frontend-version`
-- 最近部署節奏：前端 UI、後台主題（Solarized Light）、圖示與表單管理持續優化
+- 主要分支：`main`
+- 前端：`Vite + Vue 3`；正式站 deploy 入口為根目錄 `/main.html` / `/dashboard.html`（由 GitHub Pages workflow artifact 提供）
+- 後端：`Supabase Edge Functions`（Deno / Hono）
+- 前端 legacy 版號來源：`.frontend-version`
+- 目前前端版號：`130`
+- 部署模式：
+  - push 到 `main` / `master` 後會跑 GitHub Actions
+  - GitHub Pages 會以 `workflow` 模式自動部署前端
+  - Supabase `db push` / `coffee-api` deploy 需 repo secrets 已設好
+  - 2026-04-23 已確認並修正 GitHub Pages source：從 `legacy / main / root` 切回 `workflow`，並重跑成功 workflow `24798560081` 讓正式站重新指向 build artifact
+
+必要 secrets：
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_DB_PASSWORD`
 
 ---
 
-## 3) 最近更新（人工摘要）
+## 3) 目前狀態
 
-### 2026-04-09（本次）
+### 前端遷移
 
-- 修正前台副標題分隔符不一致造成的視覺跳動：
-  - 將預設文案統一為 `咖啡豆｜耳掛`。
-  - 在 `applyBranding` 新增標準化邏輯：若設定值是 `咖啡豆 | 耳掛` 或 `咖啡豆｜耳掛`，皆統一渲染為 `咖啡豆｜耳掛`。
-- 修正後台上傳區排版對齊：
-  - 「選擇檔案」與「上傳圖示」改用固定 grid 欄位。
-  - 配送方式（動態列）與金流設定（靜態列）採同一套樣式。
-  - 手機版自動換行，避免按鈕與 file input 擠壓錯位。
-- 重整本文件：
-  - 刪除重複且相互矛盾的版本敘述。
-  - 保留必要規範與完整 commit 逐筆紀錄。
+- 最終目標已確定為 `Vue 3 + Vite SFC`。
+- 後台是優先遷移區：
+  - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.ts`、`useDashboardProducts.ts`、`useDashboardCategories.ts`、`useDashboardPromotions.ts`、`useDashboardFormFields.ts`、`useDashboardUsers.ts`)
+  - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.ts`)
+  - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`）
+  - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts 六個卡片元件
+  - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
+  - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，`js/dashboard-app.js` 現在只剩薄相容殼
+  - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
+- 前台 `MainPage.vue` 已存在，根目錄 `main.html` 已瘦身為本機 compat redirect；`js/main-app.js` 仍保留作為 Vite bundle 內的相容層。storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
+- `MainPage.vue` 已是 storefront 組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
+- storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
+- `useStorefrontCart.js`、`useStorefrontShell.js` 已轉為 `useStorefrontCart.ts`、`useStorefrontShell.ts`；目前 storefront 仍留在 JS 的 composable 已再縮減。
+- `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 只保留相容 re-export。
+- storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` 已是相容 no-op，`renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
+- storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 也改成掛載同一張 Vue 卡片，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
+- storefront legacy `js/*.js` 前台檔案已改為相容 re-export；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
+- 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
+- 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
+- `tw-city-selector` 已由 CDN 改為 npm bundle（`frontend/src/lib/twCitySelector.js` + `frontend/src/features/storefront/storefrontDeliveryActions.ts`），`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
 
-### 2026-04-09（稍早）
+### 後端演進
 
-- 後台主題改為 Solarized Light，並完成文字/表格/按鈕/彈窗配色一致化。
-- 將登入頁 LINE 按鈕恢復綠色系，降低後台藍色文字突兀感。
-- 修正後台資源快取：版號升級到 `v=70` 並推送。
+- `orders.ts`、`payments.ts` 已拆成較小模組，路由匯入點維持不變。
+- rate limiter 已抽成共用 store；預設仍走記憶體 backend，但若設定 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`，可切到 Upstash Redis REST 作為分散式配額儲存。
+- LINE Pay / 街口支付已支援付款期限：超過 `payment_expires_at` 的線上付款訂單會自動轉為 `status=failed`、`payment_status=expired`，查詢、付款確認、街口 inquiry/result 流程都會先正規化逾期狀態。
+- 街口支付已切正式環境：正式 API base URL 為 `https://onlinepay.jkopay.com`，`JKOPAY_STORE_ID` / `JKOPAY_API_KEY` / `JKOPAY_SECRET_KEY` / `JKOPAY_BASE_URL` 皆走 Supabase secrets。
+
+### 視覺與互動
+
+- 前台目前已回到暖棕 / 米白系配色。
+- 全站固定操作 icon 已改為向量化對齊邏輯，legacy 入口也已補齊，不應再出現 emoji 作為正式操作 icon。
+- 後台主題以 `Solarized Light` 為基底。
+- 線上付款 UX 已分情境：下單後付款彈窗可提示「稍後可到我的訂單重新打開付款連結」；但在「我的訂單」內會改成直接提示按下方付款按鈕，不再自我指向「我的訂單」。
+- 街口支付在「我的訂單」已移除手動「重新整理街口付款狀態」入口，和 LINE Pay 一樣以重新打開付款連結為主要操作。
+
+### 測試與守門
+
+- 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
+- `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
+- Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
+- 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
+- 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
+- `tests/e2e/smoke/` 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆分，並共用 `tests/e2e/support/smoke-fixtures.ts`；目前覆蓋：
+  - 前台暖色樣式
+  - 備註欄不得出現 `<slot />`
+  - 會員資料彈窗導角
+  - 後台手機版頁籤
+  - 前後台固定 icon 樣式
+  - dashboard settings icon controls 不得退回 document-level event delegation
+  - dashboard settings / form fields controls 不得退回 document-level event delegation
+- dashboard `orders` / `products` / `categories` / `promotions` / `formfields` / `users` / `blacklist` 不得退回 `coffee:dashboard-*` custom-event bridge
+- storefront `products-container` / `dynamic-fields-container` / `cart-items` / `total-price` / `cart-discount-details` / `cart-shipping-notice` / `delivery-options-list` / `bank-accounts-list` 不得退回 imperative `innerHTML` renderer
+- storefront「我的訂單」不得將 API 回傳內容當 HTML 插入 DOM，惡意 `<script>` / `<img onerror>` payload 只能以文字顯示
+- storefront checkout smoke 已覆蓋 LINE Pay / 街口支付付款彈窗不得重複「稍後付款可到我的訂單」文案，以及「我的訂單」內待付款提示不得再出現「可到我的訂單」。
+- 2026-04-22 另補深度 unit test：`useDashboardOrders` 現在覆蓋篩選組合、批次勾選邊界與 shipped tracking URL 驗證；`useDashboardFormFields` 補了 delivery visibility normalize 與 Sortable reorder；`useDashboardSettings` 補 cached `linepay_sandbox` 與自訂配送方式狀態；`useStorefrontCart` 補零數量邊界、固定運費與多促銷疊加。
 
 ---
 
-## 4) 常用檢查指令
+## 4) 已知風險
+
+### Repo hygiene / 金鑰風險
+
+- `.env.staging` 的 git 歷史清理已完成，舊 commit SHA 已不再是目前可達歷史的一部分。
+- 但當時出現過的真實金鑰仍必須視為已外洩；剩餘的 P0 是「完成各平台金鑰輪替」，不是再次做 history rewrite。
+- 清理流程請看 `docs/repo-hygiene.md`。
+
+### 自動部署限制
+
+- 前端自動部署已正常。
+- 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過 setup / db push / function deploy，但整體 job 仍可能顯示成功；後端 function 變更需確認 deploy step 真的有跑，或用本機已登入的 Supabase CLI 手動 `rtk npm run supabase:deploy`。
+- 街口正式環境要求的來源 IP 白名單不在 repo 內管理；若使用 Cloudflare、主機防火牆或其他 WAF，需在外部平台另行設定。
+
+### 遷移未完成區
+
+- 專案仍處於 Vue / legacy 共存期。
+- 若修改前後台互動，先確認是否碰到 bridge event、`data-vue-managed` 容器或 legacy 啟動流程，避免雙寫回潮。
+
+---
+
+## 5) 最近有效變更
+
+### 2026-04-23
+
+- Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，`check_new_composables_ts.py` allowlist 已清空。
+- `storefrontOrderActions.ts` 已由 1324 行縮成相容 re-export：付款狀態/文案搬到 `storefrontPaymentDisplay.ts`，送單流程搬到 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別拆到 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`；legacy `showMyOrders()` fallback 搬到 `storefrontOrderHistoryLegacy.ts` 並改用既有 Vue `StorefrontOrderHistoryCard.vue` 渲染。
+- 前台訂單流程已補強共享型別：新增 `frontend/src/types/storefront.ts`，並讓送單、配送資訊、收據偏好、付款顯示與確認彈窗核心函式改用明確參數/回傳型別；`frontend/src/lib/swalDialogs.ts` 也開始集中常見 SweetAlert2 模式，後續可逐步把重複的 `Swal.fire()` 呼叫收斂到 helper。
+- shared legacy 最後一哩路已推進：`config.js`、`auth.js`、`utils.js`、`state.js`、`dashboard/api.js`、`dashboard-branding.js`、`order-shared.js` 的實作已搬到 `frontend/src/lib/*` 或 `frontend/src/features/dashboard/*`，`js/` 只保留 re-export 相容殼；Vite 內部 import 不再直接依賴這批 shared legacy 檔。
+- `storefrontMainApp.ts` 已移除剩餘 8 處 `window.*` 相容掛載，quote refresh、付款選項狀態、表單/UI callback 與 app settings/delivery config 都改走 `storefrontRuntime.ts` 模組 bridge；同檔直接 `Swal.*` 呼叫也已收斂到 `frontend/src/lib/swalDialogs.ts` helper。
+- 修正前台配送卡片未同步後台設定文案：`storefrontUiSnapshot.ts` 現在改讀 `storefrontRuntime.appSettings/currentDeliveryConfig`，不再依賴已移除的 `window.appSettings/currentDeliveryConfig`；並新增 snapshot unit test 保護後台配送名稱/說明同步。
+- 消費者通知已新增付款中狀態 guard：所有支付只要 `payment_status=processing`，自動付款狀態通知、後台手動 LINE Flex 與後台手動 Email 都會略過，不再把「付款確認中」通知發給消費者；店家 LINE 訂單通知不受影響。
+- P2 legacy JS 殘留續清：`js/icons.js` 已搬到 `frontend/src/lib/icons.ts`，`js/storefront-models.js` 已搬到 `frontend/src/features/storefront/storefrontModels.ts`，後台訂單通知/狀態控制模組已搬到 `frontend/src/features/dashboard/dashboardOrder*.ts`，`settings-shared.js` 已搬到 `dashboardSettingsShared.ts`。
+- `package-lock.json` 已從 `.gitignore` 移除並納入追蹤，Tailwind `content` 掃描也收斂為 `frontend/*.html` 與 `frontend/src/**/*.{js,ts,vue}`，不再掃 legacy `js/` 或根目錄 redirect stub。
+
+### 2026-04-22
+
+- 街口支付已切正式環境：Supabase secrets 已更新正式 Store ID / API Key / Secret Key / base URL，程式預設正式網域改為官方 `https://onlinepay.jkopay.com`，並已手動部署 `coffee-api`；金鑰不可寫入 repo。
+- LINE Pay / 街口支付的逾期線上付款會自動轉為失敗訂單：`status=failed`、`payment_status=expired`，並補齊 dashboard filter/label、Email template、LINE Flex 與 routing/payment regression。
+- 「我的訂單」內的街口支付手動刷新入口已移除，改為和 LINE Pay 一樣只提供重新打開付款連結；街口回跳 result/inquiry 流程仍保留後端同步能力。
+- 付款提示文案已分情境：下單後付款彈窗保留「稍後可到我的訂單重新打開付款連結」，但「我的訂單」卡片改為「請點下方付款按鈕繼續」，避免使用者已在我的訂單時看到自我指向提示。
+- 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
+- LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
+- storefront legacy 遷移續推：`useStorefrontProducts.ts` 已吸收商品分組 / spec normalize，`useStorefrontDelivery.ts` 已吸收 delivery config fallback/migration；`MainPage.vue` 現在透過 `storefrontUiSnapshot.ts` 同步 products/delivery/payment/dynamic fields state，不再依賴 `coffee:products-updated` 事件或 bridge 的 main-app snapshot export。
+- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值，legacy `renderDynamicFields()` 已改為相容 no-op，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
+- storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，legacy `js/` 只保留相容 re-export。
+- dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
+- dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
+- backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
+- backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
+- frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useDashboardOrders`、`useDashboardFormFields`、`useDashboardSettings`、`useStorefrontOrderHistory` 轉為 `.ts`。
+- 新增 `scripts/check_new_composables_ts.py`，`guardrails` 會阻擋新增 `frontend/src/features/**/use*.js`（既有 allowlist 除外）。
+- `scripts/check_new_composables_ts.py` 的 storefront allowlist 已移除 `useStorefrontCart.js`、`useStorefrontShell.js`，避免後續又把這兩支退回 JS。
+- 根目錄 `main.html` / `dashboard.html` 已瘦身為本機 compat redirect，不再保留大量 legacy 前後台靜態結構。
+- `npm run ci-local` 已納入 `npm run test:unit`，讓 frontend composable unit test 成為日常守門，而不是只在 `health` 才執行。
+
+### 2026-04-21
+
+- 顧客端街口支付資訊已補齊：下單完成提示、街口回跳結果與「我的訂單」現在會顯示付款方式、待付款提示、付款期限、失敗/取消/逾期說明；手動重新整理街口付款狀態入口已於 2026-04-22 移除。
+- storefront「我的訂單」彈窗已放大為較實用的桌機尺寸，避免付款資訊與操作按鈕擁擠。
+- 桌機版 storefront header / login prompt 已重新限制在與主內容卡相同的 `max-w-3xl` 寬度，登入提示文案與 LINE 按鈕在桌機版會同列顯示，不再出現過寬的橫幅比例失衡。
+- Playwright smoke 已新增兩類保護：街口支付顧客端狀態/操作驗證，以及桌機版登入提示比例驗證。
+- 本機健康檢查入口已補齊：`npm run health` 現在會串 `ci-local + build + 全量 Playwright`；`npm run e2e` 改成跑所有 E2E spec，`npm run e2e:smoke` 保留快速冒煙檢查。
+- GitHub Actions 的 Playwright 步驟已改成走 `npm run e2e`，避免本機與 CI 的 E2E 覆蓋範圍分岔。
+- README 已更新為現行 `guardrails` / `sync_frontend_version.py --check` 流程，不再要求協作者逐檔手動 bump `?v=`；Smoke E2E 從單一 3000+ 行檔案拆成 `tests/e2e/smoke/` 多檔與共用 fixture。
+- repo 內已追蹤的 `.DS_Store` / `supabase/.DS_Store` 已從 git index 移除，之後由 `.gitignore` 接手忽略。
+- `tests/e2e/features.spec.ts` 已對齊目前 Vue storefront / dashboard 行為：全家地圖選門市、CSV 匯出、用戶封鎖、訂單狀態更新四條 feature 測試現在都可被全量 `npm run e2e` 穩定執行。
+- `DashboardSettingsSection.vue` 已由 979 行巨型單檔拆成 39 行組裝層，並新增六個設定卡片元件：branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts。
+- `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
+- 後台訂單通知控制器曾先拆為 legacy JS 協調層；2026-04-23 已搬入 `frontend/src/features/dashboard/dashboardOrderNotifications.ts` 與相關 `dashboardOrderFlex*.ts` / `dashboardOrderEmailController.ts`。
+- E2E 新增通知 smoke，驗證後台訂單卡的 `LINE通知` / `發送信件` 仍會打到正確 API。
+- storefront legacy `innerHTML` renderer 已清到 0；前台 `js/products.js` 已移除，`js/cart.js`、`js/delivery.js`、`js/form-renderer.js`、`js/orders.js`、`js/main-app.js` 只保留相容 re-export，實作位於 storefront feature TS 檔；dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
+- storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
+- `MainPage.vue` 已從 1209 行拆到 472 行，Storefront Wave 2 的 header / product grid / delivery / payment / bottom bar / cart drawer / order history section 都已拆成獨立 Vue 元件。
+- 後台 LINE Flex 建構邏輯已從 legacy JS 拆分並於 2026-04-23 搬到 `frontend/src/features/dashboard/dashboardOrderFlexMessage.ts`、`dashboardOrderFlexBody.ts`、`dashboardOrderFlexBubble.ts`、`dashboardOrderFlexLayout.ts`。
+- 前端快取版號更新為 `130`。
+
+### 2026-04-20
+
+- 恢復前台暖色系，修正訂單備註欄位顯示 `<slot />`。
+- 對齊會員資料彈窗導角。
+- 修正後台手機版頁籤顯示。
+- 統一前後台固定 icon 的尺寸、顏色與對齊，legacy 入口也已換成向量 icon。
+- dashboard `categories` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-categories-updated`。
+- dashboard `promotions` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-promotions-updated`。
+- dashboard `formfields` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-formfields-updated`。
+- dashboard `users` / `blacklist` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-users-updated` / `coffee:dashboard-blacklist-updated`。
+- dashboard `session / tab` 已改成 reactive state，不再依賴 `dashboard-session-controller.js` 來切換登入頁、管理頁與 tab 顯示。
+- dashboard `settings` 的 delivery routing / payment options / sandbox 已改成 reactive state，不再由 `settings-controller.js` 直接組 HTML table。
+- dashboard `settings` 的 branding / section titles / announcement / store status 已改成 reactive state，並由 `useDashboardSettings.ts` 統一提交 payload。
+- dashboard `settings` 的 bank accounts 已改成 reactive state，不再依賴 `bank-accounts.js` 的 imperative `innerHTML` renderer。
+- dashboard `settings` / `icon library` 的 icon upload、預覽與 quick apply 已改成 Vue 直連 reactive state，不再依賴 `icon-assets-controller.js` 或 document-level change/click delegation。
+- dashboard `settings` 的 load/save 已併入 `useDashboardSettings.ts`，`settings-controller.js` 已移除。
+- dashboard `settings` / `formfields` 的按鈕互動已改成元件內 `@click`，不再經過 `createSettingsActionHandlers()`。
+- dashboard `categories` / `users` / `blacklist` 的按鈕與搜尋已改成元件內 `@click` / `@keyup.enter`，不再經過 `createUsersActionHandlers()`、`search-users` 的 document keyup delegation，`useDashboardUsers.ts` 也已改用 reactive `activeTab` 判斷黑名單頁。
+- dashboard `products` / `promotions` 的按鈕與 modal 儲存已改成元件內 `@click` / `@submit.prevent`，不再經過 `createProductsActionHandlers()` 或 `product-form` / `promotion-form` 的 imperative submit listener。
+- dashboard `orders` 的重整、Flex 歷史、勾選、批次操作、通知、退款、收款確認、狀態提交與刪除已改成元件內 `@click` / `@change`，`js/dashboard/events.js` 與 `createOrdersActionHandlers()` 已移除。
+- dashboard page 已改成由 Vue `onMounted()` 直接載入 public branding；`dashboard-globals.js`、`initDashboardApp()` fallback 與舊的 `window.*` dashboard helper 已移除。
+- `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
+- storefront `delivery-options-list` / `bank-accounts-list` 已改由 `MainPage.vue` 直接渲染，`renderDeliveryOptions()` / `renderBankAccounts()` 在 Vue-managed 容器上會直接退出，不再走 imperative `innerHTML` renderer。
+- storefront `storefrontOrderActions.ts` 的「我的訂單」legacy fallback 已改成掛載 Vue `StorefrontOrderHistoryCard.vue`，延續 API XSS payload smoke 保護。
+- `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
+- `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
+- 新增 `scripts/check_migration_names.py`，未來 migration 檔名統一為 `YYYYMMDDHHmm_slug.sql`；歷史 migration 不回改。
+- rate limiter 已抽離成可替換 store，支援可選的 Upstash Redis REST backend，未設 env 時會自動回退到既有記憶體策略。
+- 新增 repo hygiene 防線：
+  - `scripts/repo_hygiene_check.py`
+  - `.env.staging.example`
+  - `.env.supabase.local.example`
+  - `supabase/.temp/` 已忽略且不再追蹤
+
+### 2026-04-19
+
+- 補齊 GitHub Actions 自動部署鏈：
+  - 前端自動部署 GitHub Pages
+  - Supabase `db push` / Edge Function deploy 可由 CI 執行
+- 新增 `scripts/prepare_static_deploy.sh`，確保 `CNAME`、驗證檔與 `icons/` 會進入部署產物。
+- 修正 GitHub CI 對無 lockfile 與缺少 Supabase secrets 的相容行為。
+
+### 2026-04-18
+
+- 補齊街口支付訂單狀態流、付款欄位、同步邏輯與 LINE 通知追蹤。
+- `coffee_orders` 新增多個付款與通知追蹤欄位，`schema_full.sql` 已同步。
+
+更久以前的完整歷史請直接看 git，不再重貼在本檔：
 
 ```bash
+rtk git log --oneline origin/main
+```
+
+---
+
+## 6) 常用命令
+
+```bash
+rtk npm run hygiene
 rtk npm run guardrails
+rtk npm run test:unit
+rtk npm run ci-local
 rtk npm run build
 rtk npm run e2e
 rtk python3 scripts/sync_frontend_version.py --check
@@ -62,306 +252,18 @@ rtk python3 scripts/sync_frontend_version.py --check
 
 ---
 
-## 5) main 分支逐筆提交紀錄（完整，禁止彙整）
+## 7) 關鍵文件
 
-- 資料來源：`origin/main`
-- 格式：`YYYY-MM-DD | Commit Hash | Commit Subject`
+- `README.md`：專案入口與開發規則
+- `docs/frontend-vue-migration-plan.md`：前端 Vue 遷移決策與分階段策略
+- `docs/repo-hygiene.md`：敏感檔、金鑰輪替與 git 歷史清理流程
+- `tests/e2e/smoke/`：主要 smoke regression 保護網
+- `tests/e2e/support/smoke-fixtures.ts`：Smoke E2E 共用 route/stub fixture
 
-<!-- MAIN_COMMIT_LOG_START -->
-- `2026-04-09` | `0b78029` | fix(dashboard): align file picker and upload button layout
-- `2026-04-09` | `ade83d6` | chore(cache): bump frontend asset version to v70
-- `2026-04-09` | `f15a8a4` | style(dashboard): refine solarized text balance and restore LINE login green
-- `2026-04-09` | `6c138cf` | fix: align resource version query strings in HTML files to pass CI guardrails
-- `2026-04-09` | `bf6533c` | fix: resolve Vue syntax error and remaining duplicate classes
-- `2026-04-09` | `a757a83` | fix: resolve duplicate class attributes in dashboard HTML and Vue templates
-- `2026-04-09` | `4e79f97` | style: achieve 100% Solarized consistency for dashboard and bump version to v69
-- `2026-04-09` | `d30c756` | style: harmonize overall text and border colors with Solarized Light theme
-- `2026-04-09` | `39d5dbc` | style: bump version to v67 to force Solarized theme refresh
-- `2026-04-09` | `9c36d03` | feat: migrate dashboard theme to Solarized Light
-- `2026-04-09` | `44d388e` | Add files via upload
-- `2026-04-09` | `e389b59` | test: fix broken assertion in smoke tests due to template formatting
-- `2026-04-09` | `a43394b` | style: run deno fmt to fix ci formatting error
-- `2026-04-09` | `432bd92` | fix(ci): restore missing template string closure
-- `2026-04-09` | `d8f4988` | fix: address style, layout, icon upload, and email issues
-- `2026-04-09` | `727355b` | fix: switch to enterprise light theme + fix CI version sync + fix sidebar icons
-- `2026-04-09` | `d5b8e1d` | fix: ensure .hidden overrides grid display on admin-page
-- `2026-04-09` | `c6dab8f` | fix: add cache-busting params to CSS links for dark theme
-- `2026-04-09` | `f6d8f42` | feat: enterprise dark theme dashboard redesign
-- `2026-04-09` | `7d6d9c8` | chore: install ui-ux-pro-max-skill for AI assistant
-- `2026-04-09` | `001738b` | fix: strip legacy /sc/ prefix from icon paths on custom domain
-- `2026-04-09` | `4582508` | chore: add google site verification meta tag
-- `2026-04-09` | `78bb921` | chore: add scriptcoffee.com.tw to ALLOWED_REDIRECT_ORIGINS for CORS support
-- `2026-04-09` | `d870999` | feat: add index.html to redirect root traffic to main.html
-- `2026-04-09` | `8f66586` | chore: fix typo in custom domain to scriptcoffee.com.tw
-- `2026-04-09` | `d6850eb` | chore: add CNAME for custom domain scriptcofee.com.tw
-- `2026-04-08` | `5e8071a` | feat: add tracking-url CTA button in LINE flex message
-- `2026-04-08` | `e8938a7` | feat: flex 顯示收據需求並將統編改為選填
-- `2026-04-08` | `b4b96dc` | 功能：後台支援 LINE Flex 一鍵發送並串接官方推播 API
-- `2026-04-08` | `c804732` | 修正：補強門市回呼安全、對齊電話欄位驗證並強化限流
-- `2026-04-08` | `46ed6ea` | fix(ui): equalize icons in dashboard.html to match Vue implementation
-- `2026-04-07` | `26d5df0` | docs: 記錄修復 E2E 報錯的 commit
-- `2026-04-07` | `88e2b69` | test: 修復訂單確認 UI 改動導致 E2E 測試報錯 (移除 mock 失效的 Swal 點擊等待)
-- `2026-04-07` | `e23be84` | docs: 記錄稍早新增訂單確認與 Flex Message 功能的 commit
-- `2026-04-07` | `bfd6c4c` | feat: 新增訂單狀態變更確認流程與 LINE Flex Message 產生器
-- `2026-04-07` | `ad4664e` | 設定：初始化 RTK（Codex）專案檔案
-- `2026-04-07` | `029a8f3` | 文件：同步專案綁定流程到 README 與 DEV_CONTEXT
-- `2026-04-07` | `9d8905d` | chore: make supabase scripts load project-local credentials
-- `2026-04-07` | `bd1ba43` | chore: bind project deploy commands to fixed supabase settings
-- `2026-04-07` | `25f18c3` | fix: remove duplicated receipt section in order content
-- `2026-04-07` | `c7cb1ca` | 修正：將收據資訊併入訂單內容並同步 Email 明細
-- `2026-04-07` | `f45b06c` | 調整：收據欄位順序改為統一編號優先並同步前後台與 Email
-- `2026-04-07` | `d48a2b0` | 功能：新增索取收據流程並同步訂單後台與 Email 顯示
-- `2026-04-07` | `f06d1da` | 修正：新增電子郵件格式檢查機制並補上會員資料儲存前驗證
-- `2026-04-07` | `516bbed` | docs: track file dialog hotfix
-- `2026-04-07` | `07694d0` | fix(ui): ignore file type inputs in global click delegator to allow native file picker dialogs
-- `2026-04-07` | `e18ded5` | docs: track UI button commit
-- `2026-04-07` | `e1ede02` | feat(ui): add explicit upload button for site logo
-- `2026-04-07` | `6ca5675` | docs: 記錄 ui 修復紀錄於 DEV_CONTEXT.md
-- `2026-04-07` | `3f54fb5` | fix(ui): correct logo upload button click delegation and bind reset logo event
-- `2026-04-07` | `79afde0` | docs: 記錄 js/form-renderer.js 的熱修復
-- `2026-04-07` | `06f8871` | fix: import resolveAssetUrl in form-renderer.js
-- `2026-04-07` | `bf32caf` | docs: 記錄 drag 圖示與 Logo 上傳之修復紀錄於 DEV_CONTEXT.md
-- `2026-04-07` | `cd053ce` | chore: 修復 drag 圖示為 inline SVG 及還原隨時上傳 Logo 功能
-- `2026-04-07` | `54716b3` | ci: auto-fix CI errors
-- `2026-04-07` | `5e9c9f3` | docs: 新增 Git Commit 註釋需使用繁體中文之強制規定
-- `2026-04-07` | `42749fa` | docs: append latest main commit and v76 changes to per-commit log
-- `2026-04-07` | `23d3356` | docs: generate v76 release notes in DEV_CONTEXT.md covering UI optimizations and absolute path fixes
-- `2026-04-07` | `50e6b77` | fix: increase drag icon size and resolve absolute paths in Vue files
-- `2026-04-07` | `8a11f03` | update: change fallback site title and subtitle to Script Coffee
-- `2026-04-07` | `5a761cc` | fix: prevent path duplication in resolveAssetUrl causing /sc/sc/icons/ 404s
-- `2026-04-07` | `609a9b3` | fix: replace emoji section titles with PNG icons and skeleton loading for professional initial page load
-- `2026-04-07` | `c4b0822` | fix: remove Supabase logo upload and site_icon_url, favicon now always uses local icons/logo.png
-- `2026-04-07` | `e3c2488` | ci: auto-fix CI errors
-- `2026-04-07` | `08e4595` | docs: append latest main commit to per-commit log
-- `2026-04-07` | `77f9753` | feat: apply local /sc/icons/logo.png for brand icon and remove upload size cap
-- `2026-04-07` | `92f22dc` | docs: enforce per-commit main log and backfill origin/main history
-- `2026-04-07` | `ce5ca7f` | docs: update DEV_CONTEXT latest main commit hash
-- `2026-04-07` | `4747540` | fix: restore icon replacement flow and sync brand logo updates
-- `2026-04-07` | `71f95eb` | docs: track main branch commit hash in DEV_CONTEXT.md
-- `2026-04-07` | `0981a5f` | fix: update hardcoded brand-coffee.png to logo.png in Vue templates and supply missing Vite asset
-- `2026-04-07` | `168427e` | docs: update DEV_CONTEXT.md for v73 icon upgrade
-- `2026-04-07` | `f23d1f2` | feat: replace supabase icons with local logo overriding logic and bump version
-- `2026-04-07` | `2c8ad69` | add logo.png
-- `2026-04-06` | `7c19f32` | style: center align text in delivery and payment option cards
-- `2026-04-06` | `b697c4c` | fix: bump frontend cache version and verify shipping/discount across browsers
-- `2026-04-06` | `c61febc` | fix: match payment card sizing with delivery and restore check icon
-- `2026-04-06` | `5728a8f` | fix: unify payment and delivery icon sizing in storefront cards
-- `2026-04-06` | `8bb890d` | fix: align legacy payment icon containers with modern option-icon sizing
-- `2026-04-06` | `0649093` | fix: further reduce payment icon footprint in checkout cards
-- `2026-04-06` | `fdd7226` | fix: correct shipping and discount display conditions in cart UI
-- `2026-04-06` | `7fd46fc` | fix: reduce payment method icon size for better visual balance
-- `2026-04-06` | `eb46ad1` | fix: rebalance icon proportions across storefront and dashboard
-- `2026-04-06` | `fb9fd80` | fix: ensure generated icons work for legacy /icons path
-- `2026-04-06` | `cb0eaca` | docs: update DEV_CONTEXT with v62 icon redesign record
-- `2026-04-05` | `2e64a99` | feat: regenerate icon pack with flatter minimalist style
-- `2026-04-03` | `b3295dc` | feat: unify admin modals with ui components and add icon library
-- `2026-04-03` | `5c1f7da` | chore: format settings api for ci fmt check
-- `2026-04-03` | `708c840` | feat: replace emoji UI with PNG icons and reka-based admin refresh
-- `2026-03-26` | `ab8963c` | chore: 清理專案，移除閒置備份與一次性測試腳本
-- `2026-03-26` | `1dec545` | fix(cors): 加入 localhost:5173 至 CORS 允許清單以支援 Vite 開發伺服器
-- `2026-03-25` | `70b6446` | chore: save state before icon upgrade
-- `2026-03-14` | `60e8cd1` | ci: fix syntax warnings in keep-alive workflow
-- `2026-03-14` | `67c7eeb` | ci: optimize keep-alive workflow and clean up legacy logs
-- `2026-03-11` | `0b0edbf` | chore: setup keep-alive.yml to prevent Supabase project from pausing
-- `2026-03-11` | `a3d410c` | fix(ci): avoid lockfile-dependent node setup in workflow
-- `2026-03-11` | `8c9b886` | docs: sync project rules from DEV_CONTEXT and remove legacy rules
-- `2026-03-11` | `01fcf14` | refactor(vite): align runtime and ci with vue3 architecture
-- `2026-03-11` | `d3da416` | fix(ci): auto init legacy pages for smoke tests
-- `2026-03-11` | `606a91d` | feat(dashboard): vue bridge products promotions formfields
-- `2026-03-11` | `b005659` | feat(dashboard): vue bridge categories users blacklist
-- `2026-03-11` | `4dfcbaf` | refactor: start phase2 vue-driven main storefront flow
-- `2026-03-11` | `0c59ad9` | refactor: mount all pages via Vue SFC components
-- `2026-03-11` | `f38f21c` | docs: record Vite+Vue3 migration audit status
-- `2026-03-11` | `fe486e7` | feat: migrate frontend shell to Vite + Vue 3
-- `2026-03-11` | `099a4b7` | feat: support drag-and-drop sorting for bank accounts
-- `2026-03-11` | `28d4441` | fix: stabilize settings flow and clean dashboard dead code
-- `2026-03-10` | `6b0d99b` | fix: keep linepay sandbox toggle state after save
-- `2026-03-10` | `1df5453` | fix(api): expose linepay_sandbox to admin in getSettings
-- `2026-03-10` | `2aa74c4` | fix(ci): add mock environment variables to test step
-- `2026-03-10` | `b5b9359` | chore(ci): auto-fix deno formatting
-- `2026-03-10` | `4916573` | feat(api): refactor quote engine and add unit tests
-- `2026-03-09` | `866d6b0` | fix(db): move pg_trgm to extensions schema to resolve security warning
-- `2026-03-09` | `d5b7aea` | chore(ci): auto-fix deno formatting
-- `2026-03-09` | `997b3a3` | chore(ci): remove generated test error
-- `2026-03-09` | `80d3734` | chore(ci): auto-fix deno formatting
-- `2026-03-09` | `5667df5` | chore: test ci auto fix workflow
-- `2026-03-09` | `5863543` | docs(context): record v51 order and email updates
-- `2026-03-09` | `3692944` | fix(email): normalize site title by removing confirmation suffix
-- `2026-03-09` | `d27664c` | chore(email): format template for backend ci
-- `2026-03-09` | `a97019a` | feat(email): simplify confirmation title and add tracking copy button
-- `2026-03-09` | `1e245f9` | feat(orders): add tracking number copy action for customers
-- `2026-03-09` | `49b050b` | fix(dashboard): avoid premature order status updates from dropdown
-- `2026-03-09` | `1bdd2c3` | chore: 重整 migration 版號避免重複衝突
-- `2026-03-09` | `2fa5e57` | feat: 移除追蹤頁並擴充出貨物流資訊
-- `2026-03-09` | `cbb3ac6` | fix: 保留批次付款狀態清空值
-- `2026-03-09` | `51e7a80` | feat: 升級訂單中心並新增顧客訂單追蹤頁
-- `2026-03-09` | `ba19e85` | fix: remove SRI attributes from tailwind CDN to fix CORS blockage and bump version to 46
-- `2026-03-09` | `bbd01fa` | chore: enable deno in vscode settings and update dev context
-- `2026-03-09` | `1c8b471` | ci: restore bare specifier imports in test files for deno lint compliance
-- `2026-03-09` | `498f2c0` | test(e2e): strip SRI attributes in Playwright stubs to fix CDN mock rejection
-- `2026-03-09` | `3f61932` | test(tools): fix event delegation guardrail path parsing for new events.js
-- `2026-03-09` | `c0d354b` | ci: auto-fix CI errors, replace bare internal specifiers and unlisted modules
-- `2026-03-09` | `759440e` | refactor(frontend): decouple event delegation and API layer from dashboard-app.js (#P2)
-- `2026-03-09` | `5ce4368` | feat/fix: advanced P1-P2 security and scalability optimizations
-- `2026-03-09` | `3b830c6` | ci: fix lint no-explicit-any error
-- `2026-03-09` | `f762598` | fix(frontend): resolve P0/P1 frontend vulnerabilities and idempotency
-- `2026-03-09` | `b6c6fc8` | fix(security): resolve P0-P2 security and maintenance issues
-- `2026-03-09` | `5032df5` | chore: remove tracked env files
-- `2026-03-09` | `2cc99cf` | ci: auto-fix CI errors
-- `2026-03-09` | `fe26f4a` | chore: bump frontend version to v45
-- `2026-03-09` | `97d9b78` | refactor: backend modularization phase 2, email template extraction, and frontend data source unification (P2-1, P1-4, P2-3)
-- `2026-03-08` | `59faaf8` | feat(v45): security + stability + DX improvements
-- `2026-03-08` | `c507107` | fix(ci): use working-directory for deno steps so deno.json is found
-- `2026-03-08` | `93f2174` | chore(ci): upgrade setup-deno to v2.x to match local formatting
-- `2026-03-08` | `6c9d1ba` | test(ci): adjust python scripts for main-app double quotes format
-- `2026-03-08` | `2ceb201` | test(ci): adjust python scripts for v44 dashboard modules structure
-- `2026-03-08` | `ca1ac45` | chore(fmt): run deno fmt on root to fix CI
-- `2026-03-08` | `5520f35` | fix(ci): use deno.json imports for deno lint no-import-prefix
-- `2026-03-08` | `7738ad2` | docs: reorganize DEV_CONTEXT.md timeline and commit v44 changes
-- `2026-03-08` | `ea5c576` | chore: fix deno formatting issues for CI
-- `2026-03-08` | `fdd34c9` | feat(v43): align user management API, fix promotion formulas, and strengthen zod validation
-- `2026-03-08` | `39b3218` | fix(v42): 解決編輯商品時分類選單可能為空的 Race Condition
-- `2026-03-08` | `d3ad068` | fix(v41): 購物車有品項時按鈕文字未更新的問題
-- `2026-03-07` | `5c6c3dc` | feat(v40): 會員資料功能 — 自動帶入常用資料
-- `2026-03-06` | `94c6541` | feat(v39): 優化訂單通知 Email 寄件人與排版
-- `2026-03-05` | `4f69e04` | fix(v38): 後台配送方式可見性無法顯示
-- `2026-03-05` | `b859aee` | feat(v37): 移除 phone/email 系統保護 + Email 連動表單欄位 + 標題動態化
-- `2026-03-05` | `71ac2e7` | feat(v36): 表單欄位依配送方式顯示/隱藏
-- `2026-03-05` | `94929ac` | feat(v35): 將動態表單欄位區塊移至配送方式與付款方式之間
-- `2026-03-02` | `b716184` | style: deno fmt 修正 api/orders.ts 格式
-- `2026-03-02` | `815d551` | fix(v34): 更新宅配顯示文字與 Email 格式
-- `2026-03-02` | `24111bc` | fix: 更新 E2E 測試加入政策勾選步驟 + .gitignore 排除 node_modules
-- `2026-03-02` | `f971324` | feat(v33): 新增隱私權/退換貨政策頁面 + 下單同意勾選
-- `2026-03-02` | `b10b338` | docs: 重新整理 DEV_CONTEXT.md — 按版本倒序排列、精簡內容
-- `2026-03-02` | `a7e6eb0` | fix(e2e): block SweetAlert2 CDN to prevent mock override in smoke tests
-- `2026-03-02` | `a7192da` | fix(ci): install @playwright/test via npm for proper TS module resolution
-- `2026-03-02` | `b0e68cc` | feat: event delegation v28-v32, guardrail scripts, E2E smoke tests, delivery legacy cleanup
-- `2026-03-02` | `02d3865` | refactor: implement event delegation in dashboard and sync frontend version to v27
-- `2026-03-02` | `53f2f8e` | refactor: use glob for HTML targets in sync_frontend_version.py
-- `2026-03-02` | `ac70739` | docs: record v26 category drag-sort and rename sync to DEV_CONTEXT
-- `2026-03-02` | `4fd65e4` | feat: drag-sort categories and sync product category on rename (v26)
-- `2026-03-02` | `c5fd19e` | docs: record v25 shipping display enhancement to DEV_CONTEXT
-- `2026-03-02` | `67bc6f8` | feat(cart): enhance shipping fee display with dark red color and threshold text
-- `2026-03-01` | `1eb844d` | fix: correct FRONTEND_URL to include /sc subpath for LINE Pay callback
-- `2026-03-01` | `5215f70` | docs: record v24 to DEV_CONTEXT and revert README rule to auto-record
-- `2026-03-01` | `c4da49c` | feat(cart): separate shipping fee from discounts and improve free shipping hint
-- `2026-03-01` | `846d3fc` | docs: record v22 checkout UI optimization and v23 delivery district fix to DEV_CONTEXT
-- `2026-03-01` | `03a2b02` | fix: bind updateDistricts to window and update delivery address text
-- `2026-03-01` | `33cd38b` | docs: update README rule #5 to ask before recording to DEV_CONTEXT
-- `2026-03-01` | `7d62d34` | feat: optimize checkout UI - enforce map store selection and add shipping fee difference hint
-- `2026-03-01` | `3505ff9` | docs: update DEV_CONTEXT, task list, and walkthrough with CI automation and PCSC map integration details
-- `2026-03-01` | `bfb8c75` | fix: clean up PCSC callback debug, keep robust token extraction
-- `2026-03-01` | `0d575e8` | debug: add PCSC callback field dump to diagnose Miss Token error
-- `2026-03-01` | `8d53ac2` | fix: use correct PCSC c2cemap.ashx endpoint for 7-11 store map
-- `2026-03-01` | `21fb8f6` | fix: add localhost origins to CORS allowed list for local development
-- `2026-03-01` | `44c2fda` | feat: integrate PCSC official emap for 7-11 store selection, keep ECPay for FamilyMart
-- `2026-03-01` | `011c9f0` | feat: add CI auto-check workflow and update README rule #7 with detailed post-push CI verification steps
-- `2026-03-01` | `f59da94` | ci: fix deno fmt formatting errors in index.ts and orders.ts
-- `2026-03-01` | `61c6d03` | fix: correct delivery.js version import in main-app.js and bump all imports to v21 to solve state fragmentation
-- `2026-03-01` | `5f7348b` | fix: resolve ES module fragmentation by appending consistent version query string to all internal imports
-- `2026-03-01` | `caffdf3` | fix: add version parameter to ES module imports in main-app.js to bypass browser cache
-- `2026-03-01` | `5833456` | feat: show free shipping threshold details in cart discount section
-- `2026-03-01` | `0a9c886` | docs: add v17 fix to DEV_CONTEXT
-- `2026-03-01` | `a249428` | fix: import updateCartUI in main-app.js to resolve ReferenceError crashing page load
-- `2026-03-01` | `9f7b21d` | docs: update README rule #5 and sync DEV_CONTEXT.md with v12-v16 changes
-- `2026-03-01` | `a97a94e` | fix: recalculate shipping fee instantly when switching delivery method - call updateCartUI() at end of selectDelivery() in delivery.js - expose updateCartUI on window in main-app.js - ensures free-shipping badge updates immediately on delivery switch
-- `2026-03-01` | `ea2a743` | fix: reset shipping fee and badges when cart is empty - reorder updateCartUI to check empty cart before calculating totals - add cart.length guard in calcCartSummary shipping calculation - reset all price displays to /bin/zsh when cart is cleared
-- `2026-03-01` | `342a5cb` | fix: resolve silent order submission failures - fix cart submit button disabled due to window.state (use ES module state) - throw explicit error on 401 in authFetch - provide fallback error messages in orders.js catch - show descriptive reason on disabled submit button - split backend validation for clearer error messages
-- `2026-03-01` | `10d8c68` | docs: add auto-fix rules for CI errors
-- `2026-03-01` | `fa0e3c8` | fix(ci): resolve deno lint errors for unused vars and require-await
-- `2026-03-01` | `9ad9df6` | fix(ui): correct payment option active class selector and update v=13
-- `2026-02-28` | `b0d1301` | style: fix deno fmt errors in index.ts
-- `2026-02-28` | `08fb8fe` | feat: 改進一 + 改進二 — 前端事件代理 & 後端 Hono 路由
-- `2026-02-28` | `c3cc8ab` | feat: 改進三 — 前端直連 Supabase 讀取公開資料
-- `2026-02-27` | `63007e7` | docs: add rule to mandate reading DEV_CONTEXT.md upon project load
-- `2026-02-27` | `dbf00dc` | docs: add DEV_CONTEXT.md to track development state and pitfalls
-- `2026-02-26` | `345e339` | feat: implement Option A expanding vertically stepper for products
-- `2026-02-26` | `4716bb8` | Revert "feat: implement bottom sheet for product variants (Option C)"
-- `2026-02-26` | `43fc36b` | feat: implement bottom sheet for product variants (Option C)
-- `2026-02-26` | `b24df83` | fix: bump JS version to v7 to invalidate cache for cart variable fix
-- `2026-02-26` | `81ac7c8` | fix: import cart variable in main-app.js to prevent undefined variable crash on login
-- `2026-02-26` | `4fde3fc` | fix: re-add hidden submit-btn to circumvent mobile browser JS caching null crashes
-- `2026-02-26` | `0daf2a4` | fix: resolve null submitBtn issue during login by forcing browser cache refresh
-- `2026-02-25` | `4831da0` | feat: refine bottom bar and enhance cart discount details UI
-- `2026-02-25` | `de5f1ea` | style: bottom bar price layout - apply option B (dynamic badges)
-- `2026-02-25` | `15098a8` | Update project rules and temporarily track supabase folder
-- `2026-02-25` | `2735273` | style: 優化規格按鈕 UI (結合紅點數量標記並放大中央標籤文字)
-- `2026-02-25` | `08e43d3` | style: 修正商品規格切換為算盤控制列時的排版塌陷問題 (移除 absolute)
-- `2026-02-25` | `80f774c` | feat: 商品規格按鈕改版為 In-line Stepper 加減算盤 (移除時還原為加入按鈕)
-- `2026-02-25` | `c66b7c2` | fix: 修正重新整理頁面後購物車丟失折扣活動的問題 (因為狀態尚未載入完成)
-- `2026-02-25` | `1d852f3` | fix: 修正促銷折扣誤發動於未勾選規格的問題 (修復屬性對應錯誤)
-- `2026-02-25` | `591649a` | fix: 徹底修復 Deno TS Type Check 與 Any 轉型問題
-- `2026-02-25` | `9c3da4d` | fix: 優化 Deno Lint 變數定義以完全通過 CI
-- `2026-02-25` | `258d47d` | style: 修正 Deno 程式碼格式以通過 CI 檢查
-- `2026-02-25` | `7c2c71f` | fix: 深度強化後端 API 型別檢查以徹底解決 CI 失敗問題
-- `2026-02-25` | `ce8c8d8` | fix: 強化後端型別檢查與空值防護以修復 CI 失敗
-- `2026-02-25` | `2f6e23b` | feat: 促銷條件精細化支援依『商品規格』指定活動項目
-- `2026-02-25` | `b6e75fb` | feat: 新增運費設定與商品促銷功能
-- `2026-02-24` | `2a6515f` | Upload all project contents including supabase/ and environment templates
-- `2026-02-24` | `142deca` | Update README with modularization and Zod validation rules
-- `2026-02-24` | `27cdd8b` | Remove DEPLOY.md
-- `2026-02-24` | `b330201` | Enhance delivery preferences restoration on load
-- `2026-02-24` | `f27ca9a` | Fix bank account selection, enhance security (XSS, CORS, Auth), and apply custom settings
-- `2026-02-24` | `b8d54e7` | feat: allow customizing payment option names and icons from admin dashboard
-- `2026-02-24` | `91df475` | feat: make delivery options customizable and reorderable from admin dashboard
-- `2026-02-24` | `2e83a89` | fix: add missing cod-option id to allow dynamic hiding of cod payment option
-- `2026-02-24` | `ec9ca30` | feat: implement configurable payment routing matrix for each delivery method
-- `2026-02-24` | `2d1147a` | docs: add rule to prevent unauthorized modification of textual content in code
-- `2026-02-24` | `30fe4ed` | feat: add tracking number input and courier query links for admin
-- `2026-02-24` | `94ba0d1` | fix: ensure tw-city-selector initializes on home_delivery click as fallback
-- `2026-02-24` | `edcdcd0` | fix: tw-city-selector initialization timing issue causing empty address list
-- `2026-02-24` | `d21caff` | docs: add rule to include --no-verify-jwt when deploying supabase functions
-- `2026-02-24` | `47f82da` | feat: add home_delivery option with Taiwan zipcode selector
-- `2026-02-23` | `8f830ae` | Remove supabase/ from tracking, update README & .gitignore
-- `2026-02-23` | `22f8996` | Add README.md with project rules and update email templates
-- `2026-02-23` | `07d1999` | feat: 實作下單時檢查帳號停權狀態並顯示原因
-- `2026-02-23` | `ccf873e` | fix: 訂單成立視窗改為單獨顯示顧客選擇的匯款帳號
-- `2026-02-23` | `bf9346f` | feat: 實作匯款帳戶單選並將目標帳號紀錄至訂單與管理後台
-- `2026-02-23` | `6f74a8a` | style: 調整配送文案與匯款帳號複製按鈕位置
-- `2026-02-23` | `c871af3` | fix: 修正 JS 點擊選項導致未定義 currentTarget 中斷的問題
-- `2026-02-23` | `76d60b3` | feat: 配送順序調整與轉帳 UX 優化
-- `2026-02-23` | `0b1e828` | fix: 付款區塊隱藏條件與選項選取狀態修正
-- `2026-02-23` | `22cd3dd` | feat: 整合 LINE Pay、線上轉帳及退款功能
-- `2026-02-23` | `00bbe17` | fix: remove checkMacValue from store map callback (unsupported by ECPay logistic map)
-- `2026-02-23` | `28809b5` | fix: address 8 priority security and architecture issues
-- `2026-02-23` | `37077ce` | chore: backend security hardening (JWT, price calculation, ECPay secrets)
-- `2026-02-23` | `b5d95f9` | fix: store redirect and add title styling features
-- `2026-02-23` | `f92534a` | feat: dynamic form editing system with brand settings
-- `2026-02-23` | `677b722` | fix: remove isInAppBrowser check that calls broken GetStoreList API, and add cache buster to main.html
-- `2026-02-23` | `2c8a138` | fix: remove undefined stopStoreMapPolling call in selectDelivery
-- `2026-02-23` | `21fa973` | fix: remove non-existent stopStoreMapPolling import that broke entire main page
-- `2026-02-23` | `2e18d6b` | fix: detect LINE in-app browser and use store search modal instead of ECPay map to fix blank page
-- `2026-02-23` | `625578e` | fix: resolve blank page issue for ECPay map in LINE in-app browser by using same-window redirect and localStorage cart persistence
-- `2026-02-23` | `fcd9a17` | fix: resolve undefined store pickup translation and beautify order confirmation/shipping emails with HTML
-- `2026-02-23` | `a5c3e93` | fix: add version query string to bypass browser cache for dashboard-app.js
-- `2026-02-23` | `f065459` | feat: 支援滑鼠與觸控的商品拖曳排序 (SortableJS)
-- `2026-02-22` | `af93b2f` | feat: 模組化重構、新增商品自由排序功能、訂單確認視窗顯示店號與備註
-- `2026-02-22` | `17d908f` | refactor: 模組化重構
-- `2026-02-22` | `f31ab7d` | fix: 縮小手機底部按鈕 + 規格按鈕加入紅圈數量badge
-- `2026-02-22` | `3345a47` | feat: 商品多規格系統 + 購物車 Drawer 改造
-- `2026-02-22` | `20ccc78` | feat: 新增 RWD 響應式網頁設計(手機/平板/桌面)
-- `2026-02-22` | `8503b98` | style: 交換來店取貨與宅配到府的按鈕順序
-- `2026-02-22` | `df1fb94` | fix: 修正來店取貨被判定為無效配送方式
-- `2026-02-22` | `f52dc30` | style: 更新來店取貨地圖文字及LINE連結樣式
-- `2026-02-22` | `4d57f7c` | style: 更新來店取貨資訊(地址、電話與官方LINE)
-- `2026-02-22` | `9a6dfe3` | feat: 新增來店取貨選項並加入營業時間提示
-- `2026-02-22` | `574602e` | fix: 後台用戶清單顯示超商店號
-- `2026-02-22` | `28a2624` | fix: 超商取貨自動帶入問題與後台店號顯示
-- `2026-02-22` | `9cfc855` | feat: 記憶配送偏好至資料庫並顯示於後台
-- `2026-02-22` | `0196eaf` | feat: 新增記憶使用者配送偏好設定功能
-- `2026-02-22` | `23b148a` | feat: 新增用戶管理與黑名單功能至 dashboard
-- `2026-02-22` | `16cab22` | feat(ui): Make email optional with warning and save to local storage
-- `2026-02-22` | `e1ac417` | feat: Add Order & Shipping Email Notification via SMTP
-- `2026-02-22` | `d4408e8` | Fix ServerReplyURL to use full /functions/v1/ path
-- `2026-02-22` | `d1fd336` | Force HTTPS for ECPay ServerReplyURL callback
-- `2026-02-22` | `c76eea1` | Switch ECPay logistics from B2C to C2C subtypes
-- `2026-02-22` | `78cbe1f` | Update ECPay parameters to production
-- `2026-02-22` | `161933f` | chore(api): hardcode ECPay test parameters
-- `2026-02-22` | `d617a95` | fix(main): escape script closing tag in JS template to prevent HTML parsing error
-- `2026-02-22` | `be03ba9` | fix(dashboard): resolve XSS vulnerability in editCategory and display order notes
-- `2026-02-22` | `ff5d2cf` | fix: 修正綠界電子地圖流程與資料表
-- `2026-02-22` | `3ef4d30` | fix: 更新 main 與 dashboard 頁面
-- `2026-02-22` | `12af433` | 改用門市清單 API 搜尋選擇門市
-- `2026-02-22` | `3570cd3` | 新增超商取貨 ECPay 電子地圖門市選擇
-- `2026-02-22` | `83f5a9a` | 初次提交：咖啡訂購系統與修復
-<!-- MAIN_COMMIT_LOG_END -->
+---
+
+## 8) 維護方式
+
+- 更新本檔時，優先維護「現況、風險、最近有效變更」。
+- 不要再把完整 commit log 貼進 `DEV_CONTEXT.md`；git 歷史本身就是唯一真實來源。
+- 若變更會影響交接判斷，更新本檔即可；若只是一般小修，保留在 commit history 就好。

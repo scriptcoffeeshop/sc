@@ -25,6 +25,7 @@ export type QuotePayload = {
   availablePaymentMethods: {
     cod: boolean;
     linepay: boolean;
+    jkopay: boolean;
     transfer: boolean;
   };
   items: QuoteLineItem[];
@@ -39,7 +40,7 @@ export type QuotePayload = {
   ordersText: string;
 };
 
-export type PaymentMethod = "cod" | "linepay" | "transfer";
+export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
 
 type PaymentAvailability = Record<PaymentMethod, boolean>;
 
@@ -55,7 +56,12 @@ const VALID_DELIVERY_METHODS = [
   "in_store",
 ];
 
-const VALID_PAYMENT_METHODS: PaymentMethod[] = ["cod", "linepay", "transfer"];
+const VALID_PAYMENT_METHODS: PaymentMethod[] = [
+  "cod",
+  "linepay",
+  "jkopay",
+  "transfer",
+];
 
 function isPaymentMethod(value: string): value is PaymentMethod {
   return VALID_PAYMENT_METHODS.includes(value as PaymentMethod);
@@ -65,9 +71,17 @@ function toPaymentAvailability(
   payment: Record<string, unknown> | undefined,
 ): PaymentAvailability {
   const source = payment || {};
+  const linepayEnabled = source.linepay === true || source.linepay === "true";
+  const hasJkoPayInConfig = Object.prototype.hasOwnProperty.call(
+    source,
+    "jkopay",
+  );
   return {
     cod: source.cod === true || source.cod === "true",
-    linepay: source.linepay === true || source.linepay === "true",
+    linepay: linepayEnabled,
+    jkopay: hasJkoPayInConfig
+      ? source.jkopay === true || source.jkopay === "true"
+      : linepayEnabled,
     transfer: source.transfer === true || source.transfer === "true",
   };
 }
@@ -134,15 +148,26 @@ async function loadDeliveryConfig() {
   if (deliveryConfig.length > 0) return deliveryConfig;
 
   const legacyRouting = routingConfig || {
-    in_store: { cod: true, linepay: linePayEnabled, transfer: transferEnabled },
-    delivery: { cod: true, linepay: linePayEnabled, transfer: transferEnabled },
+    in_store: {
+      cod: true,
+      linepay: linePayEnabled,
+      jkopay: linePayEnabled,
+      transfer: transferEnabled,
+    },
+    delivery: {
+      cod: true,
+      linepay: linePayEnabled,
+      jkopay: linePayEnabled,
+      transfer: transferEnabled,
+    },
     home_delivery: {
       cod: true,
       linepay: linePayEnabled,
+      jkopay: linePayEnabled,
       transfer: transferEnabled,
     },
-    seven_eleven: { cod: true, linepay: false, transfer: false },
-    family_mart: { cod: true, linepay: false, transfer: false },
+    seven_eleven: { cod: true, linepay: false, jkopay: false, transfer: false },
+    family_mart: { cod: true, linepay: false, jkopay: false, transfer: false },
   };
 
   return [
@@ -150,31 +175,31 @@ async function loadDeliveryConfig() {
       id: "in_store",
       enabled: true,
       payment: legacyRouting.in_store ||
-        { cod: true, linepay: false, transfer: false },
+        { cod: true, linepay: false, jkopay: false, transfer: false },
     },
     {
       id: "delivery",
       enabled: true,
       payment: legacyRouting.delivery ||
-        { cod: true, linepay: false, transfer: false },
+        { cod: true, linepay: false, jkopay: false, transfer: false },
     },
     {
       id: "home_delivery",
       enabled: true,
       payment: legacyRouting.home_delivery ||
-        { cod: true, linepay: false, transfer: false },
+        { cod: true, linepay: false, jkopay: false, transfer: false },
     },
     {
       id: "seven_eleven",
       enabled: true,
       payment: legacyRouting.seven_eleven ||
-        { cod: true, linepay: false, transfer: false },
+        { cod: true, linepay: false, jkopay: false, transfer: false },
     },
     {
       id: "family_mart",
       enabled: true,
       payment: legacyRouting.family_mart ||
-        { cod: true, linepay: false, transfer: false },
+        { cod: true, linepay: false, jkopay: false, transfer: false },
     },
   ];
 }

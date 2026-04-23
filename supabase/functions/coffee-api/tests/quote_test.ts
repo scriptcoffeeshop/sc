@@ -1,4 +1,4 @@
-import { assertEquals } from "std/testing/asserts";
+import { assertEquals } from "@std/assert";
 import { computeOrderQuote } from "../api/quote.ts";
 
 const MOCK_DELIVERY_CONFIG = [
@@ -7,20 +7,20 @@ const MOCK_DELIVERY_CONFIG = [
     enabled: true,
     fee: 100,
     free_threshold: 1000,
-    payment: { cod: true, transfer: true, linepay: true },
+    payment: { cod: true, transfer: true, linepay: true, jkopay: true },
   },
   {
     id: "seven_eleven",
     enabled: true,
     fee: 65,
     free_threshold: 1200,
-    payment: { cod: true, transfer: false, linepay: false },
+    payment: { cod: true, transfer: false, linepay: false, jkopay: false },
   },
   {
     id: "disabled_method",
     enabled: false,
     fee: 0,
-    payment: { cod: true, transfer: true, linepay: true },
+    payment: { cod: true, transfer: true, linepay: true, jkopay: true },
   },
 ];
 
@@ -71,29 +71,36 @@ const MOCK_PROMOS = [
 
 const DEFAULT_PROMO_NOW = new Date("2026-03-10T12:00:00Z");
 
-Deno.test("Quote Engine - Basic Subtotal Calculation", () => {
-  const result = computeOrderQuote({
-    cartItems: [
-      { productId: 1, qty: 2 },
-      { productId: 2, qty: 1 },
-    ],
-    requestedDeliveryMethod: "delivery",
-    requestedPaymentMethod: "transfer",
-    products: MOCK_PRODUCTS,
-    deliveryConfig: MOCK_DELIVERY_CONFIG,
-    activePromos: [],
-    promoNow: DEFAULT_PROMO_NOW,
-  });
+// 由於 Supabase JS client 在 module 載入時會產生一個 timer，
+// 第一個測試需關閉 sanitizer 以避免 false-positive leak 偵測。
+Deno.test({
+  name: "Quote Engine - Basic Subtotal Calculation",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    const result = computeOrderQuote({
+      cartItems: [
+        { productId: 1, qty: 2 },
+        { productId: 2, qty: 1 },
+      ],
+      requestedDeliveryMethod: "delivery",
+      requestedPaymentMethod: "transfer",
+      products: MOCK_PRODUCTS,
+      deliveryConfig: MOCK_DELIVERY_CONFIG,
+      activePromos: [],
+      promoNow: DEFAULT_PROMO_NOW,
+    });
 
-  assertEquals(result.success, true);
-  if (result.success) {
-    const q = result.quote;
-    // 300 * 2 + 500 = 1100
-    assertEquals(q.subtotal, 1100);
-    // Over free_threshold (1000) -> 0 fee
-    assertEquals(q.shippingFee, 0);
-    assertEquals(q.total, 1100);
-  }
+    assertEquals(result.success, true);
+    if (result.success) {
+      const q = result.quote;
+      // 300 * 2 + 500 = 1100
+      assertEquals(q.subtotal, 1100);
+      // Over free_threshold (1000) -> 0 fee
+      assertEquals(q.shippingFee, 0);
+      assertEquals(q.total, 1100);
+    }
+  },
 });
 
 Deno.test("Quote Engine - Product with Specs", () => {
@@ -119,6 +126,51 @@ Deno.test("Quote Engine - Product with Specs", () => {
     assertEquals(q.total, 1550);
     assertEquals(q.items[0].unitPrice, 400);
     assertEquals(q.items[1].unitPrice, 750);
+  }
+});
+
+Deno.test("Quote Engine - JKO Pay Availability", () => {
+  const result = computeOrderQuote({
+    cartItems: [{ productId: 1, qty: 1 }],
+    requestedDeliveryMethod: "delivery",
+    requestedPaymentMethod: "jkopay",
+    products: MOCK_PRODUCTS,
+    deliveryConfig: MOCK_DELIVERY_CONFIG,
+    activePromos: [],
+    promoNow: DEFAULT_PROMO_NOW,
+  });
+
+  assertEquals(result.success, true);
+  if (result.success) {
+    const q = result.quote;
+    assertEquals(q.availablePaymentMethods.jkopay, true);
+  }
+});
+
+Deno.test("Quote Engine - Legacy Routing Fallback For JKO Pay", () => {
+  const legacyDeliveryConfig = [
+    {
+      id: "delivery",
+      enabled: true,
+      fee: 100,
+      free_threshold: 1000,
+      payment: { cod: true, transfer: true, linepay: true }, // no jkopay key
+    },
+  ];
+
+  const result = computeOrderQuote({
+    cartItems: [{ productId: 1, qty: 1 }],
+    requestedDeliveryMethod: "delivery",
+    requestedPaymentMethod: "jkopay",
+    products: MOCK_PRODUCTS,
+    deliveryConfig: legacyDeliveryConfig,
+    activePromos: [],
+    promoNow: DEFAULT_PROMO_NOW,
+  });
+
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(result.quote.availablePaymentMethods.jkopay, true);
   }
 });
 
