@@ -9,6 +9,7 @@
     "./src/features/dashboard/dashboardOrderFlexMessage.ts",
     "./src/features/dashboard/dashboardOrderStatusController.ts",
     "./src/features/dashboard/useDashboardCategories.ts",
+    "./src/features/dashboard/useDashboardPromotions.ts",
     "./src/components/ui/**/*.vue"
   ]
 }

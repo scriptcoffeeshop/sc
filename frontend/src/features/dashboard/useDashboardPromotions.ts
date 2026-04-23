@@ -188,7 +188,11 @@ async function syncPromotionSortable() {
     onEnd: async (event) => {
       if (event.oldIndex === event.newIndex) return;
       const ids = Array.from(promotionsTableElement.querySelectorAll("tr[data-id]"))
-        .map((row) => Number.parseInt(row.dataset.id || "", 10))
+        .map((row) =>
+          row instanceof HTMLElement
+            ? Number.parseInt(row.dataset.id || "", 10)
+            : NaN
+        )
         .filter((id) => !Number.isNaN(id));
 
       try {
@@ -284,7 +288,7 @@ async function savePromotion(event) {
   event?.preventDefault?.();
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
 
-  const payload = {
+  const payload: Record<string, any> = {
     userId: getAuthUserId(),
     name: String(promotionForm.name || "").trim(),
     type: String(promotionForm.type || "bundle"),
