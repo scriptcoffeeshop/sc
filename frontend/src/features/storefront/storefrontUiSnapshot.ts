@@ -1,4 +1,5 @@
 import { state } from "../../lib/appState.ts";
+import { storefrontRuntime } from "./storefrontRuntime.ts";
 import type { SessionUser } from "../../types/session";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { Product } from "../../types/core";
@@ -58,18 +59,41 @@ function readWindowValue<T>(key: string, fallback: T): T {
   return (value ?? fallback) as T;
 }
 
+function getRuntimeSettings(): DashboardSettingsRecord {
+  const runtimeSettings = storefrontRuntime.appSettings;
+  if (
+    runtimeSettings && typeof runtimeSettings === "object" &&
+    !Array.isArray(runtimeSettings)
+  ) {
+    return { ...(runtimeSettings as DashboardSettingsRecord) };
+  }
+  return {
+    ...readWindowValue<DashboardSettingsRecord>("appSettings", {}),
+  };
+}
+
+function getRuntimeDeliveryConfig(): StorefrontDeliveryOption[] {
+  if (
+    Array.isArray(storefrontRuntime.currentDeliveryConfig) &&
+    storefrontRuntime.currentDeliveryConfig.length
+  ) {
+    return cloneArrayItems<StorefrontDeliveryOption>(
+      storefrontRuntime.currentDeliveryConfig,
+    );
+  }
+  return cloneArrayItems<StorefrontDeliveryOption>(
+    readWindowValue("currentDeliveryConfig", []),
+  );
+}
+
 export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {
   return {
     products: cloneArrayItems<Product>(state.products),
     categories: cloneArrayItems<StorefrontCategoryRecord>(state.categories),
     formFields: cloneArrayItems<StorefrontFormField>(state.formFields),
     currentUser: state.currentUser ? { ...state.currentUser } : null,
-    settings: {
-      ...readWindowValue<DashboardSettingsRecord>("appSettings", {}),
-    },
-    deliveryConfig: cloneArrayItems<StorefrontDeliveryOption>(
-      readWindowValue("currentDeliveryConfig", []),
-    ),
+    settings: getRuntimeSettings(),
+    deliveryConfig: getRuntimeDeliveryConfig(),
     selectedDelivery: String(state.selectedDelivery || ""),
     selectedPayment: String(state.selectedPayment || "cod"),
     bankAccounts: cloneArrayItems<StorefrontBankAccount>(state.bankAccounts),
