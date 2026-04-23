@@ -104,6 +104,10 @@ async function installStorefrontFeatureRoutes(page: Page) {
       });
     }
     if (action === "createStoreMapSession") {
+      expect(request.method()).toBe("POST");
+      const payload = request.postDataJSON() as Record<string, unknown>;
+      expect(payload.deliveryMethod).toBe("family_mart");
+      expect(String(payload.clientUrl || "")).toContain("/main.html");
       return fulfillJson(route, {
         success: true,
         mapUrl: "/mock-ecpay-map.html",

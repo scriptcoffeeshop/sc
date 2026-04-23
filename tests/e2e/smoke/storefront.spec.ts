@@ -326,7 +326,13 @@ test.describe("smoke / storefront", () => {
     });
     await blockStorefrontBodyClickDelegation(page);
 
+    let pcscMapRequest: { method: string; body: Record<string, unknown> | null } | null = null;
     await page.route(`${API_URL}?action=createPcscMapSession**`, async (route) => {
+      const request = route.request();
+      pcscMapRequest = {
+        method: request.method(),
+        body: request.postDataJSON() as Record<string, unknown> | null,
+      };
       await fulfillJson(route, {
         success: false,
         error: "地圖維護中",
@@ -381,6 +387,8 @@ test.describe("smoke / storefront", () => {
     await page.locator("#store-search-input").fill("竹科");
     await page.locator('.store-result-item[data-store-result="true"]').click();
 
+    expect(pcscMapRequest?.method).toBe("POST");
+    expect(String(pcscMapRequest?.body?.clientUrl || "")).toContain("/main.html");
     await expect(page.locator("#store-selected-info")).toBeVisible();
     await expect(page.locator("#selected-store-name")).toHaveText("竹科門市");
     await expect(page.locator("#selected-store-id")).toContainText("711001");

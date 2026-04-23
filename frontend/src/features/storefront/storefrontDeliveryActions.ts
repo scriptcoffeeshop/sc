@@ -247,11 +247,11 @@ export async function openStoreMap() {
     try {
       const clientUrl = location.origin + location.pathname;
       // 先在後端建立 store selection session（取得 token 與 callback URL）
-      const res = await fetch(
-        `${API_URL}?action=createPcscMapSession&clientUrl=${
-          encodeURIComponent(clientUrl)
-        }`,
-      );
+      const res = await fetch(`${API_URL}?action=createPcscMapSession`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientUrl }),
+      });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "建立地圖會話失敗");
 
@@ -303,11 +303,14 @@ export async function openStoreMap() {
   });
   try {
     const clientUrl = location.origin + location.pathname;
-    const res = await fetch(
-      `${API_URL}?action=createStoreMapSession&deliveryMethod=${
-        encodeURIComponent(state.selectedDelivery)
-      }&clientUrl=${encodeURIComponent(clientUrl)}`,
-    );
+    const res = await fetch(`${API_URL}?action=createStoreMapSession`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        deliveryMethod: state.selectedDelivery,
+        clientUrl,
+      }),
+    });
     const result = await res.json();
     if (!result.success) throw new Error(result.error || "建立地圖會話失敗");
 
