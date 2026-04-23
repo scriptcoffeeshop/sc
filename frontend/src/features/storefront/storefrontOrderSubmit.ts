@@ -4,6 +4,7 @@ import { escapeHtml, isValidEmail } from "../../../../js/utils.js";
 import { state } from "../../../../js/state.js";
 import { cart, clearCart } from "./storefrontCartStore.ts";
 import { collectDynamicFields } from "./storefrontFormRenderer.ts";
+import Swal from "../../lib/swal.js";
 import {
   buildSubmitDeliveryInfo,
   collectSubmitDeliveryInfo,
@@ -16,22 +17,31 @@ import {
 } from "./storefrontOrderReceiptPrefs.ts";
 import { buildPaymentLaunchDialogOptions } from "./storefrontPaymentDisplay.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
+import {
+  confirmWarning,
+  showError,
+  showLoading,
+  showWarning,
+} from "../../lib/swalDialogs.ts";
+import type { PaymentMethod, SubmitDeliveryInfo } from "../../types";
 
 /** 送出訂單 */
-export async function submitOrder() {
+export async function submitOrder(): Promise<void> {
   const u = state.currentUser;
   if (!u) {
-    Swal.fire("請先登入", "使用 LINE 登入後再訂購", "warning");
+    showWarning("請先登入", "使用 LINE 登入後再訂購");
     return;
   }
 
   // 政策同意驗證
-  const policyCheckbox = document.getElementById("policy-agree");
+  const policyCheckbox = document.getElementById(
+    "policy-agree",
+  ) as HTMLInputElement | null;
   const policyHint = document.getElementById("policy-agree-hint");
   if (policyCheckbox && !policyCheckbox.checked) {
     if (policyHint) policyHint.classList.remove("hidden");
     policyCheckbox.focus();
-    Swal.fire("提醒", "請先閱讀並勾選同意隱私權政策及退換貨政策", "warning");
+    showWarning("提醒", "請先閱讀並勾選同意隱私權政策及退換貨政策");
     return;
   }
   if (policyHint) policyHint.classList.add("hidden");
@@ -39,7 +49,7 @@ export async function submitOrder() {
   // 動態欄位驗證
   const fieldsResult = collectDynamicFields(state.formFields);
   if (!fieldsResult.valid) {
-    Swal.fire("錯誤", fieldsResult.error, "error");
+    showError("錯誤", fieldsResult.error);
     return;
   }
 
@@ -48,24 +58,22 @@ export async function submitOrder() {
   const email = fieldsResult.data.email || "";
 
   if (!state.selectedDelivery) {
-    Swal.fire("錯誤", "請選擇配送方式", "error");
+    showError("錯誤", "請選擇配送方式");
     return;
   }
 
   if (email && !isValidEmail(email)) {
-    Swal.fire("錯誤", "請填寫正確的電子郵件", "error");
+    showError("錯誤", "請填寫正確的電子郵件");
     return;
   }
 
   if (!email) {
     const emailField = state.formFields.find((f) => f.field_key === "email");
     if (emailField && emailField.enabled) {
-      const proceed = await Swal.fire({
+      const proceed = await confirmWarning({
         title: "未填寫電子郵件",
         text:
           "您沒有填寫電子郵件，將無法接收到訂單成立與出貨通知信。確定要繼續送出訂單嗎？",
-        icon: "warning",
-        showCancelButton: true,
         confirmButtonText: "繼續送出",
         cancelButtonText: "返回填寫",
         confirmButtonColor: "#3C2415",
@@ -75,24 +83,23 @@ export async function submitOrder() {
   }
 
   if (!cart.length) {
-    Swal.fire("錯誤", "購物車是空的，請先選擇商品", "error");
+    showError("錯誤", "購物車是空的，請先選擇商品");
     return;
   }
 
   if (storefrontRuntime.refreshQuote) {
     const quoteResult = await storefrontRuntime.refreshQuote({ silent: true });
     if (!quoteResult?.success) {
-      Swal.fire(
+      showError(
         "錯誤",
         quoteResult?.error || "無法計算訂單金額，請稍後再試",
-        "error",
       );
       return;
     }
   }
   const quote = state.orderQuote;
   if (!quote || !Array.isArray(quote.orderLines)) {
-    Swal.fire("錯誤", "無法取得最新報價，請稍後再試", "error");
+    showError("錯誤", "無法取得最新報價，請稍後再試");
     return;
   }
   const orderLines = quote.orderLines;
@@ -101,44 +108,48 @@ export async function submitOrder() {
 
   const deliveryResult = collectSubmitDeliveryInfo(deliveryMethod);
   if (deliveryResult.error) {
-    Swal.fire("錯誤", deliveryResult.error, "error");
+    showError("錯誤", deliveryResult.error);
     return;
   }
-  const deliveryInfo = deliveryResult.deliveryInfo;
+  const deliveryInfo = deliveryResult.deliveryInfo as SubmitDeliveryInfo;
 
-  const note = document.getElementById("order-note").value.trim();
+  const note = String(
+    (document.getElementById("order-note") as HTMLTextAreaElement | null)
+      ?.value || "",
+  ).trim();
   const receiptResult = getReceiptFormValues();
   if (receiptResult.error) {
-    Swal.fire("錯誤", receiptResult.error, "error");
+    showError("錯誤", receiptResult.error);
     return;
   }
   const receiptInfo = receiptResult.receiptInfo;
 
   // 付款方式驗證
-  const paymentMethod = state.selectedPayment || "cod";
+  const paymentMethod = String(state.selectedPayment || "cod") as PaymentMethod;
   let transferTargetAccountInfo = "";
   let transferAccountLast5 = "";
   if (
     quote.availablePaymentMethods &&
     !quote.availablePaymentMethods[paymentMethod]
   ) {
-    Swal.fire("錯誤", "目前配送方式不支援此付款方式，請重新選擇", "error");
+    showError("錯誤", "目前配送方式不支援此付款方式，請重新選擇");
     return;
   }
 
   if (paymentMethod === "transfer") {
     if (!state.selectedBankAccountId) {
-      Swal.fire("錯誤", "請選擇您要匯入的目標帳號", "error");
+      showError("錯誤", "請選擇您要匯入的目標帳號");
       return;
     }
     transferAccountLast5 =
-      document.getElementById("transfer-last5")?.value?.trim() || "";
+      (document.getElementById("transfer-last5") as HTMLInputElement | null)
+        ?.value?.trim() || "";
     if (
       !transferAccountLast5 ||
       transferAccountLast5.length !== 5 ||
       !/^\d{5}$/.test(transferAccountLast5)
     ) {
-      Swal.fire("錯誤", "請輸入正確的匯款帳號末5碼", "error");
+      showError("錯誤", "請輸入正確的匯款帳號末5碼");
       return;
     }
 
@@ -152,7 +163,7 @@ export async function submitOrder() {
   }
 
   // 組合自訂欄位（排除 phone / email，轉為 JSON）
-  const customFieldsData = {};
+  const customFieldsData: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fieldsResult.data)) {
     if (k !== "phone" && k !== "email") {
       customFieldsData[k] = v;
@@ -176,11 +187,7 @@ export async function submitOrder() {
   });
   if (!confirmResult.isConfirmed) return;
 
-  Swal.fire({
-    title: "送出中...",
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
-  });
+  showLoading("送出中...");
 
   const payloadItems = cart.map((c) => ({
     productId: c.productId,
@@ -286,7 +293,9 @@ export async function submitOrder() {
 
       const resetOrderDraft = () => {
         clearCart();
-        const noteEl = document.getElementById("order-note");
+        const noteEl = document.getElementById(
+          "order-note",
+        ) as HTMLTextAreaElement | null;
         if (noteEl) noteEl.value = "";
         applySavedOrderFormPrefs();
       };
@@ -375,11 +384,13 @@ export async function submitOrder() {
         resetOrderDraft();
       });
     } else throw new Error(result.error || "訂單送出發生未知錯誤");
-  } catch (e) {
-    const msg = e.message || "訂單送出發生未知錯誤，請稍後再試";
+  } catch (e: unknown) {
+    const msg = e instanceof Error
+      ? e.message
+      : "訂單送出發生未知錯誤，請稍後再試";
     const displayMsg = msg === "Failed to fetch"
       ? "網路連線失敗，請檢查網路後再試"
       : msg;
-    Swal.fire("送出失敗", displayMsg, "error");
+    showError("送出失敗", displayMsg);
   }
 }

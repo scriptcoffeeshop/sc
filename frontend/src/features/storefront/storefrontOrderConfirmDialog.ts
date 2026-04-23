@@ -1,8 +1,11 @@
 import { escapeHtml } from "../../../../js/utils.js";
 import { SUBMIT_DELIVERY_METHOD_TEXT } from "./storefrontOrderDeliveryInfo.ts";
 import { PAYMENT_METHOD_TEXT } from "./storefrontPaymentDisplay.ts";
+import Swal from "../../lib/swal.js";
+import type { SwalDialogPromise } from "../../lib/swalDialogs.ts";
+import type { StorefrontOrderConfirmParams } from "../../types";
 
-function buildOrderConfirmHtml(params) {
+function buildOrderConfirmHtml(params: StorefrontOrderConfirmParams): string {
   const deliveryCompanyText = params.deliveryMethod === "delivery"
     ? String(params.deliveryInfo.companyOrBuilding || "").trim()
     : "";
@@ -48,7 +51,9 @@ function buildOrderConfirmHtml(params) {
         </div>`;
 }
 
-export function confirmOrderSubmission(params) {
+export function confirmOrderSubmission(
+  params: StorefrontOrderConfirmParams,
+): SwalDialogPromise {
   return Swal.fire({
     title: "確認訂單",
     html: buildOrderConfirmHtml(params),

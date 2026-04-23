@@ -1,13 +1,20 @@
 import { escapeHtml } from "../../../../js/utils.js";
+import type {
+  CustomerPaymentDisplay,
+  PaymentActionGuide,
+  PaymentDisplayInput,
+  PaymentDisplayOptions,
+  PaymentMethod,
+} from "../../types";
 
-export const PAYMENT_METHOD_TEXT = {
+export const PAYMENT_METHOD_TEXT: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
   jkopay: "街口支付",
   transfer: "線上轉帳",
 };
 
-export const PAYMENT_STATUS_TEXT = {
+export const PAYMENT_STATUS_TEXT: Record<string, string> = {
   pending: "待付款",
   processing: "付款確認中",
   paid: "已付款",
@@ -17,7 +24,7 @@ export const PAYMENT_STATUS_TEXT = {
   refunded: "已退款",
 };
 
-export function formatDateTimeText(value) {
+export function formatDateTimeText(value: unknown): string {
   const raw = String(value || "").trim();
   if (!raw) return "";
   const parsed = new Date(raw);
@@ -25,7 +32,7 @@ export function formatDateTimeText(value) {
   return parsed.toLocaleString("zh-TW");
 }
 
-function normalizePaymentLaunchUrl(url) {
+function normalizePaymentLaunchUrl(url: unknown): string {
   const raw = String(url || "").trim();
   if (!raw || !/^https?:\/\//i.test(raw)) return "";
   try {
@@ -37,24 +44,30 @@ function normalizePaymentLaunchUrl(url) {
   }
 }
 
-function getPaymentLaunchActionLabel(paymentMethod) {
+function getPaymentLaunchActionLabel(paymentMethod: string): string {
   if (paymentMethod === "linepay") return "前往 LINE Pay 付款";
   if (paymentMethod === "jkopay") return "前往街口付款";
   return "前往付款";
 }
 
-function normalizePaymentMethod(paymentMethod) {
+function normalizePaymentMethod(paymentMethod: unknown): PaymentMethod | string {
   const normalized = String(paymentMethod || "").trim();
   return normalized || "cod";
 }
 
-function normalizePaymentStatusForDisplay(paymentMethod, paymentStatus) {
+function normalizePaymentStatusForDisplay(
+  paymentMethod: unknown,
+  paymentStatus: unknown,
+): string {
   const normalized = String(paymentStatus || "").trim();
   if (normalized) return normalized;
   return normalizePaymentMethod(paymentMethod) === "cod" ? "" : "pending";
 }
 
-function getPaymentActionGuide(paymentMethod, paymentStatus) {
+function getPaymentActionGuide(
+  paymentMethod: string,
+  paymentStatus: string,
+): PaymentActionGuide {
   if (paymentMethod === "jkopay") {
     if (paymentStatus === "paid") {
       return {
@@ -181,7 +194,7 @@ function getPaymentActionGuide(paymentMethod, paymentStatus) {
   };
 }
 
-export function getPaymentToneClasses(tone) {
+export function getPaymentToneClasses(tone: string): string {
   if (tone === "success") {
     return "border-green-200 bg-green-50 text-green-900";
   }
@@ -197,7 +210,11 @@ export function getPaymentToneClasses(tone) {
   return "border-slate-200 bg-slate-50 text-slate-900";
 }
 
-function getOrderHistoryPaymentGuideDescription(params) {
+function getOrderHistoryPaymentGuideDescription(params: {
+  paymentMethod: string;
+  paymentStatus: string;
+  resumePaymentLabel: string;
+}): string {
   const paymentMethod = params?.paymentMethod;
   const paymentStatus = params?.paymentStatus;
   const resumePaymentLabel = params?.resumePaymentLabel;
@@ -224,7 +241,7 @@ function getOrderHistoryPaymentGuideDescription(params) {
   return `這筆訂單尚未完成${readableMethodLabel}，請點下方「${resumePaymentLabel}」繼續；付款後狀態會自動同步。`;
 }
 
-export function getPaymentBadgeClass(paymentStatus) {
+export function getPaymentBadgeClass(paymentStatus: string): string {
   if (paymentStatus === "paid") return "bg-green-50 text-green-700";
   if (paymentStatus === "processing") return "bg-blue-50 text-blue-700";
   if (paymentStatus === "pending") return "bg-yellow-50 text-yellow-700";
@@ -238,7 +255,10 @@ export function getPaymentBadgeClass(paymentStatus) {
   return "bg-gray-100 text-gray-600";
 }
 
-export function getCustomerPaymentDisplay(order, options = {}) {
+export function getCustomerPaymentDisplay(
+  order: PaymentDisplayInput = {},
+  options: PaymentDisplayOptions = {},
+): CustomerPaymentDisplay {
   const paymentMethod = normalizePaymentMethod(order?.paymentMethod);
   const paymentStatus = normalizePaymentStatusForDisplay(
     paymentMethod,
@@ -289,7 +309,9 @@ export function getCustomerPaymentDisplay(order, options = {}) {
   };
 }
 
-export function buildPaymentStatusDialogOptions(params) {
+export function buildPaymentStatusDialogOptions(
+  params: PaymentDisplayInput = {},
+): Record<string, any> {
   const display = getCustomerPaymentDisplay(params);
   const orderId = escapeHtml(String(params?.orderId || ""));
   const detailLines = [
@@ -328,7 +350,7 @@ export function buildPaymentStatusDialogOptions(params) {
     ? "warning"
     : "info";
 
-  const dialogOptions = {
+  const dialogOptions: Record<string, any> = {
     icon,
     title: display.guideTitle,
     html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
@@ -348,7 +370,9 @@ export function buildPaymentStatusDialogOptions(params) {
   return dialogOptions;
 }
 
-export function buildPaymentLaunchDialogOptions(params) {
+export function buildPaymentLaunchDialogOptions(
+  params: PaymentDisplayInput = {},
+): Record<string, any> {
   const display = getCustomerPaymentDisplay({
     paymentMethod: params?.paymentMethod,
     paymentStatus: "pending",

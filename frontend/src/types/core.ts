@@ -21,7 +21,8 @@ export type PaymentStatus =
   | "paid"
   | "failed"
   | "cancelled"
-  | "expired";
+  | "expired"
+  | "refunded";
 
 export interface ReceiptInfo {
   buyer: string;
