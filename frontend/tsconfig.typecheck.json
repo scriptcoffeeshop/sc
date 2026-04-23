@@ -3,6 +3,10 @@
   "include": [
     "./src/types/**/*.ts",
     "./src/lib/*.ts",
+    "./src/features/dashboard/dashboardOrderFlexLayout.ts",
+    "./src/features/dashboard/dashboardOrderFlexBody.ts",
+    "./src/features/dashboard/dashboardOrderFlexBubble.ts",
+    "./src/features/dashboard/dashboardOrderFlexMessage.ts",
     "./src/components/ui/**/*.vue"
   ]
 }
