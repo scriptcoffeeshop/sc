@@ -1,6 +1,6 @@
 import { API_URL, LINE_REDIRECT } from "../../../../js/config.js";
 import Sortable from "sortablejs";
-import Swal from "sweetalert2";
+import Swal from "../../lib/swal.js";
 import { esc, Toast } from "../../../../js/utils.js";
 import { authFetch, loginWithLine } from "../../../../js/auth.js";
 import {

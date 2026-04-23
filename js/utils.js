@@ -2,7 +2,7 @@
 // utils.js — 共用工具函式
 // ============================================
 
-import Swal from "sweetalert2";
+import Swal from "../frontend/src/lib/swal.js";
 
 /** HTML 特殊字元跳脫 */
 export function escapeHtml(s) {

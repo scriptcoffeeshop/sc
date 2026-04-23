@@ -65,6 +65,8 @@
 - storefront「我的訂單」列表已改成 DOM API 安全渲染，`storefrontOrderActions.ts` 不再以 `innerHTML` 拼接後端訂單資料。
 - storefront legacy `js/*.js` 前台檔案已改為相容 re-export；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
+- 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
+- `tw-city-selector` 已由 CDN 改為 npm bundle（`frontend/src/lib/twCitySelector.js` + `frontend/src/features/storefront/storefrontDeliveryActions.ts`），`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
 
 ### 後端演進
 

@@ -5,13 +5,14 @@
 import { API_URL, districtData } from "../../../../js/config.js";
 import { Toast } from "../../../../js/utils.js";
 import { state } from "../../../../js/state.js";
+import TwCitySelector from "../../lib/twCitySelector.js";
 
 let allStores = [];
 let storeListLoaded = false;
 let citySelectorInstance = null; // 用來儲存 tw-city-selector 實體
 
 function initCitySelector() {
-  if (typeof TwCitySelector !== "undefined" && !citySelectorInstance) {
+  if (TwCitySelector && !citySelectorInstance) {
     citySelectorInstance = new TwCitySelector({
       el: '[role="tw-city-selector"]',
       elCounty: ".county",

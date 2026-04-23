@@ -2,7 +2,7 @@
 // auth.js — LINE Login 認證 (客戶端 + 管理端共用)
 // ============================================
 
-import Swal from "sweetalert2";
+import Swal from "../frontend/src/lib/swal.js";
 import { API_URL } from "./config.js";
 
 /**
