@@ -1,4 +1,5 @@
 import { state } from "../../../../js/state.js";
+import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 function normalizeReceiptInfo(raw) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
@@ -105,8 +106,8 @@ export function applySavedOrderFormPrefs() {
 
   const paymentOptionEl = document.getElementById(`${paymentMethod}-option`);
   if (!paymentOptionEl || paymentOptionEl.classList.contains("hidden")) return;
-  if (typeof window.selectPayment === "function") {
-    window.selectPayment(paymentMethod, { skipQuote: true });
+  if (storefrontRuntime.selectPayment) {
+    storefrontRuntime.selectPayment(paymentMethod, { skipQuote: true });
   }
 }
 

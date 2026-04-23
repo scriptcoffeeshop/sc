@@ -6,6 +6,7 @@ import { API_URL, districtData } from "../../../../js/config.js";
 import { Toast } from "../../../../js/utils.js";
 import { state } from "../../../../js/state.js";
 import TwCitySelector from "../../lib/twCitySelector.js";
+import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 let allStores = [];
 let storeListLoaded = false;
@@ -30,12 +31,12 @@ if (document.readyState === "loading") {
 }
 
 /** Vue 已接手配送選項渲染；保留相容入口避免舊流程呼叫中斷。 */
-window.renderDeliveryOptions = function (config) {
+export function renderDeliveryOptions(config) {
   void config;
-};
+}
 
 /** 選擇配送方式 */
-window.selectDelivery = function (method, e, options = {}) {
+export function selectDelivery(method, e, options = {}) {
   state.selectedDelivery = method;
   state.orderQuote = null;
   state.quoteError = "";
@@ -75,33 +76,37 @@ window.selectDelivery = function (method, e, options = {}) {
   }
 
   // 處理付款方式選項（根據新版陣列設定動態更新顯示與選取）
-  if (typeof window.updatePaymentOptionsState === "function") {
+  if (storefrontRuntime.updatePaymentOptionsState) {
     // 從 appSettings 重新抓取
-    const deliveryConfigStr = window.appSettings?.delivery_options_config || "";
+    const deliveryConfigStr =
+      storefrontRuntime.appSettings?.delivery_options_config || "";
     let deliveryConfig = [];
     if (deliveryConfigStr) {
       try {
         deliveryConfig = JSON.parse(deliveryConfigStr);
       } catch (e) {}
     }
-    window.updatePaymentOptionsState(deliveryConfig);
+    storefrontRuntime.updatePaymentOptionsState(deliveryConfig);
   }
 
   // 切換配送方式後，先更新畫面，再重新向後端取得 quote
-  if (typeof window.updateCartUI === "function") {
-    window.updateCartUI();
+  if (storefrontRuntime.updateCartUI) {
+    storefrontRuntime.updateCartUI();
   }
-  if (!options.skipQuote && typeof window.scheduleQuoteRefresh === "function") {
-    window.scheduleQuoteRefresh({ silent: true });
+  if (!options.skipQuote && storefrontRuntime.scheduleQuoteRefresh) {
+    storefrontRuntime.scheduleQuoteRefresh({ silent: true });
   }
 
   // 切換配送方式後，重新渲染動態表單欄位（依配送方式過濾）
-  if (typeof window.rerenderFormFields === "function") {
-    window.rerenderFormFields();
+  if (storefrontRuntime.rerenderFormFields) {
+    storefrontRuntime.rerenderFormFields();
   }
-};
-// 為了相容匯出 (如果其他檔案透過 import 引用)
-export const selectDelivery = window.selectDelivery;
+}
+
+if (typeof window !== "undefined") {
+  window.renderDeliveryOptions = renderDeliveryOptions;
+  window.selectDelivery = selectDelivery;
+}
 
 /** 更新地區下拉 (限新竹使用) */
 export function updateDistricts() {
@@ -214,7 +219,7 @@ export async function openStoreMap() {
       didOpen: () => Swal.showLoading(),
     });
     try {
-      const clientUrl = window.location.origin + window.location.pathname;
+      const clientUrl = location.origin + location.pathname;
       // 先在後端建立 store selection session（取得 token 與 callback URL）
       const res = await fetch(
         `${API_URL}?action=createPcscMapSession&clientUrl=${
@@ -271,7 +276,7 @@ export async function openStoreMap() {
     didOpen: () => Swal.showLoading(),
   });
   try {
-    const clientUrl = window.location.origin + window.location.pathname;
+    const clientUrl = location.origin + location.pathname;
     const res = await fetch(
       `${API_URL}?action=createStoreMapSession&deliveryMethod=${
         encodeURIComponent(state.selectedDelivery)

@@ -3,15 +3,16 @@
 // ============================================
 
 import { state } from "../../../../js/state.js";
+import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
 
 function triggerQuoteRefresh() {
-  if (typeof window.scheduleQuoteRefresh === "function") {
-    window.scheduleQuoteRefresh({ silent: true });
-  } else if (typeof window.refreshQuote === "function") {
-    window.refreshQuote({ silent: true });
+  if (storefrontRuntime.scheduleQuoteRefresh) {
+    storefrontRuntime.scheduleQuoteRefresh({ silent: true });
+  } else if (storefrontRuntime.refreshQuote) {
+    storefrontRuntime.refreshQuote({ silent: true });
   }
 }
 
@@ -64,7 +65,8 @@ function getDeliveryMeta() {
     selectedDelivery: state.selectedDelivery || "",
     deliveryName: "該配送方式",
   };
-  const configStr = window.appSettings?.delivery_options_config || "[]";
+  const configStr = storefrontRuntime.appSettings?.delivery_options_config ||
+    "[]";
   try {
     const parsed = JSON.parse(configStr);
     const selected = parsed.find((opt) => opt.id === state.selectedDelivery);
@@ -501,7 +503,7 @@ export function updateCartUI() {
     const transferTotalEl = document.getElementById("transfer-total-amount");
     if (transferTotalEl) transferTotalEl.textContent = "$0";
 
-    if (window.updateFormState) window.updateFormState();
+    if (storefrontRuntime.updateFormState) storefrontRuntime.updateFormState();
     emitCartUpdated(calcCartSummary());
     return;
   }
@@ -526,7 +528,7 @@ export function updateCartUI() {
   }
 
   // 呼叫全域 updateFormState，讓 main-app 統一處理按鈕狀態（文字與 disabled 特性）
-  if (window.updateFormState) window.updateFormState();
+  if (storefrontRuntime.updateFormState) storefrontRuntime.updateFormState();
 
   if (!vueManagedCart && container) {
     renderCartItemsList(container, summary);
@@ -574,11 +576,16 @@ export function toggleCart() {
 
 /** 取得目前的運費設定 */
 export function getShippingConfig() {
-  if (!window.appSettings || !window.appSettings.delivery_options_config) {
+  if (
+    !storefrontRuntime.appSettings ||
+    !storefrontRuntime.appSettings.delivery_options_config
+  ) {
     return null;
   }
   try {
-    const config = JSON.parse(window.appSettings.delivery_options_config);
+    const config = JSON.parse(
+      storefrontRuntime.appSettings.delivery_options_config,
+    );
     const sel = config.find((opt) => opt.id === state.selectedDelivery);
     return sel
       ? {

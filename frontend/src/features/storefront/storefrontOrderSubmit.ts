@@ -15,6 +15,7 @@ import {
   getReceiptFormValues,
 } from "./storefrontOrderReceiptPrefs.ts";
 import { buildPaymentLaunchDialogOptions } from "./storefrontPaymentDisplay.ts";
+import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 送出訂單 */
 export async function submitOrder() {
@@ -78,8 +79,8 @@ export async function submitOrder() {
     return;
   }
 
-  if (typeof window.refreshQuote === "function") {
-    const quoteResult = await window.refreshQuote({ silent: true });
+  if (storefrontRuntime.refreshQuote) {
+    const quoteResult = await storefrontRuntime.refreshQuote({ silent: true });
     if (!quoteResult?.success) {
       Swal.fire(
         "錯誤",
@@ -303,7 +304,7 @@ export async function submitOrder() {
             }),
           ).then((dialogResult) => {
             if (dialogResult.isConfirmed) {
-              window.location.href = result.paymentUrl;
+              location.href = result.paymentUrl;
             }
           });
           return;
@@ -323,7 +324,7 @@ export async function submitOrder() {
           cancelButtonColor: "#94a3b8",
         }).then((dialogResult) => {
           if (dialogResult.isConfirmed) {
-            window.location.href = result.paymentUrl;
+            location.href = result.paymentUrl;
           }
         });
         return;

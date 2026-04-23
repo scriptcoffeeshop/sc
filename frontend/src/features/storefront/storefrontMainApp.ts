@@ -14,6 +14,7 @@ import {
 import {
   checkStoreToken,
   loadDeliveryPrefs,
+  renderDeliveryOptions,
   selectDelivery,
   updateDistricts,
 } from "./storefrontDeliveryActions.ts";
@@ -33,6 +34,12 @@ import {
   setIconElement,
 } from "../../../../js/icons.js";
 import { normalizeStorefrontDeliveryConfig } from "../../../../js/storefront-models.js";
+import {
+  registerStorefrontRuntime,
+  setStorefrontAppSettings,
+  setStorefrontDeliveryConfig,
+  storefrontRuntime,
+} from "./storefrontRuntime.ts";
 
 let currentDeliveryConfig = [];
 function initMainDomBindings() {
@@ -42,21 +49,34 @@ function initMainDomBindings() {
   }
 }
 
-// ============ 保留必要的 window 掛載 ============
-// 以下函式保留掛載，避免舊快取版本或外部調用造成功能中斷。
-window.selectPayment = selectPayment;
-window.updateCartUI = updateCartUI;
-window.updateFormState = updateFormState;
-window.rerenderFormFields = function () {
+function rerenderFormFields() {
   renderDynamicFields(
     state.formFields,
     document.getElementById("dynamic-fields-container"),
     state.selectedDelivery,
   );
-  // 回填使用者資料（包含所有動態表單欄位）
   prefillUserFields();
-};
+}
+
+// ============ 保留必要的 window 掛載 ============
+// 以下函式保留掛載，避免舊快取版本或外部調用造成功能中斷。
+registerStorefrontRuntime({
+  selectPayment,
+  updateCartUI,
+  updateFormState,
+  rerenderFormFields,
+  scheduleQuoteRefresh,
+  refreshQuote,
+  updatePaymentOptionsState,
+});
+window.selectPayment = selectPayment;
+window.updateCartUI = updateCartUI;
+window.updateFormState = updateFormState;
+window.rerenderFormFields = rerenderFormFields;
 window.updateDistricts = updateDistricts;
+window.scheduleQuoteRefresh = scheduleQuoteRefresh;
+window.refreshQuote = refreshQuote;
+window.updatePaymentOptionsState = updatePaymentOptionsState;
 
 // ============ 初始化 ============
 let mainAppInitialized = false;
@@ -73,21 +93,21 @@ export async function initMainApp() {
   mainAppInitialized = true;
   initMainDomBindings();
   initReceiptRequestUi();
-  const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(location.search);
   const code = urlParams.get("code");
   const stateParam = urlParams.get("state");
 
   // LINE Pay 回調處理
   const lpAction = urlParams.get("lpAction");
   if (lpAction) {
-    window.history.replaceState({}, "", "main.html");
+    history.replaceState({}, "", "main.html");
     await handleLinePayCallback(lpAction, urlParams);
   }
 
   // 街口支付回跳處理
   const jkoOrderId = String(urlParams.get("jkoOrderId") || "").trim();
   if (jkoOrderId) {
-    window.history.replaceState({}, "", "main.html");
+    history.replaceState({}, "", "main.html");
     await handleJkoPayReturn(jkoOrderId);
   }
 
@@ -105,7 +125,7 @@ export async function initMainApp() {
 
   const storeToken = urlParams.get("store_token");
   if (storeToken) {
-    window.history.replaceState({}, "", "main.html");
+    history.replaceState({}, "", "main.html");
     await checkStoreToken(storeToken);
   }
 }
@@ -134,7 +154,7 @@ async function handleLineCallback(code, stateParam) {
   localStorage.removeItem("coffee_line_state");
   if (!saved || stateParam !== saved) {
     Swal.fire("驗證失敗", "請重新登入", "error");
-    window.history.replaceState({}, "", "main.html");
+    history.replaceState({}, "", "main.html");
     return;
   }
   Swal.fire({
@@ -155,7 +175,7 @@ async function handleLineCallback(code, stateParam) {
       },
     );
     const result = await res.json();
-    window.history.replaceState({}, "", "main.html");
+    history.replaceState({}, "", "main.html");
     if (result.success) {
       state.currentUser = result.user;
       localStorage.setItem("coffee_user", JSON.stringify(state.currentUser));
@@ -393,23 +413,21 @@ function getQuoteRequestItems() {
   }));
 }
 
-window.scheduleQuoteRefresh = function (options = {}) {
+function scheduleQuoteRefresh(options = {}) {
   if (quoteRefreshTimer) clearTimeout(quoteRefreshTimer);
   quoteRefreshTimer = setTimeout(() => {
-    window.refreshQuote(options);
+    refreshQuote(options);
   }, 120);
-};
+}
 
-window.refreshQuote = async function (options = {}) {
+async function refreshQuote(options = {}) {
   const silent = options.silent !== false;
   const items = getQuoteRequestItems();
 
   if (!items.length) {
     state.orderQuote = null;
     state.quoteError = "";
-    if (typeof window.updatePaymentOptionsState === "function") {
-      window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
-    }
+    updatePaymentOptionsState(storefrontRuntime.currentDeliveryConfig || []);
     updateCartUI();
     return { success: true, skipped: true };
   }
@@ -431,18 +449,14 @@ window.refreshQuote = async function (options = {}) {
       state.orderQuote = null;
       state.quoteError = result.error || "計價失敗";
       if (!silent) Swal.fire("錯誤", state.quoteError, "error");
-      if (typeof window.updatePaymentOptionsState === "function") {
-        window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
-      }
+      updatePaymentOptionsState(storefrontRuntime.currentDeliveryConfig || []);
       updateCartUI();
       return result;
     }
 
     state.orderQuote = result.quote;
     state.quoteError = "";
-    if (typeof window.updatePaymentOptionsState === "function") {
-      window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
-    }
+    updatePaymentOptionsState(storefrontRuntime.currentDeliveryConfig || []);
     updateCartUI();
     return result;
   } catch (e) {
@@ -452,13 +466,11 @@ window.refreshQuote = async function (options = {}) {
     state.orderQuote = null;
     state.quoteError = e.message || "計價請求失敗";
     if (!silent) Swal.fire("錯誤", state.quoteError, "error");
-    if (typeof window.updatePaymentOptionsState === "function") {
-      window.updatePaymentOptionsState(window.currentDeliveryConfig || []);
-    }
+    updatePaymentOptionsState(storefrontRuntime.currentDeliveryConfig || []);
     updateCartUI();
     return { success: false, error: state.quoteError };
   }
-};
+}
 // ============ 載入資料 ============
 async function loadInitData() {
   try {
@@ -497,7 +509,7 @@ async function loadInitData() {
       retryButton.dataset.reloadPage = "true";
       retryButton.className = "mt-3 btn-primary";
       retryButton.textContent = "重試";
-      retryButton.addEventListener("click", () => window.location.reload());
+      retryButton.addEventListener("click", () => location.reload());
       message.appendChild(retryButton);
       productsContainer.replaceChildren(message);
     }
@@ -524,7 +536,7 @@ function applySettings(s) {
   }
 
   // 將設定保存給其他模組使用
-  window.appSettings = s;
+  setStorefrontAppSettings(s);
 
   // 套用金流自訂名稱與說明
   const paymentOptionsStr = s.payment_options_config || "";
@@ -563,19 +575,14 @@ function applySettings(s) {
     icon_url: item.icon_url || item.iconUrl || "",
     iconFallbackKey: getDeliveryIconFallbackKey(item.id),
   }));
-  window.currentDeliveryConfig = currentDeliveryConfig;
+  setStorefrontDeliveryConfig(currentDeliveryConfig);
 
   // 渲染物流選項 (在 delivery.js 中定義)
-  if (typeof window.renderDeliveryOptions === "function") {
-    window.renderDeliveryOptions(currentDeliveryConfig);
-  }
-
-  if (typeof window.updatePaymentOptionsState === "function") {
-    window.updatePaymentOptionsState(currentDeliveryConfig);
-  }
+  renderDeliveryOptions(currentDeliveryConfig);
+  updatePaymentOptionsState(currentDeliveryConfig);
 }
 
-window.updatePaymentOptionsState = function (deliveryConfig) {
+function updatePaymentOptionsState(deliveryConfig) {
   if (!Array.isArray(deliveryConfig)) return;
 
   // 確保有預設選擇的物流
@@ -591,9 +598,7 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
     // 如果目前選的物流不存在或被關閉，預設選回第一個
     state.selectedDelivery = activeDeliveryOptions[0].id;
     // 需同步更新 UI
-    if (typeof window.selectDelivery === "function") {
-      window.selectDelivery(state.selectedDelivery, null, { skipQuote: true });
-    }
+    selectDelivery(state.selectedDelivery, null, { skipQuote: true });
   }
 
   const fallbackConfigOpt = activeDeliveryOptions.find((d) =>
@@ -666,7 +671,7 @@ window.updatePaymentOptionsState = function (deliveryConfig) {
       selectPayment("transfer", { skipQuote: true });
     }
   }
-};
+}
 
 function updateFormState() {
   const loggedIn = !!state.currentUser;
@@ -713,8 +718,8 @@ export function selectPayment(method, options = {}) {
     transferSection.classList.add("hidden");
   }
 
-  if (!options.skipQuote && typeof window.scheduleQuoteRefresh === "function") {
-    window.scheduleQuoteRefresh({ silent: true });
+  if (!options.skipQuote) {
+    scheduleQuoteRefresh({ silent: true });
   }
 }
 
@@ -837,7 +842,7 @@ function renderBankAccounts() {
 }
 
 function copyTransferAccount(btn, account) {
-  if (navigator.clipboard && window.isSecureContext) {
+  if (navigator.clipboard && globalThis.isSecureContext) {
     navigator.clipboard.writeText(account).then(() => {
       showCopySuccess(btn);
     }).catch((err) => {
@@ -963,7 +968,7 @@ async function handleJkoPayReturn(orderId) {
       });
       const dialogResult = await Swal.fire(dialogOptions);
       if (dialogResult.isConfirmed && dialogOptions.paymentLaunchUrl) {
-        window.location.href = dialogOptions.paymentLaunchUrl;
+        location.href = dialogOptions.paymentLaunchUrl;
       }
       return;
     }
