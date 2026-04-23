@@ -3,7 +3,7 @@ import {
   createFlexSectionTitle,
   createFlexSeparator,
   orderStatusColorMap,
-} from "./order-flex-layout.js";
+} from "./dashboardOrderFlexLayout.ts";
 
 function appendOrderNoteSection(bodyContents, orderNote) {
   if (!orderNote) return;
@@ -160,7 +160,7 @@ export function buildOrderFlexBodyPayload({ deps, order, newStatus }) {
     order.shippingProvider && customTrackingUrl,
   );
 
-  const bodyContents = [
+  const bodyContents: any[] = [
     createFlexInfoRow({
       label: "訂單編號",
       text: `#${order.orderId || ""}`,

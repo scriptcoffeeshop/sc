@@ -6,7 +6,7 @@ export function buildOrderFlexMessageBubble({
   customTrackingUrl,
   hasTrackingLinkCta,
 }) {
-  const footerContents = [];
+  const footerContents: any[] = [];
 
   if (hasTrackingLinkCta) {
     footerContents.push({

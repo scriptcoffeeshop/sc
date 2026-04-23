@@ -93,7 +93,7 @@ import DashboardSettingsSection from "../features/dashboard/DashboardSettingsSec
 import DashboardTabs from "../features/dashboard/DashboardTabs.vue";
 import DashboardUsersSection from "../features/dashboard/DashboardUsersSection.vue";
 import { dashboardShellActions } from "../features/dashboard/bootstrapDashboard.ts";
-import { ICON_CATALOG, getDefaultIconUrl } from "../../../js/icons.js";
+import { ICON_CATALOG, getDefaultIconUrl } from "../lib/icons.ts";
 import {
   dashboardSessionActions,
   useDashboardSession,

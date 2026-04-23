@@ -1,6 +1,6 @@
-import { getDefaultIconUrl, normalizeIconPath } from "../../icons.js";
+import { getDefaultIconUrl, normalizeIconPath } from "../../lib/icons.ts";
 
-export const DEFAULT_DELIVERY_OPTIONS = {
+export const DEFAULT_DELIVERY_OPTIONS: Record<string, any> = {
   in_store: {
     id: "in_store",
     icon: "",
@@ -43,7 +43,7 @@ export const DEFAULT_DELIVERY_OPTIONS = {
   },
 };
 
-export const DEFAULT_PAYMENT_OPTIONS = {
+export const DEFAULT_PAYMENT_OPTIONS: Record<string, any> = {
   cod: {
     icon: "",
     icon_url: getDefaultIconUrl("cod"),
@@ -70,7 +70,7 @@ export const DEFAULT_PAYMENT_OPTIONS = {
   },
 };
 
-export function normalizeDeliveryOption(item = {}) {
+export function normalizeDeliveryOption(item: any = {}) {
   const id = String(item.id || "").trim();
   const defaults = DEFAULT_DELIVERY_OPTIONS[id] || {
     id: id || `custom_${Date.now()}`,
@@ -113,7 +113,7 @@ export function normalizeDeliveryOption(item = {}) {
   };
 }
 
-export function normalizePaymentOption(method, option = {}) {
+export function normalizePaymentOption(method: string, option: any = {}) {
   const defaults = DEFAULT_PAYMENT_OPTIONS[method] || DEFAULT_PAYMENT_OPTIONS.cod;
   return {
     ...defaults,

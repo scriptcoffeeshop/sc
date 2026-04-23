@@ -135,6 +135,7 @@
 - `storefrontOrderActions.ts` 已由 1324 行縮成相容 re-export：付款狀態/文案搬到 `storefrontPaymentDisplay.ts`，送單流程搬到 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別拆到 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`；legacy `showMyOrders()` fallback 搬到 `storefrontOrderHistoryLegacy.ts` 並改用既有 Vue `StorefrontOrderHistoryCard.vue` 渲染。
 - `storefrontMainApp.ts` 已開始收斂 `window.*` 全域耦合：quote refresh、付款選項狀態、表單/UI callback 與 app settings/delivery config 改走 `storefrontRuntime.ts` 模組 bridge；`window.*` 目前主要只剩 legacy 相容出口，不再是 storefront 正常流程主路徑。
 - 消費者通知已新增付款中狀態 guard：所有支付只要 `payment_status=processing`，自動付款狀態通知、後台手動 LINE Flex 與後台手動 Email 都會略過，不再把「付款確認中」通知發給消費者；店家 LINE 訂單通知不受影響。
+- P2 legacy JS 殘留續清：`js/icons.js` 已搬到 `frontend/src/lib/icons.ts`，`js/storefront-models.js` 已搬到 `frontend/src/features/storefront/storefrontModels.ts`，後台訂單通知/狀態控制模組已搬到 `frontend/src/features/dashboard/dashboardOrder*.ts`，`settings-shared.js` 已搬到 `dashboardSettingsShared.ts`。
 
 ### 2026-04-22
 
@@ -170,12 +171,12 @@
 - `tests/e2e/features.spec.ts` 已對齊目前 Vue storefront / dashboard 行為：全家地圖選門市、CSV 匯出、用戶封鎖、訂單狀態更新四條 feature 測試現在都可被全量 `npm run e2e` 穩定執行。
 - `DashboardSettingsSection.vue` 已由 979 行巨型單檔拆成 39 行組裝層，並新增六個設定卡片元件：branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts。
 - `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
-- `js/dashboard/modules/order-notifications-controller.js` 已縮成 29 行協調層，Flex payload、Flex 歷史與 Email 發送拆到獨立模組，站名來源也改走 dashboard settings state，不再直接讀 `#s-site-title` DOM。
+- 後台訂單通知控制器曾先拆為 legacy JS 協調層；2026-04-23 已搬入 `frontend/src/features/dashboard/dashboardOrderNotifications.ts` 與相關 `dashboardOrderFlex*.ts` / `dashboardOrderEmailController.ts`。
 - E2E 新增通知 smoke，驗證後台訂單卡的 `LINE通知` / `發送信件` 仍會打到正確 API。
 - storefront legacy `innerHTML` renderer 已清到 0；前台 `js/products.js` 已移除，`js/cart.js`、`js/delivery.js`、`js/form-renderer.js`、`js/orders.js`、`js/main-app.js` 只保留相容 re-export，實作位於 storefront feature TS 檔；dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
 - storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
 - `MainPage.vue` 已從 1209 行拆到 472 行，Storefront Wave 2 的 header / product grid / delivery / payment / bottom bar / cart drawer / order history section 都已拆成獨立 Vue 元件。
-- `js/dashboard/modules/order-flex-message.js` 已從 491 行拆到 40 行協調層，主要內容分到 `order-flex-body.js`、`order-flex-bubble.js`、`order-flex-layout.js`。
+- 後台 LINE Flex 建構邏輯已從 legacy JS 拆分並於 2026-04-23 搬到 `frontend/src/features/dashboard/dashboardOrderFlexMessage.ts`、`dashboardOrderFlexBody.ts`、`dashboardOrderFlexBubble.ts`、`dashboardOrderFlexLayout.ts`。
 - 前端快取版號更新為 `130`。
 
 ### 2026-04-20

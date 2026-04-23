@@ -7,10 +7,7 @@ import {
   getDefaultIconUrl,
   normalizeIconPath,
   resolveAssetUrl,
-} from "../../../../js/icons.js";
-import {
-  createOrdersTabLoaders,
-} from "../../../../js/dashboard/modules/orders.js";
+} from "../../lib/icons.ts";
 import {
   orderMethodLabel,
   orderPayMethodLabel,
@@ -19,14 +16,8 @@ import {
   normalizeReceiptInfo,
   normalizeTrackingUrl,
 } from "../../../../js/dashboard/modules/order-shared.js";
-import { createOrderStatusController } from "../../../../js/dashboard/modules/order-status-controller.js";
-import {
-  createProductsTabLoaders,
-} from "../../../../js/dashboard/modules/products.js";
-import { createOrderNotificationsController } from "../../../../js/dashboard/modules/order-notifications-controller.js";
-import {
-  createSettingsTabLoaders,
-} from "../../../../js/dashboard/modules/settings.js";
+import { createOrderStatusController } from "./dashboardOrderStatusController.ts";
+import { createOrderNotificationsController } from "./dashboardOrderNotifications.ts";
 import {
   createDashboardBrandingController,
   parseBooleanSetting,
@@ -36,10 +27,7 @@ import {
   normalizeDeliveryOption,
   normalizePaymentOption,
   sectionIconSettingKey,
-} from "../../../../js/dashboard/modules/settings-shared.js";
-import {
-  createUsersTabLoaders,
-} from "../../../../js/dashboard/modules/users.js";
+} from "./dashboardSettingsShared.ts";
 import {
   configureDashboardCategoriesServices,
   dashboardCategoriesActions,
@@ -100,6 +88,34 @@ const dashboardTabs = [
   "blacklist",
   "formfields",
 ];
+
+function createOrdersTabLoaders(deps: Record<string, any>) {
+  return {
+    orders: () => deps.loadOrders(),
+  };
+}
+
+function createProductsTabLoaders(deps: Record<string, any>) {
+  return {
+    categories: () => deps.renderCategories(),
+    promotions: () => deps.loadPromotions(),
+  };
+}
+
+function createSettingsTabLoaders(deps: Record<string, any>) {
+  return {
+    settings: () => deps.loadSettings(),
+    "icon-library": () => deps.loadSettings(),
+    formfields: () => deps.loadFormFields(),
+  };
+}
+
+function createUsersTabLoaders(deps: Record<string, any>) {
+  return {
+    users: () => deps.loadUsers(),
+    blacklist: () => deps.loadBlacklist(),
+  };
+}
 
 const brandingController = createDashboardBrandingController({
   API_URL,

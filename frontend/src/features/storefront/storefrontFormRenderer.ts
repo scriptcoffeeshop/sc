@@ -7,7 +7,7 @@ import {
   getDefaultIconUrl,
   resolveAssetUrl,
   setIconElement,
-} from "../../../../js/icons.js";
+} from "../../lib/icons.ts";
 
 const STOREFRONT_PUBLIC_BRANDING_CACHE_KEY =
   "coffee_storefront_public_branding";

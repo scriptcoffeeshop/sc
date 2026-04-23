@@ -49,7 +49,7 @@ async function loadSettingsIconsModule() {
   vi.doMock("./useDashboardSettings.ts", () => ({
     useDashboardSettings: () => dashboardSettingsState,
   }));
-  vi.doMock("../../../../js/icons.js", () => ({
+  vi.doMock("../../lib/icons.ts", () => ({
     getDefaultIconUrl: (key) => `icons/${key}.png`,
     getDeliveryIconFallbackKey: (deliveryId) => deliveryId || "delivery",
     getPaymentIconFallbackKey: (method) => method || "payment",
@@ -59,7 +59,7 @@ async function loadSettingsIconsModule() {
     resolveAssetUrl: (url = "") =>
       url ? `/assets/${String(url).replace(/^\/+/, "")}` : "",
   }));
-  vi.doMock("../../../../js/dashboard/modules/settings-shared.js", () => ({
+  vi.doMock("./dashboardSettingsShared.ts", () => ({
     sectionIconSettingKey: (section) => `${section}_section_icon_url`,
   }));
 

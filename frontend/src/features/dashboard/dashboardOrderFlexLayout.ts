@@ -1,4 +1,4 @@
-export const orderStatusColorMap = {
+export const orderStatusColorMap: Record<string, string> = {
   pending: "#B58900",
   processing: "#268BD2",
   shipped: "#859900",

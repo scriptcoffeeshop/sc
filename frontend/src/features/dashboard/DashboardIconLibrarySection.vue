@@ -95,7 +95,7 @@
 import { ref } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
-import { getDefaultIconUrl } from "../../../../js/icons.js";
+import { getDefaultIconUrl } from "../../lib/icons.ts";
 import { dashboardSettingsIconActions } from "./useDashboardSettingsIcons.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 

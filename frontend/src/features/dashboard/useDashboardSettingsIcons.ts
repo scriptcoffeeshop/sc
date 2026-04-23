@@ -5,8 +5,8 @@ import {
   getPaymentIconFallbackKey,
   normalizeIconPath,
   resolveAssetUrl,
-} from "../../../../js/icons.js";
-import { sectionIconSettingKey } from "../../../../js/dashboard/modules/settings-shared.js";
+} from "../../lib/icons.ts";
+import { sectionIconSettingKey } from "./dashboardSettingsShared.ts";
 import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const {

@@ -1,6 +1,6 @@
-import { createOrderEmailController } from "./order-email-controller.js";
-import { createOrderFlexController } from "./order-flex-controller.js";
-import { createOrderFlexMessageBuilder } from "./order-flex-message.js";
+import { createOrderEmailController } from "./dashboardOrderEmailController.ts";
+import { createOrderFlexController } from "./dashboardOrderFlexController.ts";
+import { createOrderFlexMessageBuilder } from "./dashboardOrderFlexMessage.ts";
 
 export function createOrderNotificationsController(deps) {
   function getOrders() {

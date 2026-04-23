@@ -30,13 +30,13 @@ This creates three concrete problems:
 2. Payment, order, and admin flows can drift out of sync.
 3. Remaining large dashboard sections can still become difficult to review if they are allowed to grow back into monoliths.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.ts`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and `order-notifications-controller.js` is now only a 29-line orchestrator backed by smaller notification modules.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.ts`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and order notification/status orchestration now lives in `frontend/src/features/dashboard/dashboardOrder*.ts`.
 
 Storefront legacy rendering is also moving into maintenance-only mode more aggressively now: the remaining `innerHTML` renderers in `js/*.js` have been reduced to zero, and smoke coverage now blocks regression on the core storefront containers.
 
 ## Current Progress Snapshot
 
-As of 2026-04-21:
+As of 2026-04-23:
 
 - Vue-owned dashboard sections completed:
   - orders
@@ -54,7 +54,8 @@ As of 2026-04-21:
   - `DashboardSettingsSection.vue`: 39 lines
   - `DashboardOrdersSection.vue`: 31 lines
   - `MainPage.vue`: 472 lines
-  - `order-flex-message.js`: 40 lines
+  - `dashboardOrderFlexMessage.ts`: 40 lines
+  - `dashboardOrderStatusController.ts`: 249 lines
   - settings cards: branding, section titles, storefront status, delivery/payment routing, payment options, bank accounts
   - orders subcomponents: toolbar, order card
   - notification modules: flex payload builder shell + body/bubble/layout helpers, flex controller, email controller
@@ -197,7 +198,7 @@ Initial storefront progress:
 - delivery option selection, store-search result selection, tracking-number copy, and load-failure retry no longer require body-level click delegation
 - storefront body-level click delegation has been removed from the normal runtime path
 - delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; legacy `renderDeliveryOptions()` / `renderBankAccounts()` only remain as compatibility fallbacks and skip Vue-managed containers
-- my-orders list rendering no longer uses `innerHTML` for API order payloads; `js/orders.js` now builds order cards with DOM APIs while the Vue storefront migration continues
+- my-orders list rendering no longer uses `innerHTML` for API order payloads; Vue `StorefrontOrderHistoryCard.vue` is the active renderer, while `js/orders.js` only remains as a thin compatibility re-export
 
 ## Dashboard Decomposition Blueprint
 

@@ -1,5 +1,5 @@
-import { buildOrderFlexBodyPayload } from "./order-flex-body.js";
-import { buildOrderFlexMessageBubble } from "./order-flex-bubble.js";
+import { buildOrderFlexBodyPayload } from "./dashboardOrderFlexBody.ts";
+import { buildOrderFlexMessageBubble } from "./dashboardOrderFlexBubble.ts";
 
 export function createOrderFlexMessageBuilder(deps) {
   function resolveOrderLineUserId(order) {

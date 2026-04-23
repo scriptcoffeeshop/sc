@@ -3,7 +3,7 @@ import type { Product } from "../../types/core";
 import {
   buildStorefrontProductsViewModel,
   parseEnabledProductSpecs,
-} from "../../../../js/storefront-models.js";
+} from "./storefrontModels.ts";
 
 interface StorefrontCategoryRecord {
   name?: string;

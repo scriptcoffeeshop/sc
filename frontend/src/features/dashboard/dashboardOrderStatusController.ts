@@ -123,7 +123,11 @@ export function createOrderStatusController(deps) {
         }
       }
 
-      const payload = { userId: deps.getAuthUserId(), orderId, status };
+      const payload: Record<string, any> = {
+        userId: deps.getAuthUserId(),
+        orderId,
+        status,
+      };
       if (status === "shipped") {
         payload.trackingNumber = trackingNumber;
         payload.shippingProvider = shippingProvider;

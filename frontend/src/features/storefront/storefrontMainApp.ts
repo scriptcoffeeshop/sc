@@ -32,8 +32,8 @@ import {
   getDeliveryIconFallbackKey,
   getPaymentIconFallbackKey,
   setIconElement,
-} from "../../../../js/icons.js";
-import { normalizeStorefrontDeliveryConfig } from "../../../../js/storefront-models.js";
+} from "../../lib/icons.ts";
+import { normalizeStorefrontDeliveryConfig } from "./storefrontModels.ts";
 import {
   registerStorefrontRuntime,
   setStorefrontAppSettings,

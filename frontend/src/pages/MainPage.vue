@@ -201,7 +201,7 @@ import { useStorefrontProducts } from "../features/storefront/useStorefrontProdu
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
 import { authFetch } from "../../../js/auth.js";
 import { API_URL } from "../../../js/config.js";
-import { getDefaultIconUrl } from "../../../js/icons.js";
+import { getDefaultIconUrl } from "../lib/icons.ts";
 import {
   clearSelectedStore,
   openStoreMap,

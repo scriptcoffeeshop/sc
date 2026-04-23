@@ -1,10 +1,18 @@
-// ============================================
-// icons.js — Icon URL 與渲染工具
-// ============================================
+function escapeHtml(value = "") {
+  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
-import { escapeAttr, escapeHtml } from "./utils.js";
+function escapeAttr(value = "") {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
-export const ICON_FILE_MAP = {
+export const ICON_FILE_MAP: Record<string, string> = {
   brand: "icons/logo.png",
   orders: "icons/orders-list.png",
   profile: "icons/profile-user.png",
@@ -42,7 +50,7 @@ export const ICON_FILE_MAP = {
   selected: "icons/selected-check.png",
 };
 
-const ICON_META_MAP = {
+const ICON_META_MAP: Record<string, { label: string; category: string }> = {
   brand: { label: "品牌", category: "品牌" },
   orders: { label: "訂單", category: "導航" },
   profile: { label: "會員", category: "導航" },
@@ -179,7 +187,7 @@ function isLikelyImageUrl(value = "") {
   return /\.(?:png|jpe?g|webp|gif|svg)(?:$|\?)/i.test(raw);
 }
 
-export function getIconUrlFromConfig(option = {}, fallbackKey = "") {
+export function getIconUrlFromConfig(option: any = {}, fallbackKey = "") {
   if (!option || typeof option !== "object") {
     return getDefaultIconUrl(fallbackKey);
   }
@@ -193,7 +201,7 @@ export function getIconUrlFromConfig(option = {}, fallbackKey = "") {
   return getDefaultIconUrl(fallbackKey);
 }
 
-export function renderIconMarkup(option = {}, fallbackKey = "", alt = "") {
+export function renderIconMarkup(option: any = {}, fallbackKey = "", alt = "") {
   const url = getIconUrlFromConfig(option, fallbackKey);
   if (url) {
     return `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" class="ui-icon-img">`;
@@ -209,7 +217,12 @@ export function renderIconMarkup(option = {}, fallbackKey = "", alt = "") {
   return "";
 }
 
-export function setIconElement(element, option = {}, fallbackKey = "", alt = "") {
+export function setIconElement(
+  element: any,
+  option: any = {},
+  fallbackKey = "",
+  alt = "",
+) {
   if (!element) return "";
 
   const url = getIconUrlFromConfig(option, fallbackKey);

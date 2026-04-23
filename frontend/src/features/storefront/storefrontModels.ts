@@ -1,8 +1,4 @@
-// ============================================
-// storefront-models.js — storefront 共用資料整理 helper
-// ============================================
-
-export function parseEnabledProductSpecs(product = {}) {
+export function parseEnabledProductSpecs(product: any = {}) {
   let specs = [];
   try {
     specs = Array.isArray(product.specs)
@@ -28,8 +24,11 @@ export function parseEnabledProductSpecs(product = {}) {
   }];
 }
 
-export function buildStorefrontProductsViewModel(products = [], categories = []) {
-  const grouped = {};
+export function buildStorefrontProductsViewModel(
+  products: any[] = [],
+  categories: any[] = [],
+) {
+  const grouped: Record<string, any[]> = {};
 
   products.forEach((product) => {
     const categoryName = String(product.category || "未分類");
@@ -83,7 +82,7 @@ function parseJsonObject(value) {
   }
 }
 
-function normalizeDeliveryPaymentConfig(payment = {}) {
+function normalizeDeliveryPaymentConfig(payment: any = {}) {
   const hasJkoPay = Object.prototype.hasOwnProperty.call(payment, "jkopay");
   return {
     cod: Boolean(payment.cod),
@@ -93,7 +92,7 @@ function normalizeDeliveryPaymentConfig(payment = {}) {
   };
 }
 
-export function normalizeStorefrontDeliveryOption(option = {}) {
+export function normalizeStorefrontDeliveryOption(option: any = {}) {
   return {
     ...option,
     id: String(option.id || ""),
@@ -107,7 +106,7 @@ export function normalizeStorefrontDeliveryOption(option = {}) {
   };
 }
 
-export function normalizeStorefrontDeliveryConfig(settings = {}) {
+export function normalizeStorefrontDeliveryConfig(settings: any = {}) {
   const configuredDeliveryOptions = parseJsonArray(settings.delivery_options_config);
   if (configuredDeliveryOptions.length) {
     return configuredDeliveryOptions.map((option) =>

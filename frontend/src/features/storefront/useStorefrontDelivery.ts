@@ -2,11 +2,11 @@ import { ref } from "vue";
 import {
   getDeliveryIconFallbackKey,
   getIconUrlFromConfig,
-} from "../../../../js/icons.js";
+} from "../../lib/icons.ts";
 import {
   normalizeStorefrontDeliveryConfig,
   normalizeStorefrontDeliveryOption,
-} from "../../../../js/storefront-models.js";
+} from "./storefrontModels.ts";
 import type { DashboardSettingsRecord } from "../../types/settings";
 
 interface StorefrontDeliveryPaymentConfig {
