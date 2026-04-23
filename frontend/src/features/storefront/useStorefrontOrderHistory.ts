@@ -183,7 +183,7 @@ function getCustomerPaymentDisplayFallback(order: Order): OrderHistoryPaymentDis
   };
 }
 
-function buildOrderHistoryItem(
+export function buildOrderHistoryItem(
   order: Order,
   deps: Pick<
     OrderHistoryDeps,
