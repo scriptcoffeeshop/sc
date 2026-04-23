@@ -1,3 +1,15 @@
+function getFormControlValue(id: string): string {
+  const element = document.getElementById(id);
+  if (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    element instanceof HTMLSelectElement
+  ) {
+    return element.value.trim();
+  }
+  return "";
+}
+
 export function createOrderStatusController(deps) {
   function getOrders() {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
@@ -39,12 +51,13 @@ export function createOrderStatusController(deps) {
           confirmButtonColor: "#268BD2",
           focusConfirm: false,
           preConfirm: () => {
-            const trackingNumEl = document.getElementById("swal-tracking-number");
-            const providerEl = document.getElementById("swal-shipping-provider");
-            const urlEl = document.getElementById("swal-tracking-url");
-            const trackingNumberValue = String(trackingNumEl?.value || "").trim();
-            const shippingProviderValue = String(providerEl?.value || "").trim();
-            const trackingUrlValue = String(urlEl?.value || "").trim();
+            const trackingNumberValue = getFormControlValue(
+              "swal-tracking-number",
+            );
+            const shippingProviderValue = getFormControlValue(
+              "swal-shipping-provider",
+            );
+            const trackingUrlValue = getFormControlValue("swal-tracking-url");
             if (
               trackingUrlValue &&
               !/^https?:\/\//i.test(trackingUrlValue)
@@ -91,8 +104,7 @@ export function createOrderStatusController(deps) {
           confirmButtonColor: "#DC322F",
           focusConfirm: false,
           preConfirm: () => {
-            const reasonEl = document.getElementById("swal-cancel-reason");
-            const reasonValue = String(reasonEl?.value || "").trim();
+            const reasonValue = getFormControlValue("swal-cancel-reason");
             return { cancelReason: reasonValue };
           },
         });

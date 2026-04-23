@@ -292,12 +292,14 @@ dashboardTabLoaders = {
   }),
 };
 
-loadInitialDashboardData = () => Promise.all([
-  dashboardCategoriesActions.loadCategories(),
-  dashboardProductsActions.loadProducts(),
-  dashboardSettingsActions.loadSettings(),
-  dashboardOrdersActions.loadOrders(),
-]);
+loadInitialDashboardData = async () => {
+  await Promise.all([
+    dashboardCategoriesActions.loadCategories(),
+    dashboardProductsActions.loadProducts(),
+    dashboardSettingsActions.loadSettings(),
+    dashboardOrdersActions.loadOrders(),
+  ]);
+};
 
 export const dashboardShellActions = {
   loadPublicBranding: () => brandingController.loadPublicDashboardBranding(),
