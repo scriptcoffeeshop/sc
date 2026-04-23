@@ -53,7 +53,11 @@ async function syncCategorySortable() {
     onEnd: async (event) => {
       if (event.oldIndex === event.newIndex) return;
       const ids = Array.from(categoriesListElement.querySelectorAll("[data-id]"))
-        .map((element) => Number.parseInt(element.dataset.id || "", 10))
+        .map((element) =>
+          element instanceof HTMLElement
+            ? Number.parseInt(element.dataset.id || "", 10)
+            : NaN
+        )
         .filter((id) => !Number.isNaN(id));
 
       try {

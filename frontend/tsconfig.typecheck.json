@@ -8,6 +8,7 @@
     "./src/features/dashboard/dashboardOrderFlexBubble.ts",
     "./src/features/dashboard/dashboardOrderFlexMessage.ts",
     "./src/features/dashboard/dashboardOrderStatusController.ts",
+    "./src/features/dashboard/useDashboardCategories.ts",
     "./src/components/ui/**/*.vue"
   ]
 }
