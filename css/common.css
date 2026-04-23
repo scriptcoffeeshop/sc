@@ -303,9 +303,3 @@ select.input-field {
     padding: 16px !important;
   }
 }
-
-@media (min-width: 1280px) {
-  .max-w-3xl {
-    max-width: 58rem;
-  }
-}
