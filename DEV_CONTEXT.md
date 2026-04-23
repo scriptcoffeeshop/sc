@@ -136,6 +136,7 @@
 - `storefrontMainApp.ts` 已開始收斂 `window.*` 全域耦合：quote refresh、付款選項狀態、表單/UI callback 與 app settings/delivery config 改走 `storefrontRuntime.ts` 模組 bridge；`window.*` 目前主要只剩 legacy 相容出口，不再是 storefront 正常流程主路徑。
 - 消費者通知已新增付款中狀態 guard：所有支付只要 `payment_status=processing`，自動付款狀態通知、後台手動 LINE Flex 與後台手動 Email 都會略過，不再把「付款確認中」通知發給消費者；店家 LINE 訂單通知不受影響。
 - P2 legacy JS 殘留續清：`js/icons.js` 已搬到 `frontend/src/lib/icons.ts`，`js/storefront-models.js` 已搬到 `frontend/src/features/storefront/storefrontModels.ts`，後台訂單通知/狀態控制模組已搬到 `frontend/src/features/dashboard/dashboardOrder*.ts`，`settings-shared.js` 已搬到 `dashboardSettingsShared.ts`。
+- `package-lock.json` 已從 `.gitignore` 移除並納入追蹤，Tailwind `content` 掃描也收斂為 `frontend/*.html` 與 `frontend/src/**/*.{js,ts,vue}`，不再掃 legacy `js/` 或根目錄 redirect stub。
 
 ### 2026-04-22
 
