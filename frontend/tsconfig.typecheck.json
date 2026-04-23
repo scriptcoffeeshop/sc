@@ -10,6 +10,7 @@
     "./src/features/dashboard/dashboardOrderStatusController.ts",
     "./src/features/dashboard/useDashboardCategories.ts",
     "./src/features/dashboard/useDashboardPromotions.ts",
+    "./src/features/dashboard/useDashboardBankAccounts.ts",
     "./src/components/ui/**/*.vue"
   ]
 }

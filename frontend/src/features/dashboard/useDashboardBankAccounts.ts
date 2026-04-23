@@ -6,11 +6,23 @@ let services = null;
 let bankAccountsListElement = null;
 let bankAccountsSortable = null;
 
+interface BankAccountFormValues {
+  bankCode?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+}
+
 function getServices() {
   if (!services) {
     throw new Error("Dashboard bank accounts services 尚未初始化");
   }
   return services;
+}
+
+function getFormInputValue(id: string): string {
+  const element = document.getElementById(id);
+  return element instanceof HTMLInputElement ? element.value.trim() : "";
 }
 
 function destroyBankAccountsSortable() {
@@ -48,7 +60,11 @@ async function syncBankAccountsSortable() {
       const ids = Array.from(
         bankAccountsListElement.querySelectorAll("[data-bank-account-row]"),
       )
-        .map((element) => Number.parseInt(element.dataset.bankAccountId || "", 10))
+        .map((element) =>
+          element instanceof HTMLElement
+            ? Number.parseInt(element.dataset.bankAccountId || "", 10)
+            : NaN
+        )
         .filter((id) => Number.isInteger(id));
 
       try {
@@ -103,9 +119,13 @@ async function openBankAccountModal({
   title,
   confirmButtonText,
   initialValues = {},
-}) {
+}: {
+  title: string;
+  confirmButtonText: string;
+  initialValues?: BankAccountFormValues;
+}): Promise<BankAccountFormValues | undefined> {
   const { Swal } = getServices();
-  const { value: formValues } = await Swal.fire({
+  const result = await Swal.fire({
     title,
     html: `<div style="text-align:left;">
             <label class="block text-sm mb-1 font-medium">銀行代碼</label>
@@ -130,14 +150,14 @@ async function openBankAccountModal({
     confirmButtonText,
     cancelButtonText: "取消",
     preConfirm: () => ({
-      bankCode: document.getElementById("swal-bc").value.trim(),
-      bankName: document.getElementById("swal-bn").value.trim(),
-      accountNumber: document.getElementById("swal-an").value.trim(),
-      accountName: document.getElementById("swal-am").value.trim(),
+      bankCode: getFormInputValue("swal-bc"),
+      bankName: getFormInputValue("swal-bn"),
+      accountNumber: getFormInputValue("swal-an"),
+      accountName: getFormInputValue("swal-am"),
     }),
   });
 
-  return formValues;
+  return result?.value as BankAccountFormValues | undefined;
 }
 
 async function showAddBankAccountModal() {
