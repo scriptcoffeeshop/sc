@@ -1,3 +1,7 @@
+import {
+  PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE,
+  shouldSkipCustomerNotificationForPaymentStatus,
+} from "./customer-notification-policy.ts";
 import { requireAdmin } from "../utils/auth.ts";
 import { sendEmail } from "../utils/email.ts";
 import { SMTP_USER } from "../utils/config.ts";
@@ -35,12 +39,14 @@ export async function sendLineFlexMessage(
     return { success: false, error: "Flex Message 格式錯誤" };
   }
 
+  const { data: order, error } = await supabase.from("coffee_orders").select(
+    "line_user_id, payment_status",
+  ).eq("id", orderId).maybeSingle();
+  if (error) return { success: false, error: error.message };
+  if (!order) return { success: false, error: "找不到訂單" };
+
   let to = String(data.to || "").trim();
   if (!to) {
-    const { data: order, error } = await supabase.from("coffee_orders").select(
-      "line_user_id",
-    ).eq("id", orderId).maybeSingle();
-    if (error) return { success: false, error: error.message };
     to = String(order?.line_user_id || "").trim();
   }
 
@@ -48,6 +54,16 @@ export async function sendLineFlexMessage(
     return {
       success: false,
       error: "此訂單缺少 LINE 使用者 ID，無法發送訊息",
+    };
+  }
+  const orderLineUserId = String(order.line_user_id || "").trim();
+  if (
+    shouldSkipCustomerNotificationForPaymentStatus(order.payment_status) &&
+    orderLineUserId && to === orderLineUserId
+  ) {
+    return {
+      success: false,
+      error: `${PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE}（LINE Flex）`,
     };
   }
 

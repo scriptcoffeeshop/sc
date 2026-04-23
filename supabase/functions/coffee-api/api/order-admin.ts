@@ -5,6 +5,10 @@ import {
   parseReceiptInfo,
   stripLegacyReceiptBlock,
 } from "./order-shared.ts";
+import {
+  PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE,
+  shouldSkipCustomerNotificationForPaymentStatus,
+} from "./customer-notification-policy.ts";
 import { requireAdmin } from "../utils/auth.ts";
 import { VALID_ORDER_STATUSES } from "../utils/config.ts";
 import { sendEmail } from "../utils/email.ts";
@@ -111,6 +115,14 @@ export async function sendOrderEmail(
 
   const to = String(orderData.email || "").trim();
   if (!to) return { success: false, error: "此訂單未填寫 Email，無法發送" };
+  if (
+    shouldSkipCustomerNotificationForPaymentStatus(orderData.payment_status)
+  ) {
+    return {
+      success: false,
+      error: `${PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE}（Email）`,
+    };
+  }
 
   const { siteTitle, siteLogoUrl } = await getEmailBranding();
   const orderStatus = String(orderData.status || "pending");

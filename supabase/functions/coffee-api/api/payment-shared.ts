@@ -1,4 +1,5 @@
 import { hmacSign } from "../utils/auth.ts";
+import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notification-policy.ts";
 import { FRONTEND_URL } from "../utils/config.ts";
 import { sendEmail } from "../utils/email.ts";
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
@@ -386,6 +387,10 @@ export async function notifyLinePayPaymentStatusChanged(
   orderId: string,
   paymentStatus: LinePayStatus,
 ) {
+  if (shouldSkipCustomerNotificationForPaymentStatus(paymentStatus)) {
+    return;
+  }
+
   try {
     const { data: order, error } = await supabase.from("coffee_orders").select(
       "id, status, line_user_id, line_name, email, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
@@ -484,6 +489,23 @@ export async function notifyJkoPayPaymentStatusChanged(
       return;
     }
 
+    const normalizedPaymentStatus = String(paymentStatus || "").trim() ||
+      String(order.payment_status || "").trim() || "pending";
+    if (
+      shouldSkipCustomerNotificationForPaymentStatus(normalizedPaymentStatus)
+    ) {
+      const { error: persistError } = await supabase.from("coffee_orders")
+        .update({
+          line_payment_status_notify_error: "",
+        }).eq("id", orderId);
+      if (persistError) {
+        console.warn(
+          `[jkoPayStatusNotify] failed to clear skipped notification error: ${orderId} (${persistError.message})`,
+        );
+      }
+      return;
+    }
+
     const lineUserId = String(order.line_user_id || "").trim();
     if (!lineUserId) {
       const { error: persistError } = await supabase.from("coffee_orders")
@@ -498,8 +520,6 @@ export async function notifyJkoPayPaymentStatusChanged(
       return;
     }
 
-    const normalizedPaymentStatus = String(paymentStatus || "").trim() ||
-      String(order.payment_status || "").trim() || "pending";
     const lastNotifiedStatus = String(order.line_payment_status_notified || "")
       .trim();
     if (!options.force && lastNotifiedStatus === normalizedPaymentStatus) {

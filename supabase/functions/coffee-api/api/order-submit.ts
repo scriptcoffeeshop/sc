@@ -1,4 +1,5 @@
 import { buildOrderQuote } from "./quote.ts";
+import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notification-policy.ts";
 import {
   buildCustomFieldsHtml,
   buildReceiptHtml,
@@ -166,9 +167,14 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 
   const customerEmail = String(data.email || "").trim();
   const autoSendConfirmationEmail = await isOrderConfirmationAutoEmailEnabled();
+  const shouldSendCustomerNotifications =
+    !shouldSkipCustomerNotificationForPaymentStatus(
+      insertPayload.payment_status,
+    );
   if (
     customerEmail && insertPayload.status === "pending" &&
-    autoSendConfirmationEmail
+    autoSendConfirmationEmail &&
+    shouldSendCustomerNotifications
   ) {
     try {
       const { siteTitle, siteLogoUrl } = await getEmailBranding();
@@ -242,26 +248,31 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         error,
       );
     }
-    try {
-      const customerNotifyResult =
-        await sendCustomerOrderCreatedFlexNotification(
-          {
-            ...lineNotifyPayload,
-            lineUserId,
-          },
+    if (shouldSendCustomerNotifications) {
+      try {
+        const customerNotifyResult =
+          await sendCustomerOrderCreatedFlexNotification(
+            {
+              ...lineNotifyPayload,
+              lineUserId,
+            },
+          );
+        await persistOrderCreatedLineNotifyResult(
+          orderId,
+          customerNotifyResult,
         );
-      await persistOrderCreatedLineNotifyResult(orderId, customerNotifyResult);
-    } catch (error) {
-      console.error(
-        `[submitOrder] unexpected error while sending customer LINE flex notification: ${orderId}`,
-        error,
-      );
-      await persistOrderCreatedLineNotifyResult(orderId, {
-        attempted: true,
-        success: false,
-        target: String(lineUserId || "").trim(),
-        error: trimLineNotifyError(error),
-      });
+      } catch (error) {
+        console.error(
+          `[submitOrder] unexpected error while sending customer LINE flex notification: ${orderId}`,
+          error,
+        );
+        await persistOrderCreatedLineNotifyResult(orderId, {
+          attempted: true,
+          success: false,
+          target: String(lineUserId || "").trim(),
+          error: trimLineNotifyError(error),
+        });
+      }
     }
   }
 

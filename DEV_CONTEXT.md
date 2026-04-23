@@ -134,6 +134,7 @@
 - Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，`check_new_composables_ts.py` allowlist 已清空。
 - `storefrontOrderActions.ts` 已由 1324 行縮成相容 re-export：付款狀態/文案搬到 `storefrontPaymentDisplay.ts`，送單流程搬到 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別拆到 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`；legacy `showMyOrders()` fallback 搬到 `storefrontOrderHistoryLegacy.ts` 並改用既有 Vue `StorefrontOrderHistoryCard.vue` 渲染。
 - `storefrontMainApp.ts` 已開始收斂 `window.*` 全域耦合：quote refresh、付款選項狀態、表單/UI callback 與 app settings/delivery config 改走 `storefrontRuntime.ts` 模組 bridge；`window.*` 目前主要只剩 legacy 相容出口，不再是 storefront 正常流程主路徑。
+- 消費者通知已新增付款中狀態 guard：所有支付只要 `payment_status=processing`，自動付款狀態通知、後台手動 LINE Flex 與後台手動 Email 都會略過，不再把「付款確認中」通知發給消費者；店家 LINE 訂單通知不受影響。
 
 ### 2026-04-22
 
