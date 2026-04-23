@@ -163,6 +163,7 @@ export class ActionRequestError extends Error {
 }
 
 const POST_ONLY = ["POST"] as const;
+const MAP_SESSION_METHODS = ["GET", "POST"] as const;
 
 function publicAction(
   handler: ActionHandler,
@@ -219,7 +220,7 @@ export const actionMap: Record<string, ActionConfig> = {
         (data.deliveryMethod as string) || "",
         (data.clientUrl as string) || "",
       ),
-    { methods: POST_ONLY },
+    { methods: MAP_SESSION_METHODS },
   ),
   getStoreSelection: publicAction(async (data) =>
     await getStoreSelection(data.token as string)
@@ -234,7 +235,7 @@ export const actionMap: Record<string, ActionConfig> = {
   createPcscMapSession: publicAction(
     async (data) =>
       await createPcscMapSession((data.clientUrl as string) || ""),
-    { methods: POST_ONLY },
+    { methods: MAP_SESSION_METHODS },
   ),
   pcscMapCallback: publicAction(async (data) =>
     await handlePcscMapCallback(data)

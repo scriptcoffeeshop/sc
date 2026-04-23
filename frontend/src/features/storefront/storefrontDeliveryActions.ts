@@ -39,6 +39,14 @@ function setElementText(id: string, value: unknown) {
   if (element) element.textContent = String(value || "");
 }
 
+function buildFormBody(data: Record<string, unknown>) {
+  const body = new URLSearchParams();
+  Object.entries(data).forEach(([key, value]) => {
+    body.set(key, String(value || ""));
+  });
+  return body;
+}
+
 function initCitySelector() {
   if (TwCitySelector && !citySelectorInstance) {
     citySelectorInstance = new TwCitySelector({
@@ -249,8 +257,7 @@ export async function openStoreMap() {
       // 先在後端建立 store selection session（取得 token 與 callback URL）
       const res = await fetch(`${API_URL}?action=createPcscMapSession`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientUrl }),
+        body: buildFormBody({ clientUrl }),
       });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "建立地圖會話失敗");
@@ -305,8 +312,7 @@ export async function openStoreMap() {
     const clientUrl = location.origin + location.pathname;
     const res = await fetch(`${API_URL}?action=createStoreMapSession`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: buildFormBody({
         deliveryMethod: state.selectedDelivery,
         clientUrl,
       }),

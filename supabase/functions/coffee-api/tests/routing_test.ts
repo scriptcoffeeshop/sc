@@ -4,6 +4,7 @@ import {
   buildCustomFieldsHtml,
   resolveMainPageUrlWithQuery,
 } from "../api/order-shared.ts";
+import { actionMap, enforceActionMethod } from "../routing/action-map.ts";
 import { signJwt } from "../utils/auth.ts";
 import { withMockedSupabaseTables } from "./test-support.ts";
 
@@ -101,6 +102,30 @@ Deno.test({
       assertEquals(response.status, 405);
       assertEquals(response.headers.get("Allow"), "POST");
       assertEquals(payload.success, false);
+    }
+  },
+});
+
+Deno.test({
+  name: "Routing Guards - store map sessions accept GET and POST clients",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn() {
+    for (const action of ["createStoreMapSession", "createPcscMapSession"]) {
+      for (const method of ["GET", "POST"]) {
+        let error: unknown = null;
+        try {
+          enforceActionMethod(
+            action,
+            actionMap[action],
+            new Request(`https://example.com/?action=${action}`, { method }),
+          );
+        } catch (caught) {
+          error = caught;
+        }
+
+        assertEquals(error, null);
+      }
     }
   },
 });
