@@ -85,7 +85,7 @@ describe("useStorefrontDelivery", () => {
     expect(deps.clearSelectedStore).toHaveBeenCalledTimes(1);
   });
 
-  it("resolves delivery icons through configured url or fallback text", () => {
+  it("resolves delivery icons through configured url or default icon", () => {
     const delivery = useStorefrontDelivery();
 
     const customIcon = delivery.resolveDeliveryIcon({
@@ -94,12 +94,9 @@ describe("useStorefrontDelivery", () => {
     });
     const fallbackIcon = delivery.resolveDeliveryIcon({
       id: "custom",
-      icon: "🚚",
     });
 
     expect(customIcon.url).toContain("icons/custom.png");
-    expect(customIcon.fallbackText).toBe("");
     expect(fallbackIcon.url).toContain("icons/delivery-truck.png");
-    expect(fallbackIcon.fallbackText).toBe("");
   });
 });

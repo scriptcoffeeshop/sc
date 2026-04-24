@@ -98,7 +98,7 @@ async function installStorefrontFeatureRoutes(page: Page) {
             },
           ]),
           payment_options_config: JSON.stringify({
-            cod: { icon: "", name: "貨到付款", description: "到付" },
+            cod: { icon_url: "", name: "貨到付款", description: "到付" },
           }),
         },
       });
@@ -175,7 +175,6 @@ async function installDashboardFeatureRoutes(
         settings: {
           site_title: "Script Coffee",
           site_subtitle: "咖啡豆｜耳掛",
-          site_icon_emoji: "☕",
           site_icon_url: "",
           announcement_enabled: "false",
           announcement: "",
@@ -196,10 +195,10 @@ async function installDashboardFeatureRoutes(
           linepay_sandbox: "true",
           delivery_options_config: JSON.stringify([]),
           payment_options_config: JSON.stringify({
-            cod: { icon: "", icon_url: "", name: "貨到/取貨付款", description: "到付" },
-            linepay: { icon: "", icon_url: "", name: "LINE Pay", description: "線上安全付款" },
-            jkopay: { icon: "", icon_url: "", name: "街口支付", description: "街口支付線上付款" },
-            transfer: { icon: "", icon_url: "", name: "線上轉帳", description: "ATM / 網銀匯款" },
+            cod: { icon_url: "", name: "貨到/取貨付款", description: "到付" },
+            linepay: { icon_url: "", name: "LINE Pay", description: "線上安全付款" },
+            jkopay: { icon_url: "", name: "街口支付", description: "街口支付線上付款" },
+            transfer: { icon_url: "", name: "線上轉帳", description: "ATM / 網銀匯款" },
           }),
         },
       });

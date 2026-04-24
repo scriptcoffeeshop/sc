@@ -150,7 +150,6 @@ test.describe("smoke / storefront", () => {
       deliveryOptions: [
         {
           id: "delivery",
-          icon: "🛵",
           name: "配送到府",
           description: "新竹配送",
           enabled: true,
@@ -158,7 +157,6 @@ test.describe("smoke / storefront", () => {
         },
         {
           id: "seven_eleven",
-          icon: "🏪",
           name: "7-11 取件",
           description: "超商門市",
           enabled: true,
@@ -308,7 +306,6 @@ test.describe("smoke / storefront", () => {
       deliveryOptions: [
         {
           id: "delivery",
-          icon: "🛵",
           name: "配送到府",
           description: "新竹配送",
           enabled: true,
@@ -316,7 +313,6 @@ test.describe("smoke / storefront", () => {
         },
         {
           id: "seven_eleven",
-          icon: "🏪",
           name: "7-11 取件",
           description: "超商門市",
           enabled: true,

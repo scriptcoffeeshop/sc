@@ -10,7 +10,6 @@ function buildDashboardSettingsPayload() {
   return {
     site_title: "Script Coffee",
     site_subtitle: "咖啡豆｜耳掛",
-    site_icon_emoji: "☕",
     site_icon_url: "",
     announcement_enabled: "false",
     announcement: "",
@@ -32,7 +31,6 @@ function buildDashboardSettingsPayload() {
     delivery_options_config: JSON.stringify([
       {
         id: "delivery",
-        icon: "",
         icon_url: "/icons/delivery_method.png",
         name: "配送到府",
         description: "新竹配送",
@@ -49,25 +47,21 @@ function buildDashboardSettingsPayload() {
     ]),
     payment_options_config: JSON.stringify({
       cod: {
-        icon: "",
         icon_url: "",
         name: "貨到/取貨付款",
         description: "到付",
       },
       linepay: {
-        icon: "",
         icon_url: "",
         name: "LINE Pay",
         description: "線上安全付款",
       },
       jkopay: {
-        icon: "",
         icon_url: "",
         name: "街口支付",
         description: "街口支付線上付款",
       },
       transfer: {
-        icon: "",
         icon_url: "",
         name: "線上轉帳",
         description: "ATM / 網銀匯款",

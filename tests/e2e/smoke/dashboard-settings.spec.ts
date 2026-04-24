@@ -28,6 +28,8 @@ test.describe("smoke / dashboard settings", () => {
     const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
     await expect(deliveryRows).toHaveCount(1);
     await expect(deliveryRows.first().locator(".do-name")).toHaveValue("配送到府");
+    await expect(page.getByText(["備援", "字元"].join(""))).toHaveCount(0);
+    await expect(page.locator("#po-linepay-icon")).toHaveCount(0);
     await expect(deliveryRows.first().locator(".do-desc")).toHaveJSProperty(
       "tagName",
       "TEXTAREA",
@@ -162,8 +164,10 @@ test.describe("smoke / dashboard settings", () => {
 
     const firstDeliveryRow = page.locator("#delivery-routing-table .delivery-option-row")
       .first();
+    await expect(firstDeliveryRow.locator(".do-name")).toHaveValue("配送到府");
     await firstDeliveryRow.locator(".do-name").fill("新的取貨名稱");
     await firstDeliveryRow.locator(".do-desc").fill("第一行說明\n第二行提醒");
+    await expect(firstDeliveryRow.locator(".do-name")).toHaveValue("新的取貨名稱");
     await page.locator("#po-linepay-name").fill("LINE Pay 快速付款");
     await page.locator("#s-linepay-sandbox").uncheck();
     await page.locator("#checkout-settings-section").getByRole("button", {
@@ -180,7 +184,9 @@ test.describe("smoke / dashboard settings", () => {
     );
     expect(deliveryConfig[0]?.name).toBe("新的取貨名稱");
     expect(deliveryConfig[0]?.description).toBe("第一行說明\n第二行提醒");
+    expect(deliveryConfig[0]).not.toHaveProperty("icon");
     expect(paymentConfig.linepay?.name).toBe("LINE Pay 快速付款");
+    expect(paymentConfig.linepay).not.toHaveProperty("icon");
     expect(updatePayload?.settings?.linepay_sandbox).toBe("false");
   });
 

@@ -503,11 +503,6 @@
   white-space: nowrap;
 }
 
-.icon-text-fallback {
-  width: 4.2rem;
-  text-align: center;
-}
-
 .routing-payment-header {
   display: inline-flex;
   align-items: center;

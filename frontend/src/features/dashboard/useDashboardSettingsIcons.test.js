@@ -8,7 +8,6 @@ async function loadSettingsIconsModule() {
     brandingSettings: ref({
       siteTitle: "Script Coffee",
       siteSubtitle: "咖啡豆 | 耳掛",
-      siteEmoji: ">_",
       siteIconUrl: "",
     }),
     sectionTitleSettings: ref({

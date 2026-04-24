@@ -18,7 +18,6 @@ export type DashboardPaymentOptionsMap = Record<
 export interface DashboardBrandingSettings {
   siteTitle: string;
   siteSubtitle: string;
-  siteEmoji: string;
   siteIconUrl: string;
 }
 
@@ -143,10 +142,10 @@ function buildLegacyRoutingConfig(
 
 export function createEmptyPaymentOptions(): DashboardPaymentOptionsMap {
   return {
-    cod: { icon: "", icon_url: "", name: "", description: "" },
-    linepay: { icon: "", icon_url: "", name: "", description: "" },
-    jkopay: { icon: "", icon_url: "", name: "", description: "" },
-    transfer: { icon: "", icon_url: "", name: "", description: "" },
+    cod: { icon_url: "", name: "", description: "" },
+    linepay: { icon_url: "", name: "", description: "" },
+    jkopay: { icon_url: "", name: "", description: "" },
+    transfer: { icon_url: "", name: "", description: "" },
   };
 }
 
@@ -154,7 +153,6 @@ export function createDefaultBrandingSettings(): DashboardBrandingSettings {
   return {
     siteTitle: "",
     siteSubtitle: "",
-    siteEmoji: "",
     siteIconUrl: "",
   };
 }
@@ -268,7 +266,6 @@ export function createCustomDeliveryOption(
 ): DashboardDeliveryOption {
   return normalizeDeliveryOption({
     id: `custom_${timestamp}`,
-    icon: "",
     name: "新物流方式",
     description: "設定敘述",
     enabled: true,
@@ -306,7 +303,6 @@ export function buildSettingsPersistedConfig(
       is_open: String(state.storefrontSettings.isOpen),
       site_title: state.brandingSettings.siteTitle.trim(),
       site_subtitle: state.brandingSettings.siteSubtitle.trim(),
-      site_icon_emoji: state.brandingSettings.siteEmoji.trim(),
       site_icon_url: deps.normalizeIconPath(state.brandingSettings.siteIconUrl),
       products_section_title: state.sectionTitleSettings.products.title.trim(),
       products_section_color: state.sectionTitleSettings.products.color,
@@ -354,7 +350,6 @@ export function buildSettingsStateFromConfig(
     brandingSettings: {
       siteTitle: String(settings.site_title || ""),
       siteSubtitle: String(settings.site_subtitle || ""),
-      siteEmoji: String(settings.site_icon_emoji || ""),
       siteIconUrl: deps.normalizeIconPath(String(settings.site_icon_url || "")),
     },
     storefrontSettings: {

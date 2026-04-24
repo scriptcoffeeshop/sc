@@ -54,7 +54,6 @@ function createSettingsServices(overrides = {}) {
     Swal: { fire: vi.fn() },
     defaultDeliveryOptions,
     normalizePaymentOption: (method, option = {}) => ({
-      icon: String(option?.icon || ""),
       icon_url: normalizeIconPath(option?.icon_url || ""),
       name: String(option?.name || method),
       description: String(option?.description || ""),
@@ -65,7 +64,6 @@ function createSettingsServices(overrides = {}) {
     normalizeDeliveryOption: (option = {}) => ({
       id: String(option.id || ""),
       label: String(option.label || option.name || ""),
-      icon: String(option.icon || ""),
       icon_url: String(option.icon_url || ""),
       name: String(option.name || option.label || ""),
       description: String(option.description || ""),
@@ -94,6 +92,8 @@ async function loadSettingsModule() {
 }
 
 describe("useDashboardSettings", () => {
+  const legacyIconKey = "icon";
+
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -119,6 +119,7 @@ describe("useDashboardSettings", () => {
       payment_options_config: JSON.stringify({
         linepay: {
           name: "LINE Pay",
+          [legacyIconKey]: "LP",
           icon_url: "/icons/payment-linepay.png",
           description: "快速付款",
         },
@@ -171,15 +172,19 @@ describe("useDashboardSettings", () => {
         site_icon_url: "icons/logo.png",
       },
     });
+    expect(settingsConfig.settings).not.toHaveProperty("site_icon_emoji");
 
-    expect(JSON.parse(settingsConfig.settings.payment_options_config)).toMatchObject({
+    const paymentConfig = JSON.parse(settingsConfig.settings.payment_options_config);
+    expect(paymentConfig).toMatchObject({
       linepay: {
         name: "LINE Pay",
         icon_url: "icons/payment-linepay.png",
       },
     });
-    expect(JSON.parse(settingsConfig.settings.delivery_options_config))
-      .toHaveLength(5);
+    expect(paymentConfig.linepay).not.toHaveProperty("icon");
+    const deliveryConfig = JSON.parse(settingsConfig.settings.delivery_options_config);
+    expect(deliveryConfig).toHaveLength(5);
+    expect(deliveryConfig[0]).not.toHaveProperty("icon");
   });
 
   it("loads settings, saves round-trip payload, and refreshes dependent state", async () => {
@@ -195,7 +200,6 @@ describe("useDashboardSettings", () => {
           settings: {
             site_title: "Script Coffee",
             site_subtitle: "咖啡豆",
-            site_icon_emoji: ">_",
             site_icon_url: "/icons/logo.png",
             announcement_enabled: "true",
             announcement: "原始公告",
@@ -205,6 +209,7 @@ describe("useDashboardSettings", () => {
             delivery_options_config: JSON.stringify([{
               id: "delivery",
               label: "宅配",
+              [legacyIconKey]: "D",
               name: "宅配",
               fee: 100,
               free_threshold: 1200,

@@ -76,7 +76,6 @@ export function createMainRouteState(options: MainRouteOptions): MainRouteState 
     deliveryOptions: options.deliveryOptions ?? [
       {
         id: "delivery",
-        icon: "🛵",
         name: "配送到府",
         description: "新竹配送",
         enabled: true,
@@ -139,19 +138,19 @@ export function buildMainInitDataPayload(state: MainRouteState) {
       is_open: "true",
       delivery_options_config: JSON.stringify(state.deliveryOptions),
       payment_options_config: JSON.stringify({
-        cod: { icon: "💵", name: "貨到付款", description: "到付" },
+        cod: { icon_url: "", name: "貨到付款", description: "到付" },
         linepay: {
-          icon: "💚",
+          icon_url: "",
           name: "LINE Pay",
           description: "線上安全付款",
         },
         jkopay: {
-          icon: "🟧",
+          icon_url: "",
           name: "街口支付",
           description: "街口支付線上付款",
         },
         transfer: {
-          icon: "🏦",
+          icon_url: "",
           name: "線上轉帳",
           description: "ATM / 網銀",
         },

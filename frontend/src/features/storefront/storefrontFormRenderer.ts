@@ -110,7 +110,6 @@ export function applyBranding(settings) {
       iconEl,
       {
         icon_url: settings.site_icon_url,
-        icon: settings.site_icon_emoji,
       },
       "brand",
       "品牌圖示",

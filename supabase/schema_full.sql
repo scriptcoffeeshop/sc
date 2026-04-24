@@ -82,7 +82,6 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('site_title', '咖啡豆訂購'),
   ('site_subtitle', '新鮮烘焙・產地直送'),
   ('site_icon_url', ''),
-  ('site_icon_emoji', ''),
   ('products_section_title', '咖啡豆選購'),
   ('products_section_icon_url', ''),
   ('delivery_section_title', '配送方式'),
@@ -233,7 +232,7 @@ CREATE POLICY "Allow anon read coffee_settings" ON coffee_settings FOR SELECT US
   key IN (
     'is_open', 'announcement', 'announcement_enabled', 'store_name', 
     'delivery_pricing_rules', 'site_title', 'site_subtitle', 'site_icon_url', 
-    'site_icon_emoji', 'products_section_title', 'products_section_icon_url',
+    'products_section_title', 'products_section_icon_url',
     'delivery_section_title', 'delivery_section_icon_url',
     'notes_section_title', 'notes_section_icon_url',
     'payment_enabled', 'linepay_enabled', 'linepay_sandbox', 'transfer_enabled',

@@ -1,8 +1,3 @@
-function escapeHtml(value = "") {
-  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-
 function escapeAttr(value = "") {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -89,7 +84,6 @@ const ICON_META_MAP: Record<string, { label: string; category: string }> = {
 };
 
 interface IconConfig {
-  icon?: unknown;
   icon_url?: unknown;
   iconUrl?: unknown;
 }
@@ -186,13 +180,6 @@ export function getDefaultIconUrl(key = "") {
   return file ? resolveAssetUrl(file) : "";
 }
 
-function isLikelyImageUrl(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return false;
-  if (ABSOLUTE_URL_RE.test(raw)) return true;
-  return /\.(?:png|jpe?g|webp|gif|svg)(?:$|\?)/i.test(raw);
-}
-
 export function getIconUrlFromConfig(
   option: IconConfig = {},
   fallbackKey = "",
@@ -203,9 +190,6 @@ export function getIconUrlFromConfig(
 
   const explicitUrl = String(option.icon_url || option.iconUrl || "").trim();
   if (explicitUrl) return resolveAssetUrl(explicitUrl);
-
-  const iconField = String(option.icon || "").trim();
-  if (isLikelyImageUrl(iconField)) return resolveAssetUrl(iconField);
 
   return getDefaultIconUrl(fallbackKey);
 }
@@ -218,13 +202,6 @@ export function renderIconMarkup(
   const url = getIconUrlFromConfig(option, fallbackKey);
   if (url) {
     return `<img src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" class="ui-icon-img">`;
-  }
-
-  const fallbackText = String(option.icon || "").trim();
-  if (fallbackText) {
-    return `<span class="ui-icon-fallback" aria-hidden="true">${
-      escapeHtml(fallbackText)
-    }</span>`;
   }
 
   return "";
@@ -259,8 +236,6 @@ export function setIconElement(
       img.alt = alt || "icon";
       img.className = "ui-icon-img";
       element.appendChild(img);
-    } else if (option && option.icon) {
-      element.textContent = String(option.icon);
     }
   }
 

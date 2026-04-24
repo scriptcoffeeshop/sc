@@ -16,7 +16,6 @@ const PUBLIC_SETTINGS_KEYS = [
   "site_subtitle",
 
   "site_icon_url",
-  "site_icon_emoji",
   "products_section_title",
   "products_section_icon_url",
   "delivery_section_title",
@@ -76,7 +75,9 @@ function normalizeDeliveryOptionsConfig(value: string): string {
     const normalized = parsed.map((item) => {
       if (!item || typeof item !== "object") return item;
       const rawItem = item as Record<string, unknown>;
-      const { iconUrl: _iconUrl, ...rest } = rawItem;
+      const rest = { ...rawItem };
+      delete rest.icon;
+      delete rest.iconUrl;
       const normalizedIconUrl = normalizeIconPath(
         rawItem.icon_url ?? rawItem.iconUrl ?? "",
       );
@@ -105,7 +106,9 @@ function normalizePaymentOptionsConfig(value: string): string {
           return acc;
         }
         const rawOption = option as Record<string, unknown>;
-        const { iconUrl: _iconUrl, ...rest } = rawOption;
+        const rest = { ...rawOption };
+        delete rest.icon;
+        delete rest.iconUrl;
         const normalizedIconUrl = normalizeIconPath(
           rawOption.icon_url ?? rawOption.iconUrl ?? "",
         );

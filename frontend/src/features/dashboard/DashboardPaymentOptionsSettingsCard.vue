@@ -58,22 +58,13 @@
                     class="text-[11px] ui-text-muted truncate max-w-[260px]"
                   >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
                 </div>
-                <div class="flex items-center gap-2">
-                  <input
-                    v-model.trim="paymentOptions[method].icon"
-                    type="text"
-                    :id="`po-${method}-icon`"
-                    class="border rounded p-1 icon-text-fallback text-sm"
-                    placeholder="備援字元"
-                  >
-                  <input
-                    v-model.trim="paymentOptions[method].name"
-                    type="text"
-                    :id="`po-${method}-name`"
-                    class="border rounded p-1 flex-1 min-w-[120px]"
-                    placeholder="顯示名稱"
-                  >
-                </div>
+                <input
+                  v-model.trim="paymentOptions[method].name"
+                  type="text"
+                  :id="`po-${method}-name`"
+                  class="border rounded p-1 w-full"
+                  placeholder="顯示名稱"
+                >
                 <input
                   v-model.trim="paymentOptions[method].description"
                   type="text"

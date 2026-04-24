@@ -49,7 +49,6 @@ export interface StorefrontPaymentConfig {
 
 export interface StorefrontDeliveryOption extends JsonRecord {
   id: string;
-  icon: string;
   icon_url: string;
   label: string;
   name: string;
@@ -169,10 +168,12 @@ export function normalizeStorefrontDeliveryOption(
   option: JsonRecord = {},
 ): StorefrontDeliveryOption {
   const payment = asRecord(option.payment);
+  const normalized = { ...option };
+  delete normalized.icon;
+  delete normalized.iconUrl;
   return {
-    ...option,
+    ...normalized,
     id: String(option.id || ""),
-    icon: String(option.icon || ""),
     icon_url: String(option.icon_url || option.iconUrl || ""),
     label: String(option.label || option.name || ""),
     name: String(option.name || option.label || ""),

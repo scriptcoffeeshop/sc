@@ -11,7 +11,6 @@ export interface DashboardPaymentRouting {
 
 export interface DashboardDeliveryOption extends SettingsRecord {
   id: string;
-  icon: string;
   icon_url: string;
   name: string;
   description: string;
@@ -23,7 +22,6 @@ export interface DashboardDeliveryOption extends SettingsRecord {
 }
 
 export interface DashboardPaymentOption extends SettingsRecord {
-  icon: string;
   icon_url: string;
   name: string;
   description: string;
@@ -35,10 +33,16 @@ function asRecord(value: unknown): SettingsRecord {
     : {};
 }
 
+function omitLegacyIconFields(value: SettingsRecord): SettingsRecord {
+  const sanitized = { ...value };
+  delete sanitized.icon;
+  delete sanitized.iconUrl;
+  return sanitized;
+}
+
 export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> = {
   in_store: {
     id: "in_store",
-    icon: "",
     icon_url: getDefaultIconUrl("in_store"),
     name: "來店自取",
     description: "到店自取",
@@ -46,7 +50,6 @@ export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> =
   },
   delivery: {
     id: "delivery",
-    icon: "",
     icon_url: getDefaultIconUrl("delivery_method"),
     name: "配送到府 (限新竹)",
     description: "專人外送",
@@ -54,7 +57,6 @@ export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> =
   },
   home_delivery: {
     id: "home_delivery",
-    icon: "",
     icon_url: getDefaultIconUrl("home_delivery"),
     name: "全台宅配",
     description: "宅配到府",
@@ -62,7 +64,6 @@ export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> =
   },
   seven_eleven: {
     id: "seven_eleven",
-    icon: "",
     icon_url: getDefaultIconUrl("seven_eleven"),
     name: "7-11 取件",
     description: "超商門市",
@@ -70,7 +71,6 @@ export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> =
   },
   family_mart: {
     id: "family_mart",
-    icon: "",
     icon_url: getDefaultIconUrl("family_mart"),
     name: "全家取件",
     description: "超商門市",
@@ -80,25 +80,21 @@ export const DEFAULT_DELIVERY_OPTIONS: Record<string, DashboardDeliveryOption> =
 
 export const DEFAULT_PAYMENT_OPTIONS: Record<string, DashboardPaymentOption> = {
   cod: {
-    icon: "",
     icon_url: getDefaultIconUrl("cod"),
     name: "取件 / 到付",
     description: "取貨時付現或宅配到付",
   },
   linepay: {
-    icon: "",
     icon_url: getDefaultIconUrl("linepay"),
     name: "LINE Pay",
     description: "線上安全付款",
   },
   jkopay: {
-    icon: "",
     icon_url: getDefaultIconUrl("jkopay"),
     name: "街口支付",
     description: "街口支付線上付款",
   },
   transfer: {
-    icon: "",
     icon_url: getDefaultIconUrl("transfer"),
     name: "線上轉帳",
     description: "ATM / 網銀匯款",
@@ -111,7 +107,6 @@ export function normalizeDeliveryOption(
   const id = String(item.id || "").trim();
   const defaults = DEFAULT_DELIVERY_OPTIONS[id] || {
     id: id || `custom_${Date.now()}`,
-    icon: "",
     icon_url: getDefaultIconUrl("delivery"),
     name: "新物流方式",
     description: "設定敘述",
@@ -129,9 +124,8 @@ export function normalizeDeliveryOption(
 
   return {
     ...defaults,
-    ...item,
+    ...omitLegacyIconFields(item),
     id: id || defaults.id,
-    icon: String(item.icon ?? defaults.icon ?? ""),
     icon_url: normalizeIconPath(
       String(item.icon_url ?? item.iconUrl ?? defaults.icon_url ?? ""),
     ),
@@ -158,8 +152,7 @@ export function normalizePaymentOption(
   const defaults = DEFAULT_PAYMENT_OPTIONS[method] || DEFAULT_PAYMENT_OPTIONS.cod;
   return {
     ...defaults,
-    ...option,
-    icon: String(option.icon ?? defaults.icon ?? ""),
+    ...omitLegacyIconFields(option),
     icon_url: normalizeIconPath(
       String(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
     ),

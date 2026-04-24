@@ -33,11 +33,6 @@
             :alt="`${option.name} 圖示`"
             class="ui-icon-img"
           >
-          <span
-            v-else-if="getDeliveryIcon(option).fallbackText"
-            class="ui-icon-fallback"
-            aria-hidden="true"
-          >{{ getDeliveryIcon(option).fallbackText }}</span>
         </div>
         <div class="font-semibold" style="font-size: 0.95rem;">
           {{ option.name }}
@@ -213,13 +208,8 @@ const props = defineProps({
 
 function getDeliveryIcon(option) {
   const resolvedIcon = props.resolveDeliveryIcon?.(option) || {};
-  const url = String(resolvedIcon.url || "").trim();
-  const fallbackText = String(
-    resolvedIcon.fallbackText || option?.icon || "",
-  ).trim();
   return {
-    url,
-    fallbackText: url ? "" : fallbackText,
+    url: String(resolvedIcon.url || "").trim(),
   };
 }
 </script>

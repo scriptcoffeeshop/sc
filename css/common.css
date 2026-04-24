@@ -247,11 +247,6 @@ select.input-field {
   opacity: 0.65;
 }
 
-.ui-icon-fallback {
-  font-size: 1.12rem;
-  line-height: 1;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;

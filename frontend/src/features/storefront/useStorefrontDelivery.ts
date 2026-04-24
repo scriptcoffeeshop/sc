@@ -18,7 +18,6 @@ interface StorefrontDeliveryPaymentConfig {
 
 interface StorefrontDeliveryOption {
   id?: string;
-  icon?: string;
   icon_url?: string;
   iconUrl?: string;
   label?: string;
@@ -43,10 +42,8 @@ interface StorefrontDeliveryDeps {
 
 function resolveDeliveryIcon(option: StorefrontDeliveryOption = {}) {
   const fallbackKey = getDeliveryIconFallbackKey(option?.id);
-  const url = getIconUrlFromConfig(option, fallbackKey);
   return {
-    url,
-    fallbackText: url ? "" : String(option?.icon || "").trim(),
+    url: getIconUrlFromConfig(option, fallbackKey),
   };
 }
 

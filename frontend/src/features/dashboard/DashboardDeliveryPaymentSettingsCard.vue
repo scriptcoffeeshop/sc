@@ -29,8 +29,8 @@
         :data-id="item.id"
         :data-delivery-id="item.id"
       >
-        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.85fr)] gap-4">
-          <div class="min-w-0 space-y-3">
+        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,0.9fr)_minmax(340px,1.15fr)] gap-3">
+          <div class="min-w-0 space-y-2">
             <div class="flex flex-col sm:flex-row sm:items-start gap-3">
               <button
                 type="button"
@@ -69,26 +69,15 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-[4.5rem_minmax(0,1fr)] gap-2">
-              <div>
-                <label class="block text-xs ui-text-subtle mb-1">備援字元</label>
-                <input
-                  v-model.trim="item.icon"
-                  type="text"
-                  class="border rounded p-2 icon-text-fallback text-sm do-icon"
-                  placeholder="文字"
-                >
-              </div>
-              <div>
-                <label class="block text-xs ui-text-subtle mb-1">取貨方式名稱</label>
-                <input
-                  v-model.trim="item.name"
-                  type="text"
-                  class="border rounded p-2 w-full min-w-0 do-name"
-                  placeholder="物流名稱"
-                >
-                <input :value="item.id" type="hidden" class="do-id">
-              </div>
+            <div>
+              <label class="block text-xs ui-text-subtle mb-1">取貨方式名稱</label>
+              <input
+                v-model.trim="item.name"
+                type="text"
+                class="border rounded p-2 w-full min-w-0 do-name"
+                placeholder="物流名稱"
+              >
+              <input :value="item.id" type="hidden" class="do-id">
             </div>
 
             <div>

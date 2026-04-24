@@ -1,7 +1,6 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
 import {
-  getDeliveryIconFallbackKey,
   getPaymentIconFallbackKey,
   setIconElement,
 } from "../../lib/icons.ts";
@@ -131,7 +130,6 @@ export function createStorefrontMainAppPayments(
             iconEl,
             {
               icon_url: option.icon_url || option.iconUrl,
-              icon: option.icon,
             },
             getPaymentIconFallbackKey(method),
             `${method} 圖示`,
@@ -144,16 +142,7 @@ export function createStorefrontMainAppPayments(
       });
     }
 
-    currentDeliveryConfig = normalizeStorefrontDeliveryConfig(settings).map((item) => {
-      const legacyItem = item as StorefrontDeliveryOption & {
-        iconUrl?: unknown;
-      };
-      return {
-        ...item,
-        icon_url: String(item.icon_url || legacyItem.iconUrl || ""),
-        iconFallbackKey: getDeliveryIconFallbackKey(item.id),
-      };
-    });
+    currentDeliveryConfig = normalizeStorefrontDeliveryConfig(settings);
 
     setStorefrontDeliveryConfig(currentDeliveryConfig);
     renderDeliveryOptions(currentDeliveryConfig);

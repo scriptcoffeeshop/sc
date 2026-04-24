@@ -13,7 +13,6 @@ CREATE POLICY "Allow anon read coffee_settings" ON coffee_settings
       'site_title',
       'site_subtitle',
       'site_icon_url',
-      'site_icon_emoji',
       'products_section_title',
       'delivery_section_title',
       'notes_section_title',
