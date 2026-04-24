@@ -44,8 +44,8 @@ export const promotionSchema = z.object({
   id: positiveIdSchema.optional(),
   name: z.string().trim().min(1, "活動名稱不能為空"),
   type: z.string().default("bundle"),
-  targetProductIds: z.any().optional(), // 保留相容
-  targetItems: z.any().optional(),
+  targetProductIds: z.unknown().optional(), // 保留相容
+  targetItems: z.unknown().optional(),
   minQuantity: z.coerce.number().min(1).default(1),
   discountType: z.enum(["percent", "amount"]),
   discountValue: z.coerce.number().min(0),
