@@ -62,7 +62,7 @@ As of 2026-04-25:
   - storefront subcomponents: header, product grid, delivery section, payment section, bottom bar, cart drawer, order history modal
 - Remaining legacy-heavy areas:
   - local compatibility redirects for root `dashboard.html` / `main.html`
-  - storefront DOM fallback helpers that still coordinate payment/store-search/order-history side effects from `frontend/src/features/storefront/`
+  - storefront DOM fallback helpers that still coordinate store-search/order-history side effects from `frontend/src/features/storefront/`
   - `data-vue-managed` compatibility guards that can be removed once the remaining fallback helpers are retired
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
@@ -197,7 +197,7 @@ Initial storefront progress:
 - payment selection, announcement close, my orders modal close, and transfer bank-account interactions no longer require body-level click delegation either
 - delivery option selection, store-search result selection, tracking-number copy, and load-failure retry no longer require body-level click delegation
 - storefront body-level click delegation has been removed from the normal runtime path
-- delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; fallback renderers skip Vue-managed containers and should be deleted after their state side effects are extracted
+- delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; transfer bank-account fallback rendering has been retired and the remaining selection behavior is a typed state helper
 - my-orders list rendering no longer uses `innerHTML` for API order payloads; Vue `StorefrontOrderHistoryCard.vue` is the active renderer
 
 ## Dashboard Decomposition Blueprint

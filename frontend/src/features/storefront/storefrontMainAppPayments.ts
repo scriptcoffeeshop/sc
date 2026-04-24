@@ -12,7 +12,7 @@ import {
   normalizeStorefrontDeliveryConfig,
   type StorefrontDeliveryOption,
 } from "./storefrontModels.ts";
-import { createStorefrontBankAccountsUi } from "./storefrontBankAccountsUi.ts";
+import { selectStorefrontBankAccount } from "./storefrontBankAccountsState.ts";
 import { createStorefrontQuoteManager } from "./storefrontQuoteManager.ts";
 import {
   setStorefrontAppSettings,
@@ -33,7 +33,6 @@ export function createStorefrontMainAppPayments(
   deps: StorefrontMainAppPaymentsDeps,
 ) {
   let currentDeliveryConfig: StorefrontDeliveryOption[] = [];
-  const bankAccountUi = createStorefrontBankAccountsUi();
   const quoteManager = createStorefrontQuoteManager({
     getErrorMessage: deps.getErrorMessage,
     getCurrentDeliveryConfig: () => currentDeliveryConfig,
@@ -58,7 +57,6 @@ export function createStorefrontMainAppPayments(
 
       applySettings(result.settings || {});
       applyBranding(result.settings || {});
-      bankAccountUi.renderBankAccounts();
 
       if (state.currentUser) {
         deps.prefillUserFields();
@@ -274,7 +272,7 @@ export function createStorefrontMainAppPayments(
     if (method === "transfer") {
       transferSection?.classList.remove("hidden");
       if (state.bankAccounts.length > 0 && !state.selectedBankAccountId) {
-        bankAccountUi.selectBankAccount(state.bankAccounts[0].id);
+        selectStorefrontBankAccount(state.bankAccounts[0].id);
       }
     } else {
       transferSection?.classList.add("hidden");
@@ -290,7 +288,7 @@ export function createStorefrontMainAppPayments(
     loadInitData,
     refreshQuote: quoteManager.refreshQuote,
     scheduleQuoteRefresh: quoteManager.scheduleQuoteRefresh,
-    selectBankAccount: bankAccountUi.selectBankAccount,
+    selectBankAccount: selectStorefrontBankAccount,
     selectPayment,
     updateFormState,
     updatePaymentOptionsState,
