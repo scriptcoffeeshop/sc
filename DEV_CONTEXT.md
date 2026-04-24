@@ -175,6 +175,7 @@
 - storefront 門市搜尋彈窗改由 `StorefrontStoreSearchPicker.vue` 掛在 SweetAlert 容器內，搜尋輸入、結果列表與門市點選不再由 `storefrontStoreSearch.ts` 手動 `createElement/addEventListener`。
 - storefront 配送子區塊顯示已改由 `StorefrontDeliverySection.vue` 依 `selectedDelivery` 綁定 class，`selectDelivery()` 不再手動替配送/宅配/超商/來店區塊加減 `hidden`。
 - `storefrontMainApp.ts` 已移除 DOMContentLoaded 自動初始化 fallback；前台初始化由 `MainPage.vue` 的 Vue lifecycle 明確呼叫 `initMainApp()`。
+- storefront 購物車 DOM renderer 已移除；`storefrontCartStore.ts` 現在只維護 cart state、localStorage、quote refresh 與 `coffee:cart-updated` 事件，購物車品項、底部總額、運費提示、優惠明細與轉帳應付金額都由 Vue 元件渲染。
 
 ### 2026-04-24
 
