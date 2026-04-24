@@ -10,11 +10,40 @@ import TwCitySelector from "../../lib/twCitySelector.js";
 import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
-let allStores = [];
-let storeListLoaded = false;
-let citySelectorInstance = null; // 用來儲存 tw-city-selector 實體
+type DeliveryPrefs = Record<string, unknown>;
+type StoreRecord = {
+  id: string;
+  name: string;
+  address: string;
+};
 
-type DeliveryPrefs = Record<string, any>;
+let allStores: StoreRecord[] = [];
+let storeListLoaded = false;
+let citySelectorInstance: unknown = null; // 用來儲存 tw-city-selector 實體
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function parseDeliveryPrefs(rawPrefs: string | null): DeliveryPrefs {
+  if (!rawPrefs) return {};
+  try {
+    return asRecord(JSON.parse(rawPrefs));
+  } catch {
+    return {};
+  }
+}
+
+function normalizeStoreRecord(value: unknown): StoreRecord {
+  const record = asRecord(value);
+  return {
+    id: String(record.id || ""),
+    name: String(record.name || ""),
+    address: String(record.address || ""),
+  };
+}
 
 function getInputElement(id: string): HTMLInputElement | null {
   const element = document.getElementById(id);
@@ -360,7 +389,9 @@ export async function openStoreSearchModal() {
         Swal.fire("錯誤", result.error || "取得門市清單失敗", "error");
         return;
       }
-      allStores = result.stores || [];
+      allStores = Array.isArray(result.stores)
+        ? result.stores.map(normalizeStoreRecord)
+        : [];
       storeListLoaded = true;
       Swal.close();
     } catch (e) {
@@ -454,13 +485,9 @@ export async function openStoreSearchModal() {
 export function loadDeliveryPrefs() {
   try {
     let prefs: DeliveryPrefs = {};
-    let localPrefs: DeliveryPrefs = {};
-    const prefsStr = localStorage.getItem("coffee_delivery_prefs");
-    if (prefsStr) {
-      try {
-        localPrefs = JSON.parse(prefsStr);
-      } catch {}
-    }
+    const localPrefs = parseDeliveryPrefs(
+      localStorage.getItem("coffee_delivery_prefs"),
+    );
 
     const u = state.currentUser;
     if (u && u.defaultDeliveryMethod) {
@@ -520,7 +547,7 @@ export function loadDeliveryPrefs() {
         const zipMatch = rawDistrict.match(/^(\d{3})/);
 
         if (countyEl instanceof HTMLSelectElement && prefs.city) {
-          countyEl.value = prefs.city;
+          countyEl.value = String(prefs.city || "");
           countyEl.dispatchEvent(new Event("change", { bubbles: true }));
         }
         if (districtEl instanceof HTMLSelectElement && districtText) {
