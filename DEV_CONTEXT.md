@@ -64,7 +64,7 @@
 - storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
 - `useStorefrontCart.js`、`useStorefrontShell.js` 已轉為 `useStorefrontCart.ts`、`useStorefrontShell.ts`；目前 storefront 仍留在 JS 的 composable 已再縮減。
 - `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 只保留相容 re-export。
-- storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；legacy `renderDeliveryOptions()` 已是相容 no-op，`renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
+- storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；配送操作不再掛到 `window`，`renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
 - storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 也改成掛載同一張 Vue 卡片，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
 - storefront legacy `js/*.js` 前台檔案已改為相容 re-export；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
@@ -249,7 +249,7 @@
 - dashboard `orders` 的重整、Flex 歷史、勾選、批次操作、通知、退款、收款確認、狀態提交與刪除已改成元件內 `@click` / `@change`，`js/dashboard/events.js` 與 `createOrdersActionHandlers()` 已移除。
 - dashboard page 已改成由 Vue `onMounted()` 直接載入 public branding；`dashboard-globals.js`、`initDashboardApp()` fallback 與舊的 `window.*` dashboard helper 已移除。
 - `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
-- storefront `delivery-options-list` / `bank-accounts-list` 已改由 `MainPage.vue` 直接渲染，`renderDeliveryOptions()` / `renderBankAccounts()` 在 Vue-managed 容器上會直接退出，不再走 imperative `innerHTML` renderer。
+- storefront `delivery-options-list` / `bank-accounts-list` 已改由 `MainPage.vue` 直接渲染；配送選項沒有全域 renderer 或 `window.selectDelivery` 橋接，`renderBankAccounts()` 在 Vue-managed 容器上會直接退出，不再走 imperative `innerHTML` renderer。
 - storefront `storefrontOrderActions.ts` 的「我的訂單」legacy fallback 已改成掛載 Vue `StorefrontOrderHistoryCard.vue`，延續 API XSS payload smoke 保護。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。

@@ -5,10 +5,7 @@ import {
   setIconElement,
 } from "../../lib/icons.ts";
 import { cart } from "./storefrontCartStore.ts";
-import {
-  renderDeliveryOptions,
-  selectDelivery,
-} from "./storefrontDeliveryActions.ts";
+import { selectDelivery } from "./storefrontDeliveryActions.ts";
 import { applyBranding, renderDynamicFields } from "./storefrontFormRenderer.ts";
 import {
   normalizeStorefrontDeliveryConfig,
@@ -145,7 +142,6 @@ export function createStorefrontMainAppPayments(
     currentDeliveryConfig = normalizeStorefrontDeliveryConfig(settings);
 
     setStorefrontDeliveryConfig(currentDeliveryConfig);
-    renderDeliveryOptions(currentDeliveryConfig);
     updatePaymentOptionsState(currentDeliveryConfig);
   }
 

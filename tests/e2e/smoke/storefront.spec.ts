@@ -116,6 +116,24 @@ test.describe("smoke / storefront", () => {
     await expect(description).toHaveCSS("white-space", "pre-line");
   });
 
+  test("storefront delivery actions are module-scoped instead of global", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page);
+
+    await page.goto("/main.html");
+
+    await expect.poll(() =>
+      page.evaluate(() => ({
+        renderDeliveryOptions: typeof (window as any).renderDeliveryOptions,
+        selectDelivery: typeof (window as any).selectDelivery,
+      }))
+    ).toEqual({
+      renderDeliveryOptions: "undefined",
+      selectDelivery: "undefined",
+    });
+    await expect(page.locator('.delivery-option[data-id="delivery"]')).toBeVisible();
+  });
+
   test("storefront action icons use vector sizing and currentColor", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);

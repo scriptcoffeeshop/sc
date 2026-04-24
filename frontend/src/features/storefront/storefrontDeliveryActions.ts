@@ -65,11 +65,6 @@ if (document.readyState === "loading") {
   initCitySelector();
 }
 
-/** Vue 已接手配送選項渲染；保留相容入口避免舊流程呼叫中斷。 */
-export function renderDeliveryOptions(config) {
-  void config;
-}
-
 /** 選擇配送方式 */
 export function selectDelivery(method, e = null, options: { skipQuote?: boolean } = {}) {
   state.selectedDelivery = method;
@@ -136,11 +131,6 @@ export function selectDelivery(method, e = null, options: { skipQuote?: boolean 
   if (storefrontRuntime.rerenderFormFields) {
     storefrontRuntime.rerenderFormFields();
   }
-}
-
-if (typeof window !== "undefined") {
-  window.renderDeliveryOptions = renderDeliveryOptions;
-  window.selectDelivery = selectDelivery;
 }
 
 /** 更新地區下拉 (限新竹使用) */
