@@ -140,6 +140,57 @@ function getLinePayStatusLabel(status: LinePayStatus): string {
   return status === "paid" ? "已付款" : "已取消";
 }
 
+async function updateJkoLineNotifyState(
+  orderId: string,
+  payload: Record<string, unknown>,
+  failureContext: string,
+) {
+  const { error } = await supabase.from("coffee_orders").update(payload).eq(
+    "id",
+    orderId,
+  );
+  if (error) {
+    console.warn(
+      `[jkoPayStatusNotify] ${failureContext}: ${orderId} (${error.message})`,
+    );
+  }
+}
+
+async function persistJkoLineNotifyError(
+  orderId: string,
+  error: unknown,
+  failureContext = "failed to persist notification error",
+) {
+  await updateJkoLineNotifyState(
+    orderId,
+    { line_payment_status_notify_error: trimLineNotifyError(error) },
+    failureContext,
+  );
+}
+
+async function clearJkoLineNotifyError(orderId: string) {
+  await updateJkoLineNotifyState(
+    orderId,
+    { line_payment_status_notify_error: "" },
+    "failed to clear skipped notification error",
+  );
+}
+
+async function persistJkoLineNotifySuccess(
+  orderId: string,
+  paymentStatus: string,
+) {
+  await updateJkoLineNotifyState(
+    orderId,
+    {
+      line_payment_status_notified: paymentStatus,
+      line_payment_status_notified_at: new Date().toISOString(),
+      line_payment_status_notify_error: "",
+    },
+    "failed to persist notification success state",
+  );
+}
+
 function buildLinePayStatusEmailHtml(params: {
   orderId: string;
   siteTitle: string;
@@ -320,29 +371,17 @@ export async function notifyJkoPayPaymentStatusChanged(
     if (
       shouldSkipCustomerNotificationForPaymentStatus(normalizedPaymentStatus)
     ) {
-      const { error: persistError } = await supabase.from("coffee_orders")
-        .update({
-          line_payment_status_notify_error: "",
-        }).eq("id", orderId);
-      if (persistError) {
-        console.warn(
-          `[jkoPayStatusNotify] failed to clear skipped notification error: ${orderId} (${persistError.message})`,
-        );
-      }
+      await clearJkoLineNotifyError(orderId);
       return;
     }
 
     const lineUserId = String(order.line_user_id || "").trim();
     if (!lineUserId) {
-      const { error: persistError } = await supabase.from("coffee_orders")
-        .update({
-          line_payment_status_notify_error: "缺少 LINE 使用者 ID",
-        }).eq("id", orderId);
-      if (persistError) {
-        console.warn(
-          `[jkoPayStatusNotify] failed to persist missing LINE user id: ${orderId} (${persistError.message})`,
-        );
-      }
+      await persistJkoLineNotifyError(
+        orderId,
+        "缺少 LINE 使用者 ID",
+        "failed to persist missing LINE user id",
+      );
       return;
     }
 
@@ -375,46 +414,19 @@ export async function notifyJkoPayPaymentStatusChanged(
       console.error(
         `[jkoPayStatusNotify] failed to send LINE flex: ${orderId} -> ${lineUserId} (${flexResult.error})`,
       );
-      const { error: persistError } = await supabase.from("coffee_orders")
-        .update({
-          line_payment_status_notify_error: trimLineNotifyError(
-            flexResult.error,
-          ),
-        }).eq("id", orderId);
-      if (persistError) {
-        console.warn(
-          `[jkoPayStatusNotify] failed to persist notification error: ${orderId} (${persistError.message})`,
-        );
-      }
+      await persistJkoLineNotifyError(orderId, flexResult.error);
       return;
     }
-    const nowIso = new Date().toISOString();
-    const { error: persistError } = await supabase.from("coffee_orders").update(
-      {
-        line_payment_status_notified: normalizedPaymentStatus,
-        line_payment_status_notified_at: nowIso,
-        line_payment_status_notify_error: "",
-      },
-    ).eq("id", orderId);
-    if (persistError) {
-      console.warn(
-        `[jkoPayStatusNotify] failed to persist notification success state: ${orderId} (${persistError.message})`,
-      );
-    }
+    await persistJkoLineNotifySuccess(orderId, normalizedPaymentStatus);
   } catch (error) {
     console.error(
       `[jkoPayStatusNotify] unexpected error while notifying order ${orderId}`,
       error,
     );
-    const { error: persistError } = await supabase.from("coffee_orders").update(
-      {
-        line_payment_status_notify_error: trimLineNotifyError(error),
-      },
-    ).eq("id", orderId);
-    if (persistError) {
-      console.warn(
-        `[jkoPayStatusNotify] failed to persist unexpected error: ${orderId} (${persistError.message})`,
-      );
-    }
+    await persistJkoLineNotifyError(
+      orderId,
+      error,
+      "failed to persist unexpected error",
+    );
   }
 }

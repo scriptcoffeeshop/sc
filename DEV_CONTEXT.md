@@ -191,6 +191,7 @@
 - `repo_hygiene_check.py` 新增 runtime 守門，阻擋 production 直接新增 `JSON.parse` 或匿名 `catch {}`；本輪通過 `npm run guardrails`、`python3 scripts/repo_hygiene_check.py` 與 `git diff --check`。
 - `payment-shared.ts` 已移除重複的 email branding 與 LINE 通知錯誤截斷 helper，改 re-export `order-shared.ts` 的共用版本；付款專用 `parseReceiptInfo` 因需保留物件原樣回傳語意，仍留在付款模組並由 payments test 保護。
 - `payment-shared.ts` 的線上付款逾期狀態機已拆到 `payment-expiry.ts`，再由原檔 re-export 保持既有 import 相容；本輪通過 `npm run fmt:check`、`npm run check`、`payments_test.ts`、`npm run test`、`npm run lint`、`npm run guardrails` 與 `git diff --check`。
+- `payment-shared.ts` 的 JKO LINE 通知狀態寫回已集中到 helper，缺 LINE user、通知失敗、略過通知與通知成功不再各自手寫 Supabase update / warning 樣板。
 - `payment-jkopay.ts` 的街口訂單狀態同步核心已拆到 `payment-jkopay-sync.ts`，result/inquiry/refund 路由層不再內嵌 DB 狀態機；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`payments_test.ts`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
 - `storefrontDeliveryActions.ts` 已先抽出 `storefrontDeliveryDom.ts`，集中配送偏好/門市資料 normalize 與 DOM input/select/form helper；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run guardrails` 與 `git diff --check`。
 - `useDashboardPromotions.ts` 已抽出 `dashboardPromotionsShared.ts`，集中促銷 view model、target items normalize、商品規格解析與 product groups；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run guardrails` 與 `git diff --check`。
