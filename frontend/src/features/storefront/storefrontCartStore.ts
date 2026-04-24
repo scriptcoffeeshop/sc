@@ -1,5 +1,5 @@
 // ============================================
-// storefrontCartStore.ts — 購物車 CRUD & UI
+// storefrontCartStore.ts — 購物車 CRUD & state
 // ============================================
 
 import { state } from "../../lib/appState.ts";
@@ -169,22 +169,6 @@ export function updateCartUI() {
   const summary = calcCartSummary();
   if (storefrontRuntime.updateFormState) storefrontRuntime.updateFormState();
   emitCartUpdated(summary);
-}
-
-/** 切換購物車 Drawer */
-export function toggleCart() {
-  const drawer = document.getElementById("cart-drawer");
-  const overlay = document.getElementById("cart-overlay");
-  const isOpen = !drawer.classList.contains("translate-x-full");
-  if (isOpen) {
-    drawer.classList.add("translate-x-full");
-    overlay.classList.add("hidden");
-    document.body.style.overflow = "";
-  } else {
-    drawer.classList.remove("translate-x-full");
-    overlay.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-  }
 }
 
 /** 取得目前的運費設定 */

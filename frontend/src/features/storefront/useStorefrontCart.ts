@@ -3,7 +3,6 @@ import {
   addToCart,
   getCartSnapshot,
   removeCartItem,
-  toggleCart,
   updateCartItemQty,
   updateCartItemQtyByKeys,
 } from "./storefrontCartStore.ts";
@@ -48,7 +47,6 @@ interface StorefrontCartApi {
   addToCart: (productId: unknown, specKey: unknown) => void;
   getCartSnapshot: () => StorefrontCartItem[];
   removeCartItem: (index: number) => void;
-  toggleCart: () => void;
   updateCartItemQty: (index: number, delta: number) => void;
   updateCartItemQtyByKeys: (
     productId: unknown,
@@ -105,7 +103,6 @@ const defaultCartApi: StorefrontCartApi = {
   addToCart,
   getCartSnapshot,
   removeCartItem,
-  toggleCart,
   updateCartItemQty,
   updateCartItemQtyByKeys,
 };
@@ -126,6 +123,7 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
 
   const cartItems = ref<StorefrontCartItem[]>([]);
   const selectedDelivery = ref("");
+  const isCartDrawerOpen = ref(false);
   const deliveryName = ref("該配送方式");
   const shippingConfig = ref<StorefrontShippingConfig | null>(null);
   const cartSummary = ref<Required<StorefrontCartSummary>>({
@@ -227,11 +225,11 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   }
 
   function toggleCartDrawer() {
-    cartApi.toggleCart();
+    isCartDrawerOpen.value = !isCartDrawerOpen.value;
   }
 
   function submitOrderFromCart() {
-    cartApi.toggleCart();
+    isCartDrawerOpen.value = false;
     void orderApi.submitOrder();
   }
 
@@ -259,6 +257,7 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   return {
     cartItems,
     selectedDelivery,
+    isCartDrawerOpen,
     deliveryName,
     shippingConfig,
     cartSummary,

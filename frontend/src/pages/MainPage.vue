@@ -156,6 +156,7 @@
   />
 
   <StorefrontCartDrawer
+    :is-open="isCartDrawerOpen"
     :cart-items="cartItems"
     :discounted-item-keys="discountedItemKeySet"
     :cart-summary="cartSummary"
@@ -184,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from "vue";
+import { onBeforeUnmount, onMounted, watch } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import StorefrontBottomBar from "../features/storefront/StorefrontBottomBar.vue";
@@ -233,6 +234,7 @@ import { state } from "../lib/appState.ts";
 import { Toast } from "../lib/sharedUtils.ts";
 
 const originalBodyClass = document.body.className;
+const originalBodyOverflow = document.body.style.overflow;
 const {
   isOrderHistoryOpen,
   orderHistoryError,
@@ -267,6 +269,7 @@ const {
   freeShippingThresholdText,
   cartQtyMap,
   cartItemCount,
+  isCartDrawerOpen,
   syncCartSnapshot,
   handleCartUpdated: syncCartFromEvent,
   changeSpecQty,
@@ -352,6 +355,10 @@ function handleCartUpdated(event: Event) {
   syncStorefrontUiState();
 }
 
+watch(isCartDrawerOpen, (open) => {
+  document.body.style.overflow = open ? "hidden" : originalBodyOverflow;
+});
+
 function handleStorefrontLogout() {
   logoutFromShell();
   syncStorefrontUiState();
@@ -382,5 +389,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("coffee:cart-updated", handleCartUpdated);
   document.body.className = originalBodyClass;
+  document.body.style.overflow = originalBodyOverflow;
 });
 </script>

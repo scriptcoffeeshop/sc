@@ -1,13 +1,17 @@
 <template>
   <div
     id="cart-overlay"
-    class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60]"
+    class="fixed inset-0 bg-black bg-opacity-50 z-[60]"
+    :class="{ hidden: !isOpen }"
+    :aria-hidden="!isOpen"
     @click="$emit('toggle-cart')"
   >
   </div>
   <div
     id="cart-drawer"
-    class="fixed inset-y-0 right-0 h-dvh max-h-dvh w-full max-w-md overflow-hidden bg-white shadow-2xl z-[61] transform translate-x-full transition-transform duration-300 flex flex-col"
+    class="fixed inset-y-0 right-0 h-dvh max-h-dvh w-full max-w-md overflow-hidden bg-white shadow-2xl z-[61] transform transition-transform duration-300 flex flex-col"
+    :class="{ 'translate-x-full': !isOpen, 'translate-x-0': isOpen }"
+    :aria-hidden="!isOpen"
   >
     <div
       class="p-4 border-b flex justify-between items-center"
@@ -158,6 +162,7 @@ import type { StorefrontCartSummary } from "./storefrontCartSummary";
 
 const props = withDefaults(
   defineProps<{
+    isOpen?: boolean;
     cartItems?: StorefrontCartItem[];
     discountedItemKeys?: Set<string>;
     cartSummary: StorefrontCartSummary;
@@ -171,6 +176,7 @@ const props = withDefaults(
     totalPriceText: string;
   }>(),
   {
+    isOpen: false,
     cartItems: () => [],
     discountedItemKeys: () => new Set<string>(),
     showShippingNotice: false,

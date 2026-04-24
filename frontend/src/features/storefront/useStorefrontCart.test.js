@@ -6,7 +6,6 @@ function createCartApi(snapshot = []) {
     addToCart: vi.fn(),
     getCartSnapshot: vi.fn(() => snapshot),
     removeCartItem: vi.fn(),
-    toggleCart: vi.fn(),
     updateCartItemQty: vi.fn(),
     updateCartItemQtyByKeys: vi.fn(),
   };
@@ -92,10 +91,10 @@ describe("useStorefrontCart", () => {
     expect(cartApi.removeCartItem).toHaveBeenCalledWith(0);
 
     cart.toggleCartDrawer();
-    expect(cartApi.toggleCart).toHaveBeenCalledTimes(1);
+    expect(cart.isCartDrawerOpen.value).toBe(true);
 
     cart.submitOrderFromCart();
-    expect(cartApi.toggleCart).toHaveBeenCalledTimes(2);
+    expect(cart.isCartDrawerOpen.value).toBe(false);
     expect(orderApi.submitOrder).toHaveBeenCalledTimes(1);
   });
 
