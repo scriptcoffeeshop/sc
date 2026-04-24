@@ -1,41 +1,104 @@
 import { nextTick, ref } from "vue";
+import type {
+  DashboardDeliveryOption,
+} from "./dashboardSettingsShared.ts";
+import {
+  buildDefaultSectionTitleSettings,
+  buildSettingsPersistedConfig,
+  buildSettingsStateFromConfig,
+  createCustomDeliveryOption,
+  createDefaultBrandingSettings,
+  createDefaultStorefrontSettings,
+  createEmptyPaymentOptions,
+  PAYMENT_METHOD_ORDER,
+  type DashboardSectionTitleSettingsMap,
+  type DashboardSettingsConfigDeps,
+  type DashboardSettingsPersistedConfig,
+  type DashboardSettingsRecord,
+  type DashboardBrandingSettings,
+  type DashboardStorefrontSettings,
+  type DashboardPaymentOptionsMap,
+} from "./dashboardSettingsConfig.ts";
 
-type DashboardSettingsServices = Record<string, any>;
-type DashboardSettingsRecord = Record<string, any>;
+interface DashboardToastLike {
+  fire: (...args: unknown[]) => unknown;
+}
 
-const PAYMENT_METHOD_ORDER = ["cod", "linepay", "jkopay", "transfer"];
-const SECTION_TITLE_ORDER = ["products", "delivery", "notes"];
+interface DashboardSwalLike {
+  fire: (...args: unknown[]) => unknown;
+}
+
+interface DashboardSortableInstance {
+  destroy: () => void;
+}
+
+interface DashboardSortableOptions {
+  animation: number;
+  handle: string;
+  ghostClass: string;
+  onEnd: () => void;
+}
+
+interface DashboardSortableConstructor {
+  new (
+    element: HTMLElement,
+    options: DashboardSortableOptions,
+  ): DashboardSortableInstance;
+  create?: (
+    element: HTMLElement,
+    options: DashboardSortableOptions,
+  ) => DashboardSortableInstance;
+}
+
+interface DashboardSettingsServices extends DashboardSettingsConfigDeps {
+  API_URL: string;
+  authFetch: (input: string, init?: RequestInit) => Promise<Response>;
+  getAuthUserId: () => string;
+  Toast: DashboardToastLike;
+  Swal: DashboardSwalLike;
+  applyDashboardBranding?: (settings: DashboardSettingsRecord) => void;
+  loadBankAccounts?: () => Promise<unknown> | unknown;
+  linePaySandboxCacheKey: string;
+  Sortable?: DashboardSortableConstructor | null;
+}
 
 const rawSettings = ref<DashboardSettingsRecord>({});
-const deliveryOptions = ref<any[]>([]);
-const paymentOptions = ref<Record<string, any>>({
-  cod: { icon: "", icon_url: "", name: "", description: "" },
-  linepay: { icon: "", icon_url: "", name: "", description: "" },
-  jkopay: { icon: "", icon_url: "", name: "", description: "" },
-  transfer: { icon: "", icon_url: "", name: "", description: "" },
-});
+const deliveryOptions = ref<DashboardDeliveryOption[]>([]);
+const paymentOptions = ref<DashboardPaymentOptionsMap>(createEmptyPaymentOptions());
 const linePaySandbox = ref(true);
-const brandingSettings = ref({
-  siteTitle: "",
-  siteSubtitle: "",
-  siteEmoji: "",
-  siteIconUrl: "",
-});
-const storefrontSettings = ref({
-  announcementEnabled: false,
-  announcement: "",
-  autoOrderEmailEnabled: true,
-  isOpen: true,
-});
-const sectionTitleSettings = ref<Record<string, any>>({
-  products: { title: "", color: "#268BD2", size: "text-lg", bold: true, iconUrl: "" },
-  delivery: { title: "", color: "#268BD2", size: "text-lg", bold: true, iconUrl: "" },
-  notes: { title: "", color: "#268BD2", size: "text-base", bold: true, iconUrl: "" },
+const brandingSettings = ref<DashboardBrandingSettings>(
+  createDefaultBrandingSettings(),
+);
+const storefrontSettings = ref<DashboardStorefrontSettings>(
+  createDefaultStorefrontSettings(),
+);
+const sectionTitleSettings = ref<DashboardSectionTitleSettingsMap>({
+  products: {
+    title: "",
+    color: "#268BD2",
+    size: "text-lg",
+    bold: true,
+    iconUrl: "",
+  },
+  delivery: {
+    title: "",
+    color: "#268BD2",
+    size: "text-lg",
+    bold: true,
+    iconUrl: "",
+  },
+  notes: {
+    title: "",
+    color: "#268BD2",
+    size: "text-base",
+    bold: true,
+    iconUrl: "",
+  },
 });
 
 let services: DashboardSettingsServices | null = null;
 let deliveryRoutingTableElement: HTMLElement | null = null;
-let deliverySortable: any = null;
+let deliverySortable: DashboardSortableInstance | null = null;
 let settingsLoadToken = 0;
 
 function getServices(): DashboardSettingsServices {
@@ -45,113 +108,6 @@ function getServices(): DashboardSettingsServices {
   return services;
 }
 
-function buildPaymentOptionsView(rawPaymentOptions: DashboardSettingsRecord = {}) {
-  const { normalizePaymentOption } = getServices();
-  return PAYMENT_METHOD_ORDER.reduce<Record<string, any>>((result, method) => {
-    result[method] = normalizePaymentOption(method, rawPaymentOptions?.[method]);
-    return result;
-  }, {});
-}
-
-function buildDefaultSectionTitleSettings(): Record<string, any> {
-  const { getDefaultIconUrl } = getServices();
-  return {
-    products: {
-      title: "咖啡豆選購",
-      color: "#268BD2",
-      size: "text-lg",
-      bold: true,
-      iconUrl: getDefaultIconUrl("products"),
-    },
-    delivery: {
-      title: "配送方式",
-      color: "#268BD2",
-      size: "text-lg",
-      bold: true,
-      iconUrl: getDefaultIconUrl("delivery"),
-    },
-    notes: {
-      title: "訂單備註",
-      color: "#268BD2",
-      size: "text-base",
-      bold: true,
-      iconUrl: getDefaultIconUrl("notes"),
-    },
-  };
-}
-
-function migrateLegacyDeliveryConfig(settings: DashboardSettingsRecord) {
-  const { defaultDeliveryOptions } = getServices();
-  const deliveryConfigStr = settings.delivery_options_config || "";
-  let deliveryConfig: any[] = [];
-
-  if (deliveryConfigStr) {
-    try {
-      deliveryConfig = JSON.parse(deliveryConfigStr);
-    } catch (error) {
-      console.error("Parsed delivery_options_config fails:", error);
-    }
-  }
-
-  if (deliveryConfig.length) return deliveryConfig;
-
-  const routingConfigStr = settings.payment_routing_config || "";
-  let routingConfig: Record<string, any> = {};
-  if (routingConfigStr) {
-    try {
-      routingConfig = JSON.parse(routingConfigStr);
-    } catch {
-    }
-  } else {
-    const linePayEnabled = String(settings.linepay_enabled) === "true";
-    const transferEnabled = String(settings.transfer_enabled) === "true";
-    routingConfig = {
-      in_store: {
-        cod: true,
-        linepay: linePayEnabled,
-        jkopay: linePayEnabled,
-        transfer: transferEnabled,
-      },
-      delivery: {
-        cod: true,
-        linepay: linePayEnabled,
-        jkopay: linePayEnabled,
-        transfer: transferEnabled,
-      },
-      home_delivery: {
-        cod: true,
-        linepay: linePayEnabled,
-        jkopay: linePayEnabled,
-        transfer: transferEnabled,
-      },
-      seven_eleven: {
-        cod: true,
-        linepay: false,
-        jkopay: false,
-        transfer: false,
-      },
-      family_mart: {
-        cod: true,
-        linepay: false,
-        jkopay: false,
-        transfer: false,
-      },
-    };
-  }
-
-  return Object.values(defaultDeliveryOptions as Record<string, any>).map((item) => ({
-    ...item,
-    payment: routingConfig[item.id] || {
-      cod: true,
-      linepay: false,
-      jkopay: false,
-      transfer: false,
-    },
-    fee: 0,
-    free_threshold: 0,
-  }));
-}
-
 function destroyDeliverySortable() {
   if (!deliverySortable) return;
   deliverySortable.destroy();
@@ -159,16 +115,13 @@ function destroyDeliverySortable() {
 }
 
 function reorderDeliveryOptions(ids: string[]) {
-  const currentItems = Array.isArray(deliveryOptions.value)
-    ? deliveryOptions.value
-    : [];
   const itemsById = new Map(
-    currentItems.map((item) => [String(item.id || ""), item]),
+    deliveryOptions.value.map((item) => [String(item.id || ""), item]),
   );
   const orderedItems = ids
     .map((id) => itemsById.get(String(id)))
-    .filter(Boolean);
-  const remainingItems = currentItems.filter((item) =>
+    .filter((item): item is DashboardDeliveryOption => Boolean(item));
+  const remainingItems = deliveryOptions.value.filter((item) =>
     !ids.includes(String(item.id || ""))
   );
   deliveryOptions.value = [...orderedItems, ...remainingItems];
@@ -177,10 +130,11 @@ function reorderDeliveryOptions(ids: string[]) {
 async function syncDeliverySortable() {
   const { Sortable } = getServices();
   destroyDeliverySortable();
+
   const tableElement = deliveryRoutingTableElement;
   if (!tableElement?.querySelector?.("[data-delivery-id]")) return;
 
-  const createOptions: Record<string, any> = {
+  const createOptions: DashboardSortableOptions = {
     animation: 150,
     handle: ".cursor-move",
     ghostClass: "ui-bg-soft",
@@ -220,56 +174,14 @@ function registerDeliveryRoutingTableElement(element: HTMLElement | null) {
 
 function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
   rawSettings.value = settings;
-  const {
-    sectionIconSettingKey,
-    normalizeIconPath,
-    normalizeDeliveryOption,
-    parseBooleanSetting,
-    linePaySandboxCacheKey,
-  } = getServices();
-  const paymentOptionsStr = settings.payment_options_config || "";
-  let parsedPaymentOptions: DashboardSettingsRecord = {};
-  if (paymentOptionsStr) {
-    try {
-      parsedPaymentOptions = JSON.parse(paymentOptionsStr);
-    } catch {
-    }
-  }
+  const nextState = buildSettingsStateFromConfig(settings, getServices());
+  brandingSettings.value = nextState.brandingSettings;
+  storefrontSettings.value = nextState.storefrontSettings;
+  sectionTitleSettings.value = nextState.sectionTitleSettings;
+  paymentOptions.value = nextState.paymentOptions;
+  deliveryOptions.value = nextState.deliveryOptions;
 
-  brandingSettings.value = {
-    siteTitle: String(settings.site_title || ""),
-    siteSubtitle: String(settings.site_subtitle || ""),
-    siteEmoji: String(settings.site_icon_emoji || ""),
-    siteIconUrl: normalizeIconPath(settings.site_icon_url || ""),
-  };
-  storefrontSettings.value = {
-    announcementEnabled: String(settings.announcement_enabled) === "true",
-    announcement: String(settings.announcement || ""),
-    autoOrderEmailEnabled: parseBooleanSetting(
-      settings.order_confirmation_auto_email_enabled,
-      true,
-    ),
-    isOpen: String(settings.is_open) !== "false",
-  };
-  const defaultSectionTitleSettings = buildDefaultSectionTitleSettings();
-  sectionTitleSettings.value = SECTION_TITLE_ORDER.reduce<Record<string, any>>((result, section) => {
-    const defaults = defaultSectionTitleSettings[section];
-    result[section] = {
-      title: String(settings[`${section}_section_title`] || ""),
-      color: String(settings[`${section}_section_color`] || defaults.color),
-      size: String(settings[`${section}_section_size`] || defaults.size),
-      bold: String(settings[`${section}_section_bold`]) !== "false",
-      iconUrl: normalizeIconPath(
-        settings[sectionIconSettingKey(section)] || defaults.iconUrl,
-      ),
-    };
-    return result;
-  }, {});
-  paymentOptions.value = buildPaymentOptionsView(parsedPaymentOptions);
-  deliveryOptions.value = migrateLegacyDeliveryConfig(settings).map((item) =>
-    normalizeDeliveryOption(item)
-  );
-
+  const { parseBooleanSetting, linePaySandboxCacheKey } = getServices();
   const hasServerValue = Object.prototype.hasOwnProperty.call(
     settings,
     "linepay_sandbox",
@@ -291,28 +203,19 @@ function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
 }
 
 function resetSectionTitle(section: string) {
-  const defaults = buildDefaultSectionTitleSettings();
-  if (!defaults[section]) return;
+  const key = String(section || "").trim();
+  const defaults = buildDefaultSectionTitleSettings(getServices().getDefaultIconUrl);
+  if (!(key in defaults)) return;
   sectionTitleSettings.value = {
     ...sectionTitleSettings.value,
-    [section]: { ...defaults[section] },
+    [key]: { ...defaults[key as keyof typeof defaults] },
   };
 }
 
 function addDeliveryOption() {
-  const { normalizeDeliveryOption } = getServices();
   deliveryOptions.value = [
     ...deliveryOptions.value,
-    normalizeDeliveryOption({
-      id: `custom_${Date.now()}`,
-      icon: "",
-      name: "新物流方式",
-      description: "設定敘述",
-      enabled: true,
-      fee: 0,
-      free_threshold: 0,
-      payment: { cod: true, linepay: false, jkopay: false, transfer: false },
-    }),
+    createCustomDeliveryOption(Date.now(), getServices().normalizeDeliveryOption),
   ];
   queueDeliverySortableSync();
 }
@@ -324,60 +227,18 @@ function removeDeliveryOption(id: string | number) {
   queueDeliverySortableSync();
 }
 
-function buildSettingsConfig() {
-  const {
-    normalizeDeliveryOption,
-    normalizePaymentOption,
-    normalizeIconPath,
-  } = getServices();
-  const normalizedDeliveryOptions = deliveryOptions.value
-    .map((item) => normalizeDeliveryOption(item))
-    .filter((item) => item.name.trim());
-
-  const normalizedPaymentOptions = PAYMENT_METHOD_ORDER.reduce<Record<string, any>>((result, method) => {
-    result[method] = normalizePaymentOption(method, paymentOptions.value?.[method]);
-    return result;
-  }, {});
-
-  return {
-    settings: {
-      announcement_enabled: String(storefrontSettings.value.announcementEnabled),
-      announcement: storefrontSettings.value.announcement,
-      order_confirmation_auto_email_enabled: String(
-        storefrontSettings.value.autoOrderEmailEnabled,
-      ),
-      is_open: String(storefrontSettings.value.isOpen),
-      site_title: brandingSettings.value.siteTitle.trim(),
-      site_subtitle: brandingSettings.value.siteSubtitle.trim(),
-      site_icon_emoji: brandingSettings.value.siteEmoji.trim(),
-      site_icon_url: normalizeIconPath(brandingSettings.value.siteIconUrl),
-      products_section_title: sectionTitleSettings.value.products.title.trim(),
-      products_section_color: sectionTitleSettings.value.products.color,
-      products_section_size: sectionTitleSettings.value.products.size,
-      products_section_bold: String(sectionTitleSettings.value.products.bold),
-      products_section_icon_url: normalizeIconPath(
-        sectionTitleSettings.value.products.iconUrl,
-      ),
-      delivery_section_title: sectionTitleSettings.value.delivery.title.trim(),
-      delivery_section_color: sectionTitleSettings.value.delivery.color,
-      delivery_section_size: sectionTitleSettings.value.delivery.size,
-      delivery_section_bold: String(sectionTitleSettings.value.delivery.bold),
-      delivery_section_icon_url: normalizeIconPath(
-        sectionTitleSettings.value.delivery.iconUrl,
-      ),
-      notes_section_title: sectionTitleSettings.value.notes.title.trim(),
-      notes_section_color: sectionTitleSettings.value.notes.color,
-      notes_section_size: sectionTitleSettings.value.notes.size,
-      notes_section_bold: String(sectionTitleSettings.value.notes.bold),
-      notes_section_icon_url: normalizeIconPath(
-        sectionTitleSettings.value.notes.iconUrl,
-      ),
-      linepay_sandbox: String(linePaySandbox.value),
-      delivery_options_config: JSON.stringify(normalizedDeliveryOptions),
-      payment_options_config: JSON.stringify(normalizedPaymentOptions),
+function buildSettingsConfig(): DashboardSettingsPersistedConfig {
+  return buildSettingsPersistedConfig(
+    {
+      brandingSettings: brandingSettings.value,
+      storefrontSettings: storefrontSettings.value,
+      sectionTitleSettings: sectionTitleSettings.value,
+      deliveryOptions: deliveryOptions.value,
+      paymentOptions: paymentOptions.value,
+      linePaySandbox: linePaySandbox.value,
     },
-    linePaySandboxChecked: Boolean(linePaySandbox.value),
-  };
+    getServices(),
+  );
 }
 
 async function loadSettings() {
@@ -393,10 +254,9 @@ async function loadSettings() {
       `${API_URL}?action=getSettings&_=${Date.now()}`,
     );
     const data = await response.json();
-    if (currentLoadToken !== settingsLoadToken) return;
-    if (!data.success) return;
+    if (currentLoadToken !== settingsLoadToken || !data.success) return;
 
-    const settings = data.settings || {};
+    const settings = (data.settings || {}) as DashboardSettingsRecord;
     applyDashboardBranding?.(settings);
     replaceSettingsConfig(settings);
 
@@ -438,15 +298,18 @@ async function saveSettings() {
     Toast.fire({ icon: "success", title: "設定已儲存" });
     await loadSettings();
   } catch (error) {
-    Swal.fire("錯誤", error.message, "error");
+    const message = error instanceof Error ? error.message : String(error);
+    Swal.fire("錯誤", message, "error");
   }
 }
 
-export function configureDashboardSettingsServices(nextServices) {
+export function configureDashboardSettingsServices(
+  nextServices: Partial<DashboardSettingsServices>,
+) {
   services = {
-    ...services,
+    ...(services || {}),
     ...nextServices,
-  };
+  } as DashboardSettingsServices;
 }
 
 export function useDashboardSettings() {
@@ -457,7 +320,7 @@ export function useDashboardSettings() {
     deliveryOptions,
     paymentOptions,
     linePaySandbox,
-    paymentMethodOrder: PAYMENT_METHOD_ORDER,
+    paymentMethodOrder: [...PAYMENT_METHOD_ORDER],
   };
 }
 

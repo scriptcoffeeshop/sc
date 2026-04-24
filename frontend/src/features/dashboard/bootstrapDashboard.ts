@@ -72,8 +72,30 @@ import {
   getDashboardProducts,
 } from "./useDashboardProducts.ts";
 
-let dashboardTabLoaders = {};
-let loadInitialDashboardData = async () => {};
+type DashboardTabLoader = () => Promise<unknown> | unknown;
+type DashboardTabLoaderMap = Record<string, DashboardTabLoader>;
+
+interface OrdersTabLoadersDeps {
+  loadOrders: DashboardTabLoader;
+}
+
+interface ProductsTabLoadersDeps {
+  renderCategories: DashboardTabLoader;
+  loadPromotions: DashboardTabLoader;
+}
+
+interface SettingsTabLoadersDeps {
+  loadSettings: DashboardTabLoader;
+  loadFormFields: DashboardTabLoader;
+}
+
+interface UsersTabLoadersDeps {
+  loadUsers: DashboardTabLoader;
+  loadBlacklist: DashboardTabLoader;
+}
+
+let dashboardTabLoaders: DashboardTabLoaderMap = {};
+let loadInitialDashboardData: () => Promise<void> = async () => {};
 
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
 const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
@@ -89,20 +111,24 @@ const dashboardTabs = [
   "formfields",
 ];
 
-function createOrdersTabLoaders(deps: Record<string, any>) {
+function createOrdersTabLoaders(deps: OrdersTabLoadersDeps): DashboardTabLoaderMap {
   return {
     orders: () => deps.loadOrders(),
   };
 }
 
-function createProductsTabLoaders(deps: Record<string, any>) {
+function createProductsTabLoaders(
+  deps: ProductsTabLoadersDeps,
+): DashboardTabLoaderMap {
   return {
     categories: () => deps.renderCategories(),
     promotions: () => deps.loadPromotions(),
   };
 }
 
-function createSettingsTabLoaders(deps: Record<string, any>) {
+function createSettingsTabLoaders(
+  deps: SettingsTabLoadersDeps,
+): DashboardTabLoaderMap {
   return {
     settings: () => deps.loadSettings(),
     "icon-library": () => deps.loadSettings(),
@@ -110,7 +136,7 @@ function createSettingsTabLoaders(deps: Record<string, any>) {
   };
 }
 
-function createUsersTabLoaders(deps: Record<string, any>) {
+function createUsersTabLoaders(deps: UsersTabLoadersDeps): DashboardTabLoaderMap {
   return {
     users: () => deps.loadUsers(),
     blacklist: () => deps.loadBlacklist(),
