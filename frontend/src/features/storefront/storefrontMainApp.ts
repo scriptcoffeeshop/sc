@@ -114,22 +114,6 @@ export async function initMainApp() {
   }
 }
 
-function autoInitMainAppFallback() {
-  initMainApp().catch((error) => {
-    console.error("initMainApp fallback failed:", error);
-  });
-}
-
-if (typeof window !== "undefined") {
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", autoInitMainAppFallback, {
-      once: true,
-    });
-  } else {
-    autoInitMainAppFallback();
-  }
-}
-
 export async function showProfileModal() {
   return authActions.showProfileModal();
 }
