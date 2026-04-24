@@ -70,7 +70,7 @@
 - `useStorefrontCart.js`、`useStorefrontShell.js` 已轉為 `useStorefrontCart.ts`、`useStorefrontShell.ts`；目前 storefront 仍留在 JS 的 composable 已再縮減。
 - `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 相容 re-export 已移除。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；配送操作不再掛到 `window`，轉帳帳號選取只保留 state helper，DOM fallback renderer 已移除。
-- storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 也改成掛載同一張 Vue 卡片，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
+- storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 後續已移除，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
 - storefront legacy `js/*.js` 前台相容殼已移除；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - storefront 高流量 JSON fallback 已集中到 `frontend/src/lib/jsonUtils.ts`；cart/model/dynamic-fields/delivery/auth 路徑不再各自散落 `JSON.parse + catch {}`。
 - frontend production code 已移除匿名 `catch {}`；目前 fallback 行為維持不變，錯誤變數統一命名為 `_error`，方便後續集中補觀測與解析 helper。
@@ -171,6 +171,7 @@
 - `check_main_event_delegation.py` / `check_dashboard_event_delegation.py` 改為掃描 Vue/TS runtime 檔，阻擋 inline event attribute 與 `data-action` 事件代理回流。
 - `repo_hygiene_check.py` 新增 `js/` legacy 相容殼守門，後續若重新加入 tracked `js/` 檔會直接在 guardrails 失敗。
 - storefront 轉帳帳號 DOM fallback renderer 已移除：`storefrontBankAccountsUi.ts` 改為 `storefrontBankAccountsState.ts` 純狀態 helper，畫面與複製互動由 `StorefrontPaymentSection.vue` / `useStorefrontPayment.ts` 負責。
+- storefront「我的訂單」legacy fallback 已移除；`showMyOrders` 相容出口不再存在，開啟、載入、錯誤/空狀態與複製物流單號都由 `useStorefrontOrderHistory.ts` + `StorefrontOrderHistoryModal.vue` 管理。
 
 ### 2026-04-24
 
@@ -228,7 +229,7 @@
 - 完成 `tw-city-selector` audit 收斂：已移除 npm dependency，改用本地 `frontend/src/lib/twCitySelector.js` 與 `taiwanCityData.js`，資料取自原 runtime 的繁中縣市/區域/郵遞區號以維持全台宅配行為；新增 `twCitySelector.test.js` 保護縣市、區域、郵遞區號與 `setValue()`。`npm audit --omit=dev` 目前為 0 vulnerabilities。
 - 前端型別守門已完成升級：`npm run typecheck` 現在直接執行完整 `frontend/tsconfig.json`，並已串入 `ci-local`；補齊 dashboard products、storefront cart/delivery/form/main app/order submit/order history 等型別邊界與相容全域宣告後，`npm run typecheck:full` 目前可通過。
 - Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，`check_new_composables_ts.py` allowlist 已清空。
-- `storefrontOrderActions.ts` 已由 1324 行縮成相容 re-export：付款狀態/文案搬到 `storefrontPaymentDisplay.ts`，送單流程搬到 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別拆到 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`；legacy `showMyOrders()` fallback 搬到 `storefrontOrderHistoryLegacy.ts` 並改用既有 Vue `StorefrontOrderHistoryCard.vue` 渲染。
+- `storefrontOrderActions.ts` 已由 1324 行縮成出口層：付款狀態/文案搬到 `storefrontPaymentDisplay.ts`，送單流程搬到 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別拆到 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`；2026-04-25 已移除 legacy `showMyOrders()` fallback。
 - 前台訂單流程已補強共享型別：新增 `frontend/src/types/storefront.ts`，並讓送單、配送資訊、收據偏好、付款顯示與確認彈窗核心函式改用明確參數/回傳型別；`frontend/src/lib/swalDialogs.ts` 也開始集中常見 SweetAlert2 模式，後續可逐步把重複的 `Swal.fire()` 呼叫收斂到 helper。
 - shared legacy 最後一哩路已推進：`config.js`、`auth.js`、`utils.js`、`state.js`、`dashboard/api.js`、`dashboard-branding.js`、`order-shared.js` 的實作已搬到 `frontend/src/lib/*` 或 `frontend/src/features/dashboard/*`；Vite 內部 import 不再直接依賴這批 shared legacy 檔，2026-04-25 已移除 `js/` re-export 相容殼。
 - `storefrontMainApp.ts` 已移除剩餘 8 處 `window.*` 相容掛載，quote refresh、付款選項狀態、表單/UI callback 與 app settings/delivery config 都改走 `storefrontRuntime.ts` 模組 bridge；同檔直接 `Swal.*` 呼叫也已收斂到 `frontend/src/lib/swalDialogs.ts` helper。
@@ -310,7 +311,7 @@
 - dashboard page 已改成由 Vue `onMounted()` 直接載入 public branding；`dashboard-globals.js`、`initDashboardApp()` fallback 與舊的 `window.*` dashboard helper 已移除。
 - `Textarea.vue` 已補齊標準 `v-model` 支援，避免設定頁與前台多行欄位寫回失效。
 - storefront `delivery-options-list` / `bank-accounts-list` 已改由 `MainPage.vue` 直接渲染；配送選項沒有全域 renderer 或 `window.selectDelivery` 橋接，轉帳帳號 DOM renderer 後續已移除。
-- storefront `storefrontOrderActions.ts` 的「我的訂單」legacy fallback 已改成掛載 Vue `StorefrontOrderHistoryCard.vue`，延續 API XSS payload smoke 保護。
+- storefront `storefrontOrderActions.ts` 的「我的訂單」legacy fallback 後續已移除，API XSS payload smoke 由 Vue modal/card 路徑保護。
 - `coffee_orders` 已保留 `items TEXT` 摘要，新增 `items_json JSONB` 作為結構化訂單明細。
 - `coffee_orders.custom_fields`、`coffee_orders.receipt_info` 已改為 JSONB。
 - 新增 `scripts/check_migration_names.py`，未來 migration 檔名統一為 `YYYYMMDDHHmm_slug.sql`；歷史 migration 不回改。

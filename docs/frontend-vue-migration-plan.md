@@ -62,7 +62,7 @@ As of 2026-04-25:
   - storefront subcomponents: header, product grid, delivery section, payment section, bottom bar, cart drawer, order history modal
 - Remaining legacy-heavy areas:
   - local compatibility redirects for root `dashboard.html` / `main.html`
-  - storefront DOM fallback helpers that still coordinate store-search/order-history side effects from `frontend/src/features/storefront/`
+  - storefront DOM fallback helpers that still coordinate store-search side effects from `frontend/src/features/storefront/`
   - `data-vue-managed` compatibility guards that can be removed once the remaining fallback helpers are retired
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked

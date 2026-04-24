@@ -1,5 +1,5 @@
 // ============================================
-// storefrontOrderActions.ts — 訂單功能相容出口
+// storefrontOrderActions.ts — 訂單功能出口
 // ============================================
 
 export {
@@ -17,4 +17,3 @@ export {
   initReceiptRequestUi,
 } from "./storefrontOrderReceiptPrefs.ts";
 export { submitOrder } from "./storefrontOrderSubmit.ts";
-export { showMyOrders } from "./storefrontOrderHistoryLegacy.ts";
