@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: "在 main/master 手動執行時，同步跑 deploy jobs"
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: backend-ci-${{ github.ref }}
@@ -79,7 +85,7 @@ jobs:
 
   deploy_frontend:
     name: Deploy Frontend
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -119,7 +125,7 @@ jobs:
 
   deploy_backend:
     name: Deploy Supabase
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    if: (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.deploy)) && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     needs: test
     runs-on: ubuntu-latest
     env:

@@ -17,6 +17,7 @@
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
   - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
+  - 若需要手動重跑正式部署，可直接在 `.github/workflows/ci.yml` 的 `workflow_dispatch` 執行；預設 `deploy=true`，在 `main/master` 會連同前端與 Supabase deploy jobs 一起跑。
 - **檔案版號與快取**：**不可輕忽的手機 Cache**。正式站入口應為根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物；若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy`，應先檢查 repo 的 GitHub Pages 設定。legacy `js/*.js` 的 `?v=` 仍由 `.frontend-version` 與 `scripts/sync_frontend_version.py` 管理。GitHub Pages 的 Vite 產物則在 build 後統一改寫為穩定 `assets/*.js|css` 路徑，並於 CI deploy 時自動注入 commit SHA 版號，降低 push 後 HTML 與 asset 快取短暫失配造成的按鈕失效。若需要手動提升 legacy 版號，請執行 `python3 scripts/sync_frontend_version.py <新版本號>`，不要逐檔手動改。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 
@@ -59,6 +60,7 @@
   - 本專案 `origin` 預設為：`git@github-scriptcoffeeshop:scriptcoffeeshop/sc.git`。
   - 本專案 local git config 已固定 `core.sshCommand` 使用 `~/.ssh/id_ed25519`，避免切到其他專案時使用錯誤 SSH 身分。
   - GitHub Pages 由 `.github/workflows/ci.yml` 在 `main/master` push 成功後自動部署，repo 設定中的 Pages source 必須維持 `build_type=workflow`，不可回退到 `legacy / main / root`。
+  - `.github/workflows/ci.yml` 的 `workflow_dispatch` 已支援手動部署；若要演練測試但不 deploy，可將 `deploy` input 關閉。
 - **Supabase（固定本專案憑證來源）**：
   - 請優先使用：
     - `npm run supabase:deploy`

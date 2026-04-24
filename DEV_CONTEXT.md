@@ -2,7 +2,7 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。
 
-最後更新：2026-04-23
+最後更新：2026-04-24
 
 ---
 
@@ -29,10 +29,11 @@
 - 前端：`Vite + Vue 3`；正式站 deploy 入口為根目錄 `/main.html` / `/dashboard.html`（由 GitHub Pages workflow artifact 提供）
 - 後端：`Supabase Edge Functions`（Deno / Hono）
 - 前端 legacy 版號來源：`.frontend-version`
-- 目前前端版號：`130`
+- 目前前端版號：`131`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會以 `workflow` 模式自動部署前端
+  - `.github/workflows/ci.yml` 的 `workflow_dispatch` 預設 `deploy=true`，可在 `main/master` 手動補跑前端與 Supabase deploy jobs
   - Supabase `db push` / `coffee-api` deploy 需 repo secrets 已設好
   - 2026-04-23 已確認並修正 GitHub Pages source：從 `legacy / main / root` 切回 `workflow`，並重跑成功 workflow `24798560081` 讓正式站重新指向 build artifact
 
@@ -120,6 +121,7 @@
 ### 自動部署限制
 
 - 前端自動部署已正常。
+- 手動 `workflow_dispatch` 現在預設也會帶 deploy；若只想跑測試不想部署，需手動把 `deploy` input 關掉。
 - 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過 setup / db push / function deploy，並在 Actions summary 寫出「Supabase deployment skipped」；後端 function 變更仍需確認 deploy step 真的有跑，或用本機已登入的 Supabase CLI 手動 `rtk npm run supabase:deploy`。
 - 街口正式環境要求的來源 IP 白名單不在 repo 內管理；若使用 Cloudflare、主機防火牆或其他 WAF，需在外部平台另行設定。
 
@@ -131,6 +133,13 @@
 ---
 
 ## 5) 最近有效變更
+
+### 2026-04-24
+
+- `ci.yml` 的 `workflow_dispatch` 新增 `deploy` boolean input，預設為 `true`；現在在 `main/master` 手動觸發 workflow 會連同 `Deploy Frontend` / `Deploy Supabase` 一起跑，不再只有 test job。
+- `frontend/src/features/storefront/storefrontMainApp.ts` 已收斂成組裝層，auth/profile、quote/payment/bank account、LINE Pay/街口回跳分別拆到 `storefrontMainAppAuth.ts`、`storefrontMainAppPayments.ts`、`storefrontMainAppReturns.ts`。
+- `tests/e2e/support/smoke-fixtures.ts` 已改成相容 barrel export，實際實作拆到 `smoke-shared.ts`、`smoke-color.ts`、`smoke-global-stubs.ts`、`smoke-main-routes.ts`、`smoke-dashboard-routes.ts`，降低單檔回歸風險。
+- 本輪局部驗證已通過：`npm run guardrails`、`npm run typecheck`、`npx playwright test tests/e2e/smoke/storefront.spec.ts tests/e2e/smoke/dashboard.spec.ts --config=playwright.config.ts`。
 
 ### 2026-04-23
 
