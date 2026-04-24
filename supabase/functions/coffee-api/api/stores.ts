@@ -199,6 +199,33 @@ function getDataValue(data: Record<string, unknown>, keys: string[]): string {
   return "";
 }
 
+function buildStoreSelectionErrorHtml(params: {
+  title: string;
+  heading: string;
+  message: string;
+}): string {
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${
+    escapeHtml(params.title)
+  }</title></head><body><h3>${escapeHtml(params.heading)}</h3><p>${
+    escapeHtml(params.message)
+  }</p></body></html>`;
+}
+
+async function saveStoreSelectionCallback(params: {
+  token: string;
+  storeId: string;
+  storeName: string;
+  storeAddress: string;
+  logisticsSubType: string;
+}): Promise<{ error?: { message?: string } | null }> {
+  return await supabase.from("coffee_store_selections").update({
+    cvs_store_id: params.storeId,
+    cvs_store_name: params.storeName,
+    cvs_address: params.storeAddress,
+    logistics_sub_type: params.logisticsSubType,
+  }).eq("token", params.token);
+}
+
 function buildStoreSelectionSuccessHtml(params: {
   title: string;
   heading: string;
@@ -326,18 +353,21 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
     "logisticsSubType",
   ]);
 
-  const { error } = await supabase.from("coffee_store_selections").update({
-    cvs_store_id: storeId,
-    cvs_store_name: storeName,
-    cvs_address: storeAddress,
-    logistics_sub_type: logisticsSubType,
-  }).eq("token", token);
+  const { error } = await saveStoreSelectionCallback({
+    token,
+    storeId,
+    storeName,
+    storeAddress,
+    logisticsSubType,
+  });
 
   if (error) {
     return htmlResponse(
-      `<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>${
-        escapeHtml(error.message)
-      }</p></body></html>`,
+      buildStoreSelectionErrorHtml({
+        title: "門市回傳失敗",
+        heading: "門市回傳失敗",
+        message: error.message || "門市資料寫入失敗",
+      }),
       500,
     );
   }
@@ -388,9 +418,11 @@ export async function handlePcscMapCallback(
   );
   if (!token) {
     return htmlResponse(
-      `<!doctype html><html><head><meta charset="utf-8"><title>門市選擇錯誤</title></head><body>
-        <h3>門市選擇失敗</h3><p>缺少驗證資訊，請返回訂購頁面重新選擇門市。</p>
-      </body></html>`,
+      buildStoreSelectionErrorHtml({
+        title: "門市選擇錯誤",
+        heading: "門市選擇失敗",
+        message: "缺少驗證資訊，請返回訂購頁面重新選擇門市。",
+      }),
       400,
     );
   }
@@ -400,18 +432,21 @@ export async function handlePcscMapCallback(
   const storeName = getDataValue(data, ["storename", "StoreName"]);
   const storeAddress = getDataValue(data, ["storeaddress", "StoreAddress"]);
 
-  const { error } = await supabase.from("coffee_store_selections").update({
-    cvs_store_id: storeId,
-    cvs_store_name: storeName,
-    cvs_address: storeAddress,
-    logistics_sub_type: "UNIMARTC2C",
-  }).eq("token", token);
+  const { error } = await saveStoreSelectionCallback({
+    token,
+    storeId,
+    storeName,
+    storeAddress,
+    logisticsSubType: "UNIMARTC2C",
+  });
 
   if (error) {
     return htmlResponse(
-      `<!doctype html><html><head><meta charset="utf-8"><title>門市回傳失敗</title></head><body><h3>門市回傳失敗</h3><p>${
-        escapeHtml(error.message)
-      }</p></body></html>`,
+      buildStoreSelectionErrorHtml({
+        title: "門市回傳失敗",
+        heading: "門市回傳失敗",
+        message: error.message || "門市資料寫入失敗",
+      }),
       500,
     );
   }
