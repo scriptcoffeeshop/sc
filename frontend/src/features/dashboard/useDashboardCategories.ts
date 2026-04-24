@@ -1,31 +1,91 @@
 import { computed, nextTick, ref } from "vue";
 
-const categories = ref([]);
+import type {
+  DashboardAuthFetch,
+  DashboardSwal,
+  DashboardToast,
+} from "./dashboardOrderTypes";
+
+type DashboardCategoryRecord = Record<string, unknown> & {
+  id: number | string;
+  name: string;
+};
+
+type CategorySortableEvent = {
+  oldIndex?: number;
+  newIndex?: number;
+};
+
+type CategorySortableInstance = {
+  destroy: () => void;
+};
+
+type CategorySortableService = {
+  create?: (
+    element: Element,
+    options: {
+      handle: string;
+      animation: number;
+      onEnd: (event: CategorySortableEvent) => void | Promise<void>;
+    },
+  ) => CategorySortableInstance;
+};
+
+type DashboardCategoriesServices = {
+  API_URL: string;
+  authFetch: DashboardAuthFetch;
+  getAuthUserId: () => string;
+  onCategoriesChanged?: (categories: DashboardCategoryRecord[]) => unknown;
+  loadProducts?: () => Promise<unknown> | unknown;
+  Sortable?: CategorySortableService | null;
+  Swal: DashboardSwal;
+  Toast: DashboardToast;
+};
+
+const categories = ref<DashboardCategoryRecord[]>([]);
 const newCategoryName = ref("");
 
-let categoriesMap = {};
-let services = null;
-let categoriesListElement = null;
-let categorySortable = null;
+let categoriesMap: Record<string, DashboardCategoryRecord> = {};
+let services: DashboardCategoriesServices | null = null;
+let categoriesListElement: HTMLElement | null = null;
+let categorySortable: CategorySortableInstance | null = null;
 
-function getServices() {
+function getServices(): DashboardCategoriesServices {
   if (!services) {
     throw new Error("Dashboard categories services 尚未初始化");
   }
   return services;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function normalizeCategory(value: unknown): DashboardCategoryRecord | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (record.id === undefined || record.id === null) return null;
+  return {
+    ...record,
+    id:
+      typeof record.id === "number" || typeof record.id === "string"
+        ? record.id
+        : String(record.id),
+    name: String(record.name || ""),
+  };
+}
+
 function syncCategoriesMap(nextCategories = categories.value) {
   categoriesMap = {};
   (Array.isArray(nextCategories) ? nextCategories : []).forEach((category) => {
-    categoriesMap[category.id] = category;
+    categoriesMap[String(category.id || "")] = category;
   });
 }
 
-function buildCategoryViewModel(category) {
+function buildCategoryViewModel(category: DashboardCategoryRecord) {
   return {
-    id: Number(category?.id) || 0,
-    name: String(category?.name || ""),
+    id: Number(category.id) || 0,
+    name: String(category.name || ""),
   };
 }
 
@@ -63,7 +123,7 @@ async function syncCategorySortable() {
       try {
         await updateCategoryOrders(ids);
       } catch (error) {
-        Swal.fire("錯誤", error?.message || "分類排序更新失敗", "error");
+        Swal.fire("錯誤", getErrorMessage(error, "分類排序更新失敗"), "error");
         await loadCategories();
       }
     },
@@ -75,7 +135,7 @@ async function queueCategoriesSync() {
   await syncCategorySortable();
 }
 
-function registerCategoriesListElement(element) {
+function registerCategoriesListElement(element: HTMLElement | null) {
   categoriesListElement = element || null;
   if (categoriesListElement) {
     queueCategoriesSync();
@@ -95,7 +155,9 @@ async function loadCategories() {
     );
     const data = await response.json();
     if (!data.success) return;
-    categories.value = Array.isArray(data.categories) ? data.categories : [];
+    categories.value = Array.isArray(data.categories)
+      ? data.categories.map(normalizeCategory).filter((category) => category !== null)
+      : [];
     syncCategoriesMap();
     notifyCategoriesChanged();
     await queueCategoriesSync();
@@ -121,13 +183,13 @@ async function addCategory() {
     Toast.fire({ icon: "success", title: "已新增" });
     await loadCategories();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "新增分類失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "新增分類失敗"), "error");
   }
 }
 
-async function editCategory(id) {
+async function editCategory(id: number | string) {
   syncCategoriesMap();
-  const category = categoriesMap[id];
+  const category = categoriesMap[String(id)];
   if (!category) {
     getServices().Swal.fire("錯誤", "找不到分類", "error");
     return;
@@ -162,11 +224,11 @@ async function editCategory(id) {
     await loadCategories();
     await loadProducts?.();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "分類更新失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "分類更新失敗"), "error");
   }
 }
 
-async function delCategory(id) {
+async function delCategory(id: number | string) {
   const confirmation = await getServices().Swal.fire({
     title: "刪除分類？",
     icon: "warning",
@@ -191,11 +253,11 @@ async function delCategory(id) {
     await loadCategories();
     await loadProducts?.();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "分類刪除失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "分類刪除失敗"), "error");
   }
 }
 
-async function updateCategoryOrders(ids) {
+async function updateCategoryOrders(ids: number[]) {
   const { API_URL, authFetch, getAuthUserId } = getServices();
   const response = await authFetch(`${API_URL}?action=reorderCategory`, {
     method: "POST",
@@ -209,7 +271,9 @@ async function updateCategoryOrders(ids) {
   await loadCategories();
 }
 
-export function configureDashboardCategoriesServices(nextServices) {
+export function configureDashboardCategoriesServices(
+  nextServices: DashboardCategoriesServices,
+) {
   services = {
     ...services,
     ...nextServices,

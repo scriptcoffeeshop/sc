@@ -257,7 +257,6 @@ configureDashboardCategoriesServices({
   Toast,
   Swal,
   Sortable,
-  requestAnimationFrame: globalThis.requestAnimationFrame?.bind(globalThis),
 });
 
 configureDashboardPromotionsServices({

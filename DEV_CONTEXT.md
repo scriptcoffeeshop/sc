@@ -53,6 +53,7 @@
   - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.ts`、`useDashboardProducts.ts`、`useDashboardCategories.ts`、`useDashboardPromotions.ts`、`useDashboardFormFields.ts`、`useDashboardUsers.ts`)；其中 `useDashboardOrders.ts` 已再拆出 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`，避免單一 composable 持續膨脹
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.ts`)
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`）；`useDashboardSettings.ts` 的純設定轉換/預設值/legacy migration 已開始抽到 `dashboardSettingsConfig.ts`
+  - dashboard categories composable 已補上 category/service/sortable 型別與 API normalize，分類排序與 CRUD 不再依賴隱式 services/null 型別。
 - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、bank accounts 等卡片元件；取貨方式與付款對應、金流選項顯示已抽到獨立 `付款與取貨` 頁籤 (`DashboardCheckoutSettingsSection.vue`)
