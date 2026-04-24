@@ -1,7 +1,9 @@
+import { createApp, type App } from "vue";
 import { API_URL } from "../../lib/appConfig.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
 import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
+import StorefrontStoreSearchPicker from "./StorefrontStoreSearchPicker.vue";
 import {
   normalizeStoreRecord,
   setElementText,
@@ -80,83 +82,32 @@ export async function openStoreSearchModal(): Promise<void> {
     }
   }
 
+  let searchPickerApp: App<Element> | null = null;
   await Swal.fire({
     title: "搜尋門市",
-    html: `
-            <input id="store-search-input" class="swal2-input" placeholder="輸入門市名稱、地址或關鍵字" style="width:90%">
-            <div id="store-search-results" style="max-height:300px; overflow-y:auto; margin-top:12px; text-align:left;"></div>
-            <p id="store-search-hint" style="color:#999; font-size:12px; margin-top:8px;">共 ${allStores.length} 間門市，請輸入關鍵字搜尋</p>
-        `,
+    html: '<div id="store-search-vue-root"></div>',
     showConfirmButton: false,
     showCloseButton: true,
     width: 480,
     didOpen: () => {
-      const searchInput = document.getElementById("store-search-input");
-      const resultsDiv = document.getElementById("store-search-results");
-      const hintP = document.getElementById("store-search-hint");
-      if (
-        !(searchInput instanceof HTMLInputElement) ||
-        !resultsDiv ||
-        !hintP
-      ) {
-        return;
-      }
-      searchInput.focus();
-      searchInput.addEventListener("input", () => {
-        const kw = searchInput.value.trim().toLowerCase();
-        if (kw.length < 1) {
-          resultsDiv.replaceChildren();
-          hintP.textContent = `共 ${allStores.length} 間門市，請輸入關鍵字搜尋`;
-          return;
-        }
-        const matches = allStores.filter((store) =>
-          store.name.toLowerCase().includes(kw) ||
-          store.address.toLowerCase().includes(kw) || store.id.includes(kw)
-        ).slice(0, 50);
-        hintP.textContent = matches.length >= 50
-          ? `顯示前 50 筆，請輸入更精確的關鍵字`
-          : `找到 ${matches.length} 間門市`;
-        const fragment = document.createDocumentFragment();
-        matches.forEach((store) => {
-          const item = document.createElement("div");
-          item.className = "store-result-item";
-          item.dataset.storeResult = "true";
-          item.dataset.id = String(store.id || "");
-          item.dataset.name = String(store.name || "");
-          item.dataset.addr = String(store.address || "");
-          item.style.padding = "10px 12px";
-          item.style.borderBottom = "1px solid #eee";
-          item.style.cursor = "pointer";
-          item.style.transition = "background 0.2s";
-
-          const name = document.createElement("div");
-          name.style.fontWeight = "600";
-          name.style.fontSize = "14px";
-          name.textContent = String(store.name || "");
-
-          const address = document.createElement("div");
-          address.style.color = "#666";
-          address.style.fontSize = "12px";
-          address.textContent = String(store.address || "");
-
-          const code = document.createElement("div");
-          code.style.color = "#aaa";
-          code.style.fontSize = "11px";
-          code.textContent = `代號：${String(store.id || "")}`;
-
-          item.append(name, address, code);
-          item.addEventListener("click", () => {
-            applyStoreSelection({
-              storeId: item.dataset.id,
-              storeName: item.dataset.name,
-              storeAddress: item.dataset.addr,
-            });
-            Swal.close();
+      const root = document.getElementById("store-search-vue-root");
+      if (!root) return;
+      searchPickerApp = createApp(StorefrontStoreSearchPicker, {
+        stores: allStores,
+        onSelectStore: (store: StoreRecord) => {
+          applyStoreSelection({
+            storeId: store.id,
+            storeName: store.name,
+            storeAddress: store.address,
           });
-          fragment.appendChild(item);
-        });
-        resultsDiv.replaceChildren(fragment);
+          Swal.close();
+        },
       });
+      searchPickerApp.mount(root);
+    },
+    willClose: () => {
+      searchPickerApp?.unmount();
+      searchPickerApp = null;
     },
   });
 }

@@ -172,6 +172,7 @@
 - `repo_hygiene_check.py` 新增 `js/` legacy 相容殼守門，後續若重新加入 tracked `js/` 檔會直接在 guardrails 失敗。
 - storefront 轉帳帳號 DOM fallback renderer 已移除：`storefrontBankAccountsUi.ts` 改為 `storefrontBankAccountsState.ts` 純狀態 helper，畫面與複製互動由 `StorefrontPaymentSection.vue` / `useStorefrontPayment.ts` 負責。
 - storefront「我的訂單」legacy fallback 已移除；`showMyOrders` 相容出口不再存在，開啟、載入、錯誤/空狀態與複製物流單號都由 `useStorefrontOrderHistory.ts` + `StorefrontOrderHistoryModal.vue` 管理。
+- storefront 門市搜尋彈窗改由 `StorefrontStoreSearchPicker.vue` 掛在 SweetAlert 容器內，搜尋輸入、結果列表與門市點選不再由 `storefrontStoreSearch.ts` 手動 `createElement/addEventListener`。
 
 ### 2026-04-24
 
