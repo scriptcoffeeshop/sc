@@ -1,16 +1,15 @@
 import { parseJsonRecord } from "../../lib/jsonUtils.ts";
 import {
+  getDashboardFormControlValue,
+  getDashboardInputChecked,
+} from "./dashboardFormControls.ts";
+import {
   escapeHtml,
   FIELD_TYPE_LABELS,
   parseFieldOptionsText,
   serializeFieldOptions,
   type DashboardFormField,
 } from "./dashboardFormFieldsShared.ts";
-
-type DashboardFormControl =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
 
 export interface DashboardDeliveryOptionLike {
   id?: string | number;
@@ -25,18 +24,6 @@ export interface DashboardFormFieldModalValues {
   options: string;
   required: boolean;
   deliveryVisibility: string | null;
-}
-
-function getFormControl(id: string): DashboardFormControl | null {
-  return document.getElementById(id) as DashboardFormControl | null;
-}
-
-function getFormControlValue(id: string): string {
-  return String(getFormControl(id)?.value || "").trim();
-}
-
-function isFormCheckboxChecked(id: string): boolean {
-  return Boolean((document.getElementById(id) as HTMLInputElement | null)?.checked);
 }
 
 export function renderDeliveryVisibilityCheckboxes(
@@ -160,31 +147,31 @@ export function buildEditFieldModalHtml(field: DashboardFormField): string {
 }
 
 export function collectAddFieldFormValues(): DashboardFormFieldModalValues | false {
-  const fieldKey = getFormControlValue("swal-fk");
-  const label = getFormControlValue("swal-fl");
+  const fieldKey = getDashboardFormControlValue("swal-fk");
+  const label = getDashboardFormControlValue("swal-fl");
   if (!fieldKey || !label) return false;
 
   return {
     fieldKey,
     label,
-    fieldType: getFormControlValue("swal-ft"),
-    placeholder: getFormControlValue("swal-fp"),
-    options: serializeFieldOptions(getFormControlValue("swal-fo")),
-    required: isFormCheckboxChecked("swal-fr"),
+    fieldType: getDashboardFormControlValue("swal-ft"),
+    placeholder: getDashboardFormControlValue("swal-fp"),
+    options: serializeFieldOptions(getDashboardFormControlValue("swal-fo")),
+    required: getDashboardInputChecked("swal-fr"),
     deliveryVisibility: collectDeliveryVisibility(),
   };
 }
 
 export function collectEditFieldFormValues(): DashboardFormFieldModalValues | false {
-  const label = getFormControlValue("swal-fl");
+  const label = getDashboardFormControlValue("swal-fl");
   if (!label) return false;
 
   return {
     label,
-    fieldType: getFormControlValue("swal-ft"),
-    placeholder: getFormControlValue("swal-fp"),
-    options: serializeFieldOptions(getFormControlValue("swal-fo")),
-    required: isFormCheckboxChecked("swal-fr"),
+    fieldType: getDashboardFormControlValue("swal-ft"),
+    placeholder: getDashboardFormControlValue("swal-fp"),
+    options: serializeFieldOptions(getDashboardFormControlValue("swal-fo")),
+    required: getDashboardInputChecked("swal-fr"),
     deliveryVisibility: collectDeliveryVisibility(),
   };
 }

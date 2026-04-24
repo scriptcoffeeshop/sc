@@ -1,6 +1,6 @@
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-import { getFormControlValue } from "./dashboardOrdersView.ts";
+import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
 import type { DashboardOrderServices } from "./dashboardOrderTypes.ts";
 
 type CreateDashboardOrdersBulkActionsOptions = {
@@ -53,13 +53,15 @@ export function createDashboardOrdersBulkActions(
         confirmButtonColor: "#268BD2",
         focusConfirm: false,
         preConfirm: () => {
-          const trackingNumberValue = getFormControlValue(
+          const trackingNumberValue = getDashboardFormControlValue(
             "swal-batch-tracking-number",
           );
-          const shippingProviderValue = getFormControlValue(
+          const shippingProviderValue = getDashboardFormControlValue(
             "swal-batch-shipping-provider",
           );
-          const trackingUrlValue = getFormControlValue("swal-batch-tracking-url");
+          const trackingUrlValue = getDashboardFormControlValue(
+            "swal-batch-tracking-url",
+          );
           if (trackingUrlValue && !/^https?:\/\//i.test(trackingUrlValue)) {
             Swal.showValidationMessage?.(
               "物流追蹤網址需以 http:// 或 https:// 開頭",

@@ -1,6 +1,6 @@
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-import { getFormControlValue } from "./dashboardOrdersView.ts";
+import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
 import type {
   DashboardAuthFetch,
   DashboardOrderRecord,
@@ -65,13 +65,15 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
           confirmButtonColor: "#268BD2",
           focusConfirm: false,
           preConfirm: () => {
-            const trackingNumberValue = getFormControlValue(
+            const trackingNumberValue = getDashboardFormControlValue(
               "swal-tracking-number",
             );
-            const shippingProviderValue = getFormControlValue(
+            const shippingProviderValue = getDashboardFormControlValue(
               "swal-shipping-provider",
             );
-            const trackingUrlValue = getFormControlValue("swal-tracking-url");
+            const trackingUrlValue = getDashboardFormControlValue(
+              "swal-tracking-url",
+            );
             if (
               trackingUrlValue &&
               !/^https?:\/\//i.test(trackingUrlValue)
@@ -119,7 +121,9 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
           confirmButtonColor: "#DC322F",
           focusConfirm: false,
           preConfirm: () => {
-            const reasonValue = getFormControlValue("swal-cancel-reason");
+            const reasonValue = getDashboardFormControlValue(
+              "swal-cancel-reason",
+            );
             return { cancelReason: reasonValue };
           },
         });

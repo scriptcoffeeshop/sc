@@ -76,6 +76,7 @@
 - frontend production code 已移除匿名 `catch {}`；目前 fallback 行為維持不變，錯誤變數統一命名為 `_error`，方便後續集中補觀測與解析 helper。
 - frontend feature 模組已不再直接手寫 `JSON.parse`；settings/products/form-fields/session/promotions/storefront receipt/cart/payment 等路徑改共用 `jsonUtils.ts` 的 record/array 解析 helper。
 - dashboard 錯誤訊息 fallback 已集中到 `dashboardErrors.ts`；products/categories/promotions/formfields/bank accounts/users/orders/settings/order notification 不再各自維護 `getErrorMessage()`。
+- dashboard SweetAlert/form modal 的 input/select/textarea/checkbox 讀值已集中到 `dashboardFormControls.ts`；orders bulk/status、form fields、bank accounts 不再各自維護 DOM 取值 helper。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 表單 DOM 讀寫 helper 已集中在 `storefrontDeliveryDom.ts`；主入口、送出配送資訊與發票/轉帳偏好不再各自維護 input/select/checkbox 讀取邏輯。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。

@@ -12,15 +12,6 @@ import type {
   DashboardOrderRecord,
 } from "./dashboardOrderTypes.ts";
 
-export function getFormControlValue(id: string) {
-  const element = document.getElementById(id) as
-    | HTMLInputElement
-    | HTMLSelectElement
-    | HTMLTextAreaElement
-    | null;
-  return String(element?.value || "").trim();
-}
-
 function parseDateBound(dateStr: string, isEnd = false) {
   if (!dateStr) return null;
   const parsed = new Date(`${dateStr}T00:00:00`);

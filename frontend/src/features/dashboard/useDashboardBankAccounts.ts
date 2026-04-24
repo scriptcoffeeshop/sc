@@ -5,6 +5,7 @@ import type {
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
 
 interface BankAccountFormValues {
   bankCode?: string;
@@ -92,11 +93,6 @@ function isSortableConstructor(
   sortable: DashboardBankAccountsServices["Sortable"],
 ): sortable is BankAccountsSortableConstructor {
   return typeof sortable === "function";
-}
-
-function getFormInputValue(id: string): string {
-  const element = document.getElementById(id);
-  return element instanceof HTMLInputElement ? element.value.trim() : "";
 }
 
 function destroyBankAccountsSortable() {
@@ -226,10 +222,10 @@ async function openBankAccountModal({
     confirmButtonText,
     cancelButtonText: "取消",
     preConfirm: () => ({
-      bankCode: getFormInputValue("swal-bc"),
-      bankName: getFormInputValue("swal-bn"),
-      accountNumber: getFormInputValue("swal-an"),
-      accountName: getFormInputValue("swal-am"),
+      bankCode: getDashboardFormControlValue("swal-bc"),
+      bankName: getDashboardFormControlValue("swal-bn"),
+      accountNumber: getDashboardFormControlValue("swal-an"),
+      accountName: getDashboardFormControlValue("swal-am"),
     }),
   });
 
