@@ -1,50 +1,98 @@
 import { computed, nextTick, reactive, ref } from "vue";
+import {
+  buildGroupedProductsView,
+  buildSaveProductPayload,
+  cloneSpecs,
+  fillProductFormState,
+  resetProductFormState,
+  type DashboardProductFormState,
+  type DashboardProductRecord,
+  type DashboardProductSpec,
+} from "./dashboardProductsShared.ts";
 
-const defaultSpecs = [
-  { key: "quarter", label: "1/4磅", price: 0, enabled: true },
-  { key: "half", label: "半磅", price: 0, enabled: true },
-  { key: "drip_bag", label: "單包耳掛", price: 0, enabled: true },
-];
+interface DashboardToastLike {
+  fire: (...args: unknown[]) => unknown;
+}
 
-const products = ref([]);
-const categoryOptions = ref([]);
+interface DashboardSwalResult {
+  isConfirmed?: boolean;
+}
+
+interface DashboardSwalLike {
+  fire: (...args: unknown[]) => Promise<DashboardSwalResult> | unknown;
+}
+
+interface DashboardSortableInstance {
+  destroy?: () => void;
+}
+
+interface DashboardSortableConstructor {
+  create?: (
+    element: HTMLElement,
+    options: Record<string, unknown>,
+  ) => DashboardSortableInstance;
+}
+
+interface DashboardCategoryRecord {
+  id: number | string;
+  name: string;
+}
+
+interface DashboardProductsServices {
+  API_URL: string;
+  authFetch: (input: string, init?: RequestInit) => Promise<Response>;
+  getAuthUserId: () => string;
+  getCategories?: () => DashboardCategoryRecord[];
+  ensureCategoriesLoaded?: () => Promise<unknown> | unknown;
+  Sortable?: DashboardSortableConstructor | null;
+  Swal: DashboardSwalLike;
+  Toast: DashboardToastLike;
+}
+
+interface DashboardProductsResponse {
+  success?: boolean;
+  error?: string;
+  products?: DashboardProductRecord[];
+}
+
+type DashboardProductSortableWindow = Window & {
+  productSortables?: DashboardSortableInstance[];
+};
+
+const products = ref<DashboardProductRecord[]>([]);
+const categoryOptions = ref<Array<{ id: number | string; name: string }>>([]);
 const isProductModalOpen = ref(false);
 const categoriesVersion = ref(0);
 
-const productForm = reactive({
+const productForm = reactive<DashboardProductFormState>({
   id: "",
   category: "",
   name: "",
   description: "",
   roastLevel: "",
   enabled: true,
-  specs: [],
+  specs: cloneSpecs(),
 });
 
-let productsMap = {};
-let services = null;
-let productsTableElement = null;
+let productsMap: Record<string | number, DashboardProductRecord> = {};
+let services: DashboardProductsServices | null = null;
+let productsTableElement: HTMLElement | null = null;
 
-function getServices() {
+function getServices(): DashboardProductsServices {
   if (!services) {
     throw new Error("Dashboard products services 尚未初始化");
   }
   return services;
 }
 
-function cloneSpecs(specs = defaultSpecs) {
-  return specs.map((spec) => ({
-    key: String(spec.key || ""),
-    label: String(spec.label || ""),
-    price: Number(spec.price) || 0,
-    enabled: Boolean(spec.enabled),
-  }));
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message || fallback : fallback;
 }
 
-function syncProductsMap(nextProducts = products.value) {
+function syncProductsMap(nextProducts: DashboardProductRecord[] = products.value) {
   productsMap = {};
   (Array.isArray(nextProducts) ? nextProducts : []).forEach((product) => {
-    productsMap[product.id] = product;
+    productsMap[product.id || ""] = product;
   });
 }
 
@@ -56,83 +104,42 @@ function refreshCategoryOptions() {
   }));
 }
 
-function getProductPriceLines(product) {
-  try {
-    const specs = product.specs ? JSON.parse(product.specs) : [];
-    const enabledSpecs = specs.filter((spec) => spec.enabled);
-    if (enabledSpecs.length > 0) {
-      return enabledSpecs.map((spec) => ({
-        label: spec.label || "",
-        price: Number(spec.price) || 0,
-        isSpec: true,
-      }));
-    }
-  } catch {
-  }
-  return [{ label: "", price: Number(product.price) || 0, isSpec: false }];
-}
-
-function buildProductViewModel(product) {
-  const enabled = Boolean(product?.enabled);
-  return {
-    id: Number(product?.id) || 0,
-    category: product?.category || "",
-    name: product?.name || "",
-    description: product?.description || "",
-    roastLevel: product?.roastLevel || "",
-    enabled,
-    statusLabel: enabled ? "啟用" : "未啟用",
-    statusClass: enabled ? "ui-text-success" : "ui-text-muted",
-    priceLines: getProductPriceLines(product),
-  };
-}
-
 const productsGroupsView = computed(() => {
   categoriesVersion.value;
-  const grouped = {};
-  products.value.forEach((product) => {
-    const category = product?.category || "";
-    if (!grouped[category]) grouped[category] = [];
-    grouped[category].push(buildProductViewModel(product));
-  });
   const { getCategories } = getServices();
   const categoryOrder = (getCategories?.() || []).map((category) => category.name);
-  const sortedCategories = Object.keys(grouped).sort((a, b) => {
-    const aIndex = categoryOrder.indexOf(a);
-    const bIndex = categoryOrder.indexOf(b);
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-    return aIndex - bIndex;
-  });
-  return sortedCategories.map((category) => ({
-    category,
-    items: grouped[category],
-  }));
+  return buildGroupedProductsView(products.value, categoryOrder);
 });
 
 const productModalTitle = computed(() => productForm.id ? "編輯商品" : "新增商品");
 
-function resetProductForm() {
-  productForm.id = "";
-  productForm.category = "";
-  productForm.name = "";
-  productForm.description = "";
-  productForm.roastLevel = "";
-  productForm.enabled = true;
-  productForm.specs = cloneSpecs();
+function updateProductField(
+  field: keyof DashboardProductFormState,
+  value: string | boolean | DashboardProductSpec[],
+) {
+  if (field === "enabled") {
+    productForm.enabled = Boolean(value);
+    return;
+  }
+  if (field === "specs") {
+    productForm.specs = Array.isArray(value) ? value : productForm.specs;
+    return;
+  }
+
+  productForm[field] = String(value) as DashboardProductFormState[typeof field];
 }
 
-function updateProductField(field, value) {
-  productForm[field] = value;
-}
-
-function updateProductSpec(index, field, value) {
+function updateProductSpec(
+  index: number,
+  field: keyof DashboardProductSpec,
+  value: string | number | boolean,
+) {
   const targetSpec = productForm.specs[index];
   if (!targetSpec) return;
-  targetSpec[field] = field === "enabled" ? Boolean(value) : value;
+  targetSpec[field] = (field === "enabled" ? Boolean(value) : value) as never;
 }
 
-function addSpecRow(specData) {
+function addSpecRow(specData?: Partial<DashboardProductSpec>) {
   const spec = specData || { key: "", label: "", price: 0, enabled: true };
   productForm.specs.push({
     key: String(spec.key || ""),
@@ -142,42 +149,34 @@ function addSpecRow(specData) {
   });
 }
 
-function removeSpecRow(index) {
+function removeSpecRow(index: number) {
   if (index < 0 || index >= productForm.specs.length) return;
   productForm.specs.splice(index, 1);
 }
 
-function getSpecsFromForm() {
-  return productForm.specs.reduce((result, spec, index) => {
-    const label = String(spec.label || "").trim();
-    const price = Number(spec.price) || 0;
-    const enabled = Boolean(spec.enabled);
-    if (!label) return result;
-    const key = String(spec.key || "").trim() ||
-      label.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g, "_").toLowerCase() ||
-      `spec_${index}_${Date.now()}`;
-    result.push({ key, label, price, enabled });
-    return result;
-  }, []);
+function getProductSortablesWindow(): DashboardProductSortableWindow {
+  return window as DashboardProductSortableWindow;
 }
 
 async function syncProductSortables() {
   const { Sortable, Swal } = getServices();
   if (!Sortable?.create) return;
-  if (Array.isArray(window.productSortables)) {
-    window.productSortables.forEach((sortable) => sortable?.destroy?.());
+
+  const productsWindow = getProductSortablesWindow();
+  if (Array.isArray(productsWindow.productSortables)) {
+    productsWindow.productSortables.forEach((sortable) => sortable?.destroy?.());
   }
-  window.productSortables = [];
+  productsWindow.productSortables = [];
   if (!productsTableElement) return;
 
   const sortables = productsTableElement.querySelectorAll("tbody.sortable-tbody");
   sortables.forEach((tbody) => {
     if (!(tbody instanceof HTMLElement)) return;
     if (!tbody.querySelector("tr[data-id]")) return;
-    const sortable = Sortable.create(tbody, {
+    const sortable = Sortable.create?.(tbody, {
       handle: ".drag-handle",
       animation: 150,
-      onEnd: async (event) => {
+      onEnd: async (event: { oldIndex?: number; newIndex?: number }) => {
         if (event.oldIndex === event.newIndex) return;
         const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
           .map((row) =>
@@ -189,12 +188,12 @@ async function syncProductSortables() {
         try {
           await updateProductOrders(ids);
         } catch (error) {
-          Swal.fire("錯誤", error?.message || "商品排序更新失敗", "error");
+          Swal.fire("錯誤", getErrorMessage(error, "商品排序更新失敗"), "error");
           await loadProducts();
         }
       },
     });
-    window.productSortables.push(sortable);
+    if (sortable) productsWindow.productSortables.push(sortable);
   });
 }
 
@@ -203,7 +202,7 @@ async function queueProductTableSync() {
   await syncProductSortables();
 }
 
-function registerProductsTableElement(element) {
+function registerProductsTableElement(element: HTMLElement | null) {
   productsTableElement = element || null;
   if (productsTableElement) {
     queueProductTableSync();
@@ -220,7 +219,7 @@ async function loadProducts() {
   try {
     const { API_URL, authFetch } = getServices();
     const response = await authFetch(`${API_URL}?action=getProducts&_=${Date.now()}`);
-    const data = await response.json();
+    const data = await response.json() as DashboardProductsResponse;
     if (!data.success) return;
     products.value = Array.isArray(data.products) ? data.products : [];
     syncProductsMap();
@@ -236,7 +235,7 @@ function renderProducts() {
   return productsGroupsView.value;
 }
 
-async function moveProduct(id, direction) {
+async function moveProduct(id: number, direction: string) {
   try {
     const { API_URL, authFetch, getAuthUserId } = getServices();
     const response = await authFetch(`${API_URL}?action=reorderProduct`, {
@@ -244,43 +243,44 @@ async function moveProduct(id, direction) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: getAuthUserId(), id, direction }),
     });
-    const data = await response.json();
+    const data = await response.json() as { success?: boolean; error?: string };
     if (!data.success) throw new Error(data.error);
     await loadProducts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "商品排序失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "商品排序失敗"), "error");
   }
 }
 
-async function updateProductOrders(ids) {
+async function updateProductOrders(ids: number[]) {
   const { API_URL, authFetch, getAuthUserId } = getServices();
   const response = await authFetch(`${API_URL}?action=reorderProductsBulk`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId: getAuthUserId(), ids }),
   });
-  const data = await response.json();
+  const data = await response.json() as { success?: boolean; error?: string };
   if (!data.success) {
     throw new Error(data.error || "商品排序更新失敗");
   }
 }
 
-async function showProductModal() {
+async function ensureCategoriesReady() {
   const { getCategories, ensureCategoriesLoaded } = getServices();
   if (!(getCategories?.() || []).length) {
     await ensureCategoriesLoaded?.();
   }
   refreshCategoryOptions();
-  resetProductForm();
+}
+
+async function showProductModal() {
+  await ensureCategoriesReady();
+  resetProductFormState(productForm);
   isProductModalOpen.value = true;
 }
 
-async function editProduct(id) {
-  const { getCategories, ensureCategoriesLoaded, Swal } = getServices();
-  if (!(getCategories?.() || []).length) {
-    await ensureCategoriesLoaded?.();
-  }
-  refreshCategoryOptions();
+async function editProduct(id: number) {
+  const { Swal } = getServices();
+  await ensureCategoriesReady();
   syncProductsMap();
   const product = productsMap[id];
   if (!product) {
@@ -288,18 +288,7 @@ async function editProduct(id) {
     return;
   }
 
-  productForm.id = String(product.id || "");
-  productForm.category = product.category || "";
-  productForm.name = product.name || "";
-  productForm.description = product.description || "";
-  productForm.roastLevel = product.roastLevel || "";
-  productForm.enabled = Boolean(product.enabled);
-  let specs = [];
-  try {
-    if (product.specs) specs = JSON.parse(product.specs);
-  } catch {
-  }
-  productForm.specs = specs.length ? cloneSpecs(specs) : cloneSpecs();
+  fillProductFormState(productForm, product);
   isProductModalOpen.value = true;
 }
 
@@ -307,11 +296,13 @@ function closeProductModal() {
   isProductModalOpen.value = false;
 }
 
-async function saveProduct(event) {
+async function saveProduct(event?: Event) {
   event?.preventDefault?.();
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
-  const specs = getSpecsFromForm();
-  const enabledSpecs = specs.filter((spec) => spec.enabled);
+  const { enabledSpecs, payload } = buildSaveProductPayload(
+    productForm,
+    getAuthUserId(),
+  );
 
   if (!enabledSpecs.length) {
     Swal.fire("錯誤", "請至少啟用一個規格", "error");
@@ -320,20 +311,6 @@ async function saveProduct(event) {
   if (enabledSpecs.some((spec) => !spec.price || spec.price <= 0)) {
     Swal.fire("錯誤", "已啟用的規格必須設定價格", "error");
     return;
-  }
-
-  const payload: Record<string, any> = {
-    userId: getAuthUserId(),
-    category: productForm.category,
-    name: productForm.name,
-    description: productForm.description,
-    price: enabledSpecs[0]?.price || 0,
-    roastLevel: productForm.roastLevel,
-    specs: JSON.stringify(specs),
-    enabled: productForm.enabled,
-  };
-  if (productForm.id) {
-    payload.id = Number.parseInt(productForm.id, 10);
   }
 
   try {
@@ -345,17 +322,17 @@ async function saveProduct(event) {
         body: JSON.stringify(payload),
       },
     );
-    const data = await response.json();
+    const data = await response.json() as { success?: boolean; error?: string };
     if (!data.success) throw new Error(data.error);
     Toast.fire({ icon: "success", title: productForm.id ? "已更新" : "已新增" });
     closeProductModal();
     await loadProducts();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "商品儲存失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "商品儲存失敗"), "error");
   }
 }
 
-async function delProduct(id) {
+async function delProduct(id: number) {
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
   const confirmation = await Swal.fire({
     title: "刪除商品？",
@@ -364,7 +341,7 @@ async function delProduct(id) {
     confirmButtonColor: "#DC322F",
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
-  });
+  }) as DashboardSwalResult;
   if (!confirmation.isConfirmed) return;
 
   try {
@@ -373,16 +350,16 @@ async function delProduct(id) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId: getAuthUserId(), id }),
     });
-    const data = await response.json();
+    const data = await response.json() as { success?: boolean; error?: string };
     if (!data.success) return;
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadProducts();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "商品刪除失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "商品刪除失敗"), "error");
   }
 }
 
-async function toggleProductEnabled(id, enabled) {
+async function toggleProductEnabled(id: number, enabled: boolean) {
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
   syncProductsMap();
   const product = productsMap[id];
@@ -412,7 +389,7 @@ async function toggleProductEnabled(id, enabled) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await response.json();
+    const data = await response.json() as { success?: boolean; error?: string };
     if (!data.success) {
       throw new Error(data.error || "商品狀態更新失敗");
     }
@@ -423,15 +400,17 @@ async function toggleProductEnabled(id, enabled) {
       title: enabled ? "商品已啟用" : "商品已停用",
     });
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "商品狀態更新失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "商品狀態更新失敗"), "error");
   }
 }
 
-export function configureDashboardProductsServices(nextServices) {
+export function configureDashboardProductsServices(
+  nextServices: Partial<DashboardProductsServices>,
+) {
   services = {
-    ...services,
+    ...(services || {}),
     ...nextServices,
-  };
+  } as DashboardProductsServices;
 }
 
 export function getDashboardProducts() {

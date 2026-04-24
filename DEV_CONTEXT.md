@@ -53,7 +53,8 @@
   - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.ts`、`useDashboardProducts.ts`、`useDashboardCategories.ts`、`useDashboardPromotions.ts`、`useDashboardFormFields.ts`、`useDashboardUsers.ts`)；其中 `useDashboardOrders.ts` 已再拆出 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`，避免單一 composable 持續膨脹
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.ts`)
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`）；`useDashboardSettings.ts` 的純設定轉換/預設值/legacy migration 已開始抽到 `dashboardSettingsConfig.ts`
-  - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
+- `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
+- `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts 六個卡片元件
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，`js/dashboard-app.js` 現在只剩薄相容殼
@@ -148,6 +149,7 @@
 - E2E 支援層下一段已收斂：`tests/e2e/support/smoke-dashboard-routes.ts` 從單檔 800+ 行拆成 dispatcher + 多個 domain handler，dashboard smoke 回歸仍通過，後續要補 route stub 時可直接改對應 domain 檔，不必再回到單一大檔。
 - storefront 付款熱區也已開始降溫：`storefrontMainAppPayments.ts` 保留 settings/payment orchestration，quote manager 與 bank account fallback UI 拆出獨立 helper，storefront smoke / checkout 回歸仍通過。
 - `useDashboardSettingsIcons.ts` 已補上較明確的 service / preview map / icon upload response 型別與 key guard，維持既有行為但降低 icon 套用時的型別空窗；對應 unit test 仍通過。
+- dashboard products 也開始回到 orchestration：`useDashboardProducts.ts` 現在主要保留載入/排序/儲存 action，view/form/spec 純邏輯搬到 `dashboardProductsShared.ts`，原有 unit test 仍通過。
 - 前端靜態檢查已補齊：新增 `eslint.config.mjs` 與 `npm run lint:frontend`，`ci-local` 與 GitHub Actions test job 都會執行 Vue/TypeScript 前端 lint。
 - `guardrails` 新增 `scripts/check_dev_context_sync.py`，會比對 `DEV_CONTEXT.md` 的「最後更新」與 `.frontend-version` / 最新變更節點，降低文件與實際狀態漂移。
 - 本輪驗證已通過：`npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run ci-local`。
