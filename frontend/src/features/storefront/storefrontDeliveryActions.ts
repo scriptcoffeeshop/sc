@@ -7,6 +7,7 @@ import { Toast } from "../../lib/sharedUtils.ts";
 import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
 import TwCitySelector from "../../lib/twCitySelector.js";
+import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 let allStores = [];
@@ -110,11 +111,14 @@ export function selectDelivery(method, e = null, options: { skipQuote?: boolean 
     // 從 appSettings 重新抓取
     const deliveryConfigStr =
       storefrontRuntime.appSettings?.delivery_options_config || "";
-    let deliveryConfig = [];
+    let deliveryConfig: StorefrontDeliveryOption[] = [];
     if (deliveryConfigStr) {
       try {
-        deliveryConfig = JSON.parse(deliveryConfigStr);
-      } catch (e) {}
+        const parsed = JSON.parse(deliveryConfigStr);
+        deliveryConfig = Array.isArray(parsed)
+          ? parsed as StorefrontDeliveryOption[]
+          : [];
+      } catch {}
     }
     storefrontRuntime.updatePaymentOptionsState(deliveryConfig);
   }

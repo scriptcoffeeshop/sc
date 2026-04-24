@@ -16,6 +16,7 @@ import { createStorefrontMainAppAuth } from "./storefrontMainAppAuth.ts";
 import { createStorefrontMainAppPayments } from "./storefrontMainAppPayments.ts";
 import { createStorefrontMainAppReturns } from "./storefrontMainAppReturns.ts";
 import { registerStorefrontRuntime } from "./storefrontRuntime.ts";
+import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 
 function getInputElement(id: string): HTMLInputElement | null {
   const element = document.getElementById(id);
@@ -166,7 +167,9 @@ export async function refreshQuote(options: { silent?: boolean } = {}) {
   return paymentActions.refreshQuote(options);
 }
 
-export function updatePaymentOptionsState(deliveryConfig = []) {
+export function updatePaymentOptionsState(
+  deliveryConfig: StorefrontDeliveryOption[] = [],
+) {
   return paymentActions.updatePaymentOptionsState(deliveryConfig);
 }
 
