@@ -147,6 +147,7 @@
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。
 - E2E 支援層下一段已收斂：`tests/e2e/support/smoke-dashboard-routes.ts` 從單檔 800+ 行拆成 dispatcher + 多個 domain handler，dashboard smoke 回歸仍通過，後續要補 route stub 時可直接改對應 domain 檔，不必再回到單一大檔。
 - storefront 付款熱區也已開始降溫：`storefrontMainAppPayments.ts` 保留 settings/payment orchestration，quote manager 與 bank account fallback UI 拆出獨立 helper，storefront smoke / checkout 回歸仍通過。
+- `useDashboardSettingsIcons.ts` 已補上較明確的 service / preview map / icon upload response 型別與 key guard，維持既有行為但降低 icon 套用時的型別空窗；對應 unit test 仍通過。
 - 前端靜態檢查已補齊：新增 `eslint.config.mjs` 與 `npm run lint:frontend`，`ci-local` 與 GitHub Actions test job 都會執行 Vue/TypeScript 前端 lint。
 - `guardrails` 新增 `scripts/check_dev_context_sync.py`，會比對 `DEV_CONTEXT.md` 的「最後更新」與 `.frontend-version` / 最新變更節點，降低文件與實際狀態漂移。
 - 本輪驗證已通過：`npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run ci-local`。

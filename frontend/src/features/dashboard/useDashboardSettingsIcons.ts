@@ -9,6 +9,30 @@ import {
 import { sectionIconSettingKey } from "./dashboardSettingsShared.ts";
 import { useDashboardSettings } from "./useDashboardSettings.ts";
 
+type SectionKey = "products" | "delivery" | "notes";
+type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
+type DeliveryIconPreviewMap = Record<string, string>;
+
+interface DashboardSettingsIconServices {
+  API_URL?: string;
+  authFetch?: (input: string, init?: RequestInit) => Promise<Response>;
+  getAuthUserId?: () => string;
+  Swal: {
+    fire: (...args: unknown[]) => unknown;
+    showLoading?: () => void;
+    close?: () => void;
+  };
+  Toast: {
+    fire: (options: { icon: string; title: string }) => unknown;
+  };
+}
+
+interface DashboardUploadAssetResponse {
+  success?: boolean;
+  error?: string;
+  url?: string;
+}
+
 const {
   brandingSettings,
   sectionTitleSettings,
@@ -17,22 +41,30 @@ const {
 } = useDashboardSettings();
 
 const siteIconPreviewOverride = ref("");
-const sectionIconPreviewOverrides = ref({
+const sectionIconPreviewOverrides = ref<Record<SectionKey, string>>({
   products: "",
   delivery: "",
   notes: "",
 });
-const paymentIconPreviewOverrides = ref({
+const paymentIconPreviewOverrides = ref<Record<PaymentMethod, string>>({
   cod: "",
   linepay: "",
   jkopay: "",
   transfer: "",
 });
-const deliveryIconPreviewOverrides = ref({});
+const deliveryIconPreviewOverrides = ref<DeliveryIconPreviewMap>({});
 
-let services = null;
+let services: DashboardSettingsIconServices | null = null;
 
-function getServices() {
+function isSectionKey(value: string): value is SectionKey {
+  return ["products", "delivery", "notes"].includes(value);
+}
+
+function isPaymentMethod(value: string): value is PaymentMethod {
+  return ["cod", "linepay", "jkopay", "transfer"].includes(value);
+}
+
+function getServices(): DashboardSettingsIconServices {
   if (!services) {
     throw new Error("Dashboard settings icon services 尚未初始化");
   }
@@ -50,9 +82,9 @@ function replaceSitePreviewOverride(nextUrl = "") {
   siteIconPreviewOverride.value = String(nextUrl || "");
 }
 
-function replaceSectionPreviewOverride(section, nextUrl = "") {
+function replaceSectionPreviewOverride(section: string, nextUrl = "") {
   const key = String(section || "").trim();
-  if (!key) return;
+  if (!isSectionKey(key)) return;
   revokeObjectUrl(sectionIconPreviewOverrides.value[key]);
   sectionIconPreviewOverrides.value = {
     ...sectionIconPreviewOverrides.value,
@@ -60,9 +92,9 @@ function replaceSectionPreviewOverride(section, nextUrl = "") {
   };
 }
 
-function replacePaymentPreviewOverride(method, nextUrl = "") {
+function replacePaymentPreviewOverride(method: string, nextUrl = "") {
   const key = String(method || "").trim();
-  if (!key) return;
+  if (!isPaymentMethod(key)) return;
   revokeObjectUrl(paymentIconPreviewOverrides.value[key]);
   paymentIconPreviewOverrides.value = {
     ...paymentIconPreviewOverrides.value,
@@ -80,13 +112,13 @@ function replaceDeliveryPreviewOverride(deliveryId, nextUrl = "") {
   };
 }
 
-function buildObjectPreviewUrl(file) {
+function buildObjectPreviewUrl(file?: Blob | null) {
   if (!file) return "";
   if (typeof globalThis.URL?.createObjectURL !== "function") return "";
   return globalThis.URL.createObjectURL(file);
 }
 
-function validateIconFile(file) {
+function validateIconFile(file?: File | null): file is File {
   const { Swal } = getServices();
   if (!file) {
     Swal.fire("提示", "請先選擇圖片檔案", "info");
@@ -111,8 +143,14 @@ async function fileToBase64(file) {
   });
 }
 
-async function uploadAssetFile(file, settingKey = "") {
+async function uploadAssetFile(
+  file: File,
+  settingKey = "",
+): Promise<DashboardUploadAssetResponse> {
   const { API_URL, authFetch, getAuthUserId } = getServices();
+  if (!API_URL || !authFetch || !getAuthUserId) {
+    throw new Error("Dashboard settings icon services 缺少上傳依賴");
+  }
   const base64 = await fileToBase64(file);
   const response = await authFetch(`${API_URL}?action=uploadAsset`, {
     method: "POST",
@@ -125,7 +163,7 @@ async function uploadAssetFile(file, settingKey = "") {
       settingKey,
     }),
   });
-  return await response.json();
+  return await response.json() as DashboardUploadAssetResponse;
 }
 
 function openLoadingModal() {
@@ -141,9 +179,9 @@ function closeLoadingModal() {
   getServices().Swal.close?.();
 }
 
-function setSectionIconUrl(section, url = "") {
+function setSectionIconUrl(section: string, url = "") {
   const key = String(section || "").trim();
-  if (!key || !sectionTitleSettings.value[key]) return;
+  if (!isSectionKey(key) || !sectionTitleSettings.value[key]) return;
   sectionTitleSettings.value = {
     ...sectionTitleSettings.value,
     [key]: {
@@ -153,9 +191,9 @@ function setSectionIconUrl(section, url = "") {
   };
 }
 
-function setPaymentIconUrl(method, url = "") {
+function setPaymentIconUrl(method: string, url = "") {
   const key = String(method || "").trim();
-  if (!key || !paymentOptions.value[key]) return;
+  if (!isPaymentMethod(key) || !paymentOptions.value[key]) return;
   paymentOptions.value = {
     ...paymentOptions.value,
     [key]: {
@@ -190,8 +228,9 @@ function getSiteIconPreviewUrl() {
   );
 }
 
-function getSectionIconPreviewUrl(section) {
+function getSectionIconPreviewUrl(section: string) {
   const key = String(section || "").trim();
+  if (!isSectionKey(key)) return getDefaultIconUrl("products");
   return resolvePreviewUrl(
     sectionTitleSettings.value?.[key]?.iconUrl,
     key,
@@ -199,8 +238,9 @@ function getSectionIconPreviewUrl(section) {
   );
 }
 
-function getPaymentPreviewUrl(method) {
+function getPaymentPreviewUrl(method: string) {
   const key = String(method || "").trim();
+  if (!isPaymentMethod(key)) return getDefaultIconUrl("payment");
   return resolvePreviewUrl(
     paymentOptions.value?.[key]?.icon_url,
     getPaymentIconFallbackKey(key),
@@ -208,7 +248,7 @@ function getPaymentPreviewUrl(method) {
   );
 }
 
-function getDeliveryPreviewUrl(option) {
+function getDeliveryPreviewUrl(option: { id?: string; icon_url?: string } | null | undefined) {
   const deliveryId = String(option?.id || "").trim();
   return resolvePreviewUrl(
     option?.icon_url,
@@ -217,25 +257,25 @@ function getDeliveryPreviewUrl(option) {
   );
 }
 
-function previewSectionIconFile(section, file) {
+function previewSectionIconFile(section: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
   replaceSectionPreviewOverride(section, buildObjectPreviewUrl(file));
   return true;
 }
 
-function previewPaymentIconFile(method, file) {
+function previewPaymentIconFile(method: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
   replacePaymentPreviewOverride(method, buildObjectPreviewUrl(file));
   return true;
 }
 
-function previewDeliveryIconFile(deliveryId, file) {
+function previewDeliveryIconFile(deliveryId: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
   replaceDeliveryPreviewOverride(deliveryId, buildObjectPreviewUrl(file));
   return true;
 }
 
-async function handleSiteIconSelection(file) {
+async function handleSiteIconSelection(file?: File | null) {
   if (!validateIconFile(file)) return false;
 
   replaceSitePreviewOverride(buildObjectPreviewUrl(file));
@@ -259,7 +299,8 @@ async function handleSiteIconSelection(file) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    getServices().Swal.fire("錯誤", error.message, "error");
+    const message = error instanceof Error ? error.message : String(error || "");
+    getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
 }
@@ -276,7 +317,7 @@ function resetSiteIcon() {
   });
 }
 
-async function uploadSectionIconFile(section, file) {
+async function uploadSectionIconFile(section: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
 
   openLoadingModal();
@@ -292,12 +333,13 @@ async function uploadSectionIconFile(section, file) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    getServices().Swal.fire("錯誤", error.message, "error");
+    const message = error instanceof Error ? error.message : String(error || "");
+    getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
 }
 
-async function uploadPaymentIconFile(method, file) {
+async function uploadPaymentIconFile(method: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
 
   openLoadingModal();
@@ -313,12 +355,13 @@ async function uploadPaymentIconFile(method, file) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    getServices().Swal.fire("錯誤", error.message, "error");
+    const message = error instanceof Error ? error.message : String(error || "");
+    getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
 }
 
-async function uploadDeliveryIconFile(deliveryId, file) {
+async function uploadDeliveryIconFile(deliveryId: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
 
   openLoadingModal();
@@ -334,12 +377,13 @@ async function uploadDeliveryIconFile(deliveryId, file) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    getServices().Swal.fire("錯誤", error.message, "error");
+    const message = error instanceof Error ? error.message : String(error || "");
+    getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
 }
 
-function applyIconFromLibrary(targetKey, iconKey, rawUrl = "") {
+function applyIconFromLibrary(targetKey: string, iconKey: string, rawUrl = "") {
   const key = String(targetKey || "").trim();
   const fallbackUrl = getDefaultIconUrl(iconKey);
   const iconUrl = normalizeIconPath(rawUrl || fallbackUrl);
@@ -356,11 +400,11 @@ function applyIconFromLibrary(targetKey, iconKey, rawUrl = "") {
     };
     replaceSitePreviewOverride("");
     targetLabel = "品牌 Icon";
-  } else if (["products", "delivery", "notes"].includes(key)) {
+  } else if (isSectionKey(key)) {
     setSectionIconUrl(key, iconUrl);
     replaceSectionPreviewOverride(key, "");
     targetLabel = `${key} 區塊 Icon`;
-  } else if (["cod", "linepay", "jkopay", "transfer"].includes(key)) {
+  } else if (isPaymentMethod(key)) {
     setPaymentIconUrl(key, iconUrl);
     replacePaymentPreviewOverride(key, "");
     targetLabel = `${key} 付款 Icon`;
@@ -378,9 +422,9 @@ function applyIconFromLibrary(targetKey, iconKey, rawUrl = "") {
 
 export function configureDashboardSettingsIconServices(nextServices) {
   services = {
-    ...services,
+    ...(services || {}),
     ...nextServices,
-  };
+  } as DashboardSettingsIconServices;
 }
 
 export function useDashboardSettingsIcons() {
