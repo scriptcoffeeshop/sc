@@ -23,7 +23,12 @@ import {
   showLoading,
   showWarning,
 } from "../../lib/swalDialogs.ts";
-import type { PaymentMethod, SubmitDeliveryInfo } from "../../types";
+import type {
+  PaymentMethod,
+  ReceiptInfo,
+  SessionUser,
+  SubmitDeliveryInfo,
+} from "../../types";
 
 function persistOrderDraftPreference(key: string, value: unknown) {
   try {
@@ -44,6 +49,89 @@ function syncUserProfileInBackground(payload: Record<string, unknown>) {
     return false;
   }
   return true;
+}
+
+interface SubmittedOrderPreferenceInput {
+  phone: string;
+  email: string;
+  customFieldsJson: string;
+  deliveryMethod: string;
+  deliveryInfo: SubmitDeliveryInfo;
+  paymentMethod: PaymentMethod | string;
+  transferAccountLast5: string;
+  receiptInfo: ReceiptInfo | null;
+}
+
+function isDeliveryAddressMethod(deliveryMethod: string): boolean {
+  return deliveryMethod === "delivery" || deliveryMethod === "home_delivery";
+}
+
+function isStorePickupMethod(deliveryMethod: string): boolean {
+  return deliveryMethod === "seven_eleven" ||
+    deliveryMethod === "family_mart" ||
+    deliveryMethod === "in_store";
+}
+
+function buildSubmittedOrderPreferencePayload(
+  input: SubmittedOrderPreferenceInput,
+  options: { serializeReceiptInfo: boolean },
+): Record<string, unknown> {
+  const deliveryInfo = input.deliveryInfo;
+  const isDeliveryAddress = isDeliveryAddressMethod(input.deliveryMethod);
+  const isStorePickup = isStorePickupMethod(input.deliveryMethod);
+
+  return {
+    phone: input.phone || "",
+    email: input.email || "",
+    defaultCustomFields: input.customFieldsJson || "{}",
+    defaultDeliveryMethod: input.deliveryMethod || "",
+    defaultCity: isDeliveryAddress ? String(deliveryInfo.city || "") : "",
+    defaultDistrict: isDeliveryAddress
+      ? String(deliveryInfo.district || "")
+      : "",
+    defaultAddress: isDeliveryAddress ? String(deliveryInfo.address || "") : "",
+    defaultStoreId: isStorePickup ? String(deliveryInfo.storeId || "") : "",
+    defaultStoreName: isStorePickup ? String(deliveryInfo.storeName || "") : "",
+    defaultStoreAddress: isStorePickup
+      ? String(deliveryInfo.storeAddress || "")
+      : "",
+    defaultPaymentMethod: input.paymentMethod || "",
+    defaultTransferAccountLast5: input.paymentMethod === "transfer"
+      ? input.transferAccountLast5
+      : "",
+    defaultReceiptInfo: input.receiptInfo
+      ? options.serializeReceiptInfo
+        ? JSON.stringify(input.receiptInfo)
+        : input.receiptInfo
+      : "",
+  };
+}
+
+function persistSubmittedOrderPreferences(
+  user: SessionUser,
+  input: SubmittedOrderPreferenceInput,
+) {
+  Object.assign(
+    user,
+    buildSubmittedOrderPreferencePayload(input, { serializeReceiptInfo: true }),
+  );
+  localStorage.setItem("coffee_user", JSON.stringify(user));
+  persistOrderDraftPreference("coffee_delivery_prefs", {
+    method: input.deliveryMethod,
+    ...input.deliveryInfo,
+  });
+  syncUserProfileInBackground(
+    buildSubmittedOrderPreferencePayload(input, { serializeReceiptInfo: false }),
+  );
+}
+
+function resetOrderDraft() {
+  clearCart();
+  const noteEl = document.getElementById(
+    "order-note",
+  ) as HTMLTextAreaElement | null;
+  if (noteEl) noteEl.value = "";
+  applySavedOrderFormPrefs();
 }
 
 /** 送出訂單 */
@@ -243,75 +331,16 @@ export async function submitOrder(): Promise<void> {
     });
     const result = await res.json();
     if (result.success) {
-      const isDeliveryAddress = deliveryMethod === "delivery" ||
-        deliveryMethod === "home_delivery";
-      const isStorePickup = deliveryMethod === "seven_eleven" ||
-        deliveryMethod === "family_mart" || deliveryMethod === "in_store";
-
-      u.phone = phone || "";
-      u.email = email || "";
-      u.defaultCustomFields = customFieldsJson || "{}";
-      u.defaultDeliveryMethod = deliveryMethod || "";
-      u.defaultCity = isDeliveryAddress ? String(deliveryInfo.city || "") : "";
-      u.defaultDistrict = isDeliveryAddress
-        ? String(deliveryInfo.district || "")
-        : "";
-      u.defaultAddress = isDeliveryAddress
-        ? String(deliveryInfo.address || "")
-        : "";
-      u.defaultStoreId = isStorePickup ? String(deliveryInfo.storeId || "") : "";
-      u.defaultStoreName = isStorePickup
-        ? String(deliveryInfo.storeName || "")
-        : "";
-      u.defaultStoreAddress = isStorePickup
-        ? String(deliveryInfo.storeAddress || "")
-        : "";
-      u.defaultPaymentMethod = paymentMethod || "";
-      u.defaultTransferAccountLast5 = paymentMethod === "transfer"
-        ? transferAccountLast5
-        : "";
-      u.defaultReceiptInfo = receiptInfo ? JSON.stringify(receiptInfo) : "";
-      localStorage.setItem("coffee_user", JSON.stringify(u));
-      persistOrderDraftPreference("coffee_delivery_prefs", {
-        method: deliveryMethod,
-        ...deliveryInfo,
+      persistSubmittedOrderPreferences(u, {
+        phone,
+        email,
+        customFieldsJson,
+        deliveryMethod,
+        deliveryInfo,
+        paymentMethod,
+        transferAccountLast5,
+        receiptInfo,
       });
-
-      // 背景同步使用者資料到後端
-      syncUserProfileInBackground({
-        phone: phone || "",
-        email: email || "",
-        defaultCustomFields: customFieldsJson || "{}",
-        defaultDeliveryMethod: deliveryMethod || "",
-        defaultCity: isDeliveryAddress ? String(deliveryInfo.city || "") : "",
-        defaultDistrict: isDeliveryAddress
-          ? String(deliveryInfo.district || "")
-          : "",
-        defaultAddress: isDeliveryAddress
-          ? String(deliveryInfo.address || "")
-          : "",
-        defaultStoreId: isStorePickup ? String(deliveryInfo.storeId || "") : "",
-        defaultStoreName: isStorePickup
-          ? String(deliveryInfo.storeName || "")
-          : "",
-        defaultStoreAddress: isStorePickup
-          ? String(deliveryInfo.storeAddress || "")
-          : "",
-        defaultPaymentMethod: paymentMethod || "",
-        defaultTransferAccountLast5: paymentMethod === "transfer"
-          ? transferAccountLast5
-          : "",
-        defaultReceiptInfo: receiptInfo || "",
-      });
-
-      const resetOrderDraft = () => {
-        clearCart();
-        const noteEl = document.getElementById(
-          "order-note",
-        ) as HTMLTextAreaElement | null;
-        if (noteEl) noteEl.value = "";
-        applySavedOrderFormPrefs();
-      };
 
       // 線上支付: 依付款方式顯示對應跳轉文案
       if (result.paymentUrl) {
