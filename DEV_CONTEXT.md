@@ -186,6 +186,7 @@
 - storefront 品牌與區塊標題已改由 Vue 管理：`useStorefrontBranding.ts` 從 settings snapshot 建立品牌/商品/配送/備註標題 view model，Header、商品區、配送區與備註區直接吃 props；`storefrontFormRenderer.ts` 不再操作品牌或區塊標題 DOM。
 - storefront 政策同意提示已改由 Vue 管理：`useStorefrontPolicyAgreement.ts` 接收送單驗證事件並控制提示顯示，`storefrontOrderSubmit.ts` 不再直接切換 `policy-agree-hint` DOM class。
 - storefront 收據欄位展開/收合已改由 Vue 管理：`useStorefrontReceiptRequest.ts` 接收預設資料事件，`storefrontOrderReceiptPrefs.ts` 不再操作 `receipt-fields` class，也改用 runtime 付款可用性判斷預設付款方式。
+- storefront 初始化載入失敗畫面已改由 Vue 商品區塊顯示：`storefrontMainAppPayments.ts` 改發 `coffee:storefront-load-error-updated`，`StorefrontProductGrid.vue` 負責錯誤訊息與重試按鈕。
 
 ### 2026-04-24
 

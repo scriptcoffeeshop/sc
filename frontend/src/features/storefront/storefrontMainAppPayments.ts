@@ -19,6 +19,15 @@ type StorefrontMainAppPaymentsDeps = {
   applySavedOrderFormPrefs: () => void;
 };
 
+function dispatchStorefrontLoadError(errorText: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("coffee:storefront-load-error-updated", {
+      detail: { errorText },
+    }),
+  );
+}
+
 export function createStorefrontMainAppPayments(
   deps: StorefrontMainAppPaymentsDeps,
 ) {
@@ -46,28 +55,16 @@ export function createStorefrontMainAppPayments(
       state.bankAccounts = result.bankAccounts || [];
 
       applySettings(result.settings || {});
+      dispatchStorefrontLoadError("");
 
       if (state.currentUser) {
         deps.prefillUserFields();
         deps.applySavedOrderFormPrefs();
       }
     } catch (error) {
-      const productsContainer = document.getElementById("products-container");
-      if (productsContainer) {
-        const message = document.createElement("p");
-        message.className = "p-8 text-center text-red-600";
-        message.append(`載入資料失敗: ${deps.getErrorMessage(error)}`);
-        message.appendChild(document.createElement("br"));
-
-        const retryButton = document.createElement("button");
-        retryButton.type = "button";
-        retryButton.dataset.reloadPage = "true";
-        retryButton.className = "mt-3 btn-primary";
-        retryButton.textContent = "重試";
-        retryButton.addEventListener("click", () => location.reload());
-        message.appendChild(retryButton);
-        productsContainer.replaceChildren(message);
-      }
+      dispatchStorefrontLoadError(
+        `載入資料失敗: ${deps.getErrorMessage(error)}`,
+      );
     }
   }
 

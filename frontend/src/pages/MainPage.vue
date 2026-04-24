@@ -16,7 +16,9 @@
         :categories="productsCategories"
         :spec-qty-map="cartQtyMap"
         :section-title="branding.sections.products"
+        :load-error-text="loadErrorText"
         @change-spec-qty="changeSpecQty"
+        @retry-load="handleRetryStorefrontLoad"
       />
 
       <StorefrontDeliverySection
@@ -238,6 +240,7 @@ import { useStorefrontPayment } from "../features/storefront/useStorefrontPaymen
 import { useStorefrontPolicyAgreement } from "../features/storefront/useStorefrontPolicyAgreement.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontReceiptRequest } from "../features/storefront/useStorefrontReceiptRequest.ts";
+import { useStorefrontLoadState } from "../features/storefront/useStorefrontLoadState.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
 import { authFetch } from "../lib/auth.ts";
 import { API_URL } from "../lib/appConfig.ts";
@@ -320,6 +323,11 @@ const {
   productsCategories,
   refreshProductsState,
 } = useStorefrontProducts({ getStorefrontUiSnapshot });
+const {
+  loadErrorText,
+  handleLoadErrorUpdated,
+  handleRetryStorefrontLoad,
+} = useStorefrontLoadState({ reload: () => location.reload() });
 const {
   deliveryOptions,
   selectedStore,
@@ -447,6 +455,10 @@ onMounted(() => {
     "coffee:receipt-request-updated",
     handleReceiptRequestUpdated,
   );
+  window.addEventListener(
+    "coffee:storefront-load-error-updated",
+    handleLoadErrorUpdated,
+  );
 
   syncCartSnapshot();
 
@@ -465,6 +477,10 @@ onBeforeUnmount(() => {
   window.removeEventListener(
     "coffee:receipt-request-updated",
     handleReceiptRequestUpdated,
+  );
+  window.removeEventListener(
+    "coffee:storefront-load-error-updated",
+    handleLoadErrorUpdated,
   );
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;

@@ -20,7 +20,20 @@
     </h2>
     <div id="products-container" data-vue-managed="true">
       <div
-        v-if="categories.length === 0"
+        v-if="loadErrorText"
+        class="p-8 text-center text-red-600"
+      >
+        <p>{{ loadErrorText }}</p>
+        <button
+          type="button"
+          class="mt-3 btn-primary"
+          @click="$emit('retry-load')"
+        >
+          重試
+        </button>
+      </div>
+      <div
+        v-else-if="categories.length === 0"
         class="space-y-3 animate-pulse"
       >
         <div class="h-16 bg-gray-100 rounded-xl"></div>
@@ -131,16 +144,19 @@ const props = withDefaults(
     categories?: StorefrontProductCategoryView[];
     specQtyMap?: Map<string, number>;
     sectionTitle?: StorefrontSectionTitleView;
+    loadErrorText?: string;
   }>(),
   {
     categories: () => [],
     specQtyMap: () => new Map<string, number>(),
     sectionTitle: () => normalizeStorefrontBranding({}).sections.products,
+    loadErrorText: "",
   },
 );
 
 defineEmits<{
   "change-spec-qty": [productId: number, specKey: string, delta: number];
+  "retry-load": [];
 }>();
 
 function getSpecQty(productId: number | string, specKey: string) {
