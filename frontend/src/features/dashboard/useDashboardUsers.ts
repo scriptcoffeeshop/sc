@@ -1,20 +1,106 @@
 import { computed, ref } from "vue";
+import type {
+  DashboardAuthFetch,
+  DashboardSwal,
+  DashboardToast,
+} from "./dashboardOrderTypes";
 import { getDashboardActiveTab } from "./useDashboardSession.ts";
 
-const users = ref([]);
-const blacklist = ref([]);
+type DashboardUserRole = "SUPER_ADMIN" | "ADMIN" | "USER" | string;
+
+type DashboardCurrentUser = {
+  role?: DashboardUserRole;
+};
+
+type DashboardUserRecord = Record<string, unknown> & {
+  userId: string;
+  displayName: string;
+  role?: DashboardUserRole;
+  status?: string;
+  pictureUrl?: string;
+  email?: string;
+  phone?: string;
+  defaultDeliveryMethod?: string;
+  defaultCity?: string;
+  defaultDistrict?: string;
+  defaultAddress?: string;
+  defaultStoreName?: string;
+  defaultStoreId?: string;
+  lastLogin?: string;
+};
+
+type DashboardBlacklistRecord = Record<string, unknown> & {
+  displayName: string;
+  lineUserId: string;
+  blockedAt?: string;
+  reason?: string;
+};
+
+type DashboardUsersServices = {
+  API_URL: string;
+  authFetch: DashboardAuthFetch;
+  getAuthUserId: () => string;
+  getCurrentUser?: () => DashboardCurrentUser | null | undefined;
+  Swal: DashboardSwal;
+  Toast: DashboardToast;
+};
+
+const users = ref<DashboardUserRecord[]>([]);
+const blacklist = ref<DashboardBlacklistRecord[]>([]);
 const userSearch = ref("");
 
-let services = null;
+let services: DashboardUsersServices | null = null;
 
-function getServices() {
+function getServices(): DashboardUsersServices {
   if (!services) {
     throw new Error("Dashboard users services 尚未初始化");
   }
   return services;
 }
 
-function getUserDefaultDeliveryText(user) {
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message || fallback : fallback;
+}
+
+function normalizeUser(value: unknown): DashboardUserRecord | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  return {
+    ...record,
+    userId: String(record.userId || ""),
+    displayName: String(record.displayName || ""),
+    role: typeof record.role === "string" ? record.role : "USER",
+    status: typeof record.status === "string" ? record.status : "ACTIVE",
+    pictureUrl:
+      typeof record.pictureUrl === "string" ? record.pictureUrl : undefined,
+    email: String(record.email || ""),
+    phone: String(record.phone || ""),
+    defaultDeliveryMethod:
+      typeof record.defaultDeliveryMethod === "string"
+        ? record.defaultDeliveryMethod
+        : "",
+    defaultCity: String(record.defaultCity || ""),
+    defaultDistrict: String(record.defaultDistrict || ""),
+    defaultAddress: String(record.defaultAddress || ""),
+    defaultStoreName: String(record.defaultStoreName || ""),
+    defaultStoreId: String(record.defaultStoreId || ""),
+    lastLogin: typeof record.lastLogin === "string" ? record.lastLogin : "",
+  };
+}
+
+function normalizeBlacklistEntry(value: unknown): DashboardBlacklistRecord | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  return {
+    ...record,
+    displayName: String(record.displayName || ""),
+    lineUserId: String(record.lineUserId || ""),
+    blockedAt: typeof record.blockedAt === "string" ? record.blockedAt : "",
+    reason: String(record.reason || ""),
+  };
+}
+
+function getUserDefaultDeliveryText(user: DashboardUserRecord) {
   if (user.defaultDeliveryMethod === "delivery") {
     return `宅配 (${user.defaultCity || ""}${user.defaultDistrict || ""} ${
       user.defaultAddress || ""
@@ -29,7 +115,7 @@ function getUserDefaultDeliveryText(user) {
   return "尚未設定";
 }
 
-function buildUserViewModel(user, isSuperAdmin) {
+function buildUserViewModel(user: DashboardUserRecord, isSuperAdmin: boolean) {
   const isUserSuperAdmin = user.role === "SUPER_ADMIN";
   const isAdmin = user.role === "ADMIN" || isUserSuperAdmin;
   const isBlocked = user.status === "BLACKLISTED";
@@ -72,7 +158,7 @@ function buildUserViewModel(user, isSuperAdmin) {
   };
 }
 
-function buildBlacklistViewModel(blacklistEntry) {
+function buildBlacklistViewModel(blacklistEntry: DashboardBlacklistRecord) {
   return {
     displayName: String(blacklistEntry.displayName || ""),
     lineUserId: String(blacklistEntry.lineUserId || ""),
@@ -84,7 +170,7 @@ function buildBlacklistViewModel(blacklistEntry) {
 }
 
 const usersView = computed(() => {
-  const isSuperAdmin = getServices().getCurrentUser()?.role === "SUPER_ADMIN";
+  const isSuperAdmin = getServices().getCurrentUser?.()?.role === "SUPER_ADMIN";
   return users.value.map((user) => buildUserViewModel(user, isSuperAdmin));
 });
 
@@ -92,7 +178,7 @@ const blacklistView = computed(() =>
   blacklist.value.map((entry) => buildBlacklistViewModel(entry))
 );
 
-function updateUserSearch(value) {
+function updateUserSearch(value: unknown) {
   userSearch.value = String(value || "");
 }
 
@@ -115,13 +201,15 @@ async function loadUsers() {
     );
     const data = await response.json();
     if (!data.success) {
-      Swal.fire("錯誤", data.error, "error");
+      Swal.fire("錯誤", String(data.error || "載入用戶失敗"), "error");
       return;
     }
-    users.value = Array.isArray(data.users) ? data.users : [];
+    users.value = Array.isArray(data.users)
+      ? data.users.map(normalizeUser).filter((user) => user !== null)
+      : [];
     Swal.close();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "載入用戶失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "載入用戶失敗"), "error");
   }
 }
 
@@ -133,13 +221,17 @@ async function loadBlacklist() {
     );
     const data = await response.json();
     if (!data.success) return;
-    blacklist.value = Array.isArray(data.blacklist) ? data.blacklist : [];
+    blacklist.value = Array.isArray(data.blacklist)
+      ? data.blacklist
+        .map(normalizeBlacklistEntry)
+        .filter((entry) => entry !== null)
+      : [];
   } catch (error) {
     console.error(error);
   }
 }
 
-async function toggleUserRole(targetUserId, newRole) {
+async function toggleUserRole(targetUserId: string, newRole: "ADMIN" | "USER") {
   const { Swal, authFetch, API_URL, Toast } = getServices();
   const confirmation = await Swal.fire({
     title: `設為 ${newRole === "ADMIN" ? "管理員" : "一般用戶"}？`,
@@ -166,11 +258,11 @@ async function toggleUserRole(targetUserId, newRole) {
     Toast.fire({ icon: "success", title: "權限已更新" });
     await loadUsers();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "權限更新失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "權限更新失敗"), "error");
   }
 }
 
-async function toggleUserBlacklist(targetUserId, isBlocked) {
+async function toggleUserBlacklist(targetUserId: string, isBlocked: boolean) {
   const { Swal, authFetch, API_URL, Toast } = getServices();
 
   if (isBlocked) {
@@ -192,7 +284,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
       const response = await authFetch(`${API_URL}?action=addToBlacklist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUserId, reason }),
+        body: JSON.stringify({ targetUserId, reason: String(reason || "") }),
       });
       const data = await response.json();
       if (!data.success) throw new Error(data.error || "加入黑名單失敗");
@@ -201,7 +293,7 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
       await loadUsers();
       if (isBlacklistTabActive()) await loadBlacklist();
     } catch (error) {
-      Swal.fire("錯誤", error?.message || "加入黑名單失敗", "error");
+      Swal.fire("錯誤", getErrorMessage(error, "加入黑名單失敗"), "error");
     }
     return;
   }
@@ -232,11 +324,11 @@ async function toggleUserBlacklist(targetUserId, isBlocked) {
     await loadUsers();
     await loadBlacklist();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "解除封鎖失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "解除封鎖失敗"), "error");
   }
 }
 
-export function configureDashboardUsersServices(nextServices) {
+export function configureDashboardUsersServices(nextServices: DashboardUsersServices) {
   services = {
     ...services,
     ...nextServices,

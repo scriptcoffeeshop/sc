@@ -289,7 +289,6 @@ configureDashboardUsersServices({
   getCurrentUser: getDashboardCurrentUser,
   Toast,
   Swal,
-  esc,
 });
 
 configureDashboardProductsServices({
