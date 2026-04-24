@@ -50,7 +50,7 @@
 
 - 最終目標已確定為 `Vue 3 + Vite SFC`。
 - 後台是優先遷移區：
-  - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.ts`、`useDashboardProducts.ts`、`useDashboardCategories.ts`、`useDashboardPromotions.ts`、`useDashboardFormFields.ts`、`useDashboardUsers.ts`)
+  - `orders`、`products`、`categories`、`promotions`、`formfields`、`users`、`blacklist` 已改成 Vue-owned state/actions (`useDashboardOrders.ts`、`useDashboardProducts.ts`、`useDashboardCategories.ts`、`useDashboardPromotions.ts`、`useDashboardFormFields.ts`、`useDashboardUsers.ts`)；其中 `useDashboardOrders.ts` 已再拆出 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`，避免單一 composable 持續膨脹
   - `session / tab 切換` 已改成 Vue-owned state/actions (`useDashboardSession.ts`)
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`）
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts 六個卡片元件
@@ -139,7 +139,10 @@
 - `ci.yml` 的 `workflow_dispatch` 新增 `deploy` boolean input，預設為 `true`；現在在 `main/master` 手動觸發 workflow 會連同 `Deploy Frontend` / `Deploy Supabase` 一起跑，不再只有 test job。
 - `frontend/src/features/storefront/storefrontMainApp.ts` 已收斂成組裝層，auth/profile、quote/payment/bank account、LINE Pay/街口回跳分別拆到 `storefrontMainAppAuth.ts`、`storefrontMainAppPayments.ts`、`storefrontMainAppReturns.ts`。
 - `tests/e2e/support/smoke-fixtures.ts` 已改成相容 barrel export，實際實作拆到 `smoke-shared.ts`、`smoke-color.ts`、`smoke-global-stubs.ts`、`smoke-main-routes.ts`、`smoke-dashboard-routes.ts`，降低單檔回歸風險。
-- 本輪局部驗證已通過：`npm run guardrails`、`npm run typecheck`、`npx playwright test tests/e2e/smoke/storefront.spec.ts tests/e2e/smoke/dashboard.spec.ts --config=playwright.config.ts`。
+- `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
+- 前端靜態檢查已補齊：新增 `eslint.config.mjs` 與 `npm run lint:frontend`，`ci-local` 與 GitHub Actions test job 都會執行 Vue/TypeScript 前端 lint。
+- `guardrails` 新增 `scripts/check_dev_context_sync.py`，會比對 `DEV_CONTEXT.md` 的「最後更新」與 `.frontend-version` / 最新變更節點，降低文件與實際狀態漂移。
+- 本輪驗證已通過：`npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run ci-local`。
 
 ### 2026-04-23
 

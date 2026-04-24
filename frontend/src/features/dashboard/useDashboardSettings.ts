@@ -221,7 +221,6 @@ function registerDeliveryRoutingTableElement(element: HTMLElement | null) {
 function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
   rawSettings.value = settings;
   const {
-    getDefaultIconUrl,
     sectionIconSettingKey,
     normalizeIconPath,
     normalizeDeliveryOption,

@@ -8,7 +8,7 @@
 - **文字說明修改規定**：程式呈現的文字說明（UI Text），若沒有明確提及需要修改，則**嚴格禁止擅自修改**。若認為有必要，必須先徵得同意。
 - **自動化推送與部署**：
   - 修改 Edge Functions 後，必須部署至 Supabase：`supabase functions deploy coffee-api --no-verify-jwt`。
-  - 推送前請先在本機跑 `npm run health`；若只改後端或 guardrail 相關內容，可先用 `npm run ci-local` 快速確認（含 `test:unit`）。
+  - 推送前請先在本機跑 `npm run health`；若只改後端、guardrail 或純前端靜態規則，可先用 `npm run ci-local` 快速確認（含 `lint:frontend`、`test:unit`）。
   - `main` / `master` 每次 push 通過 CI 後，會自動：
     - 部署前端到 GitHub Pages
     - 執行 `supabase db push`
@@ -33,8 +33,9 @@
   - `supabase/.temp/` 屬於 Supabase CLI 本機暫存資料，現在由 `.gitignore` 忽略，不應提交。
   - `.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；請使用 `.env.staging.example`、`.env.supabase.local.example` 作為範本。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
-  - 本機完整健康檢查請使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。若已先 `npm run build`，`health` 會重用產物，不再重複 build。
-  - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`，共用路由與 stub 請放在 `tests/e2e/support/smoke-fixtures.ts`，避免再把所有回歸測試塞回單一檔案。
+  - 本機完整健康檢查請使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `lint:frontend`、`test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。若已先 `npm run build`，`health` 會重用產物，不再重複 build。
+  - `npm run guardrails` 目前也會執行 `scripts/check_dev_context_sync.py`，確認 `DEV_CONTEXT.md` 的「最後更新」與前端版號沒有和實際狀態漂移。
+  - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`；`tests/e2e/support/smoke-fixtures.ts` 保留相容 barrel export，實際共用路由、global stub、顏色比對 helper 請分別維護在 `smoke-main-routes.ts`、`smoke-dashboard-routes.ts`、`smoke-global-stubs.ts`、`smoke-color.ts`。
   - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
 
 ## 3. 後端與資料庫規範 (Deno & Supabase)
