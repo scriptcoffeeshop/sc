@@ -20,18 +20,6 @@ function normalizeSiteSubtitle(value) {
 }
 
 /**
- * Vue 已接手動態欄位渲染；保留相容入口避免舊流程呼叫中斷。
- * @param {Array} fields - coffee_form_fields 記錄
- * @param {HTMLElement} container - 要渲染到的容器
- * @param {string} [deliveryMethod] - 目前選定的配送方式 ID
- */
-export function renderDynamicFields(fields, container, deliveryMethod) {
-  void fields;
-  void container;
-  void deliveryMethod;
-}
-
-/**
  * 收集所有動態欄位的值，同時驗證必填
  * @param {Array} fields - coffee_form_fields 記錄
  * @returns {{ valid: boolean, data: Object, error: string }}

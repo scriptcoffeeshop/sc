@@ -194,7 +194,7 @@
 - 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
 - LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
 - storefront legacy 遷移續推：`useStorefrontProducts.ts` 已吸收商品分組 / spec normalize，`useStorefrontDelivery.ts` 已吸收 delivery config fallback/migration；`MainPage.vue` 現在透過 `storefrontUiSnapshot.ts` 同步 products/delivery/payment/dynamic fields state，不再依賴 `coffee:products-updated` 事件或 bridge 的 main-app snapshot export。
-- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值，legacy `renderDynamicFields()` 已改為相容 no-op，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
+- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值；legacy `renderDynamicFields()` no-op 已移除，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
 - storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，legacy `js/` 只保留相容 re-export。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。

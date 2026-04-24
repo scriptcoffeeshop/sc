@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   API_URL,
   blockStorefrontBodyClickDelegation,
@@ -8,12 +8,16 @@ import {
   installMainRoutes,
 } from "../support/smoke-fixtures";
 
+async function gotoStorefront(page: Page, path = "/main.html") {
+  await page.goto(path, { waitUntil: "domcontentloaded" });
+}
+
 test.describe("smoke / storefront", () => {
   test("storefront note textarea stays empty and keeps legacy warm palette", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect(page.locator("#login-section")).toHaveCSS(
       "background-color",
@@ -50,7 +54,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_line_state", "customer-state");
     });
 
-    await page.goto("/main.html?code=customer-code&state=customer-state");
+    await gotoStorefront(page, "/main.html?code=customer-code&state=customer-state");
 
     await expect.poll(() => loginRequest?.method).toBe("POST");
     expect(new URL(loginRequest!.url).searchParams.get("code")).toBeNull();
@@ -68,7 +72,7 @@ test.describe("smoke / storefront", () => {
     await installMainRoutes(page);
     await page.setViewportSize({ width: 1728, height: 960 });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     const metrics = await page.evaluate(() => {
       const loginSection = document.getElementById("login-section");
@@ -107,7 +111,7 @@ test.describe("smoke / storefront", () => {
       ],
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     const description = page.locator(
       '.delivery-option[data-id="home_delivery"] .delivery-option-description',
@@ -120,7 +124,7 @@ test.describe("smoke / storefront", () => {
     await installGlobalStubs(page);
     await installMainRoutes(page);
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect.poll(() =>
       page.evaluate(() => ({
@@ -132,6 +136,54 @@ test.describe("smoke / storefront", () => {
       selectDelivery: "undefined",
     });
     await expect(page.locator('.delivery-option[data-id="delivery"]')).toBeVisible();
+  });
+
+  test("storefront dynamic fields follow delivery visibility without legacy renderer", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      deliveryOptions: [
+        {
+          id: "delivery",
+          name: "配送到府",
+          description: "新竹配送",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: true },
+        },
+        {
+          id: "seven_eleven",
+          name: "7-11 取件",
+          description: "超商門市",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: false },
+        },
+      ],
+      formFields: [
+        {
+          field_key: "door_note",
+          label: "宅配備註",
+          field_type: "text",
+          enabled: true,
+          delivery_visibility: JSON.stringify({ seven_eleven: false }),
+        },
+        {
+          field_key: "store_note",
+          label: "超商備註",
+          field_type: "text",
+          enabled: true,
+          delivery_visibility: JSON.stringify({ delivery: false }),
+        },
+      ],
+    });
+
+    await gotoStorefront(page);
+
+    await expect(page.locator("#dynamic-fields-container")).toContainText("宅配備註");
+    await expect(page.locator("#dynamic-fields-container")).not.toContainText("超商備註");
+
+    await page.locator('.delivery-option[data-id="seven_eleven"]').click();
+
+    await expect(page.locator("#dynamic-fields-container")).toContainText("超商備註");
+    await expect(page.locator("#dynamic-fields-container")).not.toContainText("宅配備註");
   });
 
   test("storefront action icons use vector sizing and currentColor", async ({ page }) => {
@@ -150,7 +202,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     const ordersButton = page.getByRole("button", { name: "我的訂單" });
     const profileButton = page.getByRole("button", { name: "會員資料" });
@@ -207,7 +259,7 @@ test.describe("smoke / storefront", () => {
     });
     await blockStorefrontBodyClickDelegation(page);
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
@@ -326,7 +378,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect(page.locator("#products-container")).toContainText("測試豆");
     await expect(page.locator("#dynamic-fields-container")).toContainText("公司備註");
@@ -412,7 +464,7 @@ test.describe("smoke / storefront", () => {
       };
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
@@ -472,7 +524,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
@@ -531,7 +583,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
     await page.getByRole("button", { name: "我的訂單" }).click();
 
     await expect(page.locator("#my-orders-modal")).toBeVisible();
@@ -587,7 +639,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
     await page.getByRole("button", { name: "我的訂單" }).click();
 
     await expect(page.locator("#my-orders-modal")).toBeVisible();
@@ -615,7 +667,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await page.evaluate(() => {
       (window as any).Swal.fire = async (options: any) => {
@@ -689,7 +741,7 @@ test.describe("smoke / storefront", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoStorefront(page);
 
     await expect.poll(() =>
       page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)

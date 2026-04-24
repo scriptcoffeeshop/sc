@@ -127,9 +127,9 @@ export function selectDelivery(method, e = null, options: { skipQuote?: boolean 
     storefrontRuntime.scheduleQuoteRefresh({ silent: true });
   }
 
-  // 切換配送方式後，重新渲染動態表單欄位（依配送方式過濾）
-  if (storefrontRuntime.rerenderFormFields) {
-    storefrontRuntime.rerenderFormFields();
+  // 切換配送方式後，Vue 會依快照更新欄位；這裡只補上已顯示欄位的會員預設值。
+  if (storefrontRuntime.syncDynamicFieldDefaults) {
+    storefrontRuntime.syncDynamicFieldDefaults();
   }
 }
 

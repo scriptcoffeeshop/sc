@@ -4,7 +4,7 @@ export const storefrontRuntime = {
   selectPayment: null,
   updateCartUI: null,
   updateFormState: null,
-  rerenderFormFields: null,
+  syncDynamicFieldDefaults: null,
   scheduleQuoteRefresh: null,
   refreshQuote: null,
   updatePaymentOptionsState: null,

@@ -2,7 +2,6 @@
 // storefrontMainApp.ts — 訂購頁初始化入口
 // ============================================
 
-import { state } from "../../lib/appState.ts";
 import { loadCart, updateCartUI } from "./storefrontCartStore.ts";
 import {
   checkStoreToken,
@@ -13,7 +12,6 @@ import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
 } from "./storefrontOrderActions.ts";
-import { renderDynamicFields } from "./storefrontFormRenderer.ts";
 import { createStorefrontMainAppAuth } from "./storefrontMainAppAuth.ts";
 import { createStorefrontMainAppPayments } from "./storefrontMainAppPayments.ts";
 import { createStorefrontMainAppReturns } from "./storefrontMainAppReturns.ts";
@@ -67,12 +65,7 @@ function initMainDomBindings() {
   }
 }
 
-function rerenderFormFields() {
-  renderDynamicFields(
-    state.formFields,
-    document.getElementById("dynamic-fields-container"),
-    state.selectedDelivery,
-  );
+function syncDynamicFieldDefaults() {
   authActions.prefillUserFields();
 }
 
@@ -80,7 +73,7 @@ registerStorefrontRuntime({
   selectPayment,
   updateCartUI,
   updateFormState,
-  rerenderFormFields,
+  syncDynamicFieldDefaults,
   scheduleQuoteRefresh,
   refreshQuote,
   updatePaymentOptionsState,

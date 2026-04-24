@@ -6,7 +6,7 @@ import {
 } from "../../lib/icons.ts";
 import { cart } from "./storefrontCartStore.ts";
 import { selectDelivery } from "./storefrontDeliveryActions.ts";
-import { applyBranding, renderDynamicFields } from "./storefrontFormRenderer.ts";
+import { applyBranding } from "./storefrontFormRenderer.ts";
 import {
   normalizeStorefrontDeliveryConfig,
   type StorefrontDeliveryOption,
@@ -53,11 +53,6 @@ export function createStorefrontMainAppPayments(
 
       applySettings(result.settings || {});
       applyBranding(result.settings || {});
-      renderDynamicFields(
-        state.formFields,
-        document.getElementById("dynamic-fields-container"),
-        state.selectedDelivery,
-      );
       bankAccountUi.renderBankAccounts();
 
       if (state.currentUser) {
