@@ -2,30 +2,21 @@ import { hmacSign } from "../utils/auth.ts";
 import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notification-policy.ts";
 import { FRONTEND_URL } from "../utils/config.ts";
 import { sendEmail } from "../utils/email.ts";
-import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
 import { sanitize } from "../utils/html.ts";
 import { tryParseJsonRecord } from "../utils/json.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
+import { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
+
+export { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
 
 export type LinePayStatus = "paid" | "cancelled";
 export const EXPIRED_PAYMENT_FAILURE_REASON = "付款期限已過，自動設為失敗訂單";
 const LINEPAY_PAYMENT_TIMEOUT_MS = 20 * 60 * 1000;
 
-interface EmailBranding {
-  siteTitle: string;
-  siteLogoUrl: string;
-}
-
 interface JkoLineNotifyOptions {
   force?: boolean;
-}
-
-export function trimLineNotifyError(raw: unknown): string {
-  const value = String(raw || "").trim();
-  if (!value) return "";
-  return value.slice(0, 240);
 }
 
 export function isTerminalJkoPaymentStatus(status: string): boolean {
@@ -265,21 +256,6 @@ function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
   return `${frontendBase}/${normalized}`;
 }
 
-export function parseReceiptInfo(
-  raw: unknown,
-): Record<string, unknown> | null {
-  if (!raw) return null;
-  if (typeof raw === "string") {
-    const value = raw.trim();
-    if (!value) return null;
-    return tryParseJsonRecord(value);
-  }
-  if (typeof raw === "object" && !Array.isArray(raw)) {
-    return raw as Record<string, unknown>;
-  }
-  return null;
-}
-
 function getDeliveryAddressText(order: Record<string, unknown>): string {
   const deliveryMethod = String(order.delivery_method || "");
   if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
@@ -352,28 +328,19 @@ function buildLinePayStatusEmailHtml(params: {
 </div>`;
 }
 
-export async function getEmailBranding(): Promise<EmailBranding> {
-  const { data: settingsRows } = await supabase.from("coffee_settings")
-    .select("key, value")
-    .in("key", ["site_title", "site_icon_url"]);
-
-  let siteTitleRaw = "";
-  let siteLogoUrl = "";
-  for (const row of settingsRows || []) {
-    const key = String(row.key || "");
-    if (key === "site_title") {
-      siteTitleRaw = String(row.value || "");
-      continue;
-    }
-    if (key === "site_icon_url") {
-      siteLogoUrl = String(row.value || "").trim();
-    }
+export function parseReceiptInfo(
+  raw: unknown,
+): Record<string, unknown> | null {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    const value = raw.trim();
+    if (!value) return null;
+    return tryParseJsonRecord(value);
   }
-
-  return {
-    siteTitle: normalizeEmailSiteTitle(siteTitleRaw),
-    siteLogoUrl,
-  };
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    return raw as Record<string, unknown>;
+  }
+  return null;
 }
 
 export async function notifyLinePayPaymentStatusChanged(
