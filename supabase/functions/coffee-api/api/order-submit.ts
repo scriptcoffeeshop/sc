@@ -40,6 +40,32 @@ interface LinePayRequestResponse {
   };
 }
 
+function createOrderId(now: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const uuidHex = crypto.randomUUID().replace(/-/g, "").slice(0, 8)
+    .toUpperCase();
+  return `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
+    pad(now.getDate())
+  }-${uuidHex}`;
+}
+
+function resolveStoreType(deliveryMethod: string): string {
+  if (deliveryMethod === "seven_eleven") return "7-11";
+  if (deliveryMethod === "family_mart") return "全家";
+  return "";
+}
+
+async function markPaymentRequestFailed(
+  orderId: string,
+  fields: Record<string, unknown> = {},
+) {
+  await supabase.from("coffee_orders").update({
+    payment_status: "failed",
+    payment_last_checked_at: new Date().toISOString(),
+    ...fields,
+  }).eq("id", orderId);
+}
+
 export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
@@ -96,13 +122,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
 
   const now = new Date();
   const idempotencyKey = String(data.idempotencyKey || "").trim();
-
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const uuidHex = crypto.randomUUID().replace(/-/g, "").slice(0, 8)
-    .toUpperCase();
-  const orderId = `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
-    pad(now.getDate())
-  }-${uuidHex}`;
+  const orderId = createOrderId(now);
 
   const insertPayload: Record<string, unknown> = {
     id: orderId,
@@ -118,11 +138,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
     city: data.city || "",
     district: data.district || "",
     address: data.address || "",
-    store_type: deliveryMethod === "seven_eleven"
-      ? "7-11"
-      : deliveryMethod === "family_mart"
-      ? "全家"
-      : "",
+    store_type: resolveStoreType(deliveryMethod),
     store_id: data.storeId || "",
     store_name: data.storeName || "",
     store_address: data.storeAddress || "",
@@ -341,21 +357,14 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         };
       }
 
-      await supabase.from("coffee_orders").update({
-        payment_status: "failed",
-        payment_last_checked_at: new Date().toISOString(),
-      }).eq("id", orderId);
+      await markPaymentRequestFailed(orderId);
       return {
         success: false,
         error: `LINE Pay 請求失敗: ${lpRes.returnMessage || lpRes.returnCode}`,
         orderId,
       };
     } catch (e) {
-      await supabase.from("coffee_orders").update({
-        payment_status: "failed",
-        payment_last_checked_at: new Date().toISOString(),
-      })
-        .eq("id", orderId);
+      await markPaymentRequestFailed(orderId);
       return {
         success: false,
         error: "LINE Pay 付款請求失敗: " + String(e),
@@ -426,11 +435,9 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         };
       }
 
-      await supabase.from("coffee_orders").update({
-        payment_status: "failed",
-        payment_last_checked_at: new Date().toISOString(),
+      await markPaymentRequestFailed(orderId, {
         payment_provider_status_code: resultCode || "",
-      }).eq("id", orderId);
+      });
       const resultObjectSummary = Object.keys(resultObject).length > 0
         ? (() => {
           try {
@@ -461,10 +468,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         orderId,
       };
     } catch (e) {
-      await supabase.from("coffee_orders").update({
-        payment_status: "failed",
-        payment_last_checked_at: new Date().toISOString(),
-      }).eq("id", orderId);
+      await markPaymentRequestFailed(orderId);
       return {
         success: false,
         error: "街口支付建單失敗: " + String(e),
