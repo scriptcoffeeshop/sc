@@ -185,6 +185,7 @@
 - storefront 初始化再收斂：`initMainApp()` 不再用 DOM 探針判斷 Vue 容器是否存在，`MainPage.vue` 也不再於 mounted 後手動補 `data-vue-managed`，由 Vue 元件模板自身宣告管理邊界。
 - storefront 品牌與區塊標題已改由 Vue 管理：`useStorefrontBranding.ts` 從 settings snapshot 建立品牌/商品/配送/備註標題 view model，Header、商品區、配送區與備註區直接吃 props；`storefrontFormRenderer.ts` 不再操作品牌或區塊標題 DOM。
 - storefront 政策同意提示已改由 Vue 管理：`useStorefrontPolicyAgreement.ts` 接收送單驗證事件並控制提示顯示，`storefrontOrderSubmit.ts` 不再直接切換 `policy-agree-hint` DOM class。
+- storefront 收據欄位展開/收合已改由 Vue 管理：`useStorefrontReceiptRequest.ts` 接收預設資料事件，`storefrontOrderReceiptPrefs.ts` 不再操作 `receipt-fields` class，也改用 runtime 付款可用性判斷預設付款方式。
 
 ### 2026-04-24
 

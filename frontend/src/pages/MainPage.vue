@@ -84,6 +84,7 @@
       <div class="mb-6">
         <label class="flex items-start gap-2 cursor-pointer select-none">
           <input
+            v-model="receiptRequested"
             type="checkbox"
             id="receipt-request"
             class="mt-1 w-4 h-4 rounded accent-[#3C2415] shrink-0"
@@ -91,8 +92,9 @@
           <span class="text-sm text-gray-700">我要索取免用統一發票收據</span>
         </label>
         <div
+          v-show="receiptRequested"
           id="receipt-fields"
-          class="hidden mt-3 ml-6 p-3 rounded-xl border border-amber-200 bg-amber-50 space-y-3"
+          class="mt-3 ml-6 p-3 rounded-xl border border-amber-200 bg-amber-50 space-y-3"
         >
           <div>
             <label class="block text-sm text-gray-600 mb-1">統一編號（選填）</label>
@@ -235,6 +237,7 @@ import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontO
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontPolicyAgreement } from "../features/storefront/useStorefrontPolicyAgreement.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
+import { useStorefrontReceiptRequest } from "../features/storefront/useStorefrontReceiptRequest.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
 import { authFetch } from "../lib/auth.ts";
 import { API_URL } from "../lib/appConfig.ts";
@@ -371,6 +374,10 @@ const {
   handlePolicyHintUpdated,
 } = useStorefrontPolicyAgreement();
 const {
+  receiptRequested,
+  handleReceiptRequestUpdated,
+} = useStorefrontReceiptRequest();
+const {
   currentUser: dynamicFieldsCurrentUser,
   selectedDelivery: dynamicFieldsSelectedDelivery,
   visibleFormFields,
@@ -436,6 +443,10 @@ onMounted(() => {
     "coffee:policy-agree-hint-updated",
     handlePolicyHintUpdated,
   );
+  window.addEventListener(
+    "coffee:receipt-request-updated",
+    handleReceiptRequestUpdated,
+  );
 
   syncCartSnapshot();
 
@@ -450,6 +461,10 @@ onBeforeUnmount(() => {
   window.removeEventListener(
     "coffee:policy-agree-hint-updated",
     handlePolicyHintUpdated,
+  );
+  window.removeEventListener(
+    "coffee:receipt-request-updated",
+    handleReceiptRequestUpdated,
   );
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;

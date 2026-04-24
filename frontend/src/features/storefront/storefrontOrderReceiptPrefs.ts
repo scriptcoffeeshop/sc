@@ -3,7 +3,6 @@ import { tryParseJsonRecord } from "../../lib/jsonUtils.ts";
 import {
   getFormControlValue,
   getInputChecked,
-  getInputElement,
   setInputChecked,
   setInputValue,
 } from "./storefrontDeliveryDom.ts";
@@ -55,10 +54,13 @@ export function getReceiptFormValues(): { receiptInfo: ReceiptInfo | null; error
   };
 }
 
-function toggleReceiptFieldsByCheckbox(): void {
-  const fieldsEl = document.getElementById("receipt-fields");
-  if (!fieldsEl) return;
-  fieldsEl.classList.toggle("hidden", !getInputChecked("receipt-request"));
+function dispatchReceiptRequestUpdated(requested: boolean): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("coffee:receipt-request-updated", {
+      detail: { requested },
+    }),
+  );
 }
 
 function applyReceiptFormValues(receiptInfo: ReceiptInfo | null): void {
@@ -68,7 +70,7 @@ function applyReceiptFormValues(receiptInfo: ReceiptInfo | null): void {
     setInputValue("receipt-tax-id", "");
     setInputValue("receipt-address", "");
     setInputChecked("receipt-date-stamp", false);
-    toggleReceiptFieldsByCheckbox();
+    dispatchReceiptRequestUpdated(false);
     return;
   }
 
@@ -77,7 +79,7 @@ function applyReceiptFormValues(receiptInfo: ReceiptInfo | null): void {
   setInputValue("receipt-tax-id", receiptInfo.taxId);
   setInputValue("receipt-address", receiptInfo.address);
   setInputChecked("receipt-date-stamp", receiptInfo.needDateStamp);
-  toggleReceiptFieldsByCheckbox();
+  dispatchReceiptRequestUpdated(true);
 }
 
 export function applySavedOrderFormPrefs(): void {
@@ -96,22 +98,12 @@ export function applySavedOrderFormPrefs(): void {
   const paymentMethod = String(u.defaultPaymentMethod || "").trim() as PaymentMethod;
   if (!["cod", "linepay", "jkopay", "transfer"].includes(paymentMethod)) return;
 
-  const paymentOptionEl = document.getElementById(`${paymentMethod}-option`);
-  if (!paymentOptionEl || paymentOptionEl.classList.contains("hidden")) return;
+  if (!storefrontRuntime.availablePaymentMethods[paymentMethod]) return;
   if (storefrontRuntime.selectPayment) {
     storefrontRuntime.selectPayment(paymentMethod, { skipQuote: true });
   }
 }
 
 export function initReceiptRequestUi(): void {
-  const requestEl = getInputElement("receipt-request");
-  if (!requestEl) return;
-
-  if (requestEl.dataset.boundReceiptUi !== "true") {
-    requestEl.addEventListener("change", () => {
-      toggleReceiptFieldsByCheckbox();
-    });
-    requestEl.dataset.boundReceiptUi = "true";
-  }
-  toggleReceiptFieldsByCheckbox();
+  dispatchReceiptRequestUpdated(getInputChecked("receipt-request"));
 }
