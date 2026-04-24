@@ -3,79 +3,27 @@
 // ============================================
 
 import { API_URL, districtData } from "../../lib/appConfig.ts";
-import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
 import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
 import TwCitySelector from "../../lib/twCitySelector.js";
-import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
-
-type DeliveryPrefs = Record<string, unknown>;
-type StoreRecord = {
-  id: string;
-  name: string;
-  address: string;
-};
+import {
+  buildFormBody,
+  getSelectElement,
+  getSelectValue,
+  normalizeStoreRecord,
+  parseDeliveryConfig,
+  parseDeliveryPrefs,
+  setElementText,
+  setInputValue,
+  type DeliveryPrefs,
+  type StoreRecord,
+} from "./storefrontDeliveryDom.ts";
 
 let allStores: StoreRecord[] = [];
 let storeListLoaded = false;
 let citySelectorInstance: unknown = null; // 用來儲存 tw-city-selector 實體
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
-
-function parseDeliveryPrefs(rawPrefs: string | null): DeliveryPrefs {
-  return parseJsonRecord(rawPrefs);
-}
-
-function normalizeStoreRecord(value: unknown): StoreRecord {
-  const record = asRecord(value);
-  return {
-    id: String(record.id || ""),
-    name: String(record.name || ""),
-    address: String(record.address || ""),
-  };
-}
-
-function parseDeliveryConfig(value: unknown): StorefrontDeliveryOption[] {
-  return parseJsonArray(value) as StorefrontDeliveryOption[];
-}
-
-function getInputElement(id: string): HTMLInputElement | null {
-  const element = document.getElementById(id);
-  return element instanceof HTMLInputElement ? element : null;
-}
-
-function getSelectElement(id: string): HTMLSelectElement | null {
-  const element = document.getElementById(id);
-  return element instanceof HTMLSelectElement ? element : null;
-}
-
-function getSelectValue(id: string): string {
-  return getSelectElement(id)?.value || "";
-}
-
-function setInputValue(id: string, value: unknown) {
-  const input = getInputElement(id);
-  if (input) input.value = String(value || "");
-}
-
-function setElementText(id: string, value: unknown) {
-  const element = document.getElementById(id);
-  if (element) element.textContent = String(value || "");
-}
-
-function buildFormBody(data: Record<string, unknown>) {
-  const body = new URLSearchParams();
-  Object.entries(data).forEach(([key, value]) => {
-    body.set(key, String(value || ""));
-  });
-  return body;
-}
 
 function initCitySelector() {
   if (TwCitySelector && !citySelectorInstance) {
