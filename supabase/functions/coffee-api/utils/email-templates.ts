@@ -247,7 +247,7 @@ function normalizeTrackingUrl(url: string): string {
     const parsed = new URL(raw);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
     return parsed.toString();
-  } catch {
+  } catch (_error) {
     return "";
   }
 }
@@ -265,7 +265,7 @@ function buildTrackingCopyUrl(trackingNumber: string): string {
     const copyUrl = new URL("copy-tracking.html", normalizedBase);
     copyUrl.searchParams.set("tracking", rawTrackingNumber);
     return copyUrl.toString();
-  } catch {
+  } catch (_error) {
     return "";
   }
 }

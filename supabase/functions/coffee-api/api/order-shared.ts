@@ -69,7 +69,7 @@ export function parseReceiptInfo(raw: unknown): ReceiptInfo | null {
     if (!str) return null;
     try {
       return normalizeReceiptInfo(JSON.parse(str));
-    } catch {
+    } catch (_error) {
       return null;
     }
   }
@@ -103,7 +103,7 @@ export function parseCustomFieldsRecord(
     if (!str) return {};
     try {
       parsed = JSON.parse(str);
-    } catch {
+    } catch (_error) {
       return null;
     }
   }
@@ -368,7 +368,7 @@ export function resolveMainPageUrlWithQuery(query: URLSearchParams): string {
     url.protocol = "https:";
     url.search = qs;
     return url.toString();
-  } catch {
+  } catch (_error) {
     const fallback = new URL(
       "main.html",
       "https://scriptcoffeeshop.github.io/sc/",

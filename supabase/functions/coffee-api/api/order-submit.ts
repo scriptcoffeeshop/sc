@@ -172,7 +172,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
           : "",
         receiptInfo: receiptInfo ?? null,
       });
-    } catch {
+    } catch (_error) {
       // ignore user profile sync failures on order submit
     }
   }
@@ -435,7 +435,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
         ? (() => {
           try {
             return JSON.stringify(resultObject).slice(0, 240);
-          } catch {
+          } catch (_error) {
             return "";
           }
         })()

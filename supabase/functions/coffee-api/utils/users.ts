@@ -21,7 +21,7 @@ function normalizeReceiptInfoText(value: unknown): string {
         return "";
       }
       return JSON.stringify(parsed);
-    } catch {
+    } catch (_error) {
       return "";
     }
   }

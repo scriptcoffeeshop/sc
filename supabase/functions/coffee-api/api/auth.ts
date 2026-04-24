@@ -16,7 +16,7 @@ export function getLineLoginUrl(redirectUri: string) {
     if (!ALLOWED_REDIRECT_ORIGINS.includes(urlObj.origin)) {
       return { success: false, error: "不允許的 redirectUri 來源" };
     }
-  } catch {
+  } catch (_error) {
     return { success: false, error: "無效的 redirectUri 格式" };
   }
 

@@ -82,6 +82,7 @@
 - rate limiter 已抽成共用 store；預設仍走記憶體 backend，但若設定 `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`，可切到 Upstash Redis REST 作為分散式配額儲存。
 - LINE Pay / 街口支付已支援付款期限：超過 `payment_expires_at` 的線上付款訂單會自動轉為 `status=failed`、`payment_status=expired`，查詢、付款確認、街口 inquiry/result 流程都會先正規化逾期狀態。
 - 街口支付已切正式環境：正式 API base URL 為 `https://onlinepay.jkopay.com`，`JKOPAY_STORE_ID` / `JKOPAY_API_KEY` / `JKOPAY_SECRET_KEY` / `JKOPAY_BASE_URL` 皆走 Supabase secrets。
+- Supabase Edge Function production code 已移除匿名 `catch {}`；目前容錯 fallback 行為維持不變，但錯誤變數統一命名為 `_error`，方便後續補觀測與分級紀錄。
 
 ### 視覺與互動
 
@@ -158,6 +159,7 @@
 - `金流選項顯示設定` 已同步改為卡片式清單，取消表格版面；每個付款方式保留系統代碼、預覽、圖示上傳、顯示名稱與說明欄位，dashboard settings smoke 已覆蓋上傳按鈕位置與手機寬度不水平溢出。
 - 前台配送方式卡片的說明文字已跟進後台 textarea，多行內容以 `white-space: pre-line` 呈現；storefront smoke 已覆蓋後端換行說明不被壓成一行。
 - 後台設定 UI CSS 已再收斂：區塊標題/金流卡片共用 `settings-config-*` 樣式，並移除已無元件使用的 `settings-routing-table` / `settings-payment-table` / `settings-responsive-wrap` 手機表格相容樣式。
+- Supabase Edge Function production code 已移除匿名 `catch {}`，改為統一 `_error` binding；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。

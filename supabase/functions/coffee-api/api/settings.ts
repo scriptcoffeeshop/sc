@@ -52,7 +52,7 @@ function normalizeIconPath(rawValue: unknown): string {
           return normalizedPath;
         }
       }
-    } catch {
+    } catch (_error) {
       return value;
     }
     return value;
@@ -87,7 +87,7 @@ function normalizeDeliveryOptionsConfig(value: string): string {
       };
     });
     return JSON.stringify(normalized);
-  } catch {
+  } catch (_error) {
     return value;
   }
 }
@@ -122,7 +122,7 @@ function normalizePaymentOptionsConfig(value: string): string {
     );
 
     return JSON.stringify(normalized);
-  } catch {
+  } catch (_error) {
     return value;
   }
 }

@@ -92,7 +92,7 @@ function parseMaybeJsonArray<T = unknown>(value: unknown): T[] {
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed) ? (parsed as T[]) : [];
-  } catch {
+  } catch (_error) {
     return [];
   }
 }
@@ -117,7 +117,7 @@ async function loadDeliveryConfig() {
       try {
         const parsed = JSON.parse(String(r.value));
         if (Array.isArray(parsed)) deliveryConfig = parsed;
-      } catch {
+      } catch (_error) {
         // ignore malformed setting
       }
       return;
@@ -129,7 +129,7 @@ async function loadDeliveryConfig() {
         if (parsed && typeof parsed === "object") {
           routingConfig = parsed as Record<string, unknown>;
         }
-      } catch {
+      } catch (_error) {
         // ignore malformed setting
       }
       return;
@@ -297,7 +297,7 @@ export function computeOrderQuote(
         }
         unitPrice = Number(spec.price ?? product.price) || 0;
         specLabel = String(spec.label || specKey);
-      } catch {
+      } catch (_error) {
         return { success: false, error: `商品「${product.name}」規格解析失敗` };
       }
     } else if (specKey && specKey !== "default") {

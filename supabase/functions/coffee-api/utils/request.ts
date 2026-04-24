@@ -44,13 +44,13 @@ export async function parseRequestData(
       if (body && typeof body === "object" && !Array.isArray(body)) {
         Object.assign(data, body);
       }
-    } catch {
+    } catch (_error) {
       const form = new URLSearchParams(raw);
       form.forEach((v, k) => {
         data[k] = v;
       });
     }
-  } catch {
+  } catch (_error) {
     // 忽略 body 解析錯誤，保留 query 參數
   }
 

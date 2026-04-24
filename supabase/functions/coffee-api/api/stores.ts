@@ -236,7 +236,7 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
       if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
         clientUrl = "";
       }
-    } catch {
+    } catch (_error) {
       clientUrl = "";
     }
   }
@@ -395,7 +395,7 @@ export async function handlePcscMapCallback(
       if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
         clientUrl = "";
       }
-    } catch {
+    } catch (_error) {
       clientUrl = "";
     }
   }

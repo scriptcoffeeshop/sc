@@ -65,7 +65,7 @@ export async function verifyJwt(
     );
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;
-  } catch {
+  } catch (_error) {
     return null;
   }
 }
@@ -105,7 +105,7 @@ export async function extractAuth(req: Request): Promise<AuthResult | null> {
         role,
         isAdmin: role === "ADMIN" || role === "SUPER_ADMIN",
       };
-    } catch {
+    } catch (_error) {
       return { userId, role: "USER", isAdmin: false };
     }
   })();

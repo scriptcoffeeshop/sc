@@ -277,7 +277,7 @@ export function parseReceiptInfo(
         return parsed as Record<string, unknown>;
       }
       return null;
-    } catch {
+    } catch (_error) {
       return null;
     }
   }

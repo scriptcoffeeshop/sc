@@ -99,7 +99,7 @@ async function resolveJkoPayBaseUrl(): Promise<string> {
         isSandbox = !["false", "0", "off", "no"].includes(raw);
       }
     }
-  } catch {
+  } catch (_error) {
     // 忽略設定查詢失敗，回到 UAT 預設值
   }
 
@@ -147,7 +147,7 @@ function tryParseJsonObject(text: string): Record<string, unknown> | null {
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       return parsed as Record<string, unknown>;
     }
-  } catch {
+  } catch (_error) {
     return null;
   }
   return null;

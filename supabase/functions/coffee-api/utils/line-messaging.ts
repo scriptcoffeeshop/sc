@@ -27,7 +27,7 @@ function buildLineApiError(status: number, responseText: string): string {
 
     detail = baseMessage || detail || "未知錯誤";
     if (detailText) detail += `（${detailText}）`;
-  } catch {
+  } catch (_error) {
     detail = detail || "未知錯誤";
   }
   return `LINE 推播失敗（HTTP ${status}）：${detail}`;
