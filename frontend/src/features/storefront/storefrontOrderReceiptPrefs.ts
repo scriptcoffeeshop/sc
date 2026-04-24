@@ -6,6 +6,7 @@ import {
   setInputChecked,
   setInputValue,
 } from "./storefrontDeliveryDom.ts";
+import { emitStorefrontOrderFormStateUpdated } from "./storefrontOrderFormState.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import type { PaymentMethod, ReceiptInfo } from "../../types";
 
@@ -90,10 +91,9 @@ export function applySavedOrderFormPrefs(): void {
   applyReceiptFormValues(receiptInfo);
 
   const transferLast5 = String(u.defaultTransferAccountLast5 || "").trim();
-  setInputValue(
-    "transfer-last5",
-    /^\d{5}$/.test(transferLast5) ? transferLast5 : "",
-  );
+  emitStorefrontOrderFormStateUpdated({
+    transferAccountLast5: /^\d{5}$/.test(transferLast5) ? transferLast5 : "",
+  });
 
   const paymentMethod = String(u.defaultPaymentMethod || "").trim() as PaymentMethod;
   if (!["cod", "linepay", "jkopay", "transfer"].includes(paymentMethod)) return;

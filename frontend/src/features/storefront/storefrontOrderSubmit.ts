@@ -15,6 +15,10 @@ import {
   applySavedOrderFormPrefs,
   getReceiptFormValues,
 } from "./storefrontOrderReceiptPrefs.ts";
+import {
+  emitStorefrontOrderFormStateUpdated,
+  getStorefrontOrderFormState,
+} from "./storefrontOrderFormState.ts";
 import { buildPaymentLaunchDialogOptions } from "./storefrontPaymentDisplay.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import {
@@ -127,10 +131,7 @@ function persistSubmittedOrderPreferences(
 
 function resetOrderDraft() {
   clearCart();
-  const noteEl = document.getElementById(
-    "order-note",
-  ) as HTMLTextAreaElement | null;
-  if (noteEl) noteEl.value = "";
+  emitStorefrontOrderFormStateUpdated({ orderNote: "" });
   applySavedOrderFormPrefs();
 }
 
@@ -152,12 +153,9 @@ export async function submitOrder(): Promise<void> {
   }
 
   // 政策同意驗證
-  const policyCheckbox = document.getElementById(
-    "policy-agree",
-  ) as HTMLInputElement | null;
-  if (policyCheckbox && !policyCheckbox.checked) {
+  const orderForm = getStorefrontOrderFormState();
+  if (!orderForm.policyAgreed) {
     setPolicyAgreeHintVisible(true);
-    policyCheckbox.focus();
     showWarning("提醒", "請先閱讀並勾選同意隱私權政策及退換貨政策");
     return;
   }
@@ -231,10 +229,7 @@ export async function submitOrder(): Promise<void> {
   }
   const deliveryInfo = deliveryResult.deliveryInfo as SubmitDeliveryInfo;
 
-  const note = String(
-    (document.getElementById("order-note") as HTMLTextAreaElement | null)
-      ?.value || "",
-  ).trim();
+  const note = orderForm.orderNote.trim();
   const receiptResult = getReceiptFormValues();
   if (receiptResult.error) {
     showError("錯誤", receiptResult.error);
@@ -259,9 +254,7 @@ export async function submitOrder(): Promise<void> {
       showError("錯誤", "請選擇您要匯入的目標帳號");
       return;
     }
-    transferAccountLast5 =
-      (document.getElementById("transfer-last5") as HTMLInputElement | null)
-        ?.value?.trim() || "";
+    transferAccountLast5 = orderForm.transferAccountLast5.trim();
     if (
       !transferAccountLast5 ||
       transferAccountLast5.length !== 5 ||

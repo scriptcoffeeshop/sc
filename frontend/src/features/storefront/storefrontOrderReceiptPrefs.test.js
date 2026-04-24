@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { state } from "../../lib/appState.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import {
+  getStorefrontOrderFormState,
+  setStorefrontOrderFormState,
+} from "./storefrontOrderFormState.ts";
+import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
 } from "./storefrontOrderReceiptPrefs.ts";
@@ -15,7 +19,6 @@ function renderReceiptInputs() {
     <input id="receipt-buyer">
     <input id="receipt-address">
     <input id="receipt-date-stamp" type="checkbox">
-    <input id="transfer-last5">
   `;
 }
 
@@ -24,6 +27,7 @@ describe("storefrontOrderReceiptPrefs", () => {
     renderReceiptInputs();
     state.currentUser = null;
     state.selectedPayment = "cod";
+    setStorefrontOrderFormState({ transferAccountLast5: "" });
     storefrontRuntime.availablePaymentMethods = {
       cod: false,
       linepay: false,
@@ -54,7 +58,7 @@ describe("storefrontOrderReceiptPrefs", () => {
     expect(document.getElementById("receipt-buyer").value).toBe("測試公司");
     expect(document.getElementById("receipt-address").value).toBe("新竹市");
     expect(document.getElementById("receipt-date-stamp").checked).toBe(true);
-    expect(document.getElementById("transfer-last5").value).toBe("12345");
+    expect(getStorefrontOrderFormState().transferAccountLast5).toBe("12345");
     expect(listener).toHaveBeenCalledTimes(1);
     expect(listener.mock.calls[0][0].detail).toEqual({ requested: true });
     expect(storefrontRuntime.selectPayment).toHaveBeenCalledWith("transfer", {

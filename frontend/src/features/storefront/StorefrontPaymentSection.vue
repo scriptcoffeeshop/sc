@@ -117,11 +117,13 @@
         <input
           id="transfer-last5"
           type="text"
+          :value="transferAccountLast5"
           class="input-field"
           placeholder="請輸入帳號末5碼"
           maxlength="5"
           pattern="\d{5}"
           inputmode="numeric"
+          @input="handleTransferLast5Input"
         >
       </div>
     </div>
@@ -135,15 +137,6 @@ import type {
   StorefrontPaymentOptionView,
 } from "./useStorefrontPayment";
 
-defineEmits<{
-  "select-payment": [method: string];
-  "select-bank-account": [bankId: string | number | undefined];
-  "copy-transfer-account": [
-    bankId: string | number | undefined,
-    accountNumber: string | undefined,
-  ];
-}>();
-
 withDefaults(
   defineProps<{
     bankAccounts?: StorefrontBankAccount[];
@@ -154,6 +147,7 @@ withDefaults(
     copiedBankAccountId?: string;
     totalPriceText: string;
     selectedCheckIconUrl: string;
+    transferAccountLast5?: string;
   }>(),
   {
     bankAccounts: () => [],
@@ -167,6 +161,22 @@ withDefaults(
     }),
     paymentOptions: () => [],
     copiedBankAccountId: "",
+    transferAccountLast5: "",
   },
 );
+
+const emit = defineEmits<{
+  "select-payment": [method: string];
+  "select-bank-account": [bankId: string | number | undefined];
+  "copy-transfer-account": [
+    bankId: string | number | undefined,
+    accountNumber: string | undefined,
+  ];
+  "update-transfer-account-last5": [value: string];
+}>();
+
+function handleTransferLast5Input(event: Event) {
+  const input = event.target instanceof HTMLInputElement ? event.target : null;
+  emit("update-transfer-account-last5", input?.value || "");
+}
 </script>

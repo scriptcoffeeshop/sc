@@ -48,15 +48,18 @@
         :copied-bank-account-id="copiedBankAccountId"
         :total-price-text="totalPriceText"
         :selected-check-icon-url="selectedCheckIconUrl"
+        :transfer-account-last5="transferAccountLast5"
         @select-payment="handleSelectPayment"
         @select-bank-account="handleSelectBankAccount"
         @copy-transfer-account="handleCopyTransferAccount"
+        @update-transfer-account-last5="updateTransferAccountLast5"
       />
 
       <!-- 政策同意 -->
       <div class="mb-4">
         <label class="flex items-start gap-2 cursor-pointer select-none">
           <input
+            ref="policyCheckboxEl"
             v-model="policyAgreed"
             type="checkbox"
             id="policy-agree"
@@ -162,6 +165,7 @@
           </span>
         </label>
         <UiTextarea
+          v-model="orderNote"
           id="order-note"
           class="input-field resize-none"
           rows="2"
@@ -214,7 +218,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, watch } from "vue";
+import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import StorefrontBottomBar from "../features/storefront/StorefrontBottomBar.vue";
@@ -237,10 +241,14 @@ import { useStorefrontAnnouncement } from "../features/storefront/useStorefrontA
 import { useStorefrontBranding } from "../features/storefront/useStorefrontBranding.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
-import { useStorefrontPolicyAgreement } from "../features/storefront/useStorefrontPolicyAgreement.ts";
+import {
+  useStorefrontPolicyAgreement,
+  type StorefrontPolicyHintEvent,
+} from "../features/storefront/useStorefrontPolicyAgreement.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontReceiptRequest } from "../features/storefront/useStorefrontReceiptRequest.ts";
 import { useStorefrontLoadState } from "../features/storefront/useStorefrontLoadState.ts";
+import { useStorefrontOrderFormState } from "../features/storefront/useStorefrontOrderFormState.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
 import { authFetch } from "../lib/auth.ts";
 import { API_URL } from "../lib/appConfig.ts";
@@ -266,9 +274,11 @@ import {
 } from "../features/storefront/storefrontOrderActions.ts";
 import { state } from "../lib/appState.ts";
 import { Toast } from "../lib/sharedUtils.ts";
+import { setStorefrontOrderFormState } from "../features/storefront/storefrontOrderFormState.ts";
 
 const originalBodyClass = document.body.className;
 const originalBodyOverflow = document.body.style.overflow;
+const policyCheckboxEl = ref<HTMLInputElement | null>(null);
 const {
   isOrderHistoryOpen,
   orderHistoryError,
@@ -382,6 +392,12 @@ const {
   handlePolicyHintUpdated,
 } = useStorefrontPolicyAgreement();
 const {
+  orderNote,
+  transferAccountLast5,
+  updateTransferAccountLast5,
+  handleOrderFormStateUpdated,
+} = useStorefrontOrderFormState();
+const {
   receiptRequested,
   handleReceiptRequestUpdated,
 } = useStorefrontReceiptRequest();
@@ -428,9 +444,20 @@ function handleSelectedStoreUpdated() {
   refreshDeliveryState();
 }
 
+function handlePolicyHintEvent(event: Event) {
+  handlePolicyHintUpdated(event);
+  const detail = (event as StorefrontPolicyHintEvent).detail || {};
+  if (detail.visible) policyCheckboxEl.value?.focus();
+}
+
 watch(isCartDrawerOpen, (open) => {
   document.body.style.overflow = open ? "hidden" : originalBodyOverflow;
 });
+watch(
+  policyAgreed,
+  (value) => setStorefrontOrderFormState({ policyAgreed: value }),
+  { flush: "sync", immediate: true },
+);
 
 function handleStorefrontLogout() {
   logoutFromShell();
@@ -449,7 +476,7 @@ onMounted(() => {
   window.addEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
   window.addEventListener(
     "coffee:policy-agree-hint-updated",
-    handlePolicyHintUpdated,
+    handlePolicyHintEvent,
   );
   window.addEventListener(
     "coffee:receipt-request-updated",
@@ -458,6 +485,10 @@ onMounted(() => {
   window.addEventListener(
     "coffee:storefront-load-error-updated",
     handleLoadErrorUpdated,
+  );
+  window.addEventListener(
+    "coffee:order-form-state-updated",
+    handleOrderFormStateUpdated,
   );
 
   syncCartSnapshot();
@@ -472,7 +503,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
   window.removeEventListener(
     "coffee:policy-agree-hint-updated",
-    handlePolicyHintUpdated,
+    handlePolicyHintEvent,
   );
   window.removeEventListener(
     "coffee:receipt-request-updated",
@@ -481,6 +512,10 @@ onBeforeUnmount(() => {
   window.removeEventListener(
     "coffee:storefront-load-error-updated",
     handleLoadErrorUpdated,
+  );
+  window.removeEventListener(
+    "coffee:order-form-state-updated",
+    handleOrderFormStateUpdated,
   );
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;
