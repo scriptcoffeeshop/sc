@@ -288,7 +288,7 @@ async function savePromotion(event) {
   event?.preventDefault?.();
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
 
-  const payload: Record<string, any> = {
+  const payload: Record<string, unknown> = {
     userId: getAuthUserId(),
     name: String(promotionForm.name || "").trim(),
     type: String(promotionForm.type || "bundle"),

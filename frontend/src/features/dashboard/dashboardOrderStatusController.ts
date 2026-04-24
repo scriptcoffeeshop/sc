@@ -135,7 +135,7 @@ export function createOrderStatusController(deps) {
         }
       }
 
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         userId: deps.getAuthUserId(),
         orderId,
         status,

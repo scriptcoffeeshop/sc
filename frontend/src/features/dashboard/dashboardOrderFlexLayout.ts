@@ -7,6 +7,8 @@ export const orderStatusColorMap: Record<string, string> = {
   cancelled: "#DC322F",
 };
 
+export type FlexContent = Record<string, unknown>;
+
 type FlexTextWeight = "regular" | "bold";
 
 interface FlexInfoRowOptions {
@@ -20,7 +22,7 @@ interface FlexInfoRowOptions {
   wrap?: boolean;
 }
 
-export function createFlexSeparator(margin = "md") {
+export function createFlexSeparator(margin = "md"): FlexContent {
   return { type: "separator", margin };
 }
 
@@ -33,7 +35,7 @@ export function createFlexInfoRow({
   valueWeight,
   valueColor,
   wrap,
-}: FlexInfoRowOptions) {
+}: FlexInfoRowOptions): FlexContent {
   return {
     type: "box",
     layout: "horizontal",
@@ -59,7 +61,7 @@ export function createFlexInfoRow({
   };
 }
 
-export function createFlexSectionTitle(text: string, margin = "md") {
+export function createFlexSectionTitle(text: string, margin = "md"): FlexContent {
   return {
     type: "text",
     text,

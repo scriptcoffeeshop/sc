@@ -1,3 +1,5 @@
+import type { FlexContent } from "./dashboardOrderFlexLayout.ts";
+
 export function buildOrderFlexMessageBubble({
   siteTitle,
   orderId,
@@ -6,7 +8,7 @@ export function buildOrderFlexMessageBubble({
   customTrackingUrl,
   hasTrackingLinkCta,
 }) {
-  const footerContents: any[] = [];
+  const footerContents: FlexContent[] = [];
 
   if (hasTrackingLinkCta) {
     footerContents.push({

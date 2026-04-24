@@ -2,10 +2,11 @@ import {
   createFlexInfoRow,
   createFlexSectionTitle,
   createFlexSeparator,
+  type FlexContent,
   orderStatusColorMap,
 } from "./dashboardOrderFlexLayout.ts";
 
-function appendOrderNoteSection(bodyContents, orderNote) {
+function appendOrderNoteSection(bodyContents: FlexContent[], orderNote) {
   if (!orderNote) return;
   bodyContents.push(createFlexSeparator("md"));
   bodyContents.push(
@@ -18,7 +19,7 @@ function appendOrderNoteSection(bodyContents, orderNote) {
   );
 }
 
-function appendReceiptSection(bodyContents, receiptInfo) {
+function appendReceiptSection(bodyContents: FlexContent[], receiptInfo) {
   if (!receiptInfo) return;
 
   bodyContents.push(createFlexSeparator("md"));
@@ -70,7 +71,7 @@ function appendReceiptSection(bodyContents, receiptInfo) {
   }
 }
 
-function appendTrackingSection(bodyContents, order) {
+function appendTrackingSection(bodyContents: FlexContent[], order) {
   if (!order.trackingNumber && !order.shippingProvider) return;
 
   bodyContents.push(createFlexSeparator("md"));
@@ -100,7 +101,11 @@ function appendTrackingSection(bodyContents, order) {
   }
 }
 
-function appendCancelReasonSection(bodyContents, newStatus, cancelReason) {
+function appendCancelReasonSection(
+  bodyContents: FlexContent[],
+  newStatus,
+  cancelReason,
+) {
   if (!["cancelled", "failed"].includes(newStatus) || !cancelReason) return;
   const reasonLabel = newStatus === "failed" ? "失敗原因" : "取消原因";
 
@@ -116,7 +121,7 @@ function appendCancelReasonSection(bodyContents, newStatus, cancelReason) {
   );
 }
 
-function appendItemsSection(bodyContents, itemsText) {
+function appendItemsSection(bodyContents: FlexContent[], itemsText) {
   if (!itemsText) return;
 
   bodyContents.push(createFlexSeparator("md"));
@@ -160,7 +165,7 @@ export function buildOrderFlexBodyPayload({ deps, order, newStatus }) {
     order.shippingProvider && customTrackingUrl,
   );
 
-  const bodyContents: any[] = [
+  const bodyContents: FlexContent[] = [
     createFlexInfoRow({
       label: "訂單編號",
       text: `#${order.orderId || ""}`,

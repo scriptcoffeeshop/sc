@@ -198,6 +198,7 @@
 - storefront runtime bridge 已加上明確型別：`storefrontRuntime.ts` 只允許目前仍需要的 payment/cart/quote/dynamic-field callbacks，避免 legacy callback 名稱回流。
 - storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，legacy `js/` 只保留相容 re-export。
 - dashboard 訂單 state/view/export/selection 已共用 `dashboardOrderTypes.ts`，`useDashboardOrders` 不再以 `ref<any[]>` 保存訂單，批次操作服務也改用明確介面。
+- production frontend 已清除明顯 `any` 型別債：dashboard 訂單 payload、促銷 payload 與 LINE Flex content 改用 `unknown` / `FlexContent` 型別。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
