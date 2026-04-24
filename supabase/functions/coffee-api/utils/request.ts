@@ -1,3 +1,5 @@
+import { tryParseJsonRecord } from "./json.ts";
+
 export async function parseRequestData(
   req: Request,
   url: URL,
@@ -39,12 +41,10 @@ export async function parseRequestData(
     const raw = await req.text();
     if (!raw) return data;
 
-    try {
-      const body = JSON.parse(raw);
-      if (body && typeof body === "object" && !Array.isArray(body)) {
-        Object.assign(data, body);
-      }
-    } catch (_error) {
+    const body = tryParseJsonRecord(raw);
+    if (body) {
+      Object.assign(data, body);
+    } else {
       const form = new URLSearchParams(raw);
       form.forEach((v, k) => {
         data[k] = v;

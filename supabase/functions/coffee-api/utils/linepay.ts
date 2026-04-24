@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.ts";
 import { LINEPAY_CHANNEL_ID, LINEPAY_CHANNEL_SECRET } from "./config.ts";
+import { parseJsonText } from "./json.ts";
 
 export async function linePaySign(
   channelSecret: string,
@@ -84,7 +85,7 @@ export async function requestLinePayAPI<T = unknown>(
         /("transactionId"\s*:\s*)(\d+)/g,
         '$1"$2"',
       );
-      return JSON.parse(processed) as T;
+      return parseJsonText<T>(processed);
     } catch (err: unknown) {
       attempt++;
       if (attempt > maxRetries) {

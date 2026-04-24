@@ -2,6 +2,7 @@ import {
   LINE_MESSAGING_API_BASE_URL,
   LINE_MESSAGING_CHANNEL_ACCESS_TOKEN,
 } from "./config.ts";
+import { tryParseJsonRecord } from "./json.ts";
 
 type PushMessageResult =
   | { success: true }
@@ -9,8 +10,8 @@ type PushMessageResult =
 
 function buildLineApiError(status: number, responseText: string): string {
   let detail = responseText;
-  try {
-    const parsed = JSON.parse(responseText);
+  const parsed = tryParseJsonRecord(responseText);
+  if (parsed) {
     const baseMessage = String(parsed?.message || "").trim();
     const details = Array.isArray(parsed?.details)
       ? parsed.details.filter((item: unknown) =>
@@ -27,7 +28,7 @@ function buildLineApiError(status: number, responseText: string): string {
 
     detail = baseMessage || detail || "未知錯誤";
     if (detailText) detail += `（${detailText}）`;
-  } catch (_error) {
+  } else {
     detail = detail || "未知錯誤";
   }
   return `LINE 推播失敗（HTTP ${status}）：${detail}`;

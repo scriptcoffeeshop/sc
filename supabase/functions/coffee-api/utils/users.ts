@@ -1,4 +1,5 @@
 import { supabase } from "./supabase.ts";
+import { tryParseJsonRecord } from "./json.ts";
 
 function hasKey(data: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(data, key);
@@ -15,15 +16,8 @@ function normalizeReceiptInfoText(value: unknown): string {
   if (typeof value === "string") {
     const raw = value.trim();
     if (!raw) return "";
-    try {
-      const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-        return "";
-      }
-      return JSON.stringify(parsed);
-    } catch (_error) {
-      return "";
-    }
+    const parsed = tryParseJsonRecord(raw);
+    return parsed ? JSON.stringify(parsed) : "";
   }
 
   if (typeof value !== "object" || Array.isArray(value)) return "";

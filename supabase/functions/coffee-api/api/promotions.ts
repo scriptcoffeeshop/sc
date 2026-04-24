@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
+import { parseJsonArray } from "../utils/json.ts";
 
 export async function getPromotions() {
   const { data, error } = await supabase.from("coffee_promotions").select("*")
@@ -9,14 +10,8 @@ export async function getPromotions() {
     id: r.id,
     name: r.name,
     type: r.type,
-    targetProductIds:
-      (typeof r.target_product_ids === "string"
-        ? JSON.parse(r.target_product_ids)
-        : r.target_product_ids) || [],
-    targetItems:
-      (typeof r.target_items === "string"
-        ? JSON.parse(r.target_items)
-        : r.target_items) || [],
+    targetProductIds: parseJsonArray(r.target_product_ids),
+    targetItems: parseJsonArray(r.target_items),
     minQuantity: Number(r.min_quantity) || 1,
     discountType: r.discount_type,
     discountValue: Number(r.discount_value) || 0,

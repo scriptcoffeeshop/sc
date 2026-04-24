@@ -3,6 +3,11 @@ import {
   calcPercentDiscountAmount,
   isPromotionActive,
 } from "../utils/promotion.ts";
+import {
+  parseJsonArray,
+  tryParseJsonArray,
+  tryParseJsonRecord,
+} from "../utils/json.ts";
 
 export type QuoteRequestItem = {
   productId: number;
@@ -87,14 +92,7 @@ function toPaymentAvailability(
 }
 
 function parseMaybeJsonArray<T = unknown>(value: unknown): T[] {
-  if (Array.isArray(value)) return value as T[];
-  if (typeof value !== "string") return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? (parsed as T[]) : [];
-  } catch (_error) {
-    return [];
-  }
+  return parseJsonArray<T>(value);
 }
 
 async function loadDeliveryConfig() {
@@ -114,24 +112,12 @@ async function loadDeliveryConfig() {
 
   settingsData?.forEach((r: Record<string, unknown>) => {
     if (r.key === "delivery_options_config") {
-      try {
-        const parsed = JSON.parse(String(r.value));
-        if (Array.isArray(parsed)) deliveryConfig = parsed;
-      } catch (_error) {
-        // ignore malformed setting
-      }
+      deliveryConfig = parseJsonArray<Record<string, unknown>>(r.value);
       return;
     }
 
     if (r.key === "payment_routing_config") {
-      try {
-        const parsed = JSON.parse(String(r.value));
-        if (parsed && typeof parsed === "object") {
-          routingConfig = parsed as Record<string, unknown>;
-        }
-      } catch (_error) {
-        // ignore malformed setting
-      }
+      routingConfig = tryParseJsonRecord(r.value);
       return;
     }
 
@@ -273,11 +259,15 @@ export function computeOrderQuote(
       if (!specKey) {
         return { success: false, error: `商品「${product.name}」必須選擇規格` };
       }
+      const specList = typeof product.specs === "string"
+        ? tryParseJsonArray<Record<string, unknown>>(product.specs)
+        : Array.isArray(product.specs)
+        ? product.specs as Record<string, unknown>[]
+        : [];
+      if (!specList) {
+        return { success: false, error: `商品「${product.name}」規格解析失敗` };
+      }
       try {
-        const specs = typeof product.specs === "string"
-          ? JSON.parse(product.specs)
-          : product.specs;
-        const specList = Array.isArray(specs) ? specs : [];
         const spec = specList.find((s: Record<string, unknown>) =>
           String(s.key) === specKey ||
           String(s.label || "") === specKey ||

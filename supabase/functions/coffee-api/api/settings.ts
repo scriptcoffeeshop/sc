@@ -5,6 +5,7 @@ import { getCategories } from "./categories.ts";
 import { getFormFields } from "./form-fields.ts";
 import { getBankAccounts } from "./bank-accounts.ts";
 import { getPromotions } from "./promotions.ts";
+import { tryParseJsonArray, tryParseJsonRecord } from "../utils/json.ts";
 
 const PUBLIC_SETTINGS_KEYS = [
   "is_open",
@@ -68,63 +69,55 @@ function normalizeIconPath(rawValue: unknown): string {
 }
 
 function normalizeDeliveryOptionsConfig(value: string): string {
-  try {
-    const parsed = JSON.parse(value);
-    if (!Array.isArray(parsed)) return value;
+  const parsed = tryParseJsonArray(value);
+  if (!parsed) return value;
 
-    const normalized = parsed.map((item) => {
-      if (!item || typeof item !== "object") return item;
-      const rawItem = item as Record<string, unknown>;
-      const rest = { ...rawItem };
-      delete rest.icon;
-      delete rest.iconUrl;
-      const normalizedIconUrl = normalizeIconPath(
-        rawItem.icon_url ?? rawItem.iconUrl ?? "",
-      );
-      return {
-        ...rest,
-        icon_url: normalizedIconUrl,
-      };
-    });
-    return JSON.stringify(normalized);
-  } catch (_error) {
-    return value;
-  }
+  const normalized = parsed.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+    const rawItem = item as Record<string, unknown>;
+    const rest = { ...rawItem };
+    delete rest.icon;
+    delete rest.iconUrl;
+    const normalizedIconUrl = normalizeIconPath(
+      rawItem.icon_url ?? rawItem.iconUrl ?? "",
+    );
+    return {
+      ...rest,
+      icon_url: normalizedIconUrl,
+    };
+  });
+  return JSON.stringify(normalized);
 }
 
 function normalizePaymentOptionsConfig(value: string): string {
-  try {
-    const parsed = JSON.parse(value);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return value;
-    }
-
-    const normalized = Object.entries(parsed as Record<string, unknown>).reduce(
-      (acc, [method, option]) => {
-        if (!option || typeof option !== "object" || Array.isArray(option)) {
-          acc[method] = option;
-          return acc;
-        }
-        const rawOption = option as Record<string, unknown>;
-        const rest = { ...rawOption };
-        delete rest.icon;
-        delete rest.iconUrl;
-        const normalizedIconUrl = normalizeIconPath(
-          rawOption.icon_url ?? rawOption.iconUrl ?? "",
-        );
-        acc[method] = {
-          ...rest,
-          icon_url: normalizedIconUrl,
-        };
-        return acc;
-      },
-      {} as Record<string, unknown>,
-    );
-
-    return JSON.stringify(normalized);
-  } catch (_error) {
+  const parsed = tryParseJsonRecord(value);
+  if (!parsed) {
     return value;
   }
+
+  const normalized = Object.entries(parsed).reduce(
+    (acc, [method, option]) => {
+      if (!option || typeof option !== "object" || Array.isArray(option)) {
+        acc[method] = option;
+        return acc;
+      }
+      const rawOption = option as Record<string, unknown>;
+      const rest = { ...rawOption };
+      delete rest.icon;
+      delete rest.iconUrl;
+      const normalizedIconUrl = normalizeIconPath(
+        rawOption.icon_url ?? rawOption.iconUrl ?? "",
+      );
+      acc[method] = {
+        ...rest,
+        icon_url: normalizedIconUrl,
+      };
+      return acc;
+    },
+    {} as Record<string, unknown>,
+  );
+
+  return JSON.stringify(normalized);
 }
 
 function normalizeSettingValue(key: string, rawValue: unknown): string {

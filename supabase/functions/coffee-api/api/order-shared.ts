@@ -7,6 +7,7 @@ import {
 } from "../utils/config.ts";
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
 import { sanitize } from "../utils/html.ts";
+import { tryParseJsonRecord } from "../utils/json.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
@@ -67,11 +68,7 @@ export function parseReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (typeof raw === "string") {
     const str = raw.trim();
     if (!str) return null;
-    try {
-      return normalizeReceiptInfo(JSON.parse(str));
-    } catch (_error) {
-      return null;
-    }
+    return normalizeReceiptInfo(tryParseJsonRecord(str));
   }
   return normalizeReceiptInfo(raw);
 }
@@ -97,15 +94,11 @@ export function parseCustomFieldsRecord(
 ): CustomFields | null {
   if (raw === null || raw === undefined) return {};
 
-  let parsed = raw;
+  let parsed: unknown = raw;
   if (typeof raw === "string") {
     const str = raw.trim();
     if (!str) return {};
-    try {
-      parsed = JSON.parse(str);
-    } catch (_error) {
-      return null;
-    }
+    parsed = tryParseJsonRecord(str);
   }
 
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {

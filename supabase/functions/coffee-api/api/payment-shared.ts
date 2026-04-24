@@ -4,6 +4,7 @@ import { FRONTEND_URL } from "../utils/config.ts";
 import { sendEmail } from "../utils/email.ts";
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
 import { sanitize } from "../utils/html.ts";
+import { tryParseJsonRecord } from "../utils/json.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
@@ -271,15 +272,7 @@ export function parseReceiptInfo(
   if (typeof raw === "string") {
     const value = raw.trim();
     if (!value) return null;
-    try {
-      const parsed = JSON.parse(value);
-      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-        return parsed as Record<string, unknown>;
-      }
-      return null;
-    } catch (_error) {
-      return null;
-    }
+    return tryParseJsonRecord(value);
   }
   if (typeof raw === "object" && !Array.isArray(raw)) {
     return raw as Record<string, unknown>;

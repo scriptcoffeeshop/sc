@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.ts";
 import { JWT_SECRET, LINE_ADMIN_USER_ID } from "./config.ts";
+import { tryParseJsonRecord } from "./json.ts";
 
 function base64UrlEncode(data: Uint8Array): string {
   return btoa(String.fromCharCode(...data)).replace(/\+/g, "-").replace(
@@ -60,10 +61,12 @@ export async function verifyJwt(
     if (parts.length !== 3) return null;
     const expectedSig = await hmacSign(`${parts[0]}.${parts[1]}`);
     if (expectedSig !== parts[2]) return null;
-    const payload = JSON.parse(
+    const payload = tryParseJsonRecord(
       new TextDecoder().decode(base64UrlDecode(parts[1])),
     );
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    if (!payload) return null;
+    const expiresAt = Number(payload.exp) || 0;
+    if (expiresAt && expiresAt < Math.floor(Date.now() / 1000)) return null;
     return payload;
   } catch (_error) {
     return null;

@@ -85,6 +85,7 @@
 - LINE Pay / 街口支付已支援付款期限：超過 `payment_expires_at` 的線上付款訂單會自動轉為 `status=failed`、`payment_status=expired`，查詢、付款確認、街口 inquiry/result 流程都會先正規化逾期狀態。
 - 街口支付已切正式環境：正式 API base URL 為 `https://onlinepay.jkopay.com`，`JKOPAY_STORE_ID` / `JKOPAY_API_KEY` / `JKOPAY_SECRET_KEY` / `JKOPAY_BASE_URL` 皆走 Supabase secrets。
 - Supabase Edge Function production code 已移除匿名 `catch {}`；目前容錯 fallback 行為維持不變，但錯誤變數統一命名為 `_error`，方便後續補觀測與分級紀錄。
+- Supabase Edge Function production code 的直接 JSON 解析已集中到 `utils/json.ts`；settings/quote/order/payment/request/JWT/LINE/JKO/user profile 路徑共用 record/array/text helper。
 
 ### 視覺與互動
 
@@ -164,6 +165,7 @@
 - Supabase Edge Function production code 已移除匿名 `catch {}`，改為統一 `_error` binding；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
 - frontend production code 已移除匿名 `catch {}`，改為統一 `_error` binding；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run build`、`npm run test:unit`、`npm run guardrails` 與 `git diff --check`。
 - frontend feature 模組的 JSON 解析 fallback 已集中到 `frontend/src/lib/jsonUtils.ts`，只保留該工具內部直接呼叫 `JSON.parse`；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run guardrails` 與 `git diff --check`。
+- Supabase Edge Function production JSON 解析 fallback 已集中到 `supabase/functions/coffee-api/utils/json.ts`，只保留該工具內部直接呼叫 `JSON.parse`；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。

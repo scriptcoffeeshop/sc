@@ -6,6 +6,7 @@ import {
   JKOPAY_SECRET_KEY,
   JKOPAY_STORE_ID,
 } from "./config.ts";
+import { tryParseJsonRecord } from "./json.ts";
 
 const DEFAULT_JKOPAY_UAT_BASE_URL = "https://uat-onlinepay.jkopay.app";
 const DEFAULT_JKOPAY_PROD_BASE_URL = "https://onlinepay.jkopay.com";
@@ -141,16 +142,7 @@ function buildAbsoluteUrl(baseUrl: string, path: string): string {
 }
 
 function tryParseJsonObject(text: string): Record<string, unknown> | null {
-  if (!text) return null;
-  try {
-    const parsed = JSON.parse(text);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed as Record<string, unknown>;
-    }
-  } catch (_error) {
-    return null;
-  }
-  return null;
+  return tryParseJsonRecord(text);
 }
 
 function createProxyClient(proxyUrl: string): Deno.HttpClient | null {
