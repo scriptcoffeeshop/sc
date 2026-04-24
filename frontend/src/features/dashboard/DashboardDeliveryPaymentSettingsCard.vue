@@ -48,20 +48,22 @@
                     alt="配送圖示預覽"
                   >
                   <input v-model="item.icon_url" type="hidden" class="do-icon-url">
-                  <input
-                    type="file"
-                    :ref="(element) => registerDeliveryIconInput(item.id, element)"
-                    class="text-xs icon-upload-file"
-                    accept="image/png,image/webp,image/jpeg,image/jpg"
-                    @change="handleDeliveryIconPreview(item.id, $event)"
-                  >
-                  <button
-                    type="button"
-                    @click="handleDeliveryIconUpload(item.id)"
-                    class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft icon-upload-action"
-                  >
-                    上傳圖示
-                  </button>
+                  <div class="icon-upload-controls">
+                    <input
+                      type="file"
+                      :ref="(element) => registerDeliveryIconInput(item.id, element)"
+                      class="text-xs icon-upload-file"
+                      accept="image/png,image/webp,image/jpeg,image/jpg"
+                      @change="handleDeliveryIconPreview(item.id, $event)"
+                    >
+                    <button
+                      type="button"
+                      @click="handleDeliveryIconUpload(item.id)"
+                      class="text-xs px-2 py-1 rounded border ui-border ui-text-highlight hover:ui-primary-soft icon-upload-action"
+                    >
+                      上傳圖示
+                    </button>
+                  </div>
                 </div>
                 <p class="text-[11px] ui-text-muted truncate do-icon-url-display">
                   {{ getDisplayUrl(item.icon_url) }}

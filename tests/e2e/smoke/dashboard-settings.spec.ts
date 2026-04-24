@@ -34,6 +34,13 @@ test.describe("smoke / dashboard settings", () => {
       "tagName",
       "TEXTAREA",
     );
+    await expect.poll(async () => {
+      const fileBox = await deliveryRows.first().locator(".icon-upload-file")
+        .boundingBox();
+      const uploadBox = await deliveryRows.first().locator(".icon-upload-action")
+        .boundingBox();
+      return Boolean(fileBox && uploadBox && uploadBox.y > fileBox.y);
+    }).toBe(true);
     await expect.poll(() =>
       page.locator("#delivery-routing-table").evaluate((element) =>
         element.scrollWidth <= element.clientWidth + 2
@@ -135,6 +142,41 @@ test.describe("smoke / dashboard settings", () => {
     expect(updatePayload?.settings?.is_open).toBe("false");
     expect(updatePayload?.settings?.products_section_title).toBe("精品豆專區");
     expect(updatePayload?.settings?.products_section_color).toBe("#cb4b16");
+  });
+
+  test("dashboard section title settings are scannable cards", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-settings").click();
+
+    const settingsCard = page.locator("#section-title-settings-card");
+    await expect(settingsCard.locator(".section-title-card")).toHaveCount(3);
+    await expect(settingsCard.locator(".section-title-preview").first())
+      .toContainText("咖啡豆選購");
+    await expect.poll(async () => {
+      const firstCard = settingsCard.locator(".section-title-card").first();
+      const fileBox = await firstCard.locator(".icon-upload-file").boundingBox();
+      const uploadBox = await firstCard.locator(".icon-upload-action").boundingBox();
+      return Boolean(fileBox && uploadBox && uploadBox.y > fileBox.y);
+    }).toBe(true);
+    await expect.poll(() =>
+      settingsCard.evaluate((element) => element.scrollWidth <= element.clientWidth + 2)
+    ).toBe(true);
   });
 
   test("dashboard checkout settings save sends routing and payment option state", async ({ page }) => {
