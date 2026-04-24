@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { computed, useAttrs } from "vue";
+import type { ClassValue } from "clsx";
 import { cn } from "../../../lib/utils.ts";
 
 defineOptions({
@@ -16,15 +17,20 @@ const props = defineProps({
     default: "",
   },
 });
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits<{
+  "update:modelValue": [value: string];
+}>();
 
 const attrs = useAttrs();
 const classes = computed(() =>
-  cn("ui-input", "ui-textarea", attrs.class, props.class)
+  cn("ui-input", "ui-textarea", attrs.class as ClassValue, props.class)
 );
 
-function handleInput(event) {
-  emit("update:modelValue", event?.target?.value || "");
+function handleInput(event: Event) {
+  const target = event.target instanceof HTMLTextAreaElement
+    ? event.target
+    : null;
+  emit("update:modelValue", target?.value || "");
 }
 </script>
 

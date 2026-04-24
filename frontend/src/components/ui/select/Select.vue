@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { computed, useAttrs } from "vue";
+import type { ClassValue } from "clsx";
 import { cn } from "../../../lib/utils.ts";
 
 defineOptions({
@@ -14,7 +15,9 @@ const props = defineProps({
 });
 
 const attrs = useAttrs();
-const classes = computed(() => cn("ui-input", attrs.class, props.class));
+const classes = computed(() =>
+  cn("ui-input", attrs.class as ClassValue, props.class)
+);
 </script>
 
 <template>

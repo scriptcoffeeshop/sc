@@ -1,6 +1,7 @@
-<script setup>
+<script setup lang="ts">
 import { computed, useAttrs } from "vue";
 import { cva } from "class-variance-authority";
+import type { ClassValue } from "clsx";
 import { cn } from "../../../lib/utils.ts";
 
 defineOptions({
@@ -34,30 +35,30 @@ const buttonVariants = cva(
   },
 );
 
-const props = defineProps({
-  variant: {
-    type: String,
-    default: "default",
+type ButtonVariant = "default" | "secondary" | "outline" | "ghost" | "danger";
+type ButtonSize = "default" | "sm" | "lg" | "icon";
+type ButtonType = "button" | "submit" | "reset";
+
+const props = withDefaults(
+  defineProps<{
+    variant?: ButtonVariant;
+    size?: ButtonSize;
+    type?: ButtonType;
+    class?: string;
+  }>(),
+  {
+    variant: "default",
+    size: "default",
+    type: "button",
+    class: "",
   },
-  size: {
-    type: String,
-    default: "default",
-  },
-  type: {
-    type: String,
-    default: "button",
-  },
-  class: {
-    type: String,
-    default: "",
-  },
-});
+);
 
 const attrs = useAttrs();
 const classes = computed(() =>
   cn(
     buttonVariants({ variant: props.variant, size: props.size }),
-    attrs.class,
+    attrs.class as ClassValue,
     props.class,
   )
 );

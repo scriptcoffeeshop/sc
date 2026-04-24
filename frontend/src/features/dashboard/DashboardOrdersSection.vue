@@ -17,7 +17,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import DashboardOrderCard from "./DashboardOrderCard.vue";
 import DashboardOrdersToolbar from "./DashboardOrdersToolbar.vue";
 import { useDashboardOrders } from "./useDashboardOrders.ts";

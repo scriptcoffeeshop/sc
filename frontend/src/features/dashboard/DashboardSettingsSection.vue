@@ -17,7 +17,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import DashboardBankAccountsSettingsCard from "./DashboardBankAccountsSettingsCard.vue";
 import DashboardBrandingSettingsCard from "./DashboardBrandingSettingsCard.vue";
 import DashboardSectionTitlesSettingsCard from "./DashboardSectionTitlesSettingsCard.vue";
