@@ -116,13 +116,14 @@
   </div>
 </template>
 
-<script setup>
-defineProps({
-  order: {
-    type: Object,
-    required: true,
-  },
-});
+<script setup lang="ts">
+import type { OrderHistoryItem } from "./useStorefrontOrderHistory";
 
-defineEmits(["copy-tracking-number"]);
+defineProps<{
+  order: OrderHistoryItem;
+}>();
+
+defineEmits<{
+  "copy-tracking-number": [trackingNumber: string];
+}>();
 </script>

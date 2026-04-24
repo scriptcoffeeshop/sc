@@ -65,7 +65,7 @@
           </div>
           <div class="text-right ml-3 min-w-[60px]">
             <div class="font-semibold text-sm" style="color:var(--accent)">
-              ${{ item.qty * item.unitPrice }}
+              ${{ getItemLineTotal(item) }}
             </div>
             <button
               class="text-xs text-red-400 hover:text-red-600"
@@ -150,71 +150,55 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ShoppingCart } from "lucide-vue-next";
 import UiButton from "../../components/ui/button/Button.vue";
+import type { StorefrontCartItem } from "./useStorefrontCart";
+import type { StorefrontCartSummary } from "./storefrontCartSummary";
 
-const props = defineProps({
-  cartItems: {
-    type: Array,
-    default: () => [],
+const props = withDefaults(
+  defineProps<{
+    cartItems?: StorefrontCartItem[];
+    discountedItemKeys?: Set<string>;
+    cartSummary: StorefrontCartSummary;
+    showShippingNotice?: boolean;
+    shippingNoticeTitle?: string;
+    shippingDiff?: number;
+    showDiscountSection?: boolean;
+    isFreeShipping?: boolean;
+    deliveryName?: string;
+    freeShippingThresholdText?: string;
+    totalPriceText: string;
+  }>(),
+  {
+    cartItems: () => [],
+    discountedItemKeys: () => new Set<string>(),
+    showShippingNotice: false,
+    shippingNoticeTitle: "",
+    shippingDiff: 0,
+    showDiscountSection: false,
+    isFreeShipping: false,
+    deliveryName: "該配送方式",
+    freeShippingThresholdText: "",
   },
-  discountedItemKeys: {
-    type: Object,
-    default: () => new Set(),
-  },
-  cartSummary: {
-    type: Object,
-    required: true,
-  },
-  showShippingNotice: {
-    type: Boolean,
-    default: false,
-  },
-  shippingNoticeTitle: {
-    type: String,
-    default: "",
-  },
-  shippingDiff: {
-    type: Number,
-    default: 0,
-  },
-  showDiscountSection: {
-    type: Boolean,
-    default: false,
-  },
-  isFreeShipping: {
-    type: Boolean,
-    default: false,
-  },
-  deliveryName: {
-    type: String,
-    default: "該配送方式",
-  },
-  freeShippingThresholdText: {
-    type: String,
-    default: "",
-  },
-  totalPriceText: {
-    type: String,
-    required: true,
-  },
-});
+);
 
-defineEmits([
-  "toggle-cart",
-  "change-cart-item-qty",
-  "remove-cart-index",
-  "submit-order",
-]);
+defineEmits<{
+  "toggle-cart": [];
+  "change-cart-item-qty": [index: number, delta: number];
+  "remove-cart-index": [index: number];
+  "submit-order": [];
+}>();
 
-function itemKey(productId, specKey = "") {
+function itemKey(productId: number | string | undefined, specKey = "") {
   return `${Number(productId)}-${String(specKey || "")}`;
 }
 
-function isDiscountedItem(item) {
-  return props.discountedItemKeys?.has?.(
-    itemKey(item.productId, item.specKey),
-  );
+function getItemLineTotal(item: StorefrontCartItem) {
+  return (Number(item.qty) || 0) * (Number(item.unitPrice) || 0);
+}
+
+function isDiscountedItem(item: StorefrontCartItem) {
+  return props.discountedItemKeys.has(itemKey(item.productId, item.specKey));
 }
 </script>

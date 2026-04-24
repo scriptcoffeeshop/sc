@@ -179,7 +179,7 @@
   />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onBeforeUnmount, onMounted } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
@@ -192,7 +192,10 @@ import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderH
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { getStorefrontUiSnapshot } from "../features/storefront/storefrontUiSnapshot.ts";
-import { useStorefrontCart } from "../features/storefront/useStorefrontCart.ts";
+import {
+  useStorefrontCart,
+  type StorefrontCartUpdatedEvent,
+} from "../features/storefront/useStorefrontCart.ts";
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
 import { useStorefrontDynamicFields } from "../features/storefront/useStorefrontDynamicFields.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
@@ -202,6 +205,7 @@ import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts
 import { authFetch } from "../lib/auth.ts";
 import { API_URL } from "../lib/appConfig.ts";
 import { getDefaultIconUrl } from "../lib/icons.ts";
+import Swal from "../lib/swal.ts";
 import {
   clearSelectedStore,
   openStoreMap,
@@ -330,8 +334,8 @@ function syncStorefrontUiState() {
   refreshDynamicFieldsState();
 }
 
-function handleCartUpdated(event) {
-  syncCartFromEvent(event);
+function handleCartUpdated(event: Event) {
+  syncCartFromEvent(event as StorefrontCartUpdatedEvent);
   syncStorefrontUiState();
 }
 

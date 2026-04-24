@@ -16,7 +16,7 @@ interface StorefrontDeliveryPaymentConfig {
   transfer?: boolean;
 }
 
-interface StorefrontDeliveryOption {
+export interface StorefrontDeliveryOption {
   id?: string;
   icon_url?: string;
   iconUrl?: string;

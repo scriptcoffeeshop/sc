@@ -12,9 +12,10 @@ import {
   toItemKey,
 } from "./storefrontCartSummary.ts";
 
-interface StorefrontCartItem {
+export interface StorefrontCartItem {
   productId?: number | string;
   specKey?: string;
+  specLabel?: string;
   productName?: string;
   qty?: number | string;
   unitPrice?: number | string;
@@ -65,7 +66,7 @@ interface StorefrontCartDeps {
   orderApi?: Partial<StorefrontOrderApi>;
 }
 
-interface StorefrontCartUpdatedEvent {
+export interface StorefrontCartUpdatedEvent {
   detail?: {
     items?: StorefrontCartItem[];
     selectedDelivery?: string;

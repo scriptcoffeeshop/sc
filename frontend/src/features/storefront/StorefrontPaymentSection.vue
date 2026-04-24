@@ -171,33 +171,30 @@
   </div>
 </template>
 
-<script setup>
-defineEmits([
-  "select-payment",
-  "select-bank-account",
-  "copy-transfer-account",
-]);
+<script setup lang="ts">
+import type { StorefrontBankAccount } from "./useStorefrontPayment";
 
-defineProps({
-  bankAccounts: {
-    type: Array,
-    default: () => [],
+defineEmits<{
+  "select-payment": [method: string];
+  "select-bank-account": [bankId: string | number | undefined];
+  "copy-transfer-account": [
+    bankId: string | number | undefined,
+    accountNumber: string | undefined,
+  ];
+}>();
+
+withDefaults(
+  defineProps<{
+    bankAccounts?: StorefrontBankAccount[];
+    selectedBankAccountId?: string;
+    copiedBankAccountId?: string;
+    totalPriceText: string;
+    selectedCheckIconUrl: string;
+  }>(),
+  {
+    bankAccounts: () => [],
+    selectedBankAccountId: "",
+    copiedBankAccountId: "",
   },
-  selectedBankAccountId: {
-    type: String,
-    default: "",
-  },
-  copiedBankAccountId: {
-    type: String,
-    default: "",
-  },
-  totalPriceText: {
-    type: String,
-    required: true,
-  },
-  selectedCheckIconUrl: {
-    type: String,
-    required: true,
-  },
-});
+);
 </script>

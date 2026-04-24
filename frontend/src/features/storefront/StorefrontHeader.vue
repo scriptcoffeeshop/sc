@@ -88,15 +88,15 @@
   <input type="hidden" id="line-name">
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ListOrdered, UserRound } from "lucide-vue-next";
 import UiButton from "../../components/ui/button/Button.vue";
 
-defineEmits([
-  "close-announcement",
-  "login",
-  "show-my-orders",
-  "show-profile",
-  "logout",
-]);
+defineEmits<{
+  "close-announcement": [];
+  login: [];
+  "show-my-orders": [];
+  "show-profile": [];
+  logout: [];
+}>();
 </script>

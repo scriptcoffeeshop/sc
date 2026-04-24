@@ -115,22 +115,26 @@
   </div>
 </template>
 
-<script setup>
-const props = defineProps({
-  categories: {
-    type: Array,
-    default: () => [],
-  },
-  specQtyMap: {
-    type: Object,
-    default: () => new Map(),
-  },
-});
+<script setup lang="ts">
+import type { StorefrontProductCategoryView } from "./useStorefrontProducts";
 
-defineEmits(["change-spec-qty"]);
+const props = withDefaults(
+  defineProps<{
+    categories?: StorefrontProductCategoryView[];
+    specQtyMap?: Map<string, number>;
+  }>(),
+  {
+    categories: () => [],
+    specQtyMap: () => new Map<string, number>(),
+  },
+);
 
-function getSpecQty(productId, specKey) {
-  return props.specQtyMap?.get?.(
+defineEmits<{
+  "change-spec-qty": [productId: number, specKey: string, delta: number];
+}>();
+
+function getSpecQty(productId: number | string, specKey: string) {
+  return props.specQtyMap.get(
     `${Number(productId)}-${String(specKey || "")}`,
   ) || 0;
 }

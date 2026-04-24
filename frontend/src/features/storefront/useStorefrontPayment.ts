@@ -1,7 +1,11 @@
 import { ref } from "vue";
 
-interface StorefrontBankAccount {
+export interface StorefrontBankAccount {
   id?: string | number;
+  bankName?: string;
+  bankCode?: string;
+  accountNumber?: string;
+  accountName?: string;
 }
 
 interface StorefrontPaymentSnapshot {

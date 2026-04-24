@@ -147,7 +147,7 @@
     </UiCard>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onBeforeUnmount, onMounted } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 

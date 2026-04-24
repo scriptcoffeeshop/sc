@@ -53,19 +53,16 @@
 <script setup lang="ts">
 import { ListOrdered } from "lucide-vue-next";
 import StorefrontOrderHistoryCard from "./StorefrontOrderHistoryCard.vue";
+import type { OrderHistoryItem } from "./useStorefrontOrderHistory";
 
 type OrderHistoryModalState = "loading" | "error" | "empty" | "ready";
-
-type StorefrontOrderHistoryCardItem = Record<string, unknown> & {
-  orderId: string;
-};
 
 withDefaults(
   defineProps<{
     isOpen?: boolean;
     state?: OrderHistoryModalState;
     errorText?: string;
-    orders?: StorefrontOrderHistoryCardItem[];
+    orders?: OrderHistoryItem[];
   }>(),
   {
     isOpen: false,

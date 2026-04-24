@@ -79,40 +79,40 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
+import type { SessionUser } from "../../types/session";
 import {
   getInitialDynamicFieldValue,
   isDynamicFieldVisibleForDelivery,
   parseDynamicFieldOptions,
+  type StorefrontDynamicField,
 } from "./useStorefrontDynamicFields.ts";
 
-const props = defineProps({
-  fields: {
-    type: Array,
-    default: () => [],
+const props = withDefaults(
+  defineProps<{
+    fields?: StorefrontDynamicField[];
+    selectedDelivery?: string;
+    currentUser?: SessionUser | null;
+  }>(),
+  {
+    fields: () => [],
+    selectedDelivery: "",
+    currentUser: null,
   },
-  selectedDelivery: {
-    type: String,
-    default: "",
-  },
-  currentUser: {
-    type: Object,
-    default: null,
-  },
-});
+);
 
-function fieldId(field) {
+function fieldId(field: StorefrontDynamicField) {
   return `field-${String(field?.field_key || "")}`;
 }
 
-function initialValue(field) {
+function initialValue(field: StorefrontDynamicField) {
   return getInitialDynamicFieldValue(field, props.currentUser);
 }
 
-function isCheckboxChecked(field) {
+function isCheckboxChecked(field: StorefrontDynamicField) {
   const value = initialValue(field);
-  return value === true || value === "true" || value === "是";
+  return value === "true" || value === "是";
 }
 
 const visibleFields = computed(() =>

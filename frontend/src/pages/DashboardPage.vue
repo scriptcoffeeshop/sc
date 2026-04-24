@@ -77,7 +77,7 @@
   <DashboardPromotionModal />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import UiButton from "../components/ui/button/Button.vue";
 import UiCard from "../components/ui/card/Card.vue";
@@ -130,7 +130,7 @@ const filteredIconCatalog = computed(() => {
   });
 });
 
-function selectIconLibraryCategory(category) {
+function selectIconLibraryCategory(category: string) {
   iconLibraryCategory.value = category;
 }
 

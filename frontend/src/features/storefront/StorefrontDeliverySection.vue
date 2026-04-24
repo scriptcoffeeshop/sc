@@ -178,35 +178,35 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import UiButton from "../../components/ui/button/Button.vue";
+import type { StorefrontDeliveryOption } from "./useStorefrontDelivery";
 
-defineEmits([
-  "select-delivery",
-  "open-store-map",
-  "clear-selected-store",
-]);
+type DeliveryIconResolver = (
+  option: StorefrontDeliveryOption,
+) => { url?: string } | null | undefined;
 
-const props = defineProps({
-  deliveryOptions: {
-    type: Array,
-    default: () => [],
-  },
-  selectedDelivery: {
-    type: String,
-    default: "",
-  },
-  selectedCheckIconUrl: {
-    type: String,
-    required: true,
-  },
-  resolveDeliveryIcon: {
-    type: Function,
-    default: null,
-  },
-});
+defineEmits<{
+  "select-delivery": [deliveryId: string];
+  "open-store-map": [];
+  "clear-selected-store": [];
+}>();
 
-function getDeliveryIcon(option) {
+const props = withDefaults(
+  defineProps<{
+    deliveryOptions?: StorefrontDeliveryOption[];
+    selectedDelivery?: string;
+    selectedCheckIconUrl: string;
+    resolveDeliveryIcon?: DeliveryIconResolver | null;
+  }>(),
+  {
+    deliveryOptions: () => [],
+    selectedDelivery: "",
+    resolveDeliveryIcon: null,
+  },
+);
+
+function getDeliveryIcon(option: StorefrontDeliveryOption) {
   const resolvedIcon = props.resolveDeliveryIcon?.(option) || {};
   return {
     url: String(resolvedIcon.url || "").trim(),

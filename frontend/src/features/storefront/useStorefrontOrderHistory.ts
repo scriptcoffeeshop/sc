@@ -24,7 +24,7 @@ interface OrderHistoryPaymentDisplay {
   resumePaymentLabel: string;
 }
 
-interface OrderHistoryItem {
+export interface OrderHistoryItem {
   orderId: string;
   statusLabel: string;
   deliveryMethodLabel: string;
@@ -50,7 +50,7 @@ interface OrderHistoryResponse {
 }
 
 interface OrderHistoryToast {
-  fire: (payload: { icon?: string; title?: string }) => unknown;
+  fire: (...args: unknown[]) => unknown;
 }
 
 interface OrderHistorySwal {
