@@ -1,5 +1,6 @@
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+import { getFormControlValue } from "./dashboardOrdersView.ts";
 import type {
   DashboardAuthFetch,
   DashboardOrderRecord,
@@ -22,18 +23,6 @@ type OrderStatusControllerDeps = {
   esc: (value: unknown) => string;
   orderStatusLabel: Record<string, string>;
 };
-
-function getFormControlValue(id: string): string {
-  const element = document.getElementById(id);
-  if (
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
-  ) {
-    return element.value.trim();
-  }
-  return "";
-}
 
 export function createOrderStatusController(deps: OrderStatusControllerDeps) {
   function getOrders() {
