@@ -401,11 +401,6 @@ onMounted(() => {
   window.addEventListener("coffee:cart-updated", handleCartUpdated);
   window.addEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
 
-  const productsContainer = document.getElementById("products-container");
-  const cartContainer = document.getElementById("cart-items");
-  if (productsContainer) productsContainer.dataset.vueManaged = "true";
-  if (cartContainer) cartContainer.dataset.vueManaged = "true";
-
   syncCartSnapshot();
 
   void initMainApp().then(() => {

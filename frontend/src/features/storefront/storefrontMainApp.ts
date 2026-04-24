@@ -65,15 +65,8 @@ registerStorefrontRuntime({
 
 let mainAppInitialized = false;
 
-function canInitMainApp() {
-  return Boolean(
-    document.getElementById("products-container") &&
-      document.getElementById("cart-drawer"),
-  );
-}
-
 export async function initMainApp() {
-  if (mainAppInitialized || !canInitMainApp()) return;
+  if (mainAppInitialized) return;
   mainAppInitialized = true;
 
   initMainDomBindings();
