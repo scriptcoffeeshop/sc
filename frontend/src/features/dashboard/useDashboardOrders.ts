@@ -1,4 +1,5 @@
 import { computed, reactive, ref } from "vue";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { createDashboardOrdersBulkActions } from "./dashboardOrdersBulkActions.ts";
 import {
   buildOrdersCsv,
@@ -138,8 +139,7 @@ async function deleteOrderById(orderId: string) {
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadOrders();
   } catch (error) {
-    const message = error instanceof Error ? error.message || "刪除失敗" : "刪除失敗";
-    Swal.fire("錯誤", message, "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "刪除失敗"), "error");
   }
 }
 

@@ -1,4 +1,5 @@
 import { nextTick, ref } from "vue";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type {
   DashboardDeliveryOption,
 } from "./dashboardSettingsShared.ts";
@@ -298,8 +299,7 @@ async function saveSettings() {
     Toast.fire({ icon: "success", title: "設定已儲存" });
     await loadSettings();
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    Swal.fire("錯誤", message, "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "設定儲存失敗"), "error");
   }
 }
 

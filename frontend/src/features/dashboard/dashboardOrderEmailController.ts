@@ -1,8 +1,5 @@
 import type { DashboardOrderNotificationDeps } from "./dashboardOrderNotificationTypes";
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message || fallback : fallback;
-}
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
 export function createOrderEmailController(
   deps: DashboardOrderNotificationDeps,
@@ -66,7 +63,7 @@ export function createOrderEmailController(
       }
       deps.Toast.fire({ icon: "success", title: result.message || "信件已發送" });
     } catch (error) {
-      deps.Swal.fire("錯誤", getErrorMessage(error, "信件發送失敗"), "error");
+      deps.Swal.fire("錯誤", getDashboardErrorMessage(error, "信件發送失敗"), "error");
     }
   }
 

@@ -74,6 +74,7 @@
 - storefront 高流量 JSON fallback 已集中到 `frontend/src/lib/jsonUtils.ts`；cart/model/dynamic-fields/delivery/auth 路徑不再各自散落 `JSON.parse + catch {}`。
 - frontend production code 已移除匿名 `catch {}`；目前 fallback 行為維持不變，錯誤變數統一命名為 `_error`，方便後續集中補觀測與解析 helper。
 - frontend feature 模組已不再直接手寫 `JSON.parse`；settings/products/form-fields/session/promotions/storefront receipt/cart/payment 等路徑改共用 `jsonUtils.ts` 的 record/array 解析 helper。
+- dashboard 錯誤訊息 fallback 已集中到 `dashboardErrors.ts`；products/categories/promotions/formfields/bank accounts/users/orders/settings/order notification 不再各自維護 `getErrorMessage()`。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 - 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。

@@ -4,6 +4,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { getDashboardActiveTab } from "./useDashboardSession.ts";
 
 type DashboardUserRole = "SUPER_ADMIN" | "ADMIN" | "USER" | string;
@@ -56,10 +57,6 @@ function getServices(): DashboardUsersServices {
     throw new Error("Dashboard users services 尚未初始化");
   }
   return services;
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message || fallback : fallback;
 }
 
 function normalizeUser(value: unknown): DashboardUserRecord | null {
@@ -209,7 +206,7 @@ async function loadUsers() {
       : [];
     Swal.close();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "載入用戶失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "載入用戶失敗"), "error");
   }
 }
 
@@ -258,7 +255,7 @@ async function toggleUserRole(targetUserId: string, newRole: "ADMIN" | "USER") {
     Toast.fire({ icon: "success", title: "權限已更新" });
     await loadUsers();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "權限更新失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "權限更新失敗"), "error");
   }
 }
 
@@ -293,7 +290,7 @@ async function toggleUserBlacklist(targetUserId: string, isBlocked: boolean) {
       await loadUsers();
       if (isBlacklistTabActive()) await loadBlacklist();
     } catch (error) {
-      Swal.fire("錯誤", getErrorMessage(error, "加入黑名單失敗"), "error");
+      Swal.fire("錯誤", getDashboardErrorMessage(error, "加入黑名單失敗"), "error");
     }
     return;
   }
@@ -324,7 +321,7 @@ async function toggleUserBlacklist(targetUserId: string, isBlocked: boolean) {
     await loadUsers();
     await loadBlacklist();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "解除封鎖失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "解除封鎖失敗"), "error");
   }
 }
 

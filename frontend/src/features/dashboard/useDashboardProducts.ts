@@ -9,6 +9,7 @@ import {
   type DashboardProductRecord,
   type DashboardProductSpec,
 } from "./dashboardProductsShared.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
 interface DashboardToastLike {
   fire: (...args: unknown[]) => unknown;
@@ -83,10 +84,6 @@ function getServices(): DashboardProductsServices {
     throw new Error("Dashboard products services 尚未初始化");
   }
   return services;
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message || fallback : fallback;
 }
 
 function syncProductsMap(nextProducts: DashboardProductRecord[] = products.value) {
@@ -188,7 +185,7 @@ async function syncProductSortables() {
         try {
           await updateProductOrders(ids);
         } catch (error) {
-          Swal.fire("錯誤", getErrorMessage(error, "商品排序更新失敗"), "error");
+          Swal.fire("錯誤", getDashboardErrorMessage(error, "商品排序更新失敗"), "error");
           await loadProducts();
         }
       },
@@ -247,7 +244,7 @@ async function moveProduct(id: number, direction: string) {
     if (!data.success) throw new Error(data.error);
     await loadProducts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "商品排序失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "商品排序失敗"), "error");
   }
 }
 
@@ -328,7 +325,7 @@ async function saveProduct(event?: Event) {
     closeProductModal();
     await loadProducts();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "商品儲存失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "商品儲存失敗"), "error");
   }
 }
 
@@ -355,7 +352,7 @@ async function delProduct(id: number) {
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadProducts();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "商品刪除失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "商品刪除失敗"), "error");
   }
 }
 
@@ -400,7 +397,7 @@ async function toggleProductEnabled(id: number, enabled: boolean) {
       title: enabled ? "商品已啟用" : "商品已停用",
     });
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "商品狀態更新失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "商品狀態更新失敗"), "error");
   }
 }
 

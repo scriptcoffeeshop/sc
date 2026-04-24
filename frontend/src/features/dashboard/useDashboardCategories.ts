@@ -5,6 +5,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
 type DashboardCategoryRecord = Record<string, unknown> & {
   id: number | string;
@@ -55,10 +56,6 @@ function getServices(): DashboardCategoriesServices {
     throw new Error("Dashboard categories services 尚未初始化");
   }
   return services;
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
 }
 
 function normalizeCategory(value: unknown): DashboardCategoryRecord | null {
@@ -123,7 +120,7 @@ async function syncCategorySortable() {
       try {
         await updateCategoryOrders(ids);
       } catch (error) {
-        Swal.fire("錯誤", getErrorMessage(error, "分類排序更新失敗"), "error");
+        Swal.fire("錯誤", getDashboardErrorMessage(error, "分類排序更新失敗"), "error");
         await loadCategories();
       }
     },
@@ -183,7 +180,7 @@ async function addCategory() {
     Toast.fire({ icon: "success", title: "已新增" });
     await loadCategories();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "新增分類失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "新增分類失敗"), "error");
   }
 }
 
@@ -224,7 +221,7 @@ async function editCategory(id: number | string) {
     await loadCategories();
     await loadProducts?.();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "分類更新失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "分類更新失敗"), "error");
   }
 }
 
@@ -253,7 +250,7 @@ async function delCategory(id: number | string) {
     await loadCategories();
     await loadProducts?.();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "分類刪除失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "分類刪除失敗"), "error");
   }
 }
 

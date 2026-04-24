@@ -6,6 +6,7 @@ import {
   normalizeIconPath,
   resolveAssetUrl,
 } from "../../lib/icons.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { sectionIconSettingKey } from "./dashboardSettingsShared.ts";
 import { useDashboardSettings } from "./useDashboardSettings.ts";
 
@@ -299,7 +300,7 @@ async function handleSiteIconSelection(file?: File | null) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message = getDashboardErrorMessage(error, "品牌 Logo 上傳失敗");
     getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
@@ -333,7 +334,7 @@ async function uploadSectionIconFile(section: string, file?: File | null) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message = getDashboardErrorMessage(error, "區塊圖示上傳失敗");
     getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
@@ -355,7 +356,7 @@ async function uploadPaymentIconFile(method: string, file?: File | null) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message = getDashboardErrorMessage(error, "付款圖示上傳失敗");
     getServices().Swal.fire("錯誤", message, "error");
     return false;
   }
@@ -377,7 +378,7 @@ async function uploadDeliveryIconFile(deliveryId: string, file?: File | null) {
     return true;
   } catch (error) {
     closeLoadingModal();
-    const message = error instanceof Error ? error.message : String(error || "");
+    const message = getDashboardErrorMessage(error, "物流圖示上傳失敗");
     getServices().Swal.fire("錯誤", message, "error");
     return false;
   }

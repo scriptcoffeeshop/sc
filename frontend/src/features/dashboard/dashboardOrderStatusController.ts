@@ -1,3 +1,4 @@
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type {
   DashboardAuthFetch,
   DashboardOrderRecord,
@@ -25,10 +26,6 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message || fallback : fallback;
 }
 
 function getFormControlValue(id: string): string {
@@ -215,7 +212,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
         await deps.previewOrderStatusNotification(flexOrder, status);
       }
     } catch (error) {
-      deps.Swal.fire("錯誤", getErrorMessage(error, "更新訂單狀態失敗"), "error");
+      deps.Swal.fire("錯誤", getDashboardErrorMessage(error, "更新訂單狀態失敗"), "error");
     }
   }
 
@@ -255,7 +252,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
       deps.Toast.fire({ icon: "success", title: "退款成功" });
       await deps.loadOrders();
     } catch (error) {
-      deps.Swal.fire("錯誤", getErrorMessage(error, "退款失敗"), "error");
+      deps.Swal.fire("錯誤", getDashboardErrorMessage(error, "退款失敗"), "error");
     }
   }
 
@@ -289,7 +286,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
       deps.Toast.fire({ icon: "success", title: "已確認收款" });
       await deps.loadOrders();
     } catch (error) {
-      deps.Swal.fire("錯誤", getErrorMessage(error, "確認收款失敗"), "error");
+      deps.Swal.fire("錯誤", getDashboardErrorMessage(error, "確認收款失敗"), "error");
     }
   }
 

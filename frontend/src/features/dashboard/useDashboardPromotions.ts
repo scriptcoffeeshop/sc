@@ -4,6 +4,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import {
   buildPromotionProductGroups,
   buildPromotionViewModel,
@@ -69,10 +70,6 @@ function getServices(): DashboardPromotionsServices {
     throw new Error("Dashboard promotions services 尚未初始化");
   }
   return services;
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message || fallback : fallback;
 }
 
 function syncPromotionsMap(nextPromotions = promotions.value) {
@@ -178,7 +175,7 @@ async function syncPromotionSortable() {
       try {
         await updatePromotionOrders(ids);
       } catch (error) {
-        Swal.fire("錯誤", getErrorMessage(error, "活動排序更新失敗"), "error");
+        Swal.fire("錯誤", getDashboardErrorMessage(error, "活動排序更新失敗"), "error");
         await loadPromotions();
       }
     },
@@ -306,7 +303,7 @@ async function savePromotion(event?: Event) {
     closePromotionModal();
     await loadPromotions();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "活動儲存失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "活動儲存失敗"), "error");
   }
 }
 
@@ -333,7 +330,7 @@ async function delPromotion(id: number | string) {
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadPromotions();
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "活動刪除失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "活動刪除失敗"), "error");
   }
 }
 
@@ -381,7 +378,7 @@ async function togglePromotionEnabled(id: number | string, enabled: boolean) {
       title: enabled ? "活動已啟用" : "活動已停用",
     });
   } catch (error) {
-    Swal.fire("錯誤", getErrorMessage(error, "活動狀態更新失敗"), "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "活動狀態更新失敗"), "error");
   }
 }
 

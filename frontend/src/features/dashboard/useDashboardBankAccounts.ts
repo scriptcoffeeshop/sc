@@ -4,6 +4,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
 interface BankAccountFormValues {
   bankCode?: string;
@@ -65,10 +66,6 @@ function getServices(): DashboardBankAccountsServices {
     throw new Error("Dashboard bank accounts services 尚未初始化");
   }
   return services;
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message || fallback : fallback;
 }
 
 function normalizeBankAccount(value: unknown): BankAccountRecord {
@@ -147,7 +144,7 @@ async function syncBankAccountsSortable() {
       try {
         await reorderBankAccounts(ids);
       } catch (error) {
-        Swal.fire("錯誤", getErrorMessage(error, "排序更新失敗"), "error");
+        Swal.fire("錯誤", getDashboardErrorMessage(error, "排序更新失敗"), "error");
         await loadBankAccounts();
       }
     },
@@ -262,7 +259,7 @@ async function showAddBankAccountModal() {
     Toast.fire({ icon: "success", title: "帳號已新增" });
     await loadBankAccounts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "新增失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "新增失敗"), "error");
   }
 }
 
@@ -293,7 +290,7 @@ async function editBankAccount(id: number | string) {
     Toast.fire({ icon: "success", title: "帳號已更新" });
     await loadBankAccounts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "更新失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "更新失敗"), "error");
   }
 }
 
@@ -324,7 +321,7 @@ async function deleteBankAccount(id: number | string) {
     Toast.fire({ icon: "success", title: "帳號已刪除" });
     await loadBankAccounts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", getErrorMessage(error, "刪除失敗"), "error");
+    getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "刪除失敗"), "error");
   }
 }
 

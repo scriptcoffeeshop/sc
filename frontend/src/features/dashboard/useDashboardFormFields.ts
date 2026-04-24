@@ -1,5 +1,6 @@
 import { computed, nextTick, ref } from "vue";
 import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import {
   buildAddFieldModalHtml,
   buildEditFieldModalHtml,
@@ -107,10 +108,6 @@ function getFormFieldById(id: number): DashboardFormField | undefined {
   return formFields.value.find((entry) => Number(entry.id) === Number(id));
 }
 
-function buildMutationErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
-}
-
 async function postFormFieldsAction(
   action: string,
   payload: Record<string, unknown>,
@@ -167,7 +164,7 @@ function createSortableOptions(
       } catch (error) {
         Swal.fire(
           "錯誤",
-          buildMutationErrorMessage(error, "排序更新失敗"),
+          getDashboardErrorMessage(error, "排序更新失敗"),
           "error",
         );
         await loadFormFields();
@@ -276,7 +273,7 @@ async function showAddFieldModal() {
   } catch (error) {
     Swal.fire(
       "錯誤",
-      buildMutationErrorMessage(error, "欄位新增失敗"),
+      getDashboardErrorMessage(error, "欄位新增失敗"),
       "error",
     );
   }
@@ -328,7 +325,7 @@ async function editFormField(id: number) {
   } catch (error) {
     Swal.fire(
       "錯誤",
-      buildMutationErrorMessage(error, "欄位更新失敗"),
+      getDashboardErrorMessage(error, "欄位更新失敗"),
       "error",
     );
   }
@@ -360,7 +357,7 @@ async function deleteFormField(id: number) {
   } catch (error) {
     Swal.fire(
       "錯誤",
-      buildMutationErrorMessage(error, "欄位刪除失敗"),
+      getDashboardErrorMessage(error, "欄位刪除失敗"),
       "error",
     );
   }
@@ -383,7 +380,7 @@ async function toggleFieldEnabled(id: number, enabled: boolean) {
   } catch (error) {
     Swal.fire(
       "錯誤",
-      buildMutationErrorMessage(error, "欄位狀態更新失敗"),
+      getDashboardErrorMessage(error, "欄位狀態更新失敗"),
       "error",
     );
   }

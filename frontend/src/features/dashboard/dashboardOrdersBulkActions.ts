@@ -1,3 +1,4 @@
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { getFormControlValue } from "./dashboardOrdersView.ts";
 import type { DashboardOrderServices } from "./dashboardOrderTypes.ts";
 
@@ -15,10 +16,6 @@ type CreateDashboardOrdersBulkActionsOptions = {
 export function createDashboardOrdersBulkActions(
   options: CreateDashboardOrdersBulkActionsOptions,
 ) {
-  function getErrorMessage(error: unknown, fallback: string) {
-    return error instanceof Error ? error.message || fallback : fallback;
-  }
-
   function asRecord(value: unknown): Record<string, unknown> {
     return value && typeof value === "object" && !Array.isArray(value)
       ? value as Record<string, unknown>
@@ -124,7 +121,7 @@ export function createDashboardOrdersBulkActions(
       }
       await options.loadOrders();
     } catch (error) {
-      Swal.fire("錯誤", getErrorMessage(error, "批次更新失敗"), "error");
+      Swal.fire("錯誤", getDashboardErrorMessage(error, "批次更新失敗"), "error");
     }
   }
 
@@ -166,7 +163,7 @@ export function createDashboardOrdersBulkActions(
       });
       await options.loadOrders();
     } catch (error) {
-      Swal.fire("錯誤", getErrorMessage(error, "批次刪除失敗"), "error");
+      Swal.fire("錯誤", getDashboardErrorMessage(error, "批次刪除失敗"), "error");
     }
   }
 

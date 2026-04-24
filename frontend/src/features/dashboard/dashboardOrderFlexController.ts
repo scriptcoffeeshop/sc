@@ -1,4 +1,5 @@
 import { tryParseJsonArray } from "../../lib/jsonUtils.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type { DashboardOrderRecord } from "./dashboardOrderTypes";
 import type {
   DashboardLineFlexMessage,
@@ -14,10 +15,6 @@ type FlexHistoryItem = {
   timestamp: string;
   flex: DashboardLineFlexMessage;
 };
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message || fallback : fallback;
-}
 
 function isFlexHistoryItem(value: unknown): value is FlexHistoryItem {
   if (!value || typeof value !== "object") return false;
@@ -102,7 +99,11 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
       deps.Toast.fire({ icon: "success", title: "LINE 訊息已發送" });
       return true;
     } catch (error) {
-      deps.Swal.fire("發送失敗", getErrorMessage(error, "LINE 訊息發送失敗"), "error");
+      deps.Swal.fire(
+        "發送失敗",
+        getDashboardErrorMessage(error, "LINE 訊息發送失敗"),
+        "error",
+      );
       return false;
     }
   }
