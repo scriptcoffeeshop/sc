@@ -146,9 +146,10 @@
       <UiButton
         id="cart-submit-btn"
         class="btn-primary w-full"
+        :disabled="!canSubmitOrder"
         @click.prevent="$emit('submit-order')"
       >
-        確認送出訂單
+        {{ submitOrderText }}
       </UiButton>
     </div>
   </div>
@@ -163,6 +164,8 @@ import type { StorefrontCartSummary } from "./storefrontCartSummary";
 const props = withDefaults(
   defineProps<{
     isOpen?: boolean;
+    canSubmitOrder?: boolean;
+    submitOrderText?: string;
     cartItems?: StorefrontCartItem[];
     discountedItemKeys?: Set<string>;
     cartSummary: StorefrontCartSummary;
@@ -177,6 +180,8 @@ const props = withDefaults(
   }>(),
   {
     isOpen: false,
+    canSubmitOrder: false,
+    submitOrderText: "請先登入後再送出訂單",
     cartItems: () => [],
     discountedItemKeys: () => new Set<string>(),
     showShippingNotice: false,

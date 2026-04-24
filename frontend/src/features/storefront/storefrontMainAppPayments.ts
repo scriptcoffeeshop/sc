@@ -1,6 +1,5 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
-import { cart } from "./storefrontCartStore.ts";
 import { selectDelivery } from "./storefrontDeliveryActions.ts";
 import { applyBranding } from "./storefrontFormRenderer.ts";
 import {
@@ -87,12 +86,8 @@ export function createStorefrontMainAppPayments(
       document.getElementById("announcement-banner")?.classList.remove("hidden");
     }
 
-    if (String(settings.is_open) === "false") {
-      state.isStoreOpen = false;
-      updateFormState();
-      const totalPrice = document.getElementById("total-price");
-      if (totalPrice) totalPrice.textContent = "目前休息中，暫停接單";
-    }
+    state.isStoreOpen = String(settings.is_open) !== "false";
+    updateFormState();
 
     setStorefrontAppSettings(settings);
 
@@ -185,27 +180,7 @@ export function createStorefrontMainAppPayments(
   }
 
   function updateFormState() {
-    const loggedIn = !!state.currentUser;
-    const open = state.isStoreOpen;
-    const submitBtn = document.getElementById("submit-btn");
-    if (submitBtn instanceof HTMLButtonElement) {
-      submitBtn.disabled = !loggedIn || !open;
-    }
-
-    const cartSubmitBtn = document.getElementById("cart-submit-btn");
-    if (cartSubmitBtn instanceof HTMLButtonElement) {
-      const hasItems = cart.length > 0;
-      cartSubmitBtn.disabled = !loggedIn || !open || !hasItems;
-      if (!loggedIn) {
-        cartSubmitBtn.textContent = "請先登入後再送出訂單";
-      } else if (!open) {
-        cartSubmitBtn.textContent = "目前休息中，暫停接單";
-      } else if (!hasItems) {
-        cartSubmitBtn.textContent = "購物車是空的";
-      } else {
-        cartSubmitBtn.textContent = "確認送出訂單";
-      }
-    }
+    // Submit button state is rendered by StorefrontCartDrawer via Vue state.
   }
 
   function selectPayment(method: string, options: { skipQuote?: boolean } = {}) {

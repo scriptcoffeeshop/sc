@@ -40,6 +40,7 @@ export interface StorefrontUiSnapshot {
   categories: StorefrontCategoryRecord[];
   formFields: StorefrontFormField[];
   currentUser: SessionUser | null;
+  isStoreOpen: boolean;
   settings: DashboardSettingsRecord;
   deliveryConfig: StorefrontDeliveryOption[];
   selectedDelivery: string;
@@ -97,6 +98,7 @@ export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {
     categories: cloneArrayItems<StorefrontCategoryRecord>(state.categories),
     formFields: cloneArrayItems<StorefrontFormField>(state.formFields),
     currentUser: state.currentUser ? { ...state.currentUser } : null,
+    isStoreOpen: state.isStoreOpen !== false,
     settings: getRuntimeSettings(),
     deliveryConfig: getRuntimeDeliveryConfig(),
     selectedDelivery: String(state.selectedDelivery || ""),

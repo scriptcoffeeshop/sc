@@ -10,6 +10,7 @@ import {
   getShippingDisplayState,
   toItemKey,
 } from "./storefrontCartSummary.ts";
+import type { StorefrontUiSnapshot } from "./storefrontUiSnapshot";
 
 export interface StorefrontCartItem {
   productId?: number | string;
@@ -62,6 +63,7 @@ interface StorefrontOrderApi {
 interface StorefrontCartDeps {
   cartApi?: Partial<StorefrontCartApi>;
   orderApi?: Partial<StorefrontOrderApi>;
+  getStorefrontUiSnapshot?: () => Partial<StorefrontUiSnapshot>;
 }
 
 export interface StorefrontCartUpdatedEvent {
@@ -124,6 +126,8 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   const cartItems = ref<StorefrontCartItem[]>([]);
   const selectedDelivery = ref("");
   const isCartDrawerOpen = ref(false);
+  const isCustomerLoggedIn = ref(false);
+  const isStoreOpen = ref(true);
   const deliveryName = ref("該配送方式");
   const shippingConfig = ref<StorefrontShippingConfig | null>(null);
   const cartSummary = ref<Required<StorefrontCartSummary>>({
@@ -204,6 +208,17 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
     ),
   );
 
+  const canSubmitOrder = computed(() =>
+    isCustomerLoggedIn.value && isStoreOpen.value && cartItemCount.value > 0
+  );
+
+  const submitOrderText = computed(() => {
+    if (!isCustomerLoggedIn.value) return "請先登入後再送出訂單";
+    if (!isStoreOpen.value) return "目前休息中，暫停接單";
+    if (cartItemCount.value <= 0) return "購物車是空的";
+    return "確認送出訂單";
+  });
+
   function getSpecQty(productId: unknown, specKey: unknown) {
     return cartQtyMap.value.get(toItemKey(productId, String(specKey || ""))) || 0;
   }
@@ -237,6 +252,15 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
     cartItems.value = cartApi.getCartSnapshot();
   }
 
+  function syncCartSubmitState(snapshot: Partial<StorefrontUiSnapshot> = {}) {
+    isCustomerLoggedIn.value = Boolean(snapshot.currentUser);
+    isStoreOpen.value = snapshot.isStoreOpen !== false;
+  }
+
+  function refreshCartSubmitState() {
+    syncCartSubmitState(deps.getStorefrontUiSnapshot?.() || {});
+  }
+
   function handleCartUpdated(event?: StorefrontCartUpdatedEvent) {
     const detail = event?.detail || {};
     const summary = detail.summary || {};
@@ -252,12 +276,15 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
         cartSummary.value.discountedItemKeys,
       ),
     };
+    refreshCartSubmitState();
   }
 
   return {
     cartItems,
     selectedDelivery,
     isCartDrawerOpen,
+    isCustomerLoggedIn,
+    isStoreOpen,
     deliveryName,
     shippingConfig,
     cartSummary,
@@ -272,7 +299,11 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
     freeShippingThresholdText,
     cartQtyMap,
     cartItemCount,
+    canSubmitOrder,
+    submitOrderText,
     syncCartSnapshot,
+    syncCartSubmitState,
+    refreshCartSubmitState,
     handleCartUpdated,
     changeSpecQty,
     changeCartItemQty,

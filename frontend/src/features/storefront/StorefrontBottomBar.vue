@@ -6,8 +6,11 @@
         class="text-xl font-bold"
         style="color: var(--primary)"
       >
+        <div v-if="!isStoreOpen" class="text-xl font-bold">
+          目前休息中，暫停接單
+        </div>
         <div
-          v-if="cartSummary.totalDiscount > 0 || showShippingBadge"
+          v-else-if="cartSummary.totalDiscount > 0 || showShippingBadge"
           class="flex flex-col items-start justify-center"
         >
           <div class="flex items-center mb-0.5">
@@ -43,7 +46,6 @@
             :class="{ hidden: cartCount <= 0 }"
           >{{ cartCount }}</span>
         </button>
-        <button id="submit-btn" style="display: none"></button>
       </div>
     </div>
   </div>
@@ -63,12 +65,14 @@ const props = withDefaults(
     cartSummary: StorefrontCartSummary;
     showShippingBadge?: boolean;
     isFreeShipping?: boolean;
+    isStoreOpen?: boolean;
     totalPriceText: string;
     cartCount?: number;
   }>(),
   {
     showShippingBadge: false,
     isFreeShipping: false,
+    isStoreOpen: true,
     cartCount: 0,
   },
 );

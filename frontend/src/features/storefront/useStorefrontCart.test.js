@@ -98,6 +98,40 @@ describe("useStorefrontCart", () => {
     expect(orderApi.submitOrder).toHaveBeenCalledTimes(1);
   });
 
+  it("derives cart submit state from login, store status, and item count", () => {
+    let snapshot = {
+      currentUser: null,
+      isStoreOpen: true,
+    };
+    const cart = useStorefrontCart({
+      getStorefrontUiSnapshot: () => snapshot,
+    });
+
+    cart.refreshCartSubmitState();
+    expect(cart.canSubmitOrder.value).toBe(false);
+    expect(cart.submitOrderText.value).toBe("請先登入後再送出訂單");
+
+    snapshot = {
+      currentUser: { userId: "line-1" },
+      isStoreOpen: false,
+    };
+    cart.handleCartUpdated({
+      detail: {
+        items: [{ productId: 10, specKey: "half", qty: 1 }],
+      },
+    });
+    expect(cart.canSubmitOrder.value).toBe(false);
+    expect(cart.submitOrderText.value).toBe("目前休息中，暫停接單");
+
+    snapshot = {
+      currentUser: { userId: "line-1" },
+      isStoreOpen: true,
+    };
+    cart.refreshCartSubmitState();
+    expect(cart.canSubmitOrder.value).toBe(true);
+    expect(cart.submitOrderText.value).toBe("確認送出訂單");
+  });
+
   it("handles zero-quantity boundaries and flat shipping rules", () => {
     const cartApi = createCartApi();
     const cart = useStorefrontCart({ cartApi });

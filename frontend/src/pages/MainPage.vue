@@ -150,6 +150,7 @@
     :cart-summary="cartSummary"
     :show-shipping-badge="showShippingBadge"
     :is-free-shipping="isFreeShipping"
+    :is-store-open="isStoreOpen"
     :total-price-text="totalPriceText"
     :cart-count="cartItemCount"
     @toggle-cart="toggleCartDrawer"
@@ -158,6 +159,8 @@
   <StorefrontCartDrawer
     :is-open="isCartDrawerOpen"
     :cart-items="cartItems"
+    :can-submit-order="canSubmitOrder"
+    :submit-order-text="submitOrderText"
     :discounted-item-keys="discountedItemKeySet"
     :cart-summary="cartSummary"
     :show-shipping-notice="showShippingNotice"
@@ -270,7 +273,11 @@ const {
   cartQtyMap,
   cartItemCount,
   isCartDrawerOpen,
+  isStoreOpen,
+  canSubmitOrder,
+  submitOrderText,
   syncCartSnapshot,
+  refreshCartSubmitState,
   handleCartUpdated: syncCartFromEvent,
   changeSpecQty,
   changeCartItemQty,
@@ -279,6 +286,7 @@ const {
   submitOrderFromCart,
 } = useStorefrontCart({
   orderApi: { submitOrder },
+  getStorefrontUiSnapshot,
 });
 const {
   productsCategories,
@@ -344,6 +352,7 @@ const {
 
 function syncStorefrontUiState() {
   refreshAuthState();
+  refreshCartSubmitState();
   refreshProductsState();
   refreshDeliveryState();
   syncPaymentState();
