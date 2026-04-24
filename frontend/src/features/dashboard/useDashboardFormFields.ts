@@ -110,7 +110,7 @@ function getFormFieldById(id: number): DashboardFormField | undefined {
 
 async function postFormFieldsAction(
   action: string,
-  payload: Record<string, unknown>,
+  payload: object,
 ): Promise<DashboardMutationResponse> {
   const { API_URL, authFetch, getAuthUserId } = getServices();
   const response = await authFetch(`${API_URL}?action=${action}`, {
@@ -228,8 +228,59 @@ function buildValidatedModalValues(
   return false;
 }
 
-async function showAddFieldModal() {
+function normalizeModalValues(
+  values: DashboardFormFieldModalValues,
+): DashboardFormFieldModalValues {
+  return {
+    ...values,
+    deliveryVisibility: normalizeDeliveryVisibilityValue(
+      values.deliveryVisibility,
+    ) ?? null,
+  };
+}
+
+function showFormFieldsLoadingModal(title: string) {
+  const { Swal } = getServices();
+  Swal.fire({
+    title,
+    allowOutsideClick: false,
+    didOpen: () => Swal.showLoading?.(),
+  });
+}
+
+async function runFormFieldMutation(params: {
+  action: string;
+  payload: object;
+  successTitle: string;
+  errorMessage: string;
+  loadingTitle?: string;
+}): Promise<boolean> {
   const { Swal, Toast } = getServices();
+  try {
+    if (params.loadingTitle) {
+      showFormFieldsLoadingModal(params.loadingTitle);
+    }
+    const data = await postFormFieldsAction(params.action, params.payload);
+    if (!data.success) {
+      Swal.fire("錯誤", data.error || params.errorMessage, "error");
+      return false;
+    }
+
+    Toast.fire({ icon: "success", title: params.successTitle });
+    await loadFormFields();
+    return true;
+  } catch (error) {
+    Swal.fire(
+      "錯誤",
+      getDashboardErrorMessage(error, params.errorMessage),
+      "error",
+    );
+    return false;
+  }
+}
+
+async function showAddFieldModal() {
+  const { Swal } = getServices();
   const result = await Swal.fire({
     title: "新增欄位",
     html: buildAddFieldModalHtml(),
@@ -249,41 +300,20 @@ async function showAddFieldModal() {
 
   if (!result?.value) return;
 
-  const formValues = {
-    ...result.value,
-    deliveryVisibility: normalizeDeliveryVisibilityValue(
-      result.value.deliveryVisibility,
-    ) ?? null,
-  };
-
-  try {
-    Swal.fire({
-      title: "新增中...",
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading?.(),
-    });
-    const data = await postFormFieldsAction("addFormField", formValues);
-    if (!data.success) {
-      Swal.fire("錯誤", data.error || "欄位新增失敗", "error");
-      return;
-    }
-
-    Toast.fire({ icon: "success", title: "欄位已新增" });
-    await loadFormFields();
-  } catch (error) {
-    Swal.fire(
-      "錯誤",
-      getDashboardErrorMessage(error, "欄位新增失敗"),
-      "error",
-    );
-  }
+  await runFormFieldMutation({
+    action: "addFormField",
+    payload: normalizeModalValues(result.value),
+    successTitle: "欄位已新增",
+    errorMessage: "欄位新增失敗",
+    loadingTitle: "新增中...",
+  });
 }
 
 async function editFormField(id: number) {
   const field = getFormFieldById(id);
   if (!field) return;
 
-  const { Swal, Toast } = getServices();
+  const { Swal } = getServices();
   const result = await Swal.fire({
     title: "編輯欄位",
     html: buildEditFieldModalHtml(field),
@@ -303,37 +333,20 @@ async function editFormField(id: number) {
 
   if (!result?.value) return;
 
-  const formValues = {
-    ...result.value,
-    deliveryVisibility: normalizeDeliveryVisibilityValue(
-      result.value.deliveryVisibility,
-    ) ?? null,
-  };
-
-  try {
-    const data = await postFormFieldsAction("updateFormField", {
+  await runFormFieldMutation({
+    action: "updateFormField",
+    payload: {
       id,
-      ...formValues,
-    });
-    if (!data.success) {
-      Swal.fire("錯誤", data.error || "欄位更新失敗", "error");
-      return;
-    }
-
-    Toast.fire({ icon: "success", title: "已更新" });
-    await loadFormFields();
-  } catch (error) {
-    Swal.fire(
-      "錯誤",
-      getDashboardErrorMessage(error, "欄位更新失敗"),
-      "error",
-    );
-  }
+      ...normalizeModalValues(result.value),
+    },
+    successTitle: "已更新",
+    errorMessage: "欄位更新失敗",
+  });
 }
 
 async function deleteFormField(id: number) {
   const field = getFormFieldById(id);
-  const { Swal, Toast } = getServices();
+  const { Swal } = getServices();
   const confirmation = await Swal.fire({
     title: "確認刪除",
     text: `確定要刪除「${field?.label || ""}」欄位嗎？`,
@@ -345,45 +358,21 @@ async function deleteFormField(id: number) {
   }) as { isConfirmed?: boolean };
   if (!confirmation?.isConfirmed) return;
 
-  try {
-    const data = await postFormFieldsAction("deleteFormField", { id });
-    if (!data.success) {
-      Swal.fire("錯誤", data.error || "欄位刪除失敗", "error");
-      return;
-    }
-
-    Toast.fire({ icon: "success", title: "已刪除" });
-    await loadFormFields();
-  } catch (error) {
-    Swal.fire(
-      "錯誤",
-      getDashboardErrorMessage(error, "欄位刪除失敗"),
-      "error",
-    );
-  }
+  await runFormFieldMutation({
+    action: "deleteFormField",
+    payload: { id },
+    successTitle: "已刪除",
+    errorMessage: "欄位刪除失敗",
+  });
 }
 
 async function toggleFieldEnabled(id: number, enabled: boolean) {
-  const { Swal, Toast } = getServices();
-  try {
-    const data = await postFormFieldsAction("updateFormField", { id, enabled });
-    if (!data.success) {
-      Swal.fire("錯誤", data.error || "欄位狀態更新失敗", "error");
-      return;
-    }
-
-    Toast.fire({
-      icon: "success",
-      title: enabled ? "已啟用" : "已停用",
-    });
-    await loadFormFields();
-  } catch (error) {
-    Swal.fire(
-      "錯誤",
-      getDashboardErrorMessage(error, "欄位狀態更新失敗"),
-      "error",
-    );
-  }
+  await runFormFieldMutation({
+    action: "updateFormField",
+    payload: { id, enabled },
+    successTitle: enabled ? "已啟用" : "已停用",
+    errorMessage: "欄位狀態更新失敗",
+  });
 }
 
 export function configureDashboardFormFieldsServices(

@@ -195,6 +195,7 @@
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。
+- dashboard 表單欄位 mutation 流程已再集中：新增/編輯/刪除/啟停共用 `runFormFieldMutation()`，modal values 正規化也集中到單一 helper，減少 success/error/toast/load 樣板重複。
 - E2E 支援層下一段已收斂：`tests/e2e/support/smoke-dashboard-routes.ts` 從單檔 800+ 行拆成 dispatcher + 多個 domain handler，dashboard smoke 回歸仍通過，後續要補 route stub 時可直接改對應 domain 檔，不必再回到單一大檔。
 - storefront 付款熱區也已開始降溫：`storefrontMainAppPayments.ts` 保留 settings/payment orchestration，quote manager 與 bank account fallback UI 拆出獨立 helper，storefront smoke / checkout 回歸仍通過。
 - `useDashboardSettingsIcons.ts` 已補上較明確的 service / preview map / icon upload response 型別與 key guard，維持既有行為但降低 icon 套用時的型別空窗；對應 unit test 仍通過。
