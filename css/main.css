@@ -97,6 +97,11 @@
   box-shadow: 0 0 0 3px rgba(60, 36, 21, 0.08);
 }
 
+.delivery-option-description {
+  line-height: 1.35;
+  white-space: pre-line;
+}
+
 .delivery-option .check-mark,
 .payment-option .check-mark {
   position: absolute;

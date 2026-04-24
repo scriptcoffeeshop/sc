@@ -93,6 +93,29 @@ test.describe("smoke / storefront", () => {
     expect(metrics?.promptAlignItems).toBe("center");
   });
 
+  test("storefront delivery option descriptions preserve backend line breaks", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      deliveryOptions: [
+        {
+          id: "home_delivery",
+          name: "全台宅配",
+          description: "宅配到府\n折扣後滿$550免運",
+          enabled: true,
+          payment: { cod: true, linepay: false, transfer: true },
+        },
+      ],
+    });
+
+    await page.goto("/main.html");
+
+    const description = page.locator(
+      '.delivery-option[data-id="home_delivery"] .delivery-option-description',
+    );
+    await expect(description).toContainText("宅配到府\n折扣後滿$550免運");
+    await expect(description).toHaveCSS("white-space", "pre-line");
+  });
+
   test("storefront action icons use vector sizing and currentColor", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page);

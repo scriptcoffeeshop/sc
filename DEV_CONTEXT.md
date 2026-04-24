@@ -151,6 +151,7 @@
 - 後台品牌、取貨方式、付款選項的文字備援圖示欄位已移除；設定 payload 只保留 `*_icon_url` 與預設圖片，並新增 migration 刪除 `site_icon_emoji` 公開設定。取貨方式卡片比例同步調整為左側資料較緊湊、右側付款規則較寬。
 - 後台設定 UI 再整理：圖示上傳控制改為檔案選擇在上、上傳按鈕在下；`區塊標題樣式設定` 改成三張可掃描卡片，內含標題預覽、圖示上傳、標題/大小/顏色/粗體設定，dashboard settings smoke 已覆蓋手機寬度不水平溢出。
 - `金流選項顯示設定` 已同步改為卡片式清單，取消表格版面；每個付款方式保留系統代碼、預覽、圖示上傳、顯示名稱與說明欄位，dashboard settings smoke 已覆蓋上傳按鈕位置與手機寬度不水平溢出。
+- 前台配送方式卡片的說明文字已跟進後台 textarea，多行內容以 `white-space: pre-line` 呈現；storefront smoke 已覆蓋後端換行說明不被壓成一行。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。

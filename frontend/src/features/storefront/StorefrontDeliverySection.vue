@@ -37,7 +37,7 @@
         <div class="font-semibold" style="font-size: 0.95rem;">
           {{ option.name }}
         </div>
-        <div class="text-xs text-gray-500 mt-1">
+        <div class="delivery-option-description text-xs text-gray-500 mt-1">
           {{ option.description }}
         </div>
       </div>
