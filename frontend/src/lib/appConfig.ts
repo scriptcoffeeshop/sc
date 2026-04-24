@@ -1,4 +1,4 @@
-// 系統設定常數。legacy `js/config.js` 只保留 re-export 相容入口。
+// 系統設定常數。正式入口由 Vue/Vite bundle 直接匯入。
 
 type AppWindow = Window & {
   ENV?: {

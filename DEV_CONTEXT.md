@@ -2,16 +2,16 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。
 
-最後更新：2026-04-24
+最後更新：2026-04-25
 
 ---
 
 ## 1) 必讀規則
 
 1. 所有工作區命令一律用 `rtk <cmd>`。
-2. legacy `js/*.js` 的 cache busting 由 `.frontend-version` 管理；正式站入口應是根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物。若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy / main / root`，請先到 GitHub Pages 設定修正。GitHub Pages 的 Vite 產物則在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check`；若需要提升 legacy 版號，使用 `python3 scripts/sync_frontend_version.py <version>`，不要逐檔手動改 `?v=`。
+2. tracked `js/` legacy 相容殼已移除；正式站入口應是根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物。若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy / main / root`，請先到 GitHub Pages 設定修正。GitHub Pages 的 Vite 產物會在 build 後改寫成穩定 `assets/*.js|css` 路徑，並於 CI deploy 自動注入 commit SHA 或 `.frontend-version` 版號，避免 push 後 HTML 與 asset 短暫失配。`package.json` 的 `guardrails` 會執行 `python3 scripts/sync_frontend_version.py --check` 與 repo hygiene，禁止 `js/` 相容殼回流。
 3. 目前專案流程：修改程式碼後預設不跑本地驗證以節省 token，先 commit/push 並等待 CI；只有 CI 報錯、使用者明確要求，或需要釐清高風險問題時才跑本地 `guardrails` / tests。
-4. legacy DOM 互動維持 `data-action` + 事件代理；Vue-owned 區塊優先使用元件事件與 composable，禁止新增 inline `onclick/onchange`。
+4. 前後台 runtime 互動以 Vue 元件事件與 composable 為主；禁止新增 inline `onclick/onchange` 或 `data-action` 事件代理回流。
 5. 專案溝通、註解、commit message 以繁體中文為主。
 6. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
 7. E2E 若攔截 CDN 腳本，需留意 `integrity/crossorigin` 的 SRI 驗證衝突。
@@ -28,7 +28,7 @@
 - 主要分支：`main`
 - 前端：`Vite + Vue 3`；正式站 deploy 入口為根目錄 `/main.html` / `/dashboard.html`（由 GitHub Pages workflow artifact 提供）
 - 後端：`Supabase Edge Functions`（Deno / Hono）
-- 前端 legacy 版號來源：`.frontend-version`
+- 前端快取版號來源：`.frontend-version`
 - 目前前端版號：`131`
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
@@ -62,16 +62,16 @@
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、bank accounts 等卡片元件；取貨方式與付款對應、金流選項顯示已抽到獨立 `付款與取貨` 頁籤 (`DashboardCheckoutSettingsSection.vue`)
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
-  - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，`js/dashboard-app.js` 現在只剩薄相容殼
+  - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，tracked `js/` 相容殼已移除
   - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
-- 前台 `MainPage.vue` 已存在，根目錄 `main.html` 已瘦身為本機 compat redirect；`js/main-app.js` 仍保留作為 Vite bundle 內的相容層。storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
+- 前台 `MainPage.vue` 已存在，根目錄 `main.html` 已瘦身為本機 compat redirect；tracked `js/` 相容殼已移除，Vite bundle 直接使用 `frontend/src/` 的 Vue/TS 入口。storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
 - `MainPage.vue` 已是 storefront 組裝層，主要 UI 區塊拆到 `frontend/src/features/storefront/`：`StorefrontHeader.vue`、`StorefrontProductGrid.vue`、`StorefrontDeliverySection.vue`、`StorefrontPaymentSection.vue`、`StorefrontBottomBar.vue`、`StorefrontCartDrawer.vue`、`StorefrontOrderHistoryModal.vue`。
 - storefront 的 products / delivery / payment 狀態已從通用 `useStorefrontShell.js` 拆到 `useStorefrontProducts.ts`、`useStorefrontDelivery.ts`、`useStorefrontPayment.ts`；`useStorefrontShell.js` 只保留 header / auth / announcement / order modal 外殼事件。
 - `useStorefrontCart.js`、`useStorefrontShell.js` 已轉為 `useStorefrontCart.ts`、`useStorefrontShell.ts`；目前 storefront 仍留在 JS 的 composable 已再縮減。
-- `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 只保留相容 re-export。
+- `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 相容 re-export 已移除。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；配送操作不再掛到 `window`，`renderBankAccounts()` 在 `data-vue-managed="true"` 容器下只保留相容 fallback，不再是正常 runtime path。
 - storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 也改成掛載同一張 Vue 卡片，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
-- storefront legacy `js/*.js` 前台檔案已改為相容 re-export；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
+- storefront legacy `js/*.js` 前台相容殼已移除；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - storefront 高流量 JSON fallback 已集中到 `frontend/src/lib/jsonUtils.ts`；cart/model/dynamic-fields/delivery/auth 路徑不再各自散落 `JSON.parse + catch {}`。
 - frontend production code 已移除匿名 `catch {}`；目前 fallback 行為維持不變，錯誤變數統一命名為 `_error`，方便後續集中補觀測與解析 helper。
 - frontend feature 模組已不再直接手寫 `JSON.parse`；settings/products/form-fields/session/promotions/storefront receipt/cart/payment 等路徑改共用 `jsonUtils.ts` 的 record/array 解析 helper。
@@ -87,7 +87,7 @@
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 表單 DOM 讀寫 helper 已集中在 `storefrontDeliveryDom.ts`；主入口、送出配送資訊與發票/轉帳偏好不再各自維護 input/select/checkbox 讀取邏輯。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。
-- 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
+- 原則：新功能以 Vue-first 為主；剩餘相容層只接受 hotfix、部署修正或移除型重構。
 - 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
 - `tw-city-selector` 已由 CDN 改為 npm bundle（`frontend/src/lib/twCitySelector.js` + `frontend/src/features/storefront/storefrontDeliveryActions.ts`），`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
 
@@ -108,7 +108,7 @@
 ### 視覺與互動
 
 - 前台目前已回到暖棕 / 米白系配色。
-- 全站固定操作 icon 已改為向量化對齊邏輯，legacy 入口也已補齊，不應再出現 emoji 作為正式操作 icon。
+- 全站固定操作 icon 已改為向量化對齊邏輯，Vue 入口與 compat redirect 皆已補齊，不應再出現 emoji 作為正式操作 icon。
 - 後台主題以 `Solarized Light` 為基底。
 - 線上付款 UX 已分情境：下單後付款彈窗可提示「稍後可到我的訂單重新打開付款連結」；但在「我的訂單」內會改成直接提示按下方付款按鈕，不再自我指向「我的訂單」。
 - 街口支付在「我的訂單」已移除手動「重新整理街口付款狀態」入口，和 LINE Pay 一樣以重新打開付款連結為主要操作。
@@ -158,12 +158,18 @@
 
 ### 遷移未完成區
 
-- 專案仍處於 Vue / legacy 共存期。
-- 若修改前後台互動，先確認是否碰到 bridge event、`data-vue-managed` 容器或 legacy 啟動流程，避免雙寫回潮。
+- 專案仍處於 Vue-first 收斂期；根目錄 HTML 是本機 compat redirect，部分 storefront DOM fallback helper 尚待逐步移除。
+- 若修改前後台互動，先確認是否碰到 `data-vue-managed` 容器或 remaining DOM fallback helper，避免雙寫回潮。
 
 ---
 
 ## 5) 最近有效變更
+
+### 2026-04-25
+
+- 全面 Vue 化 Phase 1：移除 tracked `js/` compatibility wrappers，前後台 runtime 入口改由 `frontend/src/` 的 Vue/TypeScript 管理。
+- `check_main_event_delegation.py` / `check_dashboard_event_delegation.py` 改為掃描 Vue/TS runtime 檔，阻擋 inline event attribute 與 `data-action` 事件代理回流。
+- `repo_hygiene_check.py` 新增 `js/` legacy 相容殼守門，後續若重新加入 tracked `js/` 檔會直接在 guardrails 失敗。
 
 ### 2026-04-24
 
@@ -223,7 +229,7 @@
 - Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，`check_new_composables_ts.py` allowlist 已清空。
 - `storefrontOrderActions.ts` 已由 1324 行縮成相容 re-export：付款狀態/文案搬到 `storefrontPaymentDisplay.ts`，送單流程搬到 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別拆到 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`；legacy `showMyOrders()` fallback 搬到 `storefrontOrderHistoryLegacy.ts` 並改用既有 Vue `StorefrontOrderHistoryCard.vue` 渲染。
 - 前台訂單流程已補強共享型別：新增 `frontend/src/types/storefront.ts`，並讓送單、配送資訊、收據偏好、付款顯示與確認彈窗核心函式改用明確參數/回傳型別；`frontend/src/lib/swalDialogs.ts` 也開始集中常見 SweetAlert2 模式，後續可逐步把重複的 `Swal.fire()` 呼叫收斂到 helper。
-- shared legacy 最後一哩路已推進：`config.js`、`auth.js`、`utils.js`、`state.js`、`dashboard/api.js`、`dashboard-branding.js`、`order-shared.js` 的實作已搬到 `frontend/src/lib/*` 或 `frontend/src/features/dashboard/*`，`js/` 只保留 re-export 相容殼；Vite 內部 import 不再直接依賴這批 shared legacy 檔。
+- shared legacy 最後一哩路已推進：`config.js`、`auth.js`、`utils.js`、`state.js`、`dashboard/api.js`、`dashboard-branding.js`、`order-shared.js` 的實作已搬到 `frontend/src/lib/*` 或 `frontend/src/features/dashboard/*`；Vite 內部 import 不再直接依賴這批 shared legacy 檔，2026-04-25 已移除 `js/` re-export 相容殼。
 - `storefrontMainApp.ts` 已移除剩餘 8 處 `window.*` 相容掛載，quote refresh、付款選項狀態、表單/UI callback 與 app settings/delivery config 都改走 `storefrontRuntime.ts` 模組 bridge；同檔直接 `Swal.*` 呼叫也已收斂到 `frontend/src/lib/swalDialogs.ts` helper。
 - 修正前台配送卡片未同步後台設定文案：`storefrontUiSnapshot.ts` 現在改讀 `storefrontRuntime.appSettings/currentDeliveryConfig`，不再依賴已移除的 `window.appSettings/currentDeliveryConfig`；並新增 snapshot unit test 保護後台配送名稱/說明同步。
 - 消費者通知已新增付款中狀態 guard：所有支付只要 `payment_status=processing`，自動付款狀態通知、後台手動 LINE Flex 與後台手動 Email 都會略過，不再把「付款確認中」通知發給消費者；店家 LINE 訂單通知不受影響。
@@ -241,7 +247,7 @@
 - storefront legacy 遷移續推：`useStorefrontProducts.ts` 已吸收商品分組 / spec normalize，`useStorefrontDelivery.ts` 已吸收 delivery config fallback/migration；`MainPage.vue` 現在透過 `storefrontUiSnapshot.ts` 同步 products/delivery/payment/dynamic fields state，不再依賴 `coffee:products-updated` 事件或 bridge 的 main-app snapshot export。
 - storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值；legacy `renderDynamicFields()` no-op 已移除，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
 - storefront runtime bridge 已加上明確型別：`storefrontRuntime.ts` 只允許目前仍需要的 payment/cart/quote/dynamic-field callbacks，避免 legacy callback 名稱回流。
-- storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，legacy `js/` 只保留相容 re-export。
+- storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，2026-04-25 已移除 legacy `js/` 相容 re-export。
 - dashboard 訂單 state/view/export/selection 已共用 `dashboardOrderTypes.ts`，`useDashboardOrders` 不再以 `ref<any[]>` 保存訂單，批次操作服務也改用明確介面。
 - production frontend 已清除明顯 `any` 型別債：dashboard 訂單 payload、促銷 payload 與 LINE Flex content 改用 `unknown` / `FlexContent` 型別。
 - storefront cart storage 解析已改為明確 fallback helper，壞掉的 `coffee_cart` JSON 會回到空購物車並有 unit test 保護。
@@ -274,7 +280,7 @@
 - `DashboardOrdersSection.vue` 已由 483 行拆成 31 行 section shell，並抽出 `DashboardOrdersToolbar.vue` 與 `DashboardOrderCard.vue`。
 - 後台訂單通知控制器曾先拆為 legacy JS 協調層；2026-04-23 已搬入 `frontend/src/features/dashboard/dashboardOrderNotifications.ts` 與相關 `dashboardOrderFlex*.ts` / `dashboardOrderEmailController.ts`。
 - E2E 新增通知 smoke，驗證後台訂單卡的 `LINE通知` / `發送信件` 仍會打到正確 API。
-- storefront legacy `innerHTML` renderer 已清到 0；前台 `js/products.js` 已移除，`js/cart.js`、`js/delivery.js`、`js/form-renderer.js`、`js/orders.js`、`js/main-app.js` 只保留相容 re-export，實作位於 storefront feature TS 檔；dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
+- storefront legacy `innerHTML` renderer 已清到 0；前台 `js/products.js` 已移除，`js/cart.js`、`js/delivery.js`、`js/form-renderer.js`、`js/orders.js`、`js/main-app.js` 的實作已搬到 storefront feature TS 檔，2026-04-25 已移除相容 re-export；dashboard form fields 的配送可見性 checkbox 也不再拼接 `innerHTML`。
 - storefront smoke 現在會直接阻擋 `products-container`、`dynamic-fields-container`、`cart-items`、`total-price`、`cart-discount-details`、`cart-shipping-notice`、`delivery-options-list`、`bank-accounts-list` 上的 `innerHTML` setter。
 - `MainPage.vue` 已從 1209 行拆到 472 行，Storefront Wave 2 的 header / product grid / delivery / payment / bottom bar / cart drawer / order history section 都已拆成獨立 Vue 元件。
 - 後台 LINE Flex 建構邏輯已從 legacy JS 拆分並於 2026-04-23 搬到 `frontend/src/features/dashboard/dashboardOrderFlexMessage.ts`、`dashboardOrderFlexBody.ts`、`dashboardOrderFlexBubble.ts`、`dashboardOrderFlexLayout.ts`。
@@ -285,7 +291,7 @@
 - 恢復前台暖色系，修正訂單備註欄位顯示 `<slot />`。
 - 對齊會員資料彈窗導角。
 - 修正後台手機版頁籤顯示。
-- 統一前後台固定 icon 的尺寸、顏色與對齊，legacy 入口也已換成向量 icon。
+- 統一前後台固定 icon 的尺寸、顏色與對齊，Vue 入口與 compat redirect 也已換成向量 icon。
 - dashboard `categories` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-categories-updated`。
 - dashboard `promotions` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-promotions-updated`。
 - dashboard `formfields` 已改成 Vue-owned state/actions，不再依賴 `coffee:dashboard-formfields-updated`。

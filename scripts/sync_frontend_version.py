@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-同步前端檔案中的 `?v=XX` 版本參數，避免手動漏改造成快取問題。
+同步根目錄相容入口中的 `?v=XX` 版本參數，避免手動漏改造成快取問題。
 
 用法:
   python3 scripts/sync_frontend_version.py
@@ -18,8 +18,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION_FILE = ROOT / ".frontend-version"
-TARGETS: list[Path] = list((ROOT / "js").glob("*.js"))
-TARGETS.extend(ROOT.glob("*.html"))
+TARGETS: list[Path] = list(ROOT.glob("*.html"))
 
 VERSION_PATTERN = re.compile(r"\?v=\d+")
 

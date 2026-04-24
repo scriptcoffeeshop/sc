@@ -1,6 +1,6 @@
 # Frontend Vue Migration Plan
 
-Last updated: 2026-04-21
+Last updated: 2026-04-25
 
 ## Decision
 
@@ -8,9 +8,9 @@ Vue 3 + Vite SFC is the final frontend target.
 
 Starting on 2026-04-19:
 
-- Root `dashboard.html` / `main.html` are local compatibility redirects; `js/dashboard-app.js`, `js/main-app.js`, `js/cart.js`, and similar legacy modules enter maintenance-only mode.
-- No new product feature should be implemented in legacy first.
-- Any unavoidable legacy change must be either:
+- Root `dashboard.html` / `main.html` are local compatibility redirects; tracked `js/` compatibility wrappers are removed.
+- No new product feature should be implemented in legacy or DOM fallback code first.
+- Any unavoidable compatibility change must be either:
   - a parity adapter for an already-built Vue feature
   - a P0/P1 production fix
   - a short-term deployment or compatibility fix
@@ -19,24 +19,24 @@ This decision removes the current "dual-write" pattern as the default way of shi
 
 ## Why This Plan Exists
 
-The current frontend has two parallel systems:
+The frontend historically had two parallel systems:
 
 - Legacy: native HTML + JS entrypoints
 - Modern: Vue 3 + Vite SFC pages
 
-This creates three concrete problems:
+The remaining risk is now smaller but still real: compatibility redirects and DOM fallback helpers can still create drift if they grow again. This creates three concrete problems:
 
 1. Every meaningful feature risks being implemented twice.
 2. Payment, order, and admin flows can drift out of sync.
 3. Remaining large dashboard sections can still become difficult to review if they are allowed to grow back into monoliths.
 
-The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.ts`, while `js/dashboard-app.js` is only a compatibility re-export for the legacy root entrypoint. `DashboardSettingsSection.vue` is now only a 39-line composition shell, `DashboardOrdersSection.vue` is now only a 31-line shell, and order notification/status orchestration now lives in `frontend/src/features/dashboard/dashboardOrder*.ts`.
+The current Vue dashboard is much thinner than before. The `coffee:dashboard-*` bridges, section-level DOM renderers, and `initDashboardApp()` fallback are already gone. The remaining boot/service wiring now lives in `frontend/src/features/dashboard/bootstrapDashboard.ts`, tracked `js/` compatibility wrappers are gone, and order notification/status orchestration now lives in `frontend/src/features/dashboard/dashboardOrder*.ts`.
 
-Storefront legacy rendering is also moving into maintenance-only mode more aggressively now: the remaining `innerHTML` renderers in `js/*.js` have been reduced to zero, and smoke coverage now blocks regression on the core storefront containers.
+Storefront legacy rendering is also moving into removal mode: the remaining `innerHTML` renderers in tracked legacy `js/*.js` have been removed, and smoke coverage now blocks regression on the core storefront containers.
 
 ## Current Progress Snapshot
 
-As of 2026-04-23:
+As of 2026-04-25:
 
 - Vue-owned dashboard sections completed:
   - orders
@@ -62,10 +62,11 @@ As of 2026-04-23:
   - storefront subcomponents: header, product grid, delivery section, payment section, bottom bar, cart drawer, order history modal
 - Remaining legacy-heavy areas:
   - local compatibility redirects for root `dashboard.html` / `main.html`
-  - compatibility wrapper `js/dashboard-app.js`
-  - maintenance-only storefront `js/main-app.js` compatibility layer, now used by the Vue bundle and DOM API fallbacks instead of a root legacy HTML page
+  - storefront DOM fallback helpers that still coordinate payment/store-search/order-history side effects from `frontend/src/features/storefront/`
+  - `data-vue-managed` compatibility guards that can be removed once the remaining fallback helpers are retired
 - New regression policy in place:
   - each retired `coffee:dashboard-*` bridge must get a smoke test that still passes when the legacy custom event is blocked
+  - Vue/TS runtime files must not add inline event attributes or `data-action`
 
 ## Target Architecture
 
@@ -113,7 +114,7 @@ For a feature to be considered migrated:
 
 #### 2026-04-19 to 2026-04-26
 
-- Freeze new feature work in legacy admin.
+- Freeze new feature work in legacy admin and DOM fallback helpers.
 - All new dashboard work must land in Vue-first form.
 - Create Vue decomposition scaffolding and migration checklist.
 
@@ -167,7 +168,7 @@ For a feature to be considered migrated:
 #### 2026-06-22
 
 - Legacy dashboard enters removal-ready state.
-- Root `dashboard.html` redirects to the Vue build output; `js/dashboard-app.js` can be deleted once no compatibility imports remain.
+- Root `dashboard.html` redirects to the Vue build output; tracked `js/` compatibility wrappers are deleted and blocked from returning.
 
 ## Scope Priority
 
@@ -185,8 +186,7 @@ After dashboard stabilizes, apply the same policy to:
 
 - `frontend/src/pages/MainPage.vue`
 - root `main.html` compatibility redirect
-- `js/main-app.js`
-- `js/cart.js`
+- remaining storefront DOM fallback helpers under `frontend/src/features/storefront/`
 
 The dashboard migration should establish the repeatable pattern for storefront migration.
 
@@ -197,8 +197,8 @@ Initial storefront progress:
 - payment selection, announcement close, my orders modal close, and transfer bank-account interactions no longer require body-level click delegation either
 - delivery option selection, store-search result selection, tracking-number copy, and load-failure retry no longer require body-level click delegation
 - storefront body-level click delegation has been removed from the normal runtime path
-- delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; legacy `renderDeliveryOptions()` / `renderBankAccounts()` only remain as compatibility fallbacks and skip Vue-managed containers
-- my-orders list rendering no longer uses `innerHTML` for API order payloads; Vue `StorefrontOrderHistoryCard.vue` is the active renderer, while `js/orders.js` only remains as a thin compatibility re-export
+- delivery options and transfer bank-account lists are now rendered by `MainPage.vue`; fallback renderers skip Vue-managed containers and should be deleted after their state side effects are extracted
+- my-orders list rendering no longer uses `innerHTML` for API order payloads; Vue `StorefrontOrderHistoryCard.vue` is the active renderer
 
 ## Dashboard Decomposition Blueprint
 
@@ -209,14 +209,14 @@ Create a feature-oriented structure under `frontend/src/features/dashboard/`.
 - `frontend/src/features/dashboard/DashboardShell.vue`
 - `frontend/src/features/dashboard/DashboardHeader.vue`
 - `frontend/src/features/dashboard/DashboardTabs.vue`
-- `frontend/src/features/dashboard/useDashboardBoot.js`
+- `frontend/src/features/dashboard/useDashboardBoot.ts`
 
 ### Orders
 
 - `frontend/src/features/dashboard/DashboardOrdersSection.vue`
 - `frontend/src/features/dashboard/DashboardOrdersToolbar.vue`
 - `frontend/src/features/dashboard/DashboardOrderCard.vue`
-- `frontend/src/features/dashboard/useDashboardOrders.js`
+- `frontend/src/features/dashboard/useDashboardOrders.ts`
 
 ### Products
 
@@ -224,7 +224,7 @@ Create a feature-oriented structure under `frontend/src/features/dashboard/`.
 - `frontend/src/features/dashboard/products/ProductsTable.vue`
 - `frontend/src/features/dashboard/products/ProductRow.vue`
 - `frontend/src/features/dashboard/products/ProductModal.vue`
-- `frontend/src/features/dashboard/products/useProductsSection.js`
+- `frontend/src/features/dashboard/products/useProductsSection.ts`
 
 ### Categories
 
@@ -254,7 +254,7 @@ Create a feature-oriented structure under `frontend/src/features/dashboard/`.
 - `frontend/src/features/dashboard/DashboardDeliveryPaymentSettingsCard.vue`
 - `frontend/src/features/dashboard/DashboardPaymentOptionsSettingsCard.vue`
 - `frontend/src/features/dashboard/DashboardBankAccountsSettingsCard.vue`
-- `frontend/src/features/dashboard/useDashboardSettings.js`
+- `frontend/src/features/dashboard/useDashboardSettings.ts`
 
 ### Icon Library
 
@@ -313,7 +313,7 @@ That means:
 - fewer `window.*` globals
 - fewer `data-vue-managed` islands
 - fewer custom bridge events
-- less dashboard logic in `js/dashboard-app.js`
+- no tracked `js/` compatibility wrapper reintroduced
 
 ## Definition of Done
 
@@ -328,7 +328,7 @@ Dashboard migration is complete when all of the following are true:
 ## Success Metrics
 
 - `frontend/src/pages/DashboardPage.vue` under 400 lines
-- `js/dashboard-app.js` under 250 lines or removed entirely
+- no tracked root `js/` compatibility wrappers
 - zero new feature commits touching both Vue and legacy admin UI
 - all critical admin flows covered by E2E:
   - order status update
@@ -339,7 +339,7 @@ Dashboard migration is complete when all of the following are true:
 
 ## Immediate Next Actions
 
-1. Create the `frontend/src/features/dashboard/` directory structure.
-2. Keep `DashboardPage.vue` as shell-only wiring and avoid new section logic there.
-3. Replace the settings legacy DOM orchestration with Vue-owned state/actions.
-4. Repeat section by section until `DashboardPage.vue` becomes composition-only.
+1. Delete storefront fallback renderers that only exist to support removed legacy pages.
+2. Move remaining storefront side effects behind typed state/actions instead of DOM helpers.
+3. Remove `data-vue-managed` guards after the corresponding fallback path is gone.
+4. Keep `DashboardPage.vue` / `MainPage.vue` as shell-level composition and avoid new imperative section logic.

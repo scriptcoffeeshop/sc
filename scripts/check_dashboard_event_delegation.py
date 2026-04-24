@@ -3,8 +3,8 @@
 Guardrails for dashboard event delegation.
 
 Checks:
-1) No inline event attributes in dashboard files (onclick/onchange/...).
-2) Every data-action used in dashboard templates has a corresponding handler.
+1) No inline event attributes in Vue dashboard runtime files.
+2) No legacy data-action attributes in Vue dashboard runtime files.
 """
 
 from __future__ import annotations
@@ -15,20 +15,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DASHBOARD_TEMPLATE = ROOT / "frontend" / "src" / "pages" / "DashboardPage.vue"
-DASHBOARD_APP = ROOT / "js" / "dashboard-app.js"
-DASHBOARD_MODULES = list((ROOT / "js" / "dashboard" / "modules").glob("*.js"))
-DASHBOARD_EVENTS = ROOT / "js" / "dashboard" / "events.js"
+DASHBOARD_FEATURE_PATH = ROOT / "frontend" / "src" / "features" / "dashboard"
 TARGETS = [
-    path for path in [DASHBOARD_TEMPLATE, DASHBOARD_APP, DASHBOARD_EVENTS, *DASHBOARD_MODULES]
-    if path.exists()
+    path for path in [
+        ROOT / "frontend" / "src" / "pages" / "DashboardPage.vue",
+        *DASHBOARD_FEATURE_PATH.glob("*.vue"),
+        *DASHBOARD_FEATURE_PATH.glob("*.ts"),
+    ]
+    if path.exists() and not path.name.endswith(".test.ts")
 ]
 
 INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
-SWITCH_CASE_RE = re.compile(r'case ["\']([^"\']+)["\']')
-CHANGE_HANDLER_RE = re.compile(r'target\.dataset\.action\s*!==\s*["\']([^"\']+)["\']')
-OBJECT_KEY_RE = re.compile(r'["\']([-a-zA-Z0-9_]+)["\']\s*:')
 
 
 def read_text(path: Path) -> str:
@@ -47,21 +45,17 @@ def check_inline_events() -> list[str]:
     return errors
 
 
-def check_action_coverage() -> list[str]:
-    actions = set()
-    handled = set()
-
+def check_no_data_actions() -> list[str]:
+    errors: list[str] = []
     for path in TARGETS:
         text = read_text(path)
-        actions.update(DATA_ACTION_RE.findall(text))
-        
-        if path != DASHBOARD_TEMPLATE:
-            handled.update(SWITCH_CASE_RE.findall(text))
-            handled.update(CHANGE_HANDLER_RE.findall(text))
-            handled.update(OBJECT_KEY_RE.findall(text))
-
-    missing = sorted(action for action in actions if action not in handled)
-    return [f"Missing data-action handler: {action}" for action in missing]
+        for match in DATA_ACTION_RE.finditer(text):
+            line = text.count("\n", 0, match.start()) + 1
+            action = match.group(1)
+            errors.append(
+                f"{path.relative_to(ROOT)}:{line} legacy data-action is not allowed in Vue dashboard runtime: {action}"
+            )
+    return errors
 
 
 def main() -> int:
@@ -69,7 +63,7 @@ def main() -> int:
 
     try:
         errors.extend(check_inline_events())
-        errors.extend(check_action_coverage())
+        errors.extend(check_no_data_actions())
     except FileNotFoundError as exc:
         print(f"[check-dashboard-events] ERROR: {exc}", file=sys.stderr)
         return 1

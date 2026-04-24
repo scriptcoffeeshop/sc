@@ -3,8 +3,8 @@
 Guardrails for storefront event delegation.
 
 Checks:
-1) No inline event attributes in main storefront files.
-2) If any legacy data-action remains, it must have a corresponding actionHandlers key in main-app.js.
+1) No inline event attributes in Vue storefront runtime files.
+2) No legacy data-action attributes in Vue storefront runtime files.
 """
 
 from __future__ import annotations
@@ -15,16 +15,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN_TEMPLATE = ROOT / "frontend" / "src" / "pages" / "MainPage.vue"
-MAIN_APP = ROOT / "js" / "main-app.js"
-DELIVERY_JS = ROOT / "js" / "delivery.js"
-TARGETS = [MAIN_TEMPLATE, MAIN_APP, DELIVERY_JS]
+STOREFRONT_TARGET_ROOTS = [
+    ROOT / "frontend" / "src" / "pages" / "MainPage.vue",
+    *(ROOT / "frontend" / "src" / "features" / "storefront").glob("*.vue"),
+    *(ROOT / "frontend" / "src" / "features" / "storefront").glob("*.ts"),
+]
+TARGETS = [
+    path for path in STOREFRONT_TARGET_ROOTS
+    if path.exists() and not path.name.endswith(".test.ts")
+]
 
 INLINE_EVENT_RE = re.compile(r"\bon[a-z]+=")
-LEGACY_ONCLICK_SELECTOR_RE = re.compile(r"\[onclick\*")
 DATA_ACTION_RE = re.compile(r'data-action\s*=\s*"([^"]+)"')
-HANDLERS_BLOCK_RE = re.compile(r"const\s+actionHandlers\s*=\s*\{(?P<body>[\s\S]*?)\n\};")
-HANDLER_KEY_RE = re.compile(r'["\']([^"\']+)["\']\s*:')
 
 
 def read_text(path: Path) -> str:
@@ -43,30 +45,16 @@ def check_inline_events() -> list[str]:
     return errors
 
 
-def check_action_coverage() -> list[str]:
-    html_text = read_text(MAIN_TEMPLATE)
-    app_text = read_text(MAIN_APP)
-    actions = set(DATA_ACTION_RE.findall(html_text)) | set(DATA_ACTION_RE.findall(app_text))
-
-    if not actions:
-        return []
-
-    block = HANDLERS_BLOCK_RE.search(app_text)
-    if not block:
-        return ["Cannot find actionHandlers block in js/main-app.js"]
-
-    handler_keys = set(HANDLER_KEY_RE.findall(block.group("body")))
-    missing = sorted(action for action in actions if action not in handler_keys)
-    return [f"Missing actionHandlers key: {action}" for action in missing]
-
-
-def check_legacy_onclick_selector() -> list[str]:
+def check_no_data_actions() -> list[str]:
     errors: list[str] = []
-    for path in [MAIN_APP, DELIVERY_JS]:
+    for path in TARGETS:
         text = read_text(path)
-        for match in LEGACY_ONCLICK_SELECTOR_RE.finditer(text):
+        for match in DATA_ACTION_RE.finditer(text):
             line = text.count("\n", 0, match.start()) + 1
-            errors.append(f"{path.relative_to(ROOT)}:{line} legacy [onclick*] selector is not allowed")
+            action = match.group(1)
+            errors.append(
+                f"{path.relative_to(ROOT)}:{line} legacy data-action is not allowed in Vue storefront runtime: {action}"
+            )
     return errors
 
 
@@ -75,8 +63,7 @@ def main() -> int:
 
     try:
         errors.extend(check_inline_events())
-        errors.extend(check_action_coverage())
-        errors.extend(check_legacy_onclick_selector())
+        errors.extend(check_no_data_actions())
     except FileNotFoundError as exc:
         print(f"[check-main-events] ERROR: {exc}", file=sys.stderr)
         return 1

@@ -1,4 +1,4 @@
-// LINE Login 與帶 JWT 的 fetch。legacy `js/auth.js` 只保留 re-export。
+// LINE Login 與帶 JWT 的 fetch。正式入口由 Vue/Vite bundle 直接匯入。
 
 import Swal from "./swal.ts";
 import { API_URL } from "./appConfig.ts";

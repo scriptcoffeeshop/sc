@@ -12,6 +12,10 @@ BLOCKED_PREFIXES = (
     "supabase/.temp/",
 )
 
+BLOCKED_LEGACY_JS_PREFIXES = (
+    "js/",
+)
+
 ALLOWED_ENV_SUFFIXES = (
     ".example",
     ".sample",
@@ -177,6 +181,13 @@ def main() -> int:
 
         if path.startswith(BLOCKED_PREFIXES):
             violations.append(f"禁止追蹤 Supabase CLI 暫存檔：{path}")
+            continue
+
+        if path.startswith(BLOCKED_LEGACY_JS_PREFIXES):
+            if Path(path).exists():
+                violations.append(
+                    f"禁止追蹤 legacy js 相容殼，請改由 frontend/src Vue/TS 入口管理：{path}"
+                )
             continue
 
         if is_disallowed_env_file(path):
