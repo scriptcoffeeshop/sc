@@ -121,6 +121,32 @@ function buildOrderNoteHtml(note: string, margin = "0"): string {
   return `<p style="margin: ${margin};"><strong>訂單備註：</strong> ${safeNote}</p>`;
 }
 
+interface OrderStatusSummaryHtmlParams {
+  orderId: string;
+  deliveryMethod: string;
+  deliveryText: string;
+  paymentText: string;
+  paymentStatus: { text: string; color: string };
+  note?: string;
+  extraHtml?: string;
+}
+
+function buildOrderStatusSummaryHtml(
+  params: OrderStatusSummaryHtmlParams,
+): string {
+  return `<div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
+      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
+    METHOD_MAP[params.deliveryMethod] || "一般配送"
+  }<br><span style="color: #666; font-size: 14px;">${
+    sanitize(params.deliveryText)
+  }</span></p>
+      <p style="margin: 0;"><strong>付款方式：</strong> ${params.paymentText} <span style="font-size: 13px; color: ${params.paymentStatus.color}; font-weight: bold;">(${params.paymentStatus.text})</span></p>
+      ${buildOrderNoteHtml(String(params.note || ""), "10px 0 0 0")}
+      ${params.extraHtml || ""}
+    </div>`;
+}
+
 export function buildOrderConfirmationHtml(
   params: OrderConfirmationParams,
 ): string {
@@ -327,17 +353,17 @@ export function buildShippingNotificationHtml(
   }，您的訂單已出貨！</h2>
     <p>這封信是要通知您，您所訂購的商品已經安排出貨！</p>
     
-    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
-      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-    METHOD_MAP[params.deliveryMethod] || "一般配送"
-  }<br><span style="color: #666; font-size: 14px;">${
-    sanitize(deliveryText)
-  }</span></p>
-      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatus.color}; font-weight: bold;">(${paymentStatus.text})</span></p>
-      ${buildOrderNoteHtml(String(params.note || ""), "10px 0 0 0")}
-      ${trackingSection}
-    </div>
+    ${
+    buildOrderStatusSummaryHtml({
+      orderId: params.orderId,
+      deliveryMethod: params.deliveryMethod,
+      deliveryText,
+      paymentText,
+      paymentStatus,
+      note: params.note,
+      extraHtml: trackingSection,
+    })
+  }
     
     <p style="margin-top: 30px; color: #555;">依據配送方式不同，商品預計於 1-3 個工作天內抵達。<br>若是超商取貨，屆時將有手機簡訊通知取件，請留意您的手機訊息。</p>
   </div>
@@ -376,16 +402,16 @@ export function buildProcessingNotificationHtml(
   }，您的訂單已進入處理流程！</h2>
     <p>我們已開始準備您的商品，完成後會再通知您出貨進度。</p>
 
-    <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
-      <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-    METHOD_MAP[params.deliveryMethod] || "一般配送"
-  }<br><span style="color: #666; font-size: 14px;">${
-    sanitize(deliveryText)
-  }</span></p>
-      <p style="margin: 0;"><strong>付款方式：</strong> ${paymentText} <span style="font-size: 13px; color: ${paymentStatus.color}; font-weight: bold;">(${paymentStatus.text})</span></p>
-      ${buildOrderNoteHtml(String(params.note || ""), "10px 0 0 0")}
-    </div>
+    ${
+    buildOrderStatusSummaryHtml({
+      orderId: params.orderId,
+      deliveryMethod: params.deliveryMethod,
+      deliveryText,
+      paymentText,
+      paymentStatus,
+      note: params.note,
+    })
+  }
 
     <p style="margin-top: 30px; color: #555;">感謝您的耐心等候，我們會盡快完成處理並寄出商品。</p>
   </div>

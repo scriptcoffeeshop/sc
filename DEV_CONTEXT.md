@@ -78,6 +78,7 @@
 - dashboard 錯誤訊息 fallback 已集中到 `dashboardErrors.ts`；products/categories/promotions/formfields/bank accounts/users/orders/settings/order notification 不再各自維護 `getErrorMessage()`。
 - dashboard SweetAlert/form modal 的 input/select/textarea/checkbox 讀值已集中到 `dashboardFormControls.ts`；orders bulk/status、form fields、bank accounts 不再各自維護 DOM 取值 helper。
 - 後端 Email template 與 LINE Flex 的配送文字判斷已集中到共用 helper；LINE Flex 訂單狀態通知的欄位 row / separator 組裝也已抽 helper，避免每個欄位重複手寫 Flex JSON。
+- 後端 Email template 的出貨/處理中訂單摘要區塊已集中到 `buildOrderStatusSummaryHtml()`，付款狀態、配送文字、備註與追蹤附加內容共用同一套 HTML 組裝。
 - 後端報價引擎 `api/quote.ts` 的商品規格解析與單價決定已抽成純 helper，主計價迴圈專注於 quote line 組裝。
 - 後端 action routing 的 schema 驗證樣板已集中到 `publicPost` / `authPost` / `adminPost` helper；action map 不再逐筆手寫 `validate(schema, data)`。
 - 後端下單流程 `api/order-submit.ts` 已抽出訂單編號、超商類型與付款建單失敗狀態更新 helper，主流程少一層重複更新語句。
