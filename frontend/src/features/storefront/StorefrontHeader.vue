@@ -35,6 +35,7 @@
 
     <div id="login-section" class="mb-6 px-4 py-4 sm:px-5 rounded-xl ui-card-section">
       <div
+        v-if="!currentUser"
         id="login-prompt"
         class="flex flex-col items-center justify-center gap-3 text-center"
       >
@@ -51,16 +52,18 @@
           使用 LINE 登入
         </UiButton>
       </div>
-      <div id="user-info" class="hidden flex items-center gap-3">
+      <div v-else id="user-info" class="flex items-center gap-3">
         <img
           id="user-avatar"
-          src=""
-          alt=""
+          :src="userAvatarUrl"
+          :alt="userDisplayName"
           class="w-12 h-12 rounded-full border-2 border-green-300"
         >
         <div class="flex-1">
           <p class="text-sm text-gray-500">已登入</p>
-          <p id="user-display-name" class="font-semibold text-gray-700"></p>
+          <p id="user-display-name" class="font-semibold text-gray-700">
+            {{ userDisplayName }}
+          </p>
         </div>
         <button
           class="inline-flex items-center text-sm font-medium leading-none"
@@ -85,12 +88,30 @@
       </div>
     </div>
   </div>
-  <input type="hidden" id="line-name">
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { ListOrdered, UserRound } from "lucide-vue-next";
 import UiButton from "../../components/ui/button/Button.vue";
+import type { SessionUser } from "../../types/session";
+import {
+  getStorefrontUserAvatarUrl,
+  getStorefrontUserDisplayName,
+} from "./useStorefrontAuth.ts";
+
+const props = withDefaults(defineProps<{
+  currentUser?: SessionUser | null;
+}>(), {
+  currentUser: null,
+});
+
+const userDisplayName = computed(() =>
+  getStorefrontUserDisplayName(props.currentUser)
+);
+const userAvatarUrl = computed(() =>
+  getStorefrontUserAvatarUrl(props.currentUser)
+);
 
 defineEmits<{
   "close-announcement": [];

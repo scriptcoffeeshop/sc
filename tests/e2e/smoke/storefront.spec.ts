@@ -759,6 +759,6 @@ test.describe("smoke / storefront", () => {
 
     await page.getByRole("button", { name: "登出" }).click();
     await expect(page.locator("#login-prompt")).toBeVisible();
-    await expect(page.locator("#user-info")).toHaveClass(/hidden/);
+    await expect(page.locator("#user-info")).toHaveCount(0);
   });
 });

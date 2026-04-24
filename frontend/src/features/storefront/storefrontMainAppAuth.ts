@@ -61,28 +61,6 @@ export function createStorefrontMainAppAuth(
   }
 
   function showUserInfo() {
-    document.getElementById("login-prompt")?.classList.add("hidden");
-    document.getElementById("user-info")?.classList.remove("hidden");
-    document.getElementById("user-display-name")!.textContent = String(
-      state.currentUser?.displayName || state.currentUser?.display_name || "",
-    );
-
-    const avatar = document.getElementById("user-avatar");
-    if (avatar instanceof HTMLImageElement) {
-      avatar.src = String(
-        state.currentUser?.pictureUrl ||
-          state.currentUser?.picture_url ||
-          "https://via.placeholder.com/48",
-      );
-    }
-
-    const lineNameInput = deps.getInputElement("line-name");
-    if (lineNameInput) {
-      lineNameInput.value = String(
-        state.currentUser?.displayName || state.currentUser?.display_name || "",
-      );
-    }
-
     prefillUserFields();
     applySavedOrderFormPrefs();
     deps.updateFormState();
@@ -268,11 +246,6 @@ export function createStorefrontMainAppAuth(
     state.currentUser = null;
     localStorage.removeItem("coffee_user");
     localStorage.removeItem("coffee_jwt");
-    document.getElementById("login-prompt")?.classList.remove("hidden");
-    document.getElementById("user-info")?.classList.add("hidden");
-
-    const lineNameInput = deps.getInputElement("line-name");
-    if (lineNameInput) lineNameInput.value = "";
 
     const phoneEl = deps.getInputElement("field-phone");
     const emailEl = deps.getInputElement("field-email");

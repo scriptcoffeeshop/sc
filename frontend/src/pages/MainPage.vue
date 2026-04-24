@@ -1,5 +1,6 @@
 <template>
   <StorefrontHeader
+    :current-user="currentUser"
     @close-announcement="handleCloseAnnouncement"
     @login="handleStorefrontLogin"
     @show-my-orders="handleShowMyOrders"
@@ -201,6 +202,7 @@ import {
 } from "../features/storefront/useStorefrontCart.ts";
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
 import { useStorefrontDynamicFields } from "../features/storefront/useStorefrontDynamicFields.ts";
+import { useStorefrontAuth } from "../features/storefront/useStorefrontAuth.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
@@ -312,6 +314,10 @@ const {
   getStorefrontUiSnapshot,
 });
 const {
+  currentUser,
+  refreshAuthState,
+} = useStorefrontAuth({ getStorefrontUiSnapshot });
+const {
   currentUser: dynamicFieldsCurrentUser,
   selectedDelivery: dynamicFieldsSelectedDelivery,
   visibleFormFields,
@@ -334,6 +340,7 @@ const {
 });
 
 function syncStorefrontUiState() {
+  refreshAuthState();
   refreshProductsState();
   refreshDeliveryState();
   syncPaymentState();

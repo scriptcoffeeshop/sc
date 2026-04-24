@@ -9,6 +9,7 @@ describe("useStorefrontShell", () => {
   it("delegates storefront shell actions", () => {
     const announcementClassList = createClassList();
     const closeOrderHistory = vi.fn();
+    const profilePromise = Promise.resolve("saved");
     const deps = {
       document: {
         getElementById: vi.fn((id) => {
@@ -20,7 +21,7 @@ describe("useStorefrontShell", () => {
       },
       startMainLogin: vi.fn(),
       logoutCurrentUser: vi.fn(),
-      showProfileModal: vi.fn(),
+      showProfileModal: vi.fn(() => profilePromise),
       showMyOrders: vi.fn(),
       closeOrderHistory,
     };
@@ -29,7 +30,7 @@ describe("useStorefrontShell", () => {
     shell.handleCloseAnnouncement();
     shell.handleStorefrontLogin();
     shell.handleStorefrontLogout();
-    shell.handleShowProfile();
+    const showProfileResult = shell.handleShowProfile();
     shell.handleShowMyOrders();
     shell.handleCloseOrdersModal();
 
@@ -38,6 +39,7 @@ describe("useStorefrontShell", () => {
     expect(deps.startMainLogin).toHaveBeenCalledTimes(1);
     expect(deps.logoutCurrentUser).toHaveBeenCalledTimes(1);
     expect(deps.showProfileModal).toHaveBeenCalledTimes(1);
+    expect(showProfileResult).toBe(profilePromise);
     expect(deps.showMyOrders).toHaveBeenCalledTimes(1);
   });
 });

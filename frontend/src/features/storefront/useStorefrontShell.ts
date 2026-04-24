@@ -15,19 +15,19 @@ export function useStorefrontShell(deps: StorefrontShellDeps = {}) {
   }
 
   function handleStorefrontLogin() {
-    void deps.startMainLogin?.();
+    return deps.startMainLogin?.();
   }
 
   function handleStorefrontLogout() {
-    deps.logoutCurrentUser?.();
+    return deps.logoutCurrentUser?.();
   }
 
   function handleShowProfile() {
-    void deps.showProfileModal?.();
+    return deps.showProfileModal?.();
   }
 
   function handleShowMyOrders() {
-    void deps.showMyOrders?.();
+    return deps.showMyOrders?.();
   }
 
   function handleCloseOrdersModal() {
