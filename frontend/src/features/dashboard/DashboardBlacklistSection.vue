@@ -56,7 +56,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   dashboardUsersActions,
   useDashboardUsers,
@@ -66,7 +66,7 @@ import { useDashboardSession } from "./useDashboardSession.ts";
 const { blacklistView } = useDashboardUsers();
 const { activeTab } = useDashboardSession();
 
-function handleToggleUserBlacklist(userId, isBlocked) {
+function handleToggleUserBlacklist(userId: string, isBlocked: boolean) {
   dashboardUsersActions.toggleUserBlacklist(userId, isBlocked);
 }
 </script>

@@ -97,7 +97,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import {
   dashboardPromotionsActions,
@@ -107,7 +107,7 @@ import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { promotionsView } = useDashboardPromotions();
 const { activeTab } = useDashboardSession();
-const promotionsTable = ref(null);
+const promotionsTable = ref<HTMLElement | null>(null);
 
 function syncPromotionsTable() {
   dashboardPromotionsActions.registerPromotionsTableElement(
@@ -119,15 +119,15 @@ function handleShowPromotionModal() {
   dashboardPromotionsActions.showPromotionModal();
 }
 
-function handleTogglePromotionEnabled(id, enabled) {
+function handleTogglePromotionEnabled(id: number | string, enabled: boolean) {
   dashboardPromotionsActions.togglePromotionEnabled(id, enabled);
 }
 
-function handleEditPromotion(id) {
+function handleEditPromotion(id: number | string) {
   dashboardPromotionsActions.editPromotion(id);
 }
 
-function handleDeletePromotion(id) {
+function handleDeletePromotion(id: number | string) {
   dashboardPromotionsActions.delPromotion(id);
 }
 

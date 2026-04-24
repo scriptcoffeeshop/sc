@@ -56,7 +56,7 @@
   - dashboard categories composable 已補上 category/service/sortable 型別與 API normalize，分類排序與 CRUD 不再依賴隱式 services/null 型別。
   - dashboard users composable 已補上 users/blacklist/service 型別與 API normalize，會員列表、黑名單與權限操作不再依賴隱式 services/null 型別。
   - dashboard 訂單通知 controller 已補上 Email/Flex/notification deps 共用型別，Flex 歷史紀錄也改為 typed parse/write，不再吞掉 localStorage/clipboard 錯誤。
-  - 共用 UI primitive (`Button/Input/Textarea/Card/Select`) 與薄 dashboard wrapper 已開始轉為 `<script setup lang="ts">`，後續可延續同一節奏收斂剩餘 Vue SFC。
+  - 共用 UI primitive (`Button/Input/Textarea/Card/Select`)、薄 dashboard wrapper、dashboard 列表 sections 與部分 storefront shell 元件已開始轉為 `<script setup lang="ts">`，後續可延續同一節奏收斂剩餘 Vue SFC。
 - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、bank accounts 等卡片元件；取貨方式與付款對應、金流選項顯示已抽到獨立 `付款與取貨` 頁籤 (`DashboardCheckoutSettingsSection.vue`)

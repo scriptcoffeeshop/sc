@@ -49,34 +49,33 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from "vue";
 import { ShoppingCart } from "lucide-vue-next";
 
-const props = defineProps({
-  cartSummary: {
-    type: Object,
-    required: true,
-  },
-  showShippingBadge: {
-    type: Boolean,
-    default: false,
-  },
-  isFreeShipping: {
-    type: Boolean,
-    default: false,
-  },
-  totalPriceText: {
-    type: String,
-    required: true,
-  },
-  cartCount: {
-    type: Number,
-    default: 0,
-  },
-});
+type StorefrontCartSummary = {
+  totalDiscount: number;
+  shippingFee: number;
+};
 
-defineEmits(["toggle-cart"]);
+const props = withDefaults(
+  defineProps<{
+    cartSummary: StorefrontCartSummary;
+    showShippingBadge?: boolean;
+    isFreeShipping?: boolean;
+    totalPriceText: string;
+    cartCount?: number;
+  }>(),
+  {
+    showShippingBadge: false,
+    isFreeShipping: false,
+    cartCount: 0,
+  },
+);
+
+defineEmits<{
+  "toggle-cart": [];
+}>();
 
 const shippingBadgeStyle = computed(() => ({
   backgroundColor: props.isFreeShipping ? "#dbeafe" : "#f3f4f6",

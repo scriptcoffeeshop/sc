@@ -108,7 +108,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import {
   dashboardProductsActions,
@@ -118,7 +118,7 @@ import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { productsGroupsView } = useDashboardProducts();
 const { activeTab } = useDashboardSession();
-const productsTable = ref(null);
+const productsTable = ref<HTMLElement | null>(null);
 
 function syncProductsTable() {
   dashboardProductsActions.registerProductsTableElement(productsTable.value);
@@ -128,15 +128,15 @@ function handleShowProductModal() {
   dashboardProductsActions.showProductModal();
 }
 
-function handleToggleProductEnabled(id, enabled) {
+function handleToggleProductEnabled(id: number, enabled: boolean) {
   dashboardProductsActions.toggleProductEnabled(id, enabled);
 }
 
-function handleEditProduct(id) {
+function handleEditProduct(id: number) {
   dashboardProductsActions.editProduct(id);
 }
 
-function handleDeleteProduct(id) {
+function handleDeleteProduct(id: number) {
   dashboardProductsActions.delProduct(id);
 }
 

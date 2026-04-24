@@ -50,28 +50,33 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ListOrdered } from "lucide-vue-next";
 import StorefrontOrderHistoryCard from "./StorefrontOrderHistoryCard.vue";
 
-defineProps({
-  isOpen: {
-    type: Boolean,
-    default: false,
-  },
-  state: {
-    type: String,
-    default: "empty",
-  },
-  errorText: {
-    type: String,
-    default: "",
-  },
-  orders: {
-    type: Array,
-    default: () => [],
-  },
-});
+type OrderHistoryModalState = "loading" | "error" | "empty" | "ready";
 
-defineEmits(["close", "copy-tracking-number"]);
+type StorefrontOrderHistoryCardItem = Record<string, unknown> & {
+  orderId: string;
+};
+
+withDefaults(
+  defineProps<{
+    isOpen?: boolean;
+    state?: OrderHistoryModalState;
+    errorText?: string;
+    orders?: StorefrontOrderHistoryCardItem[];
+  }>(),
+  {
+    isOpen: false,
+    state: "empty",
+    errorText: "",
+    orders: () => [],
+  },
+);
+
+defineEmits<{
+  close: [];
+  "copy-tracking-number": [trackingNumber: string];
+}>();
 </script>

@@ -60,7 +60,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import {
   dashboardCategoriesActions,
@@ -70,7 +70,7 @@ import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { categoriesView, newCategoryName } = useDashboardCategories();
 const { activeTab } = useDashboardSession();
-const categoriesList = ref(null);
+const categoriesList = ref<HTMLElement | null>(null);
 
 function syncCategoriesList() {
   dashboardCategoriesActions.registerCategoriesListElement(categoriesList.value);
@@ -80,11 +80,11 @@ function handleAddCategory() {
   dashboardCategoriesActions.addCategory();
 }
 
-function handleEditCategory(id) {
+function handleEditCategory(id: number | string) {
   dashboardCategoriesActions.editCategory(id);
 }
 
-function handleDeleteCategory(id) {
+function handleDeleteCategory(id: number | string) {
   dashboardCategoriesActions.delCategory(id);
 }
 

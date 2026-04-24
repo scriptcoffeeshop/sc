@@ -19,7 +19,7 @@
           :value="keyword"
           class="input-field"
           placeholder="輸入關鍵字（例如：付款、配送、brand）"
-          @input="emit('update:keyword', $event.target.value)"
+          @input="handleKeywordInput"
         >
       </div>
     </div>
@@ -91,7 +91,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
@@ -99,34 +99,47 @@ import { getDefaultIconUrl } from "../../lib/icons.ts";
 import { dashboardSettingsIconActions } from "./useDashboardSettingsIcons.ts";
 import { useDashboardSession } from "./useDashboardSession.ts";
 
-defineProps({
-  categories: {
-    type: Array,
-    default: () => [],
-  },
-  items: {
-    type: Array,
-    default: () => [],
-  },
-  selectedCategory: {
-    type: String,
-    default: "all",
-  },
-  keyword: {
-    type: String,
-    default: "",
-  },
-});
+type IconLibraryItem = {
+  key: string;
+  label: string;
+  path: string;
+  category: string;
+};
 
-const emit = defineEmits(["update:keyword", "select-category"]);
+withDefaults(
+  defineProps<{
+    categories?: string[];
+    items?: IconLibraryItem[];
+    selectedCategory?: string;
+    keyword?: string;
+  }>(),
+  {
+    categories: () => [],
+    items: () => [],
+    selectedCategory: "all",
+    keyword: "",
+  },
+);
+
+const emit = defineEmits<{
+  "update:keyword": [keyword: string];
+  "select-category": [category: string];
+}>();
 const { activeTab } = useDashboardSession();
 const selectedTarget = ref("site");
 
-function applyIcon(icon) {
+function handleKeywordInput(event: Event) {
+  const target = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
+  emit("update:keyword", target?.value || "");
+}
+
+function applyIcon(icon: IconLibraryItem) {
   dashboardSettingsIconActions.applyIconFromLibrary(
     selectedTarget.value,
-    icon?.key,
-    icon?.path,
+    icon.key,
+    icon.path,
   );
 }
 </script>

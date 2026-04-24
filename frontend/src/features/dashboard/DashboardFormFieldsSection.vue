@@ -86,7 +86,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import {
   dashboardFormFieldsActions,
@@ -96,7 +96,7 @@ import { useDashboardSession } from "./useDashboardSession.ts";
 
 const { formFieldsView } = useDashboardFormFields();
 const { activeTab } = useDashboardSession();
-const formFieldsList = ref(null);
+const formFieldsList = ref<HTMLElement | null>(null);
 
 function syncFormFieldsList() {
   dashboardFormFieldsActions.registerFormFieldsListElement(formFieldsList.value);
@@ -106,15 +106,15 @@ function handleShowAddFieldModal() {
   dashboardFormFieldsActions.showAddFieldModal();
 }
 
-function handleToggleFieldEnabled(id, enabled) {
+function handleToggleFieldEnabled(id: number, enabled: string) {
   dashboardFormFieldsActions.toggleFieldEnabled(id, enabled === "true");
 }
 
-function handleEditFormField(id) {
+function handleEditFormField(id: number) {
   dashboardFormFieldsActions.editFormField(id);
 }
 
-function handleDeleteFormField(id) {
+function handleDeleteFormField(id: number) {
   dashboardFormFieldsActions.deleteFormField(id);
 }
 

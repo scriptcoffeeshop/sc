@@ -11,7 +11,7 @@
           class="input-field text-sm py-1"
           placeholder="搜尋名稱/手機/Email"
           :value="userSearch"
-          @input="updateUserSearch($event.target.value)"
+          @input="handleUserSearchInput"
           @keyup.enter="handleSearchUsers"
         >
         <button
@@ -114,7 +114,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   dashboardUsersActions,
   useDashboardUsers,
@@ -124,15 +124,23 @@ import { useDashboardSession } from "./useDashboardSession.ts";
 const { userSearch, usersView, updateUserSearch } = useDashboardUsers();
 const { activeTab } = useDashboardSession();
 
+function handleUserSearchInput(event: Event) {
+  const target = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
+  updateUserSearch(target?.value || "");
+}
+
 function handleSearchUsers() {
   dashboardUsersActions.loadUsers();
 }
 
-function handleToggleUserBlacklist(userId, isBlocked) {
+function handleToggleUserBlacklist(userId: string, isBlocked: boolean) {
   dashboardUsersActions.toggleUserBlacklist(userId, isBlocked);
 }
 
-function handleToggleUserRole(userId, newRole) {
+function handleToggleUserRole(userId: string, newRole: string) {
+  if (newRole !== "ADMIN" && newRole !== "USER") return;
   dashboardUsersActions.toggleUserRole(userId, newRole);
 }
 </script>
