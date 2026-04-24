@@ -198,6 +198,7 @@
 - `useDashboardSettingsIcons.ts` 已補上較明確的 service / preview map / icon upload response 型別與 key guard，維持既有行為但降低 icon 套用時的型別空窗；對應 unit test 仍通過。
 - `useDashboardSettingsIcons.ts` 已把品牌、區塊、付款與物流圖示上傳流程集中到 `uploadValidatedIconFile()`，減少 loading modal、錯誤 fallback、成功 toast 與 preview 清除流程重複。
 - dashboard products 也開始回到 orchestration：`useDashboardProducts.ts` 現在主要保留載入/排序/儲存 action，view/form/spec 純邏輯搬到 `dashboardProductsShared.ts`，原有 unit test 仍通過。
+- dashboard products API 樣板已再收斂：商品排序、新增/編輯、刪除、啟停共用 `postProductAction()` / success guard；啟停商品的完整 update payload 也移到 `dashboardProductsShared.ts`，並補 helper unit test 保護欄位保留。
 - 前端靜態檢查已補齊：新增 `eslint.config.mjs` 與 `npm run lint:frontend`，`ci-local` 與 GitHub Actions test job 都會執行 Vue/TypeScript 前端 lint。
 - `guardrails` 新增 `scripts/check_dev_context_sync.py`，會比對 `DEV_CONTEXT.md` 的「最後更新」與 `.frontend-version` / 最新變更節點，降低文件與實際狀態漂移。
 - 本輪驗證已通過：`npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run ci-local`。

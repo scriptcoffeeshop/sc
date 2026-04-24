@@ -47,6 +47,21 @@ export interface DashboardProductFormState {
   specs: DashboardProductSpec[];
 }
 
+export interface DashboardProductMutationPayload {
+  userId: string;
+  category: string;
+  name: string;
+  description: string;
+  price: number;
+  roastLevel: string;
+  specs: string;
+  enabled: boolean;
+  id?: number;
+  weight?: string;
+  origin?: string;
+  imageUrl?: string;
+}
+
 export const defaultSpecs: DashboardProductSpec[] = [
   { key: "quarter", label: "1/4磅", price: 0, enabled: true },
   { key: "half", label: "半磅", price: 0, enabled: true },
@@ -197,5 +212,26 @@ export function buildSaveProductPayload(
       enabled: productForm.enabled,
       ...(productForm.id ? { id: Number.parseInt(productForm.id, 10) } : {}),
     },
+  };
+}
+
+export function buildToggleProductEnabledPayload(
+  product: DashboardProductRecord,
+  userId: string,
+  enabled: boolean,
+): DashboardProductMutationPayload {
+  return {
+    userId,
+    id: Number(product.id),
+    category: product.category || "",
+    name: product.name || "",
+    description: product.description || "",
+    price: Number(product.price) || 0,
+    weight: product.weight || "",
+    origin: product.origin || "",
+    roastLevel: product.roastLevel || "",
+    specs: product.specs || "",
+    imageUrl: product.imageUrl || "",
+    enabled: Boolean(enabled),
   };
 }

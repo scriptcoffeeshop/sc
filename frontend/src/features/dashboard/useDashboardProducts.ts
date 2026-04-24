@@ -2,6 +2,7 @@ import { computed, nextTick, reactive, ref } from "vue";
 import {
   buildGroupedProductsView,
   buildSaveProductPayload,
+  buildToggleProductEnabledPayload,
   cloneSpecs,
   fillProductFormState,
   resetProductFormState,
@@ -54,6 +55,11 @@ interface DashboardProductsResponse {
   success?: boolean;
   error?: string;
   products?: DashboardProductRecord[];
+}
+
+interface DashboardProductActionResponse {
+  success?: boolean;
+  error?: string;
 }
 
 type DashboardProductSortableWindow = Window & {
@@ -232,16 +238,37 @@ function renderProducts() {
   return productsGroupsView.value;
 }
 
+async function postProductAction<T extends DashboardProductActionResponse>(
+  action: string,
+  payload: unknown,
+): Promise<T> {
+  const { API_URL, authFetch } = getServices();
+  const response = await authFetch(`${API_URL}?action=${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return await response.json() as T;
+}
+
+function assertProductActionSuccess(
+  data: DashboardProductActionResponse,
+  fallbackMessage: string,
+) {
+  if (!data.success) {
+    throw new Error(data.error || fallbackMessage);
+  }
+}
+
 async function moveProduct(id: number, direction: string) {
   try {
-    const { API_URL, authFetch, getAuthUserId } = getServices();
-    const response = await authFetch(`${API_URL}?action=reorderProduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id, direction }),
+    const { getAuthUserId } = getServices();
+    const data = await postProductAction("reorderProduct", {
+      userId: getAuthUserId(),
+      id,
+      direction,
     });
-    const data = await response.json() as { success?: boolean; error?: string };
-    if (!data.success) throw new Error(data.error);
+    assertProductActionSuccess(data, "商品排序失敗");
     await loadProducts();
   } catch (error) {
     getServices().Swal.fire("錯誤", getDashboardErrorMessage(error, "商品排序失敗"), "error");
@@ -249,16 +276,12 @@ async function moveProduct(id: number, direction: string) {
 }
 
 async function updateProductOrders(ids: number[]) {
-  const { API_URL, authFetch, getAuthUserId } = getServices();
-  const response = await authFetch(`${API_URL}?action=reorderProductsBulk`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: getAuthUserId(), ids }),
+  const { getAuthUserId } = getServices();
+  const data = await postProductAction("reorderProductsBulk", {
+    userId: getAuthUserId(),
+    ids,
   });
-  const data = await response.json() as { success?: boolean; error?: string };
-  if (!data.success) {
-    throw new Error(data.error || "商品排序更新失敗");
-  }
+  assertProductActionSuccess(data, "商品排序更新失敗");
 }
 
 async function ensureCategoriesReady() {
@@ -295,7 +318,7 @@ function closeProductModal() {
 
 async function saveProduct(event?: Event) {
   event?.preventDefault?.();
-  const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
+  const { getAuthUserId, Toast, Swal } = getServices();
   const { enabledSpecs, payload } = buildSaveProductPayload(
     productForm,
     getAuthUserId(),
@@ -311,16 +334,11 @@ async function saveProduct(event?: Event) {
   }
 
   try {
-    const response = await authFetch(
-      `${API_URL}?action=${productForm.id ? "updateProduct" : "addProduct"}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
+    const data = await postProductAction(
+      productForm.id ? "updateProduct" : "addProduct",
+      payload,
     );
-    const data = await response.json() as { success?: boolean; error?: string };
-    if (!data.success) throw new Error(data.error);
+    assertProductActionSuccess(data, "商品儲存失敗");
     Toast.fire({ icon: "success", title: productForm.id ? "已更新" : "已新增" });
     closeProductModal();
     await loadProducts();
@@ -330,7 +348,7 @@ async function saveProduct(event?: Event) {
 }
 
 async function delProduct(id: number) {
-  const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
+  const { getAuthUserId, Toast, Swal } = getServices();
   const confirmation = await Swal.fire({
     title: "刪除商品？",
     icon: "warning",
@@ -342,12 +360,10 @@ async function delProduct(id: number) {
   if (!confirmation.isConfirmed) return;
 
   try {
-    const response = await authFetch(`${API_URL}?action=deleteProduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: getAuthUserId(), id }),
+    const data = await postProductAction("deleteProduct", {
+      userId: getAuthUserId(),
+      id,
     });
-    const data = await response.json() as { success?: boolean; error?: string };
     if (!data.success) return;
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadProducts();
@@ -357,7 +373,7 @@ async function delProduct(id: number) {
 }
 
 async function toggleProductEnabled(id: number, enabled: boolean) {
-  const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
+  const { getAuthUserId, Toast, Swal } = getServices();
   syncProductsMap();
   const product = productsMap[id];
   if (!product) {
@@ -365,31 +381,15 @@ async function toggleProductEnabled(id: number, enabled: boolean) {
     return;
   }
 
-  const payload = {
-    userId: getAuthUserId(),
-    id: Number(product.id),
-    category: product.category || "",
-    name: product.name || "",
-    description: product.description || "",
-    price: Number(product.price) || 0,
-    weight: product.weight || "",
-    origin: product.origin || "",
-    roastLevel: product.roastLevel || "",
-    specs: product.specs || "",
-    imageUrl: product.imageUrl || "",
-    enabled: Boolean(enabled),
-  };
+  const payload = buildToggleProductEnabledPayload(
+    product,
+    getAuthUserId(),
+    enabled,
+  );
 
   try {
-    const response = await authFetch(`${API_URL}?action=updateProduct`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json() as { success?: boolean; error?: string };
-    if (!data.success) {
-      throw new Error(data.error || "商品狀態更新失敗");
-    }
+    const data = await postProductAction("updateProduct", payload);
+    assertProductActionSuccess(data, "商品狀態更新失敗");
     product.enabled = Boolean(enabled);
     renderProducts();
     Toast.fire({
