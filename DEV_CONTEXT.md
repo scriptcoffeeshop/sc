@@ -102,6 +102,7 @@
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`，避免型別錯誤被靜音。
 - `repo_hygiene_check.py` 已禁止新增 frontend production JS；目前 `frontend/src/` 只允許 `twCitySelector.js` / `taiwanCityData.js` 作為 vendor/data 邊界，entry、Swal wrapper、UI helper 已轉 TypeScript。
+- `repo_hygiene_check.py` 已禁止 production runtime 直接新增 `JSON.parse` 與匿名 `catch {}`；JSON 解析需集中在 frontend/backend json helper，catch 需具名以便後續補觀測。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
 - 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
@@ -166,6 +167,7 @@
 - frontend production code 已移除匿名 `catch {}`，改為統一 `_error` binding；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run build`、`npm run test:unit`、`npm run guardrails` 與 `git diff --check`。
 - frontend feature 模組的 JSON 解析 fallback 已集中到 `frontend/src/lib/jsonUtils.ts`，只保留該工具內部直接呼叫 `JSON.parse`；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run guardrails` 與 `git diff --check`。
 - Supabase Edge Function production JSON 解析 fallback 已集中到 `supabase/functions/coffee-api/utils/json.ts`，只保留該工具內部直接呼叫 `JSON.parse`；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
+- `repo_hygiene_check.py` 新增 runtime 守門，阻擋 production 直接新增 `JSON.parse` 或匿名 `catch {}`；本輪通過 `npm run guardrails`、`python3 scripts/repo_hygiene_check.py` 與 `git diff --check`。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。
