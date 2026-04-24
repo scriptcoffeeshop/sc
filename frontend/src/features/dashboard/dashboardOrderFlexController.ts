@@ -1,30 +1,60 @@
+import type { DashboardOrderRecord } from "./dashboardOrderTypes";
+import type {
+  DashboardLineFlexMessage,
+  DashboardOrderFlexControllerDeps,
+} from "./dashboardOrderNotificationTypes";
+
 const FLEX_HISTORY_KEY = "coffee_flex_message_history";
 const FLEX_HISTORY_MAX = 50;
 
-function readFlexHistory() {
+type FlexHistoryItem = {
+  orderId: string;
+  statusLabel: string;
+  timestamp: string;
+  flex: DashboardLineFlexMessage;
+};
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message || fallback : fallback;
+}
+
+function isFlexHistoryItem(value: unknown): value is FlexHistoryItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<FlexHistoryItem>;
+  return Boolean(item.orderId && item.statusLabel && item.timestamp && item.flex);
+}
+
+function readFlexHistory(): FlexHistoryItem[] {
+  const rawHistory = globalThis.localStorage?.getItem(FLEX_HISTORY_KEY);
+  if (!rawHistory) return [];
   try {
-    const history = JSON.parse(
-      globalThis.localStorage?.getItem(FLEX_HISTORY_KEY) || "[]",
-    );
-    return Array.isArray(history) ? history : [];
-  } catch {
+    const history = JSON.parse(rawHistory);
+    return Array.isArray(history) ? history.filter(isFlexHistoryItem) : [];
+  } catch (error) {
+    console.warn("[dashboard] 無法解析 LINE Flex 歷史紀錄", error);
     return [];
   }
 }
 
-function writeFlexHistory(history) {
+function writeFlexHistory(history: FlexHistoryItem[]) {
+  if (!globalThis.localStorage) return;
   try {
-    globalThis.localStorage?.setItem(FLEX_HISTORY_KEY, JSON.stringify(history));
-  } catch {
+    globalThis.localStorage.setItem(FLEX_HISTORY_KEY, JSON.stringify(history));
+  } catch (error) {
+    console.warn("[dashboard] 無法寫入 LINE Flex 歷史紀錄", error);
   }
 }
 
-export function createOrderFlexController(deps) {
+export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps) {
   function getOrders() {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
   }
 
-  function saveFlexToHistory(flexMsg, orderId, statusLabel) {
+  function saveFlexToHistory(
+    flexMsg: DashboardLineFlexMessage,
+    orderId: string,
+    statusLabel: string,
+  ) {
     const history = readFlexHistory();
     history.unshift({
       orderId,
@@ -36,7 +66,10 @@ export function createOrderFlexController(deps) {
     writeFlexHistory(history);
   }
 
-  async function sendFlexMessageToLine(order, flexMsg) {
+  async function sendFlexMessageToLine(
+    order: DashboardOrderRecord,
+    flexMsg: DashboardLineFlexMessage,
+  ) {
     const orderId = String(order?.orderId || "").trim();
     const lineUserId = deps.resolveOrderLineUserId(order);
 
@@ -64,17 +97,21 @@ export function createOrderFlexController(deps) {
       );
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.error || "LINE 訊息發送失敗");
+        throw new Error(String(result.error || "LINE 訊息發送失敗"));
       }
       deps.Toast.fire({ icon: "success", title: "LINE 訊息已發送" });
       return true;
     } catch (error) {
-      deps.Swal.fire("發送失敗", error?.message || String(error), "error");
+      deps.Swal.fire("發送失敗", getErrorMessage(error, "LINE 訊息發送失敗"), "error");
       return false;
     }
   }
 
-  async function showFlexMessagePopup(flexMsg, order, statusLabel) {
+  async function showFlexMessagePopup(
+    flexMsg: DashboardLineFlexMessage,
+    order: DashboardOrderRecord,
+    statusLabel: string,
+  ) {
     const orderId = String(order?.orderId || "");
     const lineUserId = deps.resolveOrderLineUserId(order);
     const canSendLine = Boolean(lineUserId);
@@ -119,7 +156,8 @@ export function createOrderFlexController(deps) {
       try {
         await navigator.clipboard.writeText(jsonStr);
         deps.Toast.fire({ icon: "success", title: "Flex Message 已複製" });
-      } catch {
+      } catch (error) {
+        console.warn("[dashboard] 無法自動複製 Flex Message", error);
         const pre = document.getElementById("swal-flex-json");
         if (pre) {
           const range = document.createRange();
@@ -132,7 +170,10 @@ export function createOrderFlexController(deps) {
     }
   }
 
-  async function previewOrderStatusNotification(order, newStatus) {
+  async function previewOrderStatusNotification(
+    order: DashboardOrderRecord,
+    newStatus: string,
+  ) {
     const statusLabel = deps.orderStatusLabel[newStatus] || newStatus;
     const orderId = String(order?.orderId || "");
     const flexMsg = deps.buildLineFlexMessage(order, newStatus);
@@ -172,9 +213,9 @@ export function createOrderFlexController(deps) {
       cancelButtonText: "關閉",
       width: 600,
       didOpen: () => {
-        const popup = deps.Swal.getPopup();
+        const popup = deps.Swal.getPopup?.();
         if (!popup) return;
-        popup.querySelectorAll(".flex-history-copy-btn").forEach((btn) => {
+        popup.querySelectorAll<HTMLElement>(".flex-history-copy-btn").forEach((btn) => {
           btn.addEventListener("click", async () => {
             const idx = Number(btn.dataset.flexIdx);
             const item = history[idx];
@@ -184,12 +225,13 @@ export function createOrderFlexController(deps) {
                 JSON.stringify(item.flex, null, 2),
               );
               deps.Toast.fire({ icon: "success", title: "已複製" });
-            } catch {
+            } catch (error) {
+              console.warn("[dashboard] 無法複製 Flex Message 歷史紀錄", error);
               deps.Swal.fire("提醒", "複製失敗，請手動操作", "info");
             }
           });
         });
-        const clearBtn = popup.querySelector("#flex-history-clear");
+        const clearBtn = popup.querySelector<HTMLElement>("#flex-history-clear");
         if (clearBtn) {
           clearBtn.addEventListener("click", () => {
             globalThis.localStorage?.removeItem(FLEX_HISTORY_KEY);
@@ -200,7 +242,7 @@ export function createOrderFlexController(deps) {
     });
   }
 
-  async function sendOrderFlexByOrderId(orderId) {
+  async function sendOrderFlexByOrderId(orderId: string) {
     const targetOrder = getOrders().find((order) => order.orderId === orderId);
     if (!targetOrder) {
       deps.Swal.fire("錯誤", "找不到訂單資料，請先重整列表", "error");

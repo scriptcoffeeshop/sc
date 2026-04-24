@@ -50,6 +50,7 @@ export type DashboardAuthFetch = (
 
 export type DashboardSwalResult = {
   isConfirmed?: boolean;
+  isDenied?: boolean;
   value?: unknown;
 };
 

@@ -1,9 +1,17 @@
-export function createOrderEmailController(deps) {
+import type { DashboardOrderNotificationDeps } from "./dashboardOrderNotificationTypes";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message || fallback : fallback;
+}
+
+export function createOrderEmailController(
+  deps: DashboardOrderNotificationDeps,
+) {
   function getOrders() {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
   }
 
-  async function sendOrderEmailByOrderId(orderId) {
+  async function sendOrderEmailByOrderId(orderId: string) {
     const targetOrder = getOrders().find((order) => order.orderId === orderId);
     if (!targetOrder) {
       deps.Swal.fire("錯誤", "找不到訂單資料，請先重整列表", "error");
@@ -53,10 +61,12 @@ export function createOrderEmailController(deps) {
         }),
       });
       const result = await response.json();
-      if (!result.success) throw new Error(result.error || "信件發送失敗");
+      if (!result.success) {
+        throw new Error(String(result.error || "信件發送失敗"));
+      }
       deps.Toast.fire({ icon: "success", title: result.message || "信件已發送" });
     } catch (error) {
-      deps.Swal.fire("錯誤", error.message, "error");
+      deps.Swal.fire("錯誤", getErrorMessage(error, "信件發送失敗"), "error");
     }
   }
 

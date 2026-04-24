@@ -5,8 +5,20 @@ import {
   type FlexContent,
   orderStatusColorMap,
 } from "./dashboardOrderFlexLayout.ts";
+import type { DashboardOrderRecord } from "./dashboardOrderTypes";
+import type {
+  DashboardOrderFlexBodyPayload,
+  DashboardOrderNotificationDeps,
+} from "./dashboardOrderNotificationTypes";
+import type { ReceiptInfo } from "../../types";
 
-function appendOrderNoteSection(bodyContents: FlexContent[], orderNote) {
+type BuildOrderFlexBodyPayloadArgs = {
+  deps: DashboardOrderNotificationDeps;
+  order: DashboardOrderRecord;
+  newStatus: string;
+};
+
+function appendOrderNoteSection(bodyContents: FlexContent[], orderNote: string) {
   if (!orderNote) return;
   bodyContents.push(createFlexSeparator("md"));
   bodyContents.push(
@@ -19,7 +31,10 @@ function appendOrderNoteSection(bodyContents: FlexContent[], orderNote) {
   );
 }
 
-function appendReceiptSection(bodyContents: FlexContent[], receiptInfo) {
+function appendReceiptSection(
+  bodyContents: FlexContent[],
+  receiptInfo: ReceiptInfo | null,
+) {
   if (!receiptInfo) return;
 
   bodyContents.push(createFlexSeparator("md"));
@@ -71,7 +86,10 @@ function appendReceiptSection(bodyContents: FlexContent[], receiptInfo) {
   }
 }
 
-function appendTrackingSection(bodyContents: FlexContent[], order) {
+function appendTrackingSection(
+  bodyContents: FlexContent[],
+  order: DashboardOrderRecord,
+) {
   if (!order.trackingNumber && !order.shippingProvider) return;
 
   bodyContents.push(createFlexSeparator("md"));
@@ -103,8 +121,8 @@ function appendTrackingSection(bodyContents: FlexContent[], order) {
 
 function appendCancelReasonSection(
   bodyContents: FlexContent[],
-  newStatus,
-  cancelReason,
+  newStatus: string,
+  cancelReason: string,
 ) {
   if (!["cancelled", "failed"].includes(newStatus) || !cancelReason) return;
   const reasonLabel = newStatus === "failed" ? "失敗原因" : "取消原因";
@@ -121,7 +139,7 @@ function appendCancelReasonSection(
   );
 }
 
-function appendItemsSection(bodyContents: FlexContent[], itemsText) {
+function appendItemsSection(bodyContents: FlexContent[], itemsText: unknown) {
   if (!itemsText) return;
 
   bodyContents.push(createFlexSeparator("md"));
@@ -136,13 +154,20 @@ function appendItemsSection(bodyContents: FlexContent[], itemsText) {
   });
 }
 
-export function buildOrderFlexBodyPayload({ deps, order, newStatus }) {
+export function buildOrderFlexBodyPayload({
+  deps,
+  order,
+  newStatus,
+}: BuildOrderFlexBodyPayloadArgs): DashboardOrderFlexBodyPayload {
   const statusLabel = deps.orderStatusLabel[newStatus] || newStatus;
   const statusColor = orderStatusColorMap[newStatus] || "#586E75";
-  const deliveryLabel = deps.orderMethodLabel[order.deliveryMethod] ||
-    order.deliveryMethod || "";
-  const isAddressDelivery = order.deliveryMethod === "delivery" ||
-    order.deliveryMethod === "home_delivery";
+  const deliveryMethod = String(order.deliveryMethod || "");
+  const paymentMethod = String(order.paymentMethod || "cod");
+  const paymentStatus = String(order.paymentStatus || "");
+  const deliveryLabel = deps.orderMethodLabel[deliveryMethod] ||
+    deliveryMethod || "";
+  const isAddressDelivery = deliveryMethod === "delivery" ||
+    deliveryMethod === "home_delivery";
   const deliveryAddressText = isAddressDelivery
     ? `${String(order.city || "")}${String(order.district || "")} ${
       String(order.address || "")
@@ -153,9 +178,9 @@ export function buildOrderFlexBodyPayload({ deps, order, newStatus }) {
         : ""
     }`.trim();
   const paymentLabel =
-    deps.orderPayMethodLabel[order.paymentMethod || "cod"] || "貨到付款";
-  const paymentStatusStr = order.paymentStatus
-    ? ` (${deps.orderPayStatusLabel[order.paymentStatus] || order.paymentStatus})`
+    deps.orderPayMethodLabel[paymentMethod] || "貨到付款";
+  const paymentStatusStr = paymentStatus
+    ? ` (${deps.orderPayStatusLabel[paymentStatus] || paymentStatus})`
     : "";
   const receiptInfo = deps.normalizeReceiptInfo(order.receiptInfo);
   const orderNote = String(order.note || "").trim();

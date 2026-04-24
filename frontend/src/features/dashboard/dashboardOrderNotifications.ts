@@ -1,8 +1,11 @@
 import { createOrderEmailController } from "./dashboardOrderEmailController.ts";
 import { createOrderFlexController } from "./dashboardOrderFlexController.ts";
 import { createOrderFlexMessageBuilder } from "./dashboardOrderFlexMessage.ts";
+import type { DashboardOrderNotificationDeps } from "./dashboardOrderNotificationTypes";
 
-export function createOrderNotificationsController(deps) {
+export function createOrderNotificationsController(
+  deps: DashboardOrderNotificationDeps,
+) {
   function getOrders() {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
   }

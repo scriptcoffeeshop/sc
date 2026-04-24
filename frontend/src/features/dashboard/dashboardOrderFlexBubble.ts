@@ -1,4 +1,14 @@
 import type { FlexContent } from "./dashboardOrderFlexLayout.ts";
+import type { DashboardLineFlexMessage } from "./dashboardOrderNotificationTypes";
+
+type BuildOrderFlexMessageBubbleArgs = {
+  siteTitle: string;
+  orderId: string;
+  statusLabel: string;
+  bodyContents: FlexContent[];
+  customTrackingUrl: string;
+  hasTrackingLinkCta: boolean;
+};
 
 export function buildOrderFlexMessageBubble({
   siteTitle,
@@ -7,7 +17,7 @@ export function buildOrderFlexMessageBubble({
   bodyContents,
   customTrackingUrl,
   hasTrackingLinkCta,
-}) {
+}: BuildOrderFlexMessageBubbleArgs): DashboardLineFlexMessage {
   const footerContents: FlexContent[] = [];
 
   if (hasTrackingLinkCta) {
