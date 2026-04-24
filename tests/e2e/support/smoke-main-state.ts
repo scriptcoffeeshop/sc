@@ -32,6 +32,7 @@ export type MainRouteOptions = {
   payment?: MainRoutePaymentConfig;
   deliveryOptions?: MainRouteDeliveryOption[];
   formFields?: MainRouteFormField[];
+  settings?: Record<string, unknown>;
   onCustomerLineLogin?: (request: PlaywrightRequest) => void;
 };
 
@@ -51,6 +52,7 @@ export interface MainRouteState {
   payment: Required<MainRoutePaymentConfig>;
   deliveryOptions: MainRouteDeliveryOption[];
   formFields: MainRouteNormalizedFormField[];
+  settings: Record<string, unknown>;
 }
 
 interface QuoteRequestItem {
@@ -95,6 +97,7 @@ export function createMainRouteState(options: MainRouteOptions): MainRouteState 
         delivery_visibility: field.delivery_visibility ?? null,
       }))
       : [],
+    settings: options.settings || {},
   };
 }
 
@@ -155,6 +158,7 @@ export function buildMainInitDataPayload(state: MainRouteState) {
           description: "ATM / 網銀",
         },
       }),
+      ...state.settings,
     },
   };
 }

@@ -1,24 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { useStorefrontShell } from "./useStorefrontShell.ts";
 
-function createClassList() {
-  return { add: vi.fn() };
-}
-
 describe("useStorefrontShell", () => {
   it("delegates storefront shell actions", () => {
-    const announcementClassList = createClassList();
     const closeOrderHistory = vi.fn();
     const profilePromise = Promise.resolve("saved");
     const deps = {
       document: {
-        getElementById: vi.fn((id) => {
-          if (id === "announcement-banner") {
-            return { classList: announcementClassList };
-          }
-          return null;
-        }),
+        getElementById: vi.fn(() => null),
       },
+      closeAnnouncement: vi.fn(),
       startMainLogin: vi.fn(),
       logoutCurrentUser: vi.fn(),
       showProfileModal: vi.fn(() => profilePromise),
@@ -34,7 +25,7 @@ describe("useStorefrontShell", () => {
     shell.handleShowMyOrders();
     shell.handleCloseOrdersModal();
 
-    expect(announcementClassList.add).toHaveBeenCalledWith("hidden");
+    expect(deps.closeAnnouncement).toHaveBeenCalledTimes(1);
     expect(closeOrderHistory).toHaveBeenCalledTimes(1);
     expect(deps.startMainLogin).toHaveBeenCalledTimes(1);
     expect(deps.logoutCurrentUser).toHaveBeenCalledTimes(1);

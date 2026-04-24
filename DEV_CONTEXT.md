@@ -180,6 +180,7 @@
 - storefront Header 登入狀態已改由 Vue 管理：`StorefrontHeader.vue` 依 `useStorefrontAuth.ts` 的 current user snapshot 顯示登入提示或會員資訊，`storefrontMainAppAuth.ts` 不再手動切換 `login-prompt` / `user-info` 或寫入頭像與名稱 DOM。
 - storefront 購物車抽屜開關已改由 Vue 管理：`useStorefrontCart.ts` 持有 `isCartDrawerOpen`，`StorefrontCartDrawer.vue` 綁定 overlay/drawer class，`storefrontCartStore.ts` 不再操作 `cart-drawer` / `cart-overlay` DOM class。
 - storefront 購物車送出按鈕與休息中底部提示已改由 Vue 管理：`useStorefrontCart.ts` 從 snapshot 推導登入/店休/空購物車狀態，`storefrontMainAppPayments.ts` 的 `updateFormState()` 不再寫入 `submit-btn` / `cart-submit-btn` DOM。
+- storefront 公告列已改由 Vue 管理：`useStorefrontAnnouncement.ts` 從 settings snapshot 推導公告文字/顯示狀態並記錄關閉狀態，`storefrontMainAppPayments.ts` / `useStorefrontShell.ts` 不再操作 `announcement-banner` / `announcement-text` DOM。
 
 ### 2026-04-24
 

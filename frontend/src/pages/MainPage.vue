@@ -1,6 +1,8 @@
 <template>
   <StorefrontHeader
     :current-user="currentUser"
+    :announcement-text="announcementText"
+    :is-announcement-visible="isAnnouncementVisible"
     @close-announcement="handleCloseAnnouncement"
     @login="handleStorefrontLogin"
     @show-my-orders="handleShowMyOrders"
@@ -207,6 +209,7 @@ import {
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
 import { useStorefrontDynamicFields } from "../features/storefront/useStorefrontDynamicFields.ts";
 import { useStorefrontAuth } from "../features/storefront/useStorefrontAuth.ts";
+import { useStorefrontAnnouncement } from "../features/storefront/useStorefrontAnnouncement.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
@@ -329,6 +332,12 @@ const {
   refreshAuthState,
 } = useStorefrontAuth({ getStorefrontUiSnapshot });
 const {
+  announcementText,
+  isAnnouncementVisible,
+  closeAnnouncement,
+  refreshAnnouncementState,
+} = useStorefrontAnnouncement({ getStorefrontUiSnapshot });
+const {
   currentUser: dynamicFieldsCurrentUser,
   selectedDelivery: dynamicFieldsSelectedDelivery,
   visibleFormFields,
@@ -343,6 +352,7 @@ const {
   handleShowProfile: showProfileFromShell,
 } = useStorefrontShell({
   document,
+  closeAnnouncement,
   startMainLogin,
   logoutCurrentUser,
   showProfileModal,
@@ -352,6 +362,7 @@ const {
 
 function syncStorefrontUiState() {
   refreshAuthState();
+  refreshAnnouncementState();
   refreshCartSubmitState();
   refreshProductsState();
   refreshDeliveryState();

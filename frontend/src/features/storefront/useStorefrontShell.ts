@@ -1,5 +1,6 @@
 interface StorefrontShellDeps {
   document?: Document;
+  closeAnnouncement?: () => void;
   startMainLogin?: () => Promise<unknown> | unknown;
   logoutCurrentUser?: () => void;
   showProfileModal?: () => Promise<unknown> | unknown;
@@ -9,9 +10,7 @@ interface StorefrontShellDeps {
 
 export function useStorefrontShell(deps: StorefrontShellDeps = {}) {
   function handleCloseAnnouncement() {
-    deps.document?.getElementById?.("announcement-banner")?.classList.add(
-      "hidden",
-    );
+    return deps.closeAnnouncement?.();
   }
 
   function handleStorefrontLogin() {

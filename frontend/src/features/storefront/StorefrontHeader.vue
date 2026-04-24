@@ -1,7 +1,8 @@
 <template>
   <div
+    v-if="isAnnouncementVisible"
     id="announcement-banner"
-    class="hidden max-w-3xl mx-auto mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 relative"
+    class="max-w-3xl mx-auto mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 relative"
   >
     <button
       type="button"
@@ -11,7 +12,9 @@
     >
       &times;
     </button>
-    <p id="announcement-text" class="pr-6"></p>
+    <p id="announcement-text" class="pr-6 whitespace-pre-line">
+      {{ announcementText }}
+    </p>
   </div>
 
   <div class="max-w-3xl mx-auto">
@@ -102,8 +105,12 @@ import {
 
 const props = withDefaults(defineProps<{
   currentUser?: SessionUser | null;
+  announcementText?: string;
+  isAnnouncementVisible?: boolean;
 }>(), {
   currentUser: null,
+  announcementText: "",
+  isAnnouncementVisible: false,
 });
 
 const userDisplayName = computed(() =>

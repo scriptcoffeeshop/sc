@@ -240,6 +240,10 @@ test.describe("smoke / storefront", () => {
   test("storefront payment controls work without body click delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page, {
+      settings: {
+        announcement_enabled: "true",
+        announcement: "測試公告",
+      },
       deliveryOptions: [
         {
           id: "delivery",
@@ -271,14 +275,9 @@ test.describe("smoke / storefront", () => {
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await expect(page.locator("#delivery-address-section")).toBeVisible();
 
-    await page.evaluate(() => {
-      const banner = document.getElementById("announcement-banner");
-      const text = document.getElementById("announcement-text");
-      if (text) text.textContent = "測試公告";
-      banner?.classList.remove("hidden");
-    });
+    await expect(page.locator("#announcement-banner")).toContainText("測試公告");
     await page.getByRole("button", { name: "關閉公告" }).click();
-    await expect(page.locator("#announcement-banner")).toHaveClass(/hidden/);
+    await expect(page.locator("#announcement-banner")).toHaveCount(0);
 
     await page.selectOption("#delivery-city", "新竹市");
     await expect(page.locator("#delivery-district option")).toHaveCount(4);

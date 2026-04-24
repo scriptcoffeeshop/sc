@@ -74,18 +74,6 @@ export function createStorefrontMainAppPayments(
   }
 
   function applySettings(settings: Record<string, unknown>) {
-    if (String(settings.announcement_enabled) === "true" && settings.announcement) {
-      const announcementEl = document.getElementById("announcement-text");
-      if (announcementEl) {
-        const normalizedAnnouncement = String(settings.announcement || "").replace(
-          /\\n/g,
-          "\n",
-        );
-        announcementEl.textContent = normalizedAnnouncement;
-      }
-      document.getElementById("announcement-banner")?.classList.remove("hidden");
-    }
-
     state.isStoreOpen = String(settings.is_open) !== "false";
     updateFormState();
 
