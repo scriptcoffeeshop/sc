@@ -77,6 +77,7 @@
 - frontend feature 模組已不再直接手寫 `JSON.parse`；settings/products/form-fields/session/promotions/storefront receipt/cart/payment 等路徑改共用 `jsonUtils.ts` 的 record/array 解析 helper。
 - dashboard 錯誤訊息 fallback 已集中到 `dashboardErrors.ts`；products/categories/promotions/formfields/bank accounts/users/orders/settings/order notification 不再各自維護 `getErrorMessage()`。
 - dashboard SweetAlert/form modal 的 input/select/textarea/checkbox 讀值已集中到 `dashboardFormControls.ts`；orders bulk/status、form fields、bank accounts 不再各自維護 DOM 取值 helper。
+- 後端 Email template 的配送文字判斷已集中到 helper；訂單成立、出貨通知與處理中通知共用宅配/超商地址格式。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 表單 DOM 讀寫 helper 已集中在 `storefrontDeliveryDom.ts`；主入口、送出配送資訊與發票/轉帳偏好不再各自維護 input/select/checkbox 讀取邏輯。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。
@@ -92,6 +93,7 @@
 - 街口支付已切正式環境：正式 API base URL 為 `https://onlinepay.jkopay.com`，`JKOPAY_STORE_ID` / `JKOPAY_API_KEY` / `JKOPAY_SECRET_KEY` / `JKOPAY_BASE_URL` 皆走 Supabase secrets。
 - Supabase Edge Function production code 已移除匿名 `catch {}`；目前容錯 fallback 行為維持不變，但錯誤變數統一命名為 `_error`，方便後續補觀測與分級紀錄。
 - Supabase Edge Function production code 的直接 JSON 解析已集中到 `utils/json.ts`；settings/quote/order/payment/request/JWT/LINE/JKO/user profile 路徑共用 record/array/text helper。
+- 後端 Email template 的配送文字判斷已集中到共用 helper；訂單成立、出貨通知與處理中通知不再各自拼接宅配/超商地址文案。
 
 ### 視覺與互動
 

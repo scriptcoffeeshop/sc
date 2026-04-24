@@ -120,17 +120,34 @@ function buildOrderNoteHtml(note: string, margin = "0"): string {
   return `<p style="margin: ${margin};"><strong>訂單備註：</strong> ${safeNote}</p>`;
 }
 
+interface EmailDeliveryInfoParams {
+  deliveryMethod: string;
+  city: string;
+  district: string;
+  address: string;
+  storeName: string;
+  storeAddress: string;
+}
+
+function isHomeDeliveryMethod(deliveryMethod: string): boolean {
+  return deliveryMethod === "delivery" || deliveryMethod === "home_delivery";
+}
+
+function buildDeliveryText(params: EmailDeliveryInfoParams): string {
+  if (isHomeDeliveryMethod(params.deliveryMethod)) {
+    return `${params.city}${params.district} ${params.address}`;
+  }
+
+  return `${params.storeName} ${
+    params.storeAddress ? `(${params.storeAddress})` : ""
+  }`.trim();
+}
+
 export function buildOrderConfirmationHtml(
   params: OrderConfirmationParams,
 ): string {
   const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
-  const isDelivery = params.deliveryMethod === "delivery" ||
-    params.deliveryMethod === "home_delivery";
-  const deliveryText = isDelivery
-    ? `${params.city}${params.district} ${params.address}`
-    : `${params.storeName} ${
-      params.storeAddress ? `(${params.storeAddress})` : ""
-    }`.trim();
+  const deliveryText = buildDeliveryText(params);
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
 
   let transferHtml = "";
@@ -273,14 +290,7 @@ function buildTrackingCopyUrl(trackingNumber: string): string {
 export function buildShippingNotificationHtml(
   params: ShippingNotificationParams,
 ): string {
-  const isDelivery = params.deliveryMethod === "delivery" ||
-    params.deliveryMethod === "home_delivery";
-  const deliveryText = isDelivery
-    ? `${params.city}${params.district} ${params.address}`
-    : `${params.storeName} ${
-      params.storeAddress ? `(${params.storeAddress})` : ""
-    }`.trim();
-
+  const deliveryText = buildDeliveryText(params);
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
   const paymentStatus = getPaymentStatusPresentation(
     params.paymentMethod,
@@ -364,13 +374,7 @@ export function buildProcessingNotificationHtml(
   params: ProcessingNotificationParams,
 ): string {
   const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
-  const isDelivery = params.deliveryMethod === "delivery" ||
-    params.deliveryMethod === "home_delivery";
-  const deliveryText = isDelivery
-    ? `${params.city}${params.district} ${params.address}`
-    : `${params.storeName} ${
-      params.storeAddress ? `(${params.storeAddress})` : ""
-    }`.trim();
+  const deliveryText = buildDeliveryText(params);
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
   const paymentStatus = getPaymentStatusPresentation(
     params.paymentMethod,
