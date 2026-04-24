@@ -1,5 +1,6 @@
 import { sanitize } from "./html.ts";
 import { FRONTEND_URL } from "./config.ts";
+import { buildOrderDeliveryText } from "./order-delivery-display.ts";
 
 export const METHOD_MAP: Record<string, string> = {
   delivery: "配送到府",
@@ -120,34 +121,11 @@ function buildOrderNoteHtml(note: string, margin = "0"): string {
   return `<p style="margin: ${margin};"><strong>訂單備註：</strong> ${safeNote}</p>`;
 }
 
-interface EmailDeliveryInfoParams {
-  deliveryMethod: string;
-  city: string;
-  district: string;
-  address: string;
-  storeName: string;
-  storeAddress: string;
-}
-
-function isHomeDeliveryMethod(deliveryMethod: string): boolean {
-  return deliveryMethod === "delivery" || deliveryMethod === "home_delivery";
-}
-
-function buildDeliveryText(params: EmailDeliveryInfoParams): string {
-  if (isHomeDeliveryMethod(params.deliveryMethod)) {
-    return `${params.city}${params.district} ${params.address}`;
-  }
-
-  return `${params.storeName} ${
-    params.storeAddress ? `(${params.storeAddress})` : ""
-  }`.trim();
-}
-
 export function buildOrderConfirmationHtml(
   params: OrderConfirmationParams,
 ): string {
   const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
-  const deliveryText = buildDeliveryText(params);
+  const deliveryText = buildOrderDeliveryText(params);
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
 
   let transferHtml = "";
@@ -290,7 +268,7 @@ function buildTrackingCopyUrl(trackingNumber: string): string {
 export function buildShippingNotificationHtml(
   params: ShippingNotificationParams,
 ): string {
-  const deliveryText = buildDeliveryText(params);
+  const deliveryText = buildOrderDeliveryText(params);
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
   const paymentStatus = getPaymentStatusPresentation(
     params.paymentMethod,
@@ -374,7 +352,7 @@ export function buildProcessingNotificationHtml(
   params: ProcessingNotificationParams,
 ): string {
   const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
-  const deliveryText = buildDeliveryText(params);
+  const deliveryText = buildOrderDeliveryText(params);
   const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
   const paymentStatus = getPaymentStatusPresentation(
     params.paymentMethod,

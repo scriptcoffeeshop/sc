@@ -1,3 +1,5 @@
+import { buildOrderDeliveryText } from "./order-delivery-display.ts";
+
 interface ReceiptInfo {
   buyer: string;
   taxId: string;
@@ -100,17 +102,7 @@ export function buildOrderStatusLineFlexMessage(
   const statusColor = STATUS_COLOR_MAP[nextStatus] || "#586E75";
   const deliveryLabel = ORDER_METHOD_LABEL[order.deliveryMethod] ||
     order.deliveryMethod || "";
-  const isAddressDelivery = order.deliveryMethod === "delivery" ||
-    order.deliveryMethod === "home_delivery";
-  const deliveryAddressText = isAddressDelivery
-    ? `${String(order.city || "")}${String(order.district || "")} ${
-      String(order.address || "")
-    }`.trim()
-    : `${String(order.storeName || "")}${
-      String(order.storeAddress || "").trim()
-        ? ` (${String(order.storeAddress || "").trim()})`
-        : ""
-    }`.trim();
+  const deliveryAddressText = buildOrderDeliveryText(order);
   const paymentLabel = ORDER_PAY_METHOD_LABEL[order.paymentMethod || "cod"] ||
     "貨到付款";
   const paymentStatusStr = order.paymentStatus
