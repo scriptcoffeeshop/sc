@@ -10,9 +10,9 @@
     <div
       v-for="section in sectionRows"
       :key="section.key"
-      class="section-title-card"
+      class="section-title-card settings-config-card"
     >
-      <div class="section-title-card-header">
+      <div class="section-title-card-header settings-config-card-header">
         <div class="min-w-0">
           <div class="text-xs font-semibold ui-text-subtle mb-1">{{ section.label }}</div>
           <div
@@ -40,13 +40,13 @@
         </button>
       </div>
 
-      <div class="section-title-card-body">
-        <div class="section-title-icon-editor">
+      <div class="section-title-card-body settings-config-card-body">
+        <div class="section-title-icon-editor settings-icon-editor">
           <img
             :id="`s-${section.key}-icon-preview`"
             :src="getSectionIconPreviewUrl(section.key)"
             alt=""
-            class="icon-upload-preview section-title-icon-preview"
+            class="icon-upload-preview section-title-icon-preview settings-large-icon-preview"
           >
           <div class="icon-upload-controls">
             <input
@@ -77,7 +77,7 @@
         </div>
 
         <div class="section-title-form-grid">
-          <label class="section-title-field section-title-field-wide">
+          <label class="section-title-field settings-config-field section-title-field-wide">
             <span>標題</span>
             <input
               v-model.trim="sectionTitleSettings[section.key].title"
@@ -87,7 +87,7 @@
               :placeholder="section.placeholder"
             >
           </label>
-          <label class="section-title-field">
+          <label class="section-title-field settings-config-field">
             <span>文字大小</span>
             <select
               v-model="sectionTitleSettings[section.key].size"
@@ -100,7 +100,7 @@
               <option value="text-2xl">24px 特大</option>
             </select>
           </label>
-          <label class="section-title-field">
+          <label class="section-title-field settings-config-field">
             <span>文字顏色</span>
             <input
               v-model="sectionTitleSettings[section.key].color"

@@ -512,18 +512,18 @@
   white-space: nowrap;
 }
 
-.section-title-card {
+.settings-config-card {
   border: 1px solid var(--ui-border);
   border-radius: 8px;
   background: #FFFDF7;
   padding: 1rem;
 }
 
-.section-title-card + .section-title-card {
+.settings-config-card + .settings-config-card {
   margin-top: 0.85rem;
 }
 
-.section-title-card-header {
+.settings-config-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -566,14 +566,14 @@
   color: #073642;
 }
 
-.section-title-card-body {
+.settings-config-card-body {
   display: grid;
   grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
   gap: 1rem;
   align-items: start;
 }
 
-.section-title-icon-editor {
+.settings-icon-editor {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.75rem;
@@ -581,7 +581,7 @@
   min-width: 0;
 }
 
-.section-title-icon-preview {
+.settings-large-icon-preview {
   width: 4rem;
   height: 4rem;
   min-width: 4rem;
@@ -596,14 +596,14 @@
   min-width: 0;
 }
 
-.section-title-field {
+.settings-config-field {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 0.3rem;
 }
 
-.section-title-field span {
+.settings-config-field span {
   font-size: 0.75rem;
   font-weight: 600;
   color: #657B83;
@@ -643,21 +643,6 @@
   gap: 0.85rem;
 }
 
-.payment-option-card {
-  border: 1px solid var(--ui-border);
-  border-radius: 8px;
-  background: #FFFDF7;
-  padding: 1rem;
-}
-
-.payment-option-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.9rem;
-}
-
 .payment-option-code {
   display: inline-flex;
   max-width: 100%;
@@ -690,45 +675,10 @@
   object-fit: contain;
 }
 
-.payment-option-card-body {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.payment-option-icon-editor {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.75rem;
-  align-items: start;
-  min-width: 0;
-}
-
-.payment-option-icon-preview {
-  width: 4rem;
-  height: 4rem;
-  min-width: 4rem;
-  min-height: 4rem;
-}
-
 .payment-option-fields {
   display: grid;
   min-width: 0;
   gap: 0.65rem;
-}
-
-.payment-option-field {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.payment-option-field span {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #657B83;
 }
 
 .routing-payment-header {
@@ -889,79 +839,6 @@
     margin: 12px;
   }
 
-  /* 設定頁：將寬表格改為卡片式，避免整體需水平捲動 */
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-responsive-wrap {
-    overflow-x: visible;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table thead,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tbody,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tr,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table th,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table thead,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tbody,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tr,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table th,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table thead,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table thead {
-    display: none;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tr,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tr {
-    border: 1px solid #E2DCC8;
-    border-radius: 12px;
-    background: #FFFDF7;
-    overflow: hidden;
-    margin-bottom: 12px;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tr:last-child,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tr:last-child {
-    margin-bottom: 0;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td {
-    border-left: none !important;
-    border-bottom: 1px dashed #E2DCC8;
-    text-align: left !important;
-    white-space: normal !important;
-    padding: 10px 12px !important;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td:last-child,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td:last-child {
-    border-bottom: none;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td[data-label]::before,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td[data-label]::before {
-    content: attr(data-label);
-    display: block;
-    margin-bottom: 6px;
-    font-size: 11px;
-    letter-spacing: 0.02em;
-    color: #839496;
-    font-weight: 600;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td:nth-child(2) > div,
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) #payment-options-table td:nth-child(2) > div {
-    min-width: 0 !important;
-  }
-
-  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table .routing-payment-header {
-    justify-content: flex-start;
-  }
 }
 
 @media (max-width: 639px) {
@@ -1010,18 +887,15 @@
   }
 
   .icon-upload-row,
-  .section-title-icon-editor,
-  .payment-option-icon-editor {
+  .settings-icon-editor {
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .section-title-card-body,
-  .payment-option-card-body {
+  .settings-config-card-body {
     grid-template-columns: 1fr;
   }
 
-  .section-title-card-header,
-  .payment-option-card-header {
+  .settings-config-card-header {
     gap: 0.75rem;
   }
 

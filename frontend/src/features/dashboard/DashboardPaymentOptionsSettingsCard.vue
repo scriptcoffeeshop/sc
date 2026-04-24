@@ -11,9 +11,9 @@
       <div
         v-for="method in paymentMethodOrder"
         :key="method"
-        class="payment-option-card"
+        class="payment-option-card settings-config-card"
       >
-        <div class="payment-option-card-header">
+        <div class="payment-option-card-header settings-config-card-header">
           <div class="min-w-0">
             <div class="text-xs font-semibold ui-text-subtle mb-1">系統代碼</div>
             <code class="payment-option-code">{{ method }}</code>
@@ -28,13 +28,13 @@
           </div>
         </div>
 
-        <div class="payment-option-card-body">
-          <div class="payment-option-icon-editor">
+        <div class="payment-option-card-body settings-config-card-body">
+          <div class="payment-option-icon-editor settings-icon-editor">
             <img
               :id="`po-${method}-icon-preview`"
               :src="getPaymentPreviewUrl(method)"
               alt=""
-              class="icon-upload-preview payment-option-icon-preview"
+              class="icon-upload-preview payment-option-icon-preview settings-large-icon-preview"
             >
             <div class="icon-upload-controls">
               <input
@@ -65,7 +65,7 @@
           </div>
 
           <div class="payment-option-fields">
-            <label class="payment-option-field">
+            <label class="payment-option-field settings-config-field">
               <span>顯示名稱</span>
               <input
                 v-model.trim="paymentOptions[method].name"
@@ -75,7 +75,7 @@
                 placeholder="顯示名稱"
               >
             </label>
-            <label class="payment-option-field">
+            <label class="payment-option-field settings-config-field">
               <span>簡短說明</span>
               <input
                 v-model.trim="paymentOptions[method].description"
