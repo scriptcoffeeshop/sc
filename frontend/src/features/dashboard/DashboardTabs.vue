@@ -110,7 +110,7 @@
   </TabsRoot>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   CreditCard,
   FileText,
@@ -130,5 +130,6 @@ import {
 } from "./useDashboardSession.ts";
 
 const { activeTab } = useDashboardSession();
-const setActiveTab = (tab) => dashboardSessionActions.setActiveTab(tab);
+const setActiveTab = (tab: unknown) =>
+  dashboardSessionActions.setActiveTab(String(tab || ""));
 </script>

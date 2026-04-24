@@ -7,7 +7,7 @@
             type="checkbox"
             class="w-4 h-4"
             :checked="order.isSelected"
-            @change="handleToggleOrderSelection(order.orderId, $event.target.checked)"
+            @change="handleToggleOrderSelection(order.orderId, $event)"
           >
         </label>
         <span class="font-bold text-sm" style="color:var(--primary)">#{{ order.orderId }}</span>
@@ -164,7 +164,7 @@
         <select
           class="text-xs border rounded px-2 py-1"
           :value="order.selectedStatus"
-          @change="handleOrderStatusChange(order.orderId, $event.target.value)"
+          @change="handleOrderStatusChange(order.orderId, $event)"
         >
           <option
             v-for="status in ordersStatusOptions"
@@ -195,54 +195,58 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   dashboardOrdersActions,
   useDashboardOrders,
 } from "./useDashboardOrders.ts";
+import type { DashboardOrderViewModel } from "./dashboardOrdersView.ts";
 
-defineProps({
-  order: {
-    type: Object,
-    required: true,
-  },
-});
+defineProps<{
+  order: DashboardOrderViewModel;
+}>();
 
 const { ordersStatusOptions, orderStatusText } = useDashboardOrders();
 
-function handleToggleOrderSelection(orderId, checked) {
-  dashboardOrdersActions.toggleOrderSelection(orderId, checked);
+function handleToggleOrderSelection(orderId: string, event: Event) {
+  const target = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
+  dashboardOrdersActions.toggleOrderSelection(orderId, Boolean(target?.checked));
 }
 
-function handleCopyTrackingNumber(trackingNumber) {
+function handleCopyTrackingNumber(trackingNumber: string) {
   dashboardOrdersActions.copyTrackingNumber(trackingNumber);
 }
 
-function handleSendOrderFlex(orderId) {
+function handleSendOrderFlex(orderId: string) {
   dashboardOrdersActions.sendOrderFlexByOrderId(orderId);
 }
 
-function handleSendOrderEmail(orderId) {
+function handleSendOrderEmail(orderId: string) {
   dashboardOrdersActions.sendOrderEmailByOrderId(orderId);
 }
 
-function handleRefundOrder(orderId, paymentMethod) {
+function handleRefundOrder(orderId: string, paymentMethod: string) {
   dashboardOrdersActions.refundOnlinePayOrder(orderId, paymentMethod);
 }
 
-function handleConfirmTransferPayment(orderId) {
+function handleConfirmTransferPayment(orderId: string) {
   dashboardOrdersActions.confirmTransferPayment(orderId);
 }
 
-function handleOrderStatusChange(orderId, status) {
-  dashboardOrdersActions.setPendingOrderStatus(orderId, status);
+function handleOrderStatusChange(orderId: string, event: Event) {
+  const target = event.target instanceof HTMLSelectElement
+    ? event.target
+    : null;
+  dashboardOrdersActions.setPendingOrderStatus(orderId, target?.value || "");
 }
 
-function handleConfirmOrderStatus(orderId) {
+function handleConfirmOrderStatus(orderId: string) {
   dashboardOrdersActions.confirmOrderStatus(orderId);
 }
 
-function handleDeleteOrder(orderId) {
+function handleDeleteOrder(orderId: string) {
   dashboardOrdersActions.deleteOrderById(orderId);
 }
 </script>

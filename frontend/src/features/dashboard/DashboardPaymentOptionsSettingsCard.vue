@@ -92,7 +92,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { ComponentPublicInstance } from "vue";
 import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,
@@ -101,26 +102,30 @@ import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const { paymentOptions, paymentMethodOrder } = useDashboardSettings();
 const { getDisplayUrl, getPaymentPreviewUrl } = useDashboardSettingsIcons();
-const paymentIconInputs = new Map();
+const paymentIconInputs = new Map<string, HTMLInputElement>();
+type TemplateRefElement = Element | ComponentPublicInstance | null;
 
-function registerPaymentIconInput(method, element) {
+function registerPaymentIconInput(method: string, element: TemplateRefElement) {
   const key = String(method || "").trim();
   if (!key) return;
-  if (element) {
+  if (element instanceof HTMLInputElement) {
     paymentIconInputs.set(key, element);
     return;
   }
   paymentIconInputs.delete(key);
 }
 
-function handlePaymentIconPreview(method, event) {
+function handlePaymentIconPreview(method: string, event: Event) {
+  const input = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
   dashboardSettingsIconActions.previewPaymentIconFile(
     method,
-    event?.target?.files?.[0] || null,
+    input?.files?.[0] || null,
   );
 }
 
-async function handlePaymentIconUpload(method) {
+async function handlePaymentIconUpload(method: string) {
   const input = paymentIconInputs.get(String(method || "").trim());
   await dashboardSettingsIconActions.uploadPaymentIconFile(
     method,

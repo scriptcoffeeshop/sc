@@ -173,7 +173,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { ComponentPublicInstance } from "vue";
 import {
   GripVertical,
   Trash2,
@@ -200,38 +201,47 @@ const {
   getPaymentPreviewUrl,
   getDeliveryPreviewUrl,
 } = useDashboardSettingsIcons();
-const deliveryIconInputs = new Map();
+const deliveryIconInputs = new Map<string, HTMLInputElement>();
+type TemplateRefElement = Element | ComponentPublicInstance | null;
 
-function registerDeliveryRoutingTableElement(element) {
-  dashboardSettingsActions.registerDeliveryRoutingTableElement(element);
+function registerDeliveryRoutingTableElement(element: TemplateRefElement) {
+  dashboardSettingsActions.registerDeliveryRoutingTableElement(
+    element instanceof HTMLElement ? element : null,
+  );
 }
 
 function handleAddDeliveryOption() {
   dashboardSettingsActions.addDeliveryOption();
 }
 
-function handleRemoveDeliveryOption(deliveryId) {
+function handleRemoveDeliveryOption(deliveryId: string | number) {
   dashboardSettingsActions.removeDeliveryOption(deliveryId);
 }
 
-function registerDeliveryIconInput(deliveryId, element) {
+function registerDeliveryIconInput(
+  deliveryId: string | number,
+  element: TemplateRefElement,
+) {
   const key = String(deliveryId || "").trim();
   if (!key) return;
-  if (element) {
+  if (element instanceof HTMLInputElement) {
     deliveryIconInputs.set(key, element);
     return;
   }
   deliveryIconInputs.delete(key);
 }
 
-function handleDeliveryIconPreview(deliveryId, event) {
+function handleDeliveryIconPreview(deliveryId: string, event: Event) {
+  const input = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
   dashboardSettingsIconActions.previewDeliveryIconFile(
     deliveryId,
-    event?.target?.files?.[0] || null,
+    input?.files?.[0] || null,
   );
 }
 
-async function handleDeliveryIconUpload(deliveryId) {
+async function handleDeliveryIconUpload(deliveryId: string) {
   const input = deliveryIconInputs.get(String(deliveryId || "").trim());
   await dashboardSettingsIconActions.uploadDeliveryIconFile(
     deliveryId,

@@ -118,7 +118,7 @@
           id="orders-select-all"
           class="w-4 h-4"
           :checked="allFilteredSelected"
-          @change="handleToggleSelectAllOrders($event.target.checked)"
+          @change="handleToggleSelectAllOrders"
         >
         全選目前篩選結果
       </label>
@@ -185,7 +185,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watchEffect } from "vue";
 import {
   dashboardOrdersActions,
@@ -200,7 +200,7 @@ const {
   selectedCountText,
 } = useDashboardOrders();
 
-const selectAllCheckbox = ref(null);
+const selectAllCheckbox = ref<HTMLInputElement | null>(null);
 
 watchEffect(() => {
   if (selectAllCheckbox.value) {
@@ -216,8 +216,11 @@ function handleReloadOrders() {
   dashboardOrdersActions.loadOrders();
 }
 
-function handleToggleSelectAllOrders(checked) {
-  dashboardOrdersActions.toggleSelectAllOrders(checked);
+function handleToggleSelectAllOrders(event: Event) {
+  const target = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
+  dashboardOrdersActions.toggleSelectAllOrders(Boolean(target?.checked));
 }
 
 function handleBatchUpdateOrders() {

@@ -16,7 +16,7 @@
             id="pm-category"
             required
             :value="productForm.category"
-            @change="updateProductField('category', $event.target.value)"
+            @change="handleProductFieldInput('category', $event)"
           >
             <option value="">選擇分類</option>
             <option
@@ -35,7 +35,7 @@
             id="pm-name"
             required
             :value="productForm.name"
-            @input="updateProductField('name', $event.target.value)"
+            @input="handleProductFieldInput('name', $event)"
           />
         </div>
         <div>
@@ -45,7 +45,7 @@
             id="pm-desc"
             placeholder="風味描述"
             :value="productForm.description"
-            @input="updateProductField('description', $event.target.value)"
+            @input="handleProductFieldInput('description', $event)"
           />
         </div>
         <div>
@@ -55,7 +55,7 @@
             id="pm-roast"
             placeholder="例：中淺焙"
             :value="productForm.roastLevel"
-            @input="updateProductField('roastLevel', $event.target.value)"
+            @input="handleProductFieldInput('roastLevel', $event)"
           />
         </div>
 
@@ -73,7 +73,7 @@
                   type="checkbox"
                   class="spec-enabled w-4 h-4"
                   :checked="spec.enabled"
-                  @change="updateProductSpec(specIndex, 'enabled', $event.target.checked)"
+                  @change="handleProductSpecChecked(specIndex, $event)"
                 >
               </label>
               <input
@@ -82,7 +82,7 @@
                 :value="spec.label"
                 placeholder="規格名稱"
                 style="width:90px"
-                @input="updateProductSpec(specIndex, 'label', $event.target.value)"
+                @input="handleProductSpecInput(specIndex, 'label', $event)"
               >
               <span class="ui-text-subtle text-sm">$</span>
               <input
@@ -92,7 +92,7 @@
                 placeholder="價格"
                 min="0"
                 style="width:80px"
-                @input="updateProductSpec(specIndex, 'price', $event.target.value)"
+                @input="handleProductSpecInput(specIndex, 'price', $event)"
               >
               <button
                 type="button"
@@ -121,7 +121,7 @@
               id="pm-enabled"
               class="w-4 h-4"
               :checked="productForm.enabled"
-              @change="updateProductField('enabled', $event.target.checked)"
+              @change="handleProductEnabledInput"
             >
             啟用販售
           </label>
@@ -142,7 +142,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import UiButton from "../../components/ui/button/Button.vue";
 import UiInput from "../../components/ui/input/Input.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
@@ -160,11 +160,52 @@ const {
   updateProductSpec,
 } = useDashboardProducts();
 
+type ProductFormTextField = "category" | "name" | "description" | "roastLevel";
+type ProductSpecTextField = "label" | "price";
+
+function getInputValue(event: Event) {
+  const target = event.target;
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement
+  ) {
+    return target.value;
+  }
+  return "";
+}
+
+function getCheckedValue(event: Event) {
+  return event.target instanceof HTMLInputElement
+    ? event.target.checked
+    : false;
+}
+
+function handleProductFieldInput(field: ProductFormTextField, event: Event) {
+  updateProductField(field, getInputValue(event));
+}
+
+function handleProductEnabledInput(event: Event) {
+  updateProductField("enabled", getCheckedValue(event));
+}
+
+function handleProductSpecInput(
+  index: number,
+  field: ProductSpecTextField,
+  event: Event,
+) {
+  updateProductSpec(index, field, getInputValue(event));
+}
+
+function handleProductSpecChecked(index: number, event: Event) {
+  updateProductSpec(index, "enabled", getCheckedValue(event));
+}
+
 function handleAddSpecRow() {
   dashboardProductsActions.addSpecRow();
 }
 
-function handleRemoveSpecRow(index) {
+function handleRemoveSpecRow(index: number) {
   dashboardProductsActions.removeSpecRow(index);
 }
 

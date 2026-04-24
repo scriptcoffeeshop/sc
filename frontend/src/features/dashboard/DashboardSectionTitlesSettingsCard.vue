@@ -124,7 +124,8 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { ComponentPublicInstance } from "vue";
 import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,
@@ -142,30 +143,34 @@ const sectionRows = [
 
 const { sectionTitleSettings } = useDashboardSettings();
 const { getDisplayUrl, getSectionIconPreviewUrl } = useDashboardSettingsIcons();
-const sectionIconInputs = new Map();
+const sectionIconInputs = new Map<string, HTMLInputElement>();
+type TemplateRefElement = Element | ComponentPublicInstance | null;
 
-function handleResetSectionTitle(section) {
+function handleResetSectionTitle(section: string) {
   dashboardSettingsActions.resetSectionTitle(section);
 }
 
-function registerSectionIconInput(section, element) {
+function registerSectionIconInput(section: string, element: TemplateRefElement) {
   const key = String(section || "").trim();
   if (!key) return;
-  if (element) {
+  if (element instanceof HTMLInputElement) {
     sectionIconInputs.set(key, element);
     return;
   }
   sectionIconInputs.delete(key);
 }
 
-function handleSectionIconPreview(section, event) {
+function handleSectionIconPreview(section: string, event: Event) {
+  const input = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
   dashboardSettingsIconActions.previewSectionIconFile(
     section,
-    event?.target?.files?.[0] || null,
+    input?.files?.[0] || null,
   );
 }
 
-async function handleSectionIconUpload(section) {
+async function handleSectionIconUpload(section: string) {
   const input = sectionIconInputs.get(String(section || "").trim());
   await dashboardSettingsIconActions.uploadSectionIconFile(
     section,

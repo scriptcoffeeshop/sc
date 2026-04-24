@@ -242,3 +242,5 @@ export function buildOrderViewModel(
       paymentMethod === "transfer" && paymentStatus === "pending",
   };
 }
+
+export type DashboardOrderViewModel = ReturnType<typeof buildOrderViewModel>;

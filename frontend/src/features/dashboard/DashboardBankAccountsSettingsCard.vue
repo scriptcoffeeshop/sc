@@ -73,27 +73,31 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { ComponentPublicInstance } from "vue";
 import {
   dashboardBankAccountsActions,
   useDashboardBankAccounts,
 } from "./useDashboardBankAccounts.ts";
 
 const { bankAccounts } = useDashboardBankAccounts();
+type TemplateRefElement = Element | ComponentPublicInstance | null;
 
-function registerBankAccountsListElement(element) {
-  dashboardBankAccountsActions.registerBankAccountsListElement(element);
+function registerBankAccountsListElement(element: TemplateRefElement) {
+  dashboardBankAccountsActions.registerBankAccountsListElement(
+    element instanceof HTMLElement ? element : null,
+  );
 }
 
 function handleShowAddBankAccountModal() {
   dashboardBankAccountsActions.showAddBankAccountModal();
 }
 
-function handleEditBankAccount(id) {
+function handleEditBankAccount(id: number | string) {
   dashboardBankAccountsActions.editBankAccount(id);
 }
 
-function handleDeleteBankAccount(id) {
+function handleDeleteBankAccount(id: number | string) {
   dashboardBankAccountsActions.deleteBankAccount(id);
 }
 </script>

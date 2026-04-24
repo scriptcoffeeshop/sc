@@ -23,7 +23,7 @@
             placeholder="例如：任選2件9折"
             required
             :value="promotionForm.name"
-            @input="updatePromotionField('name', $event.target.value)"
+            @input="handlePromotionFieldInput('name', $event)"
           />
         </div>
 
@@ -33,7 +33,7 @@
             id="prm-type"
             required
             :value="promotionForm.type"
-            @change="updatePromotionField('type', $event.target.value)"
+            @change="handlePromotionFieldInput('type', $event)"
           >
             <option value="bundle">組合優惠 (多件折扣)</option>
           </UiSelect>
@@ -70,7 +70,7 @@
                         :data-pid="group.options[0].productId"
                         :data-skey="group.options[0].specKey"
                         :checked="isPromotionTargetSelected(group.options[0].productId, group.options[0].specKey)"
-                        @change="togglePromotionTarget(group.options[0].productId, group.options[0].specKey, $event.target.checked)"
+                        @change="handlePromotionTargetChange(group.options[0].productId, group.options[0].specKey, $event)"
                       >
                       <span class="ui-text-strong font-medium">[{{ group.category }}] {{ group.name }}</span>
                     </label>
@@ -89,7 +89,7 @@
                           :data-pid="option.productId"
                           :data-skey="option.specKey"
                           :checked="isPromotionTargetSelected(option.productId, option.specKey)"
-                          @change="togglePromotionTarget(option.productId, option.specKey, $event.target.checked)"
+                          @change="handlePromotionTargetChange(option.productId, option.specKey, $event)"
                         >
                         <span class="ui-text-strong">{{ option.label }} <span class="text-xs ui-text-muted">(${{ option.price }})</span></span>
                       </label>
@@ -108,7 +108,7 @@
               :value="promotionForm.minQuantity"
               min="1"
               required
-              @input="updatePromotionField('minQuantity', $event.target.value)"
+              @input="handlePromotionFieldInput('minQuantity', $event)"
             />
             <span class="text-sm">件，可享優惠</span>
           </div>
@@ -121,7 +121,7 @@
               id="prm-discount-type"
               class="w-32"
               :value="promotionForm.discountType"
-              @change="updatePromotionField('discountType', $event.target.value)"
+              @change="handlePromotionFieldInput('discountType', $event)"
             >
               <option value="percent">打折 (%)</option>
               <option value="amount">折抵現金 ($)</option>
@@ -135,7 +135,7 @@
               min="0"
               step="0.1"
               :value="promotionForm.discountValue"
-              @input="updatePromotionField('discountValue', $event.target.value)"
+              @input="handlePromotionFieldInput('discountValue', $event)"
             />
           </div>
           <p class="text-xs ui-text-subtle">
@@ -151,7 +151,7 @@
               id="prm-enabled"
               class="w-4 h-4"
               :checked="promotionForm.enabled"
-              @change="updatePromotionField('enabled', $event.target.checked)"
+              @change="handlePromotionEnabledInput"
             >
             <span class="text-sm">啟用此活動</span>
           </label>
@@ -173,7 +173,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import UiButton from "../../components/ui/button/Button.vue";
 import UiInput from "../../components/ui/input/Input.vue";
 import UiSelect from "../../components/ui/select/Select.vue";
@@ -191,6 +191,47 @@ const {
   isPromotionTargetSelected,
   togglePromotionTarget,
 } = useDashboardPromotions();
+
+type PromotionFormField =
+  | "name"
+  | "type"
+  | "minQuantity"
+  | "discountType"
+  | "discountValue";
+
+function getInputValue(event: Event) {
+  const target = event.target;
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement
+  ) {
+    return target.value;
+  }
+  return "";
+}
+
+function getCheckedValue(event: Event) {
+  return event.target instanceof HTMLInputElement
+    ? event.target.checked
+    : false;
+}
+
+function handlePromotionFieldInput(field: PromotionFormField, event: Event) {
+  updatePromotionField(field, getInputValue(event));
+}
+
+function handlePromotionEnabledInput(event: Event) {
+  updatePromotionField("enabled", getCheckedValue(event));
+}
+
+function handlePromotionTargetChange(
+  productId: number | string,
+  specKey: string,
+  event: Event,
+) {
+  togglePromotionTarget(productId, specKey, getCheckedValue(event));
+}
 
 function handleClosePromotionModal() {
   dashboardPromotionsActions.closePromotionModal();

@@ -71,7 +71,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,
@@ -81,8 +81,10 @@ import { useDashboardSettings } from "./useDashboardSettings.ts";
 const { brandingSettings } = useDashboardSettings();
 const { getSiteIconPreviewUrl } = useDashboardSettingsIcons();
 
-async function handleSiteIconSelection(event) {
-  const input = event?.target;
+async function handleSiteIconSelection(event: Event) {
+  const input = event.target instanceof HTMLInputElement
+    ? event.target
+    : null;
   const file = input?.files?.[0] || null;
   await dashboardSettingsIconActions.handleSiteIconSelection(file);
   if (input) input.value = "";
