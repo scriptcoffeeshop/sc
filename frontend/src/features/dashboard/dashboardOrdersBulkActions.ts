@@ -1,6 +1,5 @@
 import { getFormControlValue } from "./dashboardOrdersView.ts";
-
-type DashboardOrderServices = Record<string, any>;
+import type { DashboardOrderServices } from "./dashboardOrderTypes.ts";
 
 type CreateDashboardOrdersBulkActionsOptions = {
   batchForm: {
@@ -16,6 +15,16 @@ type CreateDashboardOrdersBulkActionsOptions = {
 export function createDashboardOrdersBulkActions(
   options: CreateDashboardOrdersBulkActionsOptions,
 ) {
+  function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message || fallback : fallback;
+  }
+
+  function asRecord(value: unknown): Record<string, unknown> {
+    return value && typeof value === "object" && !Array.isArray(value)
+      ? value as Record<string, unknown>
+      : {};
+  }
+
   async function batchUpdateOrders() {
     const { API_URL, Swal, Toast, authFetch, getAuthUserId } = options
       .getServices();
@@ -60,7 +69,7 @@ export function createDashboardOrdersBulkActions(
           );
           const trackingUrlValue = getFormControlValue("swal-batch-tracking-url");
           if (trackingUrlValue && !/^https?:\/\//i.test(trackingUrlValue)) {
-            Swal.showValidationMessage(
+            Swal.showValidationMessage?.(
               "物流追蹤網址需以 http:// 或 https:// 開頭",
             );
             return false;
@@ -73,12 +82,13 @@ export function createDashboardOrdersBulkActions(
         },
       });
       if (!isConfirmed) return;
-      trackingNumber = value?.trackingNumber || "";
-      shippingProvider = value?.shippingProvider || "";
-      trackingUrl = value?.trackingUrl || "";
+      const shippingInfo = asRecord(value);
+      trackingNumber = String(shippingInfo.trackingNumber || "");
+      shippingProvider = String(shippingInfo.shippingProvider || "");
+      trackingUrl = String(shippingInfo.trackingUrl || "");
     }
 
-    const payload: Record<string, any> = {
+    const payload: Record<string, unknown> = {
       userId: getAuthUserId(),
       orderIds,
       status: options.batchForm.status,
@@ -100,9 +110,12 @@ export function createDashboardOrdersBulkActions(
       });
       const data = await response.json();
       if (data.success) {
-        Toast.fire({ icon: "success", title: data.message || "批次更新完成" });
+        Toast.fire({
+          icon: "success",
+          title: String(data.message || "批次更新完成"),
+        });
       } else {
-        const message = data.error || "批次更新失敗";
+        const message = String(data.error || "批次更新失敗");
         await Swal.fire(
           "提醒",
           message,
@@ -111,7 +124,7 @@ export function createDashboardOrdersBulkActions(
       }
       await options.loadOrders();
     } catch (error) {
-      Swal.fire("錯誤", error?.message || "批次更新失敗", "error");
+      Swal.fire("錯誤", getErrorMessage(error, "批次更新失敗"), "error");
     }
   }
 
@@ -145,12 +158,15 @@ export function createDashboardOrdersBulkActions(
         }),
       });
       const data = await response.json();
-      if (!data.success) throw new Error(data.error || "批次刪除失敗");
+      if (!data.success) throw new Error(String(data.error || "批次刪除失敗"));
       options.resetSelection();
-      Toast.fire({ icon: "success", title: data.message || "批次刪除完成" });
+      Toast.fire({
+        icon: "success",
+        title: String(data.message || "批次刪除完成"),
+      });
       await options.loadOrders();
     } catch (error) {
-      Swal.fire("錯誤", error?.message || "批次刪除失敗", "error");
+      Swal.fire("錯誤", getErrorMessage(error, "批次刪除失敗"), "error");
     }
   }
 

@@ -18,11 +18,13 @@ import {
   buildOrdersSummaryText,
   filterDashboardOrders,
 } from "./dashboardOrdersView.ts";
+import type {
+  DashboardOrderRecord,
+  DashboardOrderServices,
+} from "./dashboardOrderTypes.ts";
 import { orderStatusLabel, orderStatusOptions } from "./orderShared.ts";
 
-type DashboardOrderServices = Record<string, any>;
-
-const orders = ref<any[]>([]);
+const orders = ref<DashboardOrderRecord[]>([]);
 const selectedOrderIds = ref<Set<string>>(new Set());
 const pendingStatusByOrderId = ref<Record<string, string>>({});
 
@@ -136,14 +138,15 @@ async function deleteOrderById(orderId: string) {
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadOrders();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "刪除失敗", "error");
+    const message = error instanceof Error ? error.message || "刪除失敗" : "刪除失敗";
+    Swal.fire("錯誤", message, "error");
   }
 }
 
 async function confirmOrderStatus(orderId: string) {
   const { changeOrderStatus } = getServices();
   const nextStatus = pendingStatusByOrderId.value[orderId];
-  if (!nextStatus) return;
+  if (!nextStatus || !changeOrderStatus) return;
   await changeOrderStatus(orderId, nextStatus);
 }
 

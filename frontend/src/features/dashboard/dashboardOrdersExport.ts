@@ -6,8 +6,7 @@ import {
   orderStatusLabel,
 } from "./orderShared.ts";
 import { buildOrderAddressInfo } from "./dashboardOrdersView.ts";
-
-type DashboardOrderRecord = Record<string, any>;
+import type { DashboardOrderRecord } from "./dashboardOrderTypes.ts";
 
 function csvEscape(value: unknown) {
   const str = String(value ?? "").replace(/\r?\n/g, " | ");

@@ -7,9 +7,10 @@ import {
   orderPayStatusLabel,
   orderStatusLabel,
 } from "./orderShared.ts";
-
-type DashboardOrderRecord = Record<string, any>;
-type DashboardOrderFilters = Record<string, string>;
+import type {
+  DashboardOrderFilters,
+  DashboardOrderRecord,
+} from "./dashboardOrderTypes.ts";
 
 export function getFormControlValue(id: string) {
   const element = document.getElementById(id) as
@@ -53,7 +54,7 @@ function getTrackingLinkInfo(order: DashboardOrderRecord) {
   }
   if (
     order.deliveryMethod === "delivery" ||
-    order.deliveryMethod === "home_delivery"
+      order.deliveryMethod === "home_delivery"
   ) {
     return {
       url: "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100",
@@ -116,7 +117,7 @@ export function filterDashboardOrders(
       return false;
     }
 
-    const timestamp = new Date(order.timestamp);
+  const timestamp = new Date(order.timestamp);
     if (dateFrom && timestamp < dateFrom) return false;
     if (dateTo && timestamp > dateTo) return false;
 
@@ -175,9 +176,11 @@ export function buildOrderViewModel(
     orderId: String(order.orderId || ""),
     timestampText: new Date(order.timestamp).toLocaleString("zh-TW"),
     deliveryMethod: order.deliveryMethod || "",
-    deliveryLabel: orderMethodLabel[order.deliveryMethod] || order.deliveryMethod,
+    deliveryLabel: orderMethodLabel[order.deliveryMethod || ""] ||
+      order.deliveryMethod ||
+      "",
     status: order.status || "",
-    statusLabel: orderStatusLabel[order.status] || order.status || "",
+    statusLabel: orderStatusLabel[order.status || ""] || order.status || "",
     selectedStatus,
     showConfirmStatusButton: Boolean(selectedStatus) && selectedStatus !== order.status,
     paymentMethod,

@@ -1,6 +1,5 @@
 import type { Ref } from "vue";
-
-type DashboardOrderRecord = Record<string, any>;
+import type { DashboardOrderRecord } from "./dashboardOrderTypes.ts";
 
 export function getSelectedOrderIds(
   orderList: DashboardOrderRecord[],
