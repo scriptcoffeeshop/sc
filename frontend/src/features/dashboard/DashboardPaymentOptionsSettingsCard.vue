@@ -7,76 +7,87 @@
     <p class="text-sm ui-text-subtle mb-4">
       您可以自訂前台四種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
     </p>
-    <div class="overflow-x-auto border rounded settings-responsive-wrap">
-      <table class="w-full text-sm text-left settings-payment-table">
-        <thead class="bg-gray-50 border-b">
-          <tr>
-            <th class="p-3 font-medium ui-text-strong w-24 whitespace-nowrap">
-              系統代碼
-            </th>
-            <th class="p-3 font-medium ui-text-strong">
-              圖示與名稱 / 說明
-            </th>
-          </tr>
-        </thead>
-        <tbody id="payment-options-table">
-          <tr v-for="method in paymentMethodOrder" :key="method" class="border-b">
-            <td class="p-3 font-mono ui-text-subtle text-center" data-label="系統代碼">
-              {{ method }}
-            </td>
-            <td class="p-3" data-label="圖示與名稱 / 說明">
-              <div class="flex flex-col gap-2">
-                <div class="flex flex-wrap items-center gap-2">
-                  <input
-                    v-model="paymentOptions[method].icon_url"
-                    type="hidden"
-                    :id="`po-${method}-icon-url`"
-                  >
-                  <input
-                    type="file"
-                    :id="`po-${method}-icon-file`"
-                    accept="image/*"
-                    :ref="(element) => registerPaymentIconInput(method, element)"
-                    class="text-sm"
-                    @change="handlePaymentIconPreview(method, $event)"
-                  >
-                  <img
-                    :id="`po-${method}-icon-preview`"
-                    :src="getPaymentPreviewUrl(method)"
-                    alt=""
-                    class="icon-upload-preview"
-                  >
-                  <button
-                    type="button"
-                    @click="handlePaymentIconUpload(method)"
-                    class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft"
-                  >
-                    上傳付款圖示
-                  </button>
-                  <span
-                    :id="`po-${method}-icon-url-display`"
-                    class="text-[11px] ui-text-muted truncate max-w-[260px]"
-                  >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
-                </div>
-                <input
-                  v-model.trim="paymentOptions[method].name"
-                  type="text"
-                  :id="`po-${method}-name`"
-                  class="border rounded p-1 w-full"
-                  placeholder="顯示名稱"
-                >
-                <input
-                  v-model.trim="paymentOptions[method].description"
-                  type="text"
-                  :id="`po-${method}-desc`"
-                  class="border rounded p-1 w-full text-xs ui-text-strong"
-                  placeholder="簡短說明"
-                >
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div id="payment-options-table" class="payment-options-list">
+      <div
+        v-for="method in paymentMethodOrder"
+        :key="method"
+        class="payment-option-card"
+      >
+        <div class="payment-option-card-header">
+          <div class="min-w-0">
+            <div class="text-xs font-semibold ui-text-subtle mb-1">系統代碼</div>
+            <code class="payment-option-code">{{ method }}</code>
+          </div>
+          <div class="payment-option-preview">
+            <img
+              :src="getPaymentPreviewUrl(method)"
+              alt=""
+              class="payment-option-preview-icon"
+            >
+            <span>{{ paymentOptions[method].name || method }}</span>
+          </div>
+        </div>
+
+        <div class="payment-option-card-body">
+          <div class="payment-option-icon-editor">
+            <img
+              :id="`po-${method}-icon-preview`"
+              :src="getPaymentPreviewUrl(method)"
+              alt=""
+              class="icon-upload-preview payment-option-icon-preview"
+            >
+            <div class="icon-upload-controls">
+              <input
+                v-model="paymentOptions[method].icon_url"
+                type="hidden"
+                :id="`po-${method}-icon-url`"
+              >
+              <input
+                type="file"
+                :id="`po-${method}-icon-file`"
+                accept="image/*"
+                :ref="(element) => registerPaymentIconInput(method, element)"
+                class="text-sm icon-upload-file"
+                @change="handlePaymentIconPreview(method, $event)"
+              >
+              <button
+                type="button"
+                @click="handlePaymentIconUpload(method)"
+                class="text-xs px-2 py-1 rounded border ui-border text-blue-700 hover:ui-primary-soft icon-upload-action"
+              >
+                上傳付款圖示
+              </button>
+              <span
+                :id="`po-${method}-icon-url-display`"
+                class="text-[11px] ui-text-muted truncate max-w-full"
+              >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
+            </div>
+          </div>
+
+          <div class="payment-option-fields">
+            <label class="payment-option-field">
+              <span>顯示名稱</span>
+              <input
+                v-model.trim="paymentOptions[method].name"
+                type="text"
+                :id="`po-${method}-name`"
+                class="border rounded p-2 w-full"
+                placeholder="顯示名稱"
+              >
+            </label>
+            <label class="payment-option-field">
+              <span>簡短說明</span>
+              <input
+                v-model.trim="paymentOptions[method].description"
+                type="text"
+                :id="`po-${method}-desc`"
+                class="border rounded p-2 w-full text-sm ui-text-strong"
+                placeholder="簡短說明"
+              >
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

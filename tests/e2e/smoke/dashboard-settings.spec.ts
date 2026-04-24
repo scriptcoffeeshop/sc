@@ -46,7 +46,20 @@ test.describe("smoke / dashboard settings", () => {
         element.scrollWidth <= element.clientWidth + 2
       )
     ).toBe(true);
+    const paymentCards = page.locator("#payment-options-table .payment-option-card");
+    await expect(paymentCards).toHaveCount(4);
     await expect(page.locator("#payment-options-table")).toContainText("linepay");
+    await expect.poll(async () => {
+      const linePayCard = paymentCards.filter({ hasText: "linepay" }).first();
+      const fileBox = await linePayCard.locator(".icon-upload-file").boundingBox();
+      const uploadBox = await linePayCard.locator(".icon-upload-action").boundingBox();
+      return Boolean(fileBox && uploadBox && uploadBox.y > fileBox.y);
+    }).toBe(true);
+    await expect.poll(() =>
+      page.locator("#payment-options-table").evaluate((element) =>
+        element.scrollWidth <= element.clientWidth + 2
+      )
+    ).toBe(true);
   });
 
   test("dashboard checkout settings can add and remove delivery routing rows", async ({ page }) => {
