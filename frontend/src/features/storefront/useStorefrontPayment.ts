@@ -1,4 +1,12 @@
-import { ref } from "vue";
+import { computed, ref } from "vue";
+import { getIconUrlFromConfig } from "../../lib/icons.ts";
+import { parseJsonRecord } from "../../lib/jsonUtils.ts";
+import type {
+  StorefrontPaymentAvailability,
+  StorefrontPaymentMethod,
+} from "./storefrontRuntime";
+
+export type { StorefrontPaymentAvailability };
 
 export interface StorefrontBankAccount {
   id?: string | number;
@@ -11,6 +19,11 @@ export interface StorefrontBankAccount {
 interface StorefrontPaymentSnapshot {
   bankAccounts?: StorefrontBankAccount[];
   selectedBankAccountId?: string | number;
+  selectedPayment?: string;
+  availablePaymentMethods?: Partial<StorefrontPaymentAvailability>;
+  settings?: {
+    payment_options_config?: unknown;
+  };
 }
 
 interface StorefrontPaymentDeps {
@@ -29,10 +42,90 @@ interface StorefrontPaymentDeps {
   setTimeout?: (callback: () => void, delay: number) => unknown;
 }
 
+export interface StorefrontPaymentOptionView {
+  method: StorefrontPaymentMethod;
+  name: string;
+  description: string;
+  iconUrl: string;
+  nameClass: string;
+}
+
+const PAYMENT_METHODS: StorefrontPaymentMethod[] = [
+  "cod",
+  "linepay",
+  "jkopay",
+  "transfer",
+];
+
+const DEFAULT_PAYMENT_OPTIONS: Record<
+  StorefrontPaymentMethod,
+  { name: string; description: string; nameClass: string }
+> = {
+  cod: {
+    name: "取件 / 到付",
+    description: "取貨時付現或宅配到付",
+    nameClass: "",
+  },
+  linepay: {
+    name: "LINE Pay",
+    description: "線上安全付款",
+    nameClass: "text-[#06C755]",
+  },
+  jkopay: {
+    name: "街口支付",
+    description: "街口支付線上付款",
+    nameClass: "text-orange-600",
+  },
+  transfer: {
+    name: "線上轉帳",
+    description: "ATM / 網銀匯款",
+    nameClass: "text-blue-600",
+  },
+};
+
+function normalizePaymentAvailability(
+  value: Partial<StorefrontPaymentAvailability> | undefined,
+): StorefrontPaymentAvailability {
+  return {
+    cod: Boolean(value?.cod),
+    linepay: Boolean(value?.linepay),
+    jkopay: Boolean(value?.jkopay),
+    transfer: Boolean(value?.transfer),
+  };
+}
+
 export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
   const bankAccounts = ref<StorefrontBankAccount[]>([]);
   const selectedBankAccountId = ref("");
   const copiedBankAccountId = ref("");
+  const selectedPayment = ref("cod");
+  const paymentAvailability = ref<StorefrontPaymentAvailability>({
+    cod: true,
+    linepay: false,
+    jkopay: false,
+    transfer: false,
+  });
+  const paymentOptionConfig = ref<Record<string, Record<string, unknown>>>({});
+
+  const paymentOptions = computed<StorefrontPaymentOptionView[]>(() =>
+    PAYMENT_METHODS.map((method) => {
+      const defaults = DEFAULT_PAYMENT_OPTIONS[method];
+      const option = paymentOptionConfig.value[method] || {};
+      return {
+        method,
+        name: String(option.name || defaults.name),
+        description: String(option.description || defaults.description),
+        iconUrl: getIconUrlFromConfig(
+          {
+            icon_url: option.icon_url,
+            iconUrl: option.iconUrl,
+          },
+          method,
+        ),
+        nameClass: defaults.nameClass,
+      };
+    })
+  );
 
   function syncPaymentState() {
     const snapshot = deps.getStorefrontUiSnapshot?.() || {};
@@ -40,6 +133,13 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
       ? snapshot.bankAccounts
       : [];
     selectedBankAccountId.value = String(snapshot.selectedBankAccountId || "");
+    selectedPayment.value = String(snapshot.selectedPayment || "cod");
+    paymentAvailability.value = normalizePaymentAvailability(
+      snapshot.availablePaymentMethods,
+    );
+    paymentOptionConfig.value = parseJsonRecord(
+      snapshot.settings?.payment_options_config,
+    ) as Record<string, Record<string, unknown>>;
   }
 
   function handleSelectPayment(method: string) {
@@ -81,6 +181,9 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
   return {
     bankAccounts,
     selectedBankAccountId,
+    selectedPayment,
+    paymentAvailability,
+    paymentOptions,
     copiedBankAccountId,
     syncPaymentState,
     handleSelectPayment,

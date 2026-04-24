@@ -33,6 +33,9 @@
       <StorefrontPaymentSection
         :bank-accounts="bankAccounts"
         :selected-bank-account-id="selectedBankAccountId"
+        :selected-payment="selectedPayment"
+        :payment-availability="paymentAvailability"
+        :payment-options="paymentOptions"
         :copied-bank-account-id="copiedBankAccountId"
         :total-price-text="totalPriceText"
         :selected-check-icon-url="selectedCheckIconUrl"
@@ -292,6 +295,9 @@ const {
 const {
   bankAccounts,
   selectedBankAccountId,
+  selectedPayment,
+  paymentAvailability,
+  paymentOptions,
   copiedBankAccountId,
   syncPaymentState,
   handleSelectPayment,

@@ -1,10 +1,5 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
-import { parseJsonRecord } from "../../lib/jsonUtils.ts";
-import {
-  getPaymentIconFallbackKey,
-  setIconElement,
-} from "../../lib/icons.ts";
 import { cart } from "./storefrontCartStore.ts";
 import { selectDelivery } from "./storefrontDeliveryActions.ts";
 import { applyBranding } from "./storefrontFormRenderer.ts";
@@ -15,6 +10,7 @@ import {
 import { selectStorefrontBankAccount } from "./storefrontBankAccountsState.ts";
 import { createStorefrontQuoteManager } from "./storefrontQuoteManager.ts";
 import {
+  setStorefrontAvailablePaymentMethods,
   setStorefrontAppSettings,
   setStorefrontDeliveryConfig,
 } from "./storefrontRuntime.ts";
@@ -24,10 +20,6 @@ type StorefrontMainAppPaymentsDeps = {
   prefillUserFields: () => void;
   applySavedOrderFormPrefs: () => void;
 };
-
-function parsePaymentOptionsConfig(value: unknown) {
-  return parseJsonRecord(value) as Record<string, Record<string, unknown>>;
-}
 
 export function createStorefrontMainAppPayments(
   deps: StorefrontMainAppPaymentsDeps,
@@ -104,35 +96,6 @@ export function createStorefrontMainAppPayments(
 
     setStorefrontAppSettings(settings);
 
-    const paymentOptions = parsePaymentOptionsConfig(
-      settings.payment_options_config,
-    );
-
-    const paymentOptionsElement = document.getElementById("payment-options");
-    if (paymentOptionsElement?.dataset?.vueManaged !== "true") {
-      ["cod", "linepay", "jkopay", "transfer"].forEach((method) => {
-        const option = paymentOptions[method];
-        if (!option) return;
-        const iconEl = document.getElementById(`po-${method}-icon-display`);
-        const nameEl = document.getElementById(`po-${method}-name-display`);
-        const descEl = document.getElementById(`po-${method}-desc-display`);
-        if (iconEl) {
-          setIconElement(
-            iconEl,
-            {
-              icon_url: option.icon_url || option.iconUrl,
-            },
-            getPaymentIconFallbackKey(method),
-            `${method} 圖示`,
-          );
-        }
-        if (nameEl && option.name) nameEl.textContent = String(option.name);
-        if (descEl && option.description) {
-          descEl.textContent = String(option.description);
-        }
-      });
-    }
-
     currentDeliveryConfig = normalizeStorefrontDeliveryConfig(settings);
 
     setStorefrontDeliveryConfig(currentDeliveryConfig);
@@ -190,15 +153,7 @@ export function createStorefrontMainAppPayments(
         transfer: !!fallbackConfig.transfer,
       };
 
-    const codOpt = document.getElementById("cod-option");
-    const lpOpt = document.getElementById("linepay-option");
-    const jkoOpt = document.getElementById("jkopay-option");
-    const trOpt = document.getElementById("transfer-option");
-
-    codOpt?.classList.toggle("hidden", !currentConfig.cod);
-    lpOpt?.classList.toggle("hidden", !currentConfig.linepay);
-    jkoOpt?.classList.toggle("hidden", !currentConfig.jkopay);
-    trOpt?.classList.toggle("hidden", !currentConfig.transfer);
+    setStorefrontAvailablePaymentMethods(currentConfig);
 
     if (
       state.selectedPayment &&
@@ -213,10 +168,6 @@ export function createStorefrontMainAppPayments(
         selectPayment("transfer", { skipQuote: true });
       } else {
         state.selectedPayment = "";
-        document.querySelectorAll(".payment-option").forEach((element) =>
-          element.classList.remove("active")
-        );
-        document.getElementById("transfer-info-section")?.classList.add("hidden");
       }
       return;
     }
@@ -259,23 +210,10 @@ export function createStorefrontMainAppPayments(
 
   function selectPayment(method: string, options: { skipQuote?: boolean } = {}) {
     state.selectedPayment = method;
-    document.querySelectorAll(".payment-option").forEach((element) =>
-      element.classList.remove("active")
-    );
-
-    const activeBtn = document.querySelector(
-      `.payment-option[data-method="${method}"]`,
-    );
-    activeBtn?.classList.add("active");
-
-    const transferSection = document.getElementById("transfer-info-section");
     if (method === "transfer") {
-      transferSection?.classList.remove("hidden");
       if (state.bankAccounts.length > 0 && !state.selectedBankAccountId) {
         selectStorefrontBankAccount(state.bankAccounts[0].id);
       }
-    } else {
-      transferSection?.classList.add("hidden");
     }
 
     if (!options.skipQuote) {

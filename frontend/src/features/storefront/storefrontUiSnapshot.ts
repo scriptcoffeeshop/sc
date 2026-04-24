@@ -1,5 +1,8 @@
 import { state } from "../../lib/appState.ts";
-import { storefrontRuntime } from "./storefrontRuntime.ts";
+import {
+  storefrontRuntime,
+  type StorefrontPaymentAvailability,
+} from "./storefrontRuntime.ts";
 import type { SessionUser } from "../../types/session";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { Product } from "../../types/core";
@@ -41,6 +44,7 @@ export interface StorefrontUiSnapshot {
   deliveryConfig: StorefrontDeliveryOption[];
   selectedDelivery: string;
   selectedPayment: string;
+  availablePaymentMethods: StorefrontPaymentAvailability;
   bankAccounts: StorefrontBankAccount[];
   selectedBankAccountId: string;
 }
@@ -97,6 +101,7 @@ export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {
     deliveryConfig: getRuntimeDeliveryConfig(),
     selectedDelivery: String(state.selectedDelivery || ""),
     selectedPayment: String(state.selectedPayment || "cod"),
+    availablePaymentMethods: { ...storefrontRuntime.availablePaymentMethods },
     bankAccounts: cloneArrayItems<StorefrontBankAccount>(state.bankAccounts),
     selectedBankAccountId: String(state.selectedBankAccountId || ""),
   };

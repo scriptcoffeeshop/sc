@@ -8,6 +8,21 @@ describe("useStorefrontPayment", () => {
       getStorefrontUiSnapshot: vi.fn(() => ({
         bankAccounts: [{ id: 1 }, { id: 2 }],
         selectedBankAccountId,
+        selectedPayment: "transfer",
+        availablePaymentMethods: {
+          cod: false,
+          linepay: true,
+          jkopay: false,
+          transfer: true,
+        },
+        settings: {
+          payment_options_config: JSON.stringify({
+            transfer: {
+              name: "銀行匯款",
+              description: "請於下單後匯款",
+            },
+          }),
+        },
       })),
       selectPayment: vi.fn(),
       selectBankAccount: vi.fn((bankId) => {
@@ -22,6 +37,18 @@ describe("useStorefrontPayment", () => {
 
     expect(payment.bankAccounts.value).toEqual([{ id: 1 }, { id: 2 }]);
     expect(payment.selectedBankAccountId.value).toBe("2");
+    expect(payment.selectedPayment.value).toBe("transfer");
+    expect(payment.paymentAvailability.value).toEqual({
+      cod: false,
+      linepay: true,
+      jkopay: false,
+      transfer: true,
+    });
+    expect(payment.paymentOptions.value.find((item) => item.method === "transfer"))
+      .toMatchObject({
+        name: "銀行匯款",
+        description: "請於下單後匯款",
+      });
     expect(deps.selectPayment).toHaveBeenCalledWith("transfer");
     expect(deps.selectBankAccount).toHaveBeenCalledWith(2);
   });

@@ -2,6 +2,8 @@ import type { DashboardSettingsRecord } from "../../types/settings";
 import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 
 export type StorefrontQuoteRefreshOptions = { silent?: boolean };
+export type StorefrontPaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
+export type StorefrontPaymentAvailability = Record<StorefrontPaymentMethod, boolean>;
 
 export type StorefrontQuoteRefreshResult = {
   success?: boolean;
@@ -13,6 +15,7 @@ export type StorefrontQuoteRefreshResult = {
 type StorefrontRuntime = {
   appSettings: DashboardSettingsRecord | null;
   currentDeliveryConfig: StorefrontDeliveryOption[];
+  availablePaymentMethods: StorefrontPaymentAvailability;
   selectPayment: ((
     method: string,
     options?: { skipQuote?: boolean },
@@ -36,6 +39,12 @@ type StorefrontRuntimeBindings = Partial<
 export const storefrontRuntime: StorefrontRuntime = {
   appSettings: null,
   currentDeliveryConfig: [],
+  availablePaymentMethods: {
+    cod: true,
+    linepay: false,
+    jkopay: false,
+    transfer: false,
+  },
   selectPayment: null,
   updateCartUI: null,
   updateFormState: null,
@@ -59,4 +68,15 @@ export function setStorefrontDeliveryConfig(deliveryConfig: unknown) {
   storefrontRuntime.currentDeliveryConfig = Array.isArray(deliveryConfig)
     ? deliveryConfig as StorefrontDeliveryOption[]
     : [];
+}
+
+export function setStorefrontAvailablePaymentMethods(
+  availability: Partial<StorefrontPaymentAvailability> | null | undefined,
+) {
+  storefrontRuntime.availablePaymentMethods = {
+    cod: Boolean(availability?.cod),
+    linepay: Boolean(availability?.linepay),
+    jkopay: Boolean(availability?.jkopay),
+    transfer: Boolean(availability?.transfer),
+  };
 }

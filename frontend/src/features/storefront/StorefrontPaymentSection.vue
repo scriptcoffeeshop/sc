@@ -12,89 +12,46 @@
     </h2>
     <div
       id="payment-options"
+      data-vue-managed="true"
       class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4"
     >
       <div
-        id="cod-option"
-        data-method="cod"
-        class="payment-option active"
-        @click="$emit('select-payment', 'cod')"
+        v-for="option in paymentOptions"
+        :id="`${option.method}-option`"
+        :key="option.method"
+        :data-method="option.method"
+        class="payment-option"
+        :class="{
+          active: selectedPayment === option.method,
+          hidden: !paymentAvailability[option.method],
+        }"
+        @click="$emit('select-payment', option.method)"
       >
         <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-        <div class="option-icon" id="po-cod-icon-display"><img src="../../../../icons/payment-cash.png" alt="貨到付款圖示" class="ui-icon-img"></div>
-        <div class="font-semibold" id="po-cod-name-display">
-          取件 / 到付
+        <div class="option-icon" :id="`po-${option.method}-icon-display`">
+          <img :src="option.iconUrl" :alt="`${option.name} 圖示`" class="ui-icon-img">
         </div>
-        <div id="po-cod-desc-display" class="text-xs text-gray-500 mt-1">
-          取貨時付現或宅配到付
-        </div>
-      </div>
-      <div
-        id="linepay-option"
-        data-method="linepay"
-        class="payment-option hidden"
-        @click="$emit('select-payment', 'linepay')"
-      >
-        <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-        <div class="option-icon" id="po-linepay-icon-display"><img src="../../../../icons/payment-linepay.png" alt="LINE Pay 圖示" class="ui-icon-img"></div>
         <div
-          id="po-linepay-name-display"
-          class="font-semibold text-[#06C755]"
+          :id="`po-${option.method}-name-display`"
+          class="font-semibold"
+          :class="option.nameClass"
         >
-          LINE Pay
+          {{ option.name }}
         </div>
         <div
-          id="po-linepay-desc-display"
+          :id="`po-${option.method}-desc-display`"
           class="text-xs text-gray-500 mt-1"
         >
-          線上安全付款
-        </div>
-      </div>
-      <div
-        id="jkopay-option"
-        data-method="jkopay"
-        class="payment-option hidden"
-        @click="$emit('select-payment', 'jkopay')"
-      >
-        <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-        <div class="option-icon" id="po-jkopay-icon-display"><img src="../../../../icons/payment-jkopay.png" alt="街口支付圖示" class="ui-icon-img"></div>
-        <div
-          id="po-jkopay-name-display"
-          class="font-semibold text-orange-600"
-        >
-          街口支付
-        </div>
-        <div
-          id="po-jkopay-desc-display"
-          class="text-xs text-gray-500 mt-1"
-        >
-          街口支付線上付款
-        </div>
-      </div>
-      <div
-        id="transfer-option"
-        data-method="transfer"
-        class="payment-option hidden"
-        @click="$emit('select-payment', 'transfer')"
-      >
-        <div class="check-mark"><img :src="selectedCheckIconUrl" alt="" class="ui-icon-img"></div>
-        <div class="option-icon" id="po-transfer-icon-display"><img src="../../../../icons/payment-bank.png" alt="轉帳圖示" class="ui-icon-img"></div>
-        <div
-          id="po-transfer-name-display"
-          class="font-semibold text-blue-600"
-        >
-          線上轉帳
-        </div>
-        <div
-          id="po-transfer-desc-display"
-          class="text-xs text-gray-500 mt-1"
-        >
-          ATM / 網銀匯款
+          {{ option.description }}
         </div>
       </div>
     </div>
 
-    <div id="transfer-info-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
+    <div
+      id="transfer-info-section"
+      class="fade-in p-4 rounded-xl ui-card-section"
+      :class="{ hidden: selectedPayment !== 'transfer' }"
+    >
       <h3 class="font-semibold mb-3" style="color: var(--primary)">
         <span class="tab-with-icon"><img src="../../../../icons/payment-bank.png" alt="" class="ui-icon-inline">匯款資訊</span>
       </h3>
@@ -173,6 +130,10 @@
 
 <script setup lang="ts">
 import type { StorefrontBankAccount } from "./useStorefrontPayment";
+import type {
+  StorefrontPaymentAvailability,
+  StorefrontPaymentOptionView,
+} from "./useStorefrontPayment";
 
 defineEmits<{
   "select-payment": [method: string];
@@ -187,6 +148,9 @@ withDefaults(
   defineProps<{
     bankAccounts?: StorefrontBankAccount[];
     selectedBankAccountId?: string;
+    selectedPayment?: string;
+    paymentAvailability?: StorefrontPaymentAvailability;
+    paymentOptions?: StorefrontPaymentOptionView[];
     copiedBankAccountId?: string;
     totalPriceText: string;
     selectedCheckIconUrl: string;
@@ -194,6 +158,14 @@ withDefaults(
   {
     bankAccounts: () => [],
     selectedBankAccountId: "",
+    selectedPayment: "cod",
+    paymentAvailability: () => ({
+      cod: true,
+      linepay: false,
+      jkopay: false,
+      transfer: false,
+    }),
+    paymentOptions: () => [],
     copiedBankAccountId: "",
   },
 );
