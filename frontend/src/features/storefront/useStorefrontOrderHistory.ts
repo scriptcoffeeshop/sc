@@ -1,5 +1,6 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 import type { Order, ReceiptInfo, SessionUser } from "../../types/index";
+import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 
 type PaymentTone = "success" | "info" | "warning" | "danger" | "neutral";
 
@@ -307,7 +308,7 @@ export function useStorefrontOrderHistory(
       rawOrders.value = result.orders;
     } catch (error) {
       rawOrders.value = [];
-      orderHistoryError.value = error?.message || "訂單載入失敗";
+      orderHistoryError.value = getStorefrontErrorMessage(error, "訂單載入失敗");
     } finally {
       isLoadingOrderHistory.value = false;
     }

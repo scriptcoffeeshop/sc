@@ -8,6 +8,7 @@ import {
   setInputValue,
   type StoreRecord,
 } from "./storefrontDeliveryDom.ts";
+import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 
 let allStores: StoreRecord[] = [];
 let storeListLoaded = false;
@@ -72,8 +73,7 @@ export async function openStoreSearchModal(): Promise<void> {
     } catch (error) {
       Swal.fire(
         "錯誤",
-        "無法載入門市清單：" +
-          (error instanceof Error ? error.message : String(error)),
+        "無法載入門市清單：" + getStorefrontErrorMessage(error, "未知錯誤"),
         "error",
       );
       return;

@@ -12,6 +12,7 @@ import {
   getFormControlValue,
   getInputElement,
 } from "./storefrontDeliveryDom.ts";
+import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
@@ -22,28 +23,23 @@ import { createStorefrontMainAppReturns } from "./storefrontMainAppReturns.ts";
 import { registerStorefrontRuntime } from "./storefrontRuntime.ts";
 import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 
-function getErrorMessage(error: unknown, fallback = "發生未知錯誤") {
-  if (error instanceof Error) return error.message || fallback;
-  return String(error || fallback);
-}
-
 let paymentActions: ReturnType<typeof createStorefrontMainAppPayments>;
 
 const authActions = createStorefrontMainAppAuth({
   getInputElement,
   getFormControlValue,
-  getErrorMessage,
+  getErrorMessage: getStorefrontErrorMessage,
   updateFormState: () => paymentActions.updateFormState(),
 });
 
 paymentActions = createStorefrontMainAppPayments({
-  getErrorMessage,
+  getErrorMessage: getStorefrontErrorMessage,
   prefillUserFields: () => authActions.prefillUserFields(),
   applySavedOrderFormPrefs,
 });
 
 const returnActions = createStorefrontMainAppReturns({
-  getErrorMessage,
+  getErrorMessage: getStorefrontErrorMessage,
 });
 
 function initMainDomBindings() {
