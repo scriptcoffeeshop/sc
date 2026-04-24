@@ -170,6 +170,7 @@
 - `repo_hygiene_check.py` 新增 runtime 守門，阻擋 production 直接新增 `JSON.parse` 或匿名 `catch {}`；本輪通過 `npm run guardrails`、`python3 scripts/repo_hygiene_check.py` 與 `git diff --check`。
 - `payment-shared.ts` 已移除重複的 email branding 與 LINE 通知錯誤截斷 helper，改 re-export `order-shared.ts` 的共用版本；付款專用 `parseReceiptInfo` 因需保留物件原樣回傳語意，仍留在付款模組並由 payments test 保護。
 - `payment-shared.ts` 的線上付款逾期狀態機已拆到 `payment-expiry.ts`，再由原檔 re-export 保持既有 import 相容；本輪通過 `npm run fmt:check`、`npm run check`、`payments_test.ts`、`npm run test`、`npm run lint`、`npm run guardrails` 與 `git diff --check`。
+- `payment-jkopay.ts` 的街口訂單狀態同步核心已拆到 `payment-jkopay-sync.ts`，result/inquiry/refund 路由層不再內嵌 DB 狀態機；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`payments_test.ts`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。
