@@ -114,6 +114,7 @@ import {
   SUBMIT_ORDER_RATE_LIMIT,
 } from "../utils/rate-limit-config.ts";
 import { validate } from "../utils/validate.ts";
+import type { z } from "zod";
 import {
   addFormField,
   deleteFormField,
@@ -128,6 +129,10 @@ export type ActionHandler = (
   data: Record<string, unknown>,
   req: Request,
 ) => Promise<unknown>;
+type ValidatedActionHandler<T extends z.ZodTypeAny> = (
+  data: z.infer<T>,
+  req: Request,
+) => Promise<unknown>;
 
 export type AccessLevel = "public" | "authenticated" | "admin";
 export type HttpMethod = "GET" | "POST";
@@ -139,6 +144,7 @@ export interface ActionConfig {
   rateLimit?: RateLimitConfig;
   audit?: boolean;
 }
+type ActionOptions = Omit<ActionConfig, "handler" | "access">;
 
 export interface WrappedActionContext {
   action: string;
@@ -167,23 +173,67 @@ const MAP_SESSION_METHODS = ["GET", "POST"] as const;
 
 function publicAction(
   handler: ActionHandler,
-  options: Omit<ActionConfig, "handler" | "access"> = {},
+  options: ActionOptions = {},
 ): ActionConfig {
   return { handler, access: "public", ...options };
 }
 
 function authenticatedAction(
   handler: ActionHandler,
-  options: Omit<ActionConfig, "handler" | "access"> = {},
+  options: ActionOptions = {},
 ): ActionConfig {
   return { handler, access: "authenticated", ...options };
 }
 
 function adminAction(
   handler: ActionHandler,
-  options: Omit<ActionConfig, "handler" | "access"> = {},
+  options: ActionOptions = {},
 ): ActionConfig {
   return { handler, access: "admin", ...options };
+}
+
+function validatedAction<T extends z.ZodTypeAny>(
+  schema: T,
+  handler: ValidatedActionHandler<T>,
+): ActionHandler {
+  return async (data, req) => {
+    const validData = await validate(schema, data);
+    return await handler(validData, req);
+  };
+}
+
+function withPostMethod(options: ActionOptions = {}): ActionOptions {
+  return { ...options, methods: POST_ONLY };
+}
+
+function publicPost<T extends z.ZodTypeAny>(
+  schema: T,
+  handler: ValidatedActionHandler<T>,
+  options: ActionOptions = {},
+): ActionConfig {
+  return publicAction(
+    validatedAction(schema, handler),
+    withPostMethod(options),
+  );
+}
+
+function authPost<T extends z.ZodTypeAny>(
+  schema: T,
+  handler: ValidatedActionHandler<T>,
+  options: ActionOptions = {},
+): ActionConfig {
+  return authenticatedAction(
+    validatedAction(schema, handler),
+    withPostMethod(options),
+  );
+}
+
+function adminPost<T extends z.ZodTypeAny>(
+  schema: T,
+  handler: ValidatedActionHandler<T>,
+  options: ActionOptions = {},
+): ActionConfig {
+  return adminAction(validatedAction(schema, handler), withPostMethod(options));
 }
 
 export const actionMap: Record<string, ActionConfig> = {
@@ -203,14 +253,18 @@ export const actionMap: Record<string, ActionConfig> = {
   getLineLoginUrl: publicAction((data) =>
     Promise.resolve(getLineLoginUrl(data.redirectUri as string))
   ),
-  customerLineLogin: publicAction(async (data) => {
-    const validData = await validate(lineLoginSchema, data);
-    return await customerLineLogin(validData.code, validData.redirectUri);
-  }, { methods: POST_ONLY, rateLimit: AUTH_ACTION_RATE_LIMIT }),
-  lineLogin: publicAction(async (data) => {
-    const validData = await validate(lineLoginSchema, data);
-    return await handleAdminLogin(validData.code, validData.redirectUri);
-  }, { methods: POST_ONLY, rateLimit: AUTH_ACTION_RATE_LIMIT }),
+  customerLineLogin: publicPost(
+    lineLoginSchema,
+    async (validData) =>
+      await customerLineLogin(validData.code, validData.redirectUri),
+    { rateLimit: AUTH_ACTION_RATE_LIMIT },
+  ),
+  lineLogin: publicPost(
+    lineLoginSchema,
+    async (validData) =>
+      await handleAdminLogin(validData.code, validData.redirectUri),
+    { rateLimit: AUTH_ACTION_RATE_LIMIT },
+  ),
   getStoreList: publicAction(async (data) =>
     await getStoreList(data.cvsType as string)
   ),
@@ -228,10 +282,10 @@ export const actionMap: Record<string, ActionConfig> = {
   storeMapCallback: publicAction(async (data) =>
     await handleStoreMapCallback(data)
   ),
-  quoteOrder: publicAction(async (data) => {
-    const validData = await validate(quoteOrderSchema, data);
-    return await quoteOrder(validData);
-  }, { methods: POST_ONLY }),
+  quoteOrder: publicPost(
+    quoteOrderSchema,
+    async (validData) => await quoteOrder(validData),
+  ),
   createPcscMapSession: publicAction(
     async (data) =>
       await createPcscMapSession((data.clientUrl as string) || ""),
@@ -251,24 +305,26 @@ export const actionMap: Record<string, ActionConfig> = {
     async (data, req) => await jkoPayResult(data, req),
     { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
   ),
-  submitOrder: authenticatedAction(async (data, req) => {
-    const validData = await validate(submitOrderSchema, data);
-    return await submitOrder(validData, req);
-  }, { methods: POST_ONLY, rateLimit: SUBMIT_ORDER_RATE_LIMIT }),
+  submitOrder: authPost(
+    submitOrderSchema,
+    submitOrder,
+    { rateLimit: SUBMIT_ORDER_RATE_LIMIT },
+  ),
   getMyOrders: authenticatedAction(async (_data, req) =>
     await getMyOrders(req)
   ),
   getUserProfile: authenticatedAction(async (data, req) =>
     await getUserProfile(data, req)
   ),
-  updateUserProfile: authenticatedAction(async (data, req) => {
-    const validData = await validate(updateUserProfileSchema, data);
-    return await updateUserProfile(validData, req);
-  }, { methods: POST_ONLY }),
-  updateTransferInfo: authenticatedAction(async (data, req) => {
-    const validData = await validate(transferInfoSchema, data);
-    return await updateTransferInfo(validData, req);
-  }, { methods: POST_ONLY, rateLimit: PAYMENT_ACTION_RATE_LIMIT }),
+  updateUserProfile: authPost(
+    updateUserProfileSchema,
+    updateUserProfile,
+  ),
+  updateTransferInfo: authPost(
+    transferInfoSchema,
+    updateTransferInfo,
+    { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
+  ),
   jkoPayInquiry: authenticatedAction(
     async (data, req) => await jkoPayInquiry(data, req),
     { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
@@ -283,119 +339,83 @@ export const actionMap: Record<string, ActionConfig> = {
     await getFormFieldsAdmin(req)
   ),
   getOrders: adminAction(async (_data, req) => await getOrders(req)),
-  addPromotion: adminAction(async (data, req) => {
-    const validData = await validate(promotionSchema, data);
-    return await addPromotion(validData, req);
-  }, { methods: POST_ONLY }),
-  updatePromotion: adminAction(async (data, req) => {
-    const validData = await validate(promotionSchema, data);
-    return await updatePromotion(validData, req);
-  }, { methods: POST_ONLY }),
-  deletePromotion: adminAction(async (data, req) => {
-    const validData = await validate(deleteByIdSchema, data);
-    return await deletePromotion(validData, req);
-  }, { methods: POST_ONLY }),
-  reorderPromotionsBulk: adminAction(async (data, req) => {
-    const validData = await validate(reorderIdsSchema, data);
-    return await reorderPromotionsBulk(validData, req);
-  }, { methods: POST_ONLY }),
-  addProduct: adminAction(async (data, req) => {
-    const validData = await validate(productSchema, data);
-    return await addProduct(validData, req);
-  }, { methods: POST_ONLY }),
-  updateProduct: adminAction(async (data, req) => {
-    const validData = await validate(productSchema, data);
-    return await updateProduct(validData, req);
-  }, { methods: POST_ONLY }),
-  deleteProduct: adminAction(async (data, req) => {
-    const validData = await validate(deleteByIdSchema, data);
-    return await deleteProduct(validData, req);
-  }, { methods: POST_ONLY }),
-  reorderProduct: adminAction(async (data, req) => {
-    const validData = await validate(reorderProductSchema, data);
-    return await reorderProduct(validData, req);
-  }, { methods: POST_ONLY }),
-  reorderProductsBulk: adminAction(async (data, req) => {
-    const validData = await validate(reorderIdsSchema, data);
-    return await reorderProductsBulk(validData, req);
-  }, { methods: POST_ONLY }),
-  addCategory: adminAction(async (data, req) => {
-    const validData = await validate(categorySchema, data);
-    return await addCategory(validData, req);
-  }, { methods: POST_ONLY }),
-  updateCategory: adminAction(async (data, req) => {
-    const validData = await validate(categorySchema, data);
-    return await updateCategory(validData, req);
-  }, { methods: POST_ONLY }),
-  deleteCategory: adminAction(async (data, req) => {
-    const validData = await validate(deleteByIdSchema, data);
-    return await deleteCategory(validData, req);
-  }, { methods: POST_ONLY }),
-  reorderCategory: adminAction(async (data, req) => {
-    const validData = await validate(reorderIdsSchema, data);
-    return await reorderCategory(validData, req);
-  }, { methods: POST_ONLY }),
-  updateSettings: adminAction(async (data, req) => {
-    const validData = await validate(updateSettingsSchema, data);
-    return await updateSettingsAction(validData, req);
-  }, { methods: POST_ONLY }),
-  updateOrderStatus: adminAction(async (data, req) => {
-    const validData = await validate(updateOrderStatusSchema, data);
-    return await updateOrderStatus(validData, req);
-  }, { methods: POST_ONLY }),
-  sendOrderEmail: adminAction(async (data, req) => {
-    const validData = await validate(sendOrderEmailSchema, data);
-    return await sendOrderEmail(validData, req);
-  }, { methods: POST_ONLY }),
-  batchUpdateOrderStatus: adminAction(async (data, req) => {
-    const validData = await validate(batchUpdateOrderStatusSchema, data);
-    return await batchUpdateOrderStatus(validData, req);
-  }, { methods: POST_ONLY }),
-  deleteOrder: adminAction(async (data, req) => {
-    const validData = await validate(deleteOrderSchema, data);
-    return await deleteOrder(validData, req);
-  }, { methods: POST_ONLY }),
-  batchDeleteOrders: adminAction(async (data, req) => {
-    const validData = await validate(batchDeleteOrdersSchema, data);
-    return await batchDeleteOrders(validData, req);
-  }, { methods: POST_ONLY }),
+  addPromotion: adminPost(promotionSchema, addPromotion),
+  updatePromotion: adminPost(promotionSchema, updatePromotion),
+  deletePromotion: adminPost(deleteByIdSchema, deletePromotion),
+  reorderPromotionsBulk: adminPost(
+    reorderIdsSchema,
+    reorderPromotionsBulk,
+  ),
+  addProduct: adminPost(productSchema, addProduct),
+  updateProduct: adminPost(productSchema, updateProduct),
+  deleteProduct: adminPost(deleteByIdSchema, deleteProduct),
+  reorderProduct: adminPost(
+    reorderProductSchema,
+    reorderProduct,
+  ),
+  reorderProductsBulk: adminPost(
+    reorderIdsSchema,
+    reorderProductsBulk,
+  ),
+  addCategory: adminPost(categorySchema, addCategory),
+  updateCategory: adminPost(categorySchema, updateCategory),
+  deleteCategory: adminPost(deleteByIdSchema, deleteCategory),
+  reorderCategory: adminPost(reorderIdsSchema, reorderCategory),
+  updateSettings: adminPost(
+    updateSettingsSchema,
+    updateSettingsAction,
+  ),
+  updateOrderStatus: adminPost(
+    updateOrderStatusSchema,
+    updateOrderStatus,
+  ),
+  sendOrderEmail: adminPost(
+    sendOrderEmailSchema,
+    sendOrderEmail,
+  ),
+  batchUpdateOrderStatus: adminPost(
+    batchUpdateOrderStatusSchema,
+    batchUpdateOrderStatus,
+  ),
+  deleteOrder: adminPost(deleteOrderSchema, deleteOrder),
+  batchDeleteOrders: adminPost(
+    batchDeleteOrdersSchema,
+    batchDeleteOrders,
+  ),
   getUsers: adminAction(async (_data, req) => await getUsers(req)),
-  updateUserRole: adminAction(async (data, req) => {
-    const validData = await validate(updateUserRoleSchema, data);
-    return await updateUserRole(validData, req);
-  }, { methods: POST_ONLY }),
+  updateUserRole: adminPost(
+    updateUserRoleSchema,
+    updateUserRole,
+  ),
   getBlacklist: adminAction(async (_data, req) => await getBlacklist(req)),
-  addToBlacklist: adminAction(async (data, req) => {
-    const validData = await validate(addToBlacklistSchema, data);
-    return await addToBlacklist(validData, req);
-  }, { methods: POST_ONLY }),
-  removeFromBlacklist: adminAction(async (data, req) => {
-    const validData = await validate(removeFromBlacklistSchema, data);
-    return await removeFromBlacklist(validData, req);
-  }, { methods: POST_ONLY }),
+  addToBlacklist: adminPost(
+    addToBlacklistSchema,
+    addToBlacklist,
+  ),
+  removeFromBlacklist: adminPost(
+    removeFromBlacklistSchema,
+    removeFromBlacklist,
+  ),
   testEmail: adminAction(async (data, req) => await testEmail(data, req), {
     methods: POST_ONLY,
   }),
-  sendLineFlexMessage: adminAction(async (data, req) => {
-    const validData = await validate(sendLineFlexMessageSchema, data);
-    return await sendLineFlexMessage(validData, req);
-  }, { methods: POST_ONLY }),
-  addFormField: adminAction(async (data, req) => {
-    const validData = await validate(addFormFieldSchema, data);
-    return await addFormField(validData, req);
-  }, { methods: POST_ONLY }),
-  updateFormField: adminAction(async (data, req) => {
-    const validData = await validate(updateFormFieldSchema, data);
-    return await updateFormField(validData, req);
-  }, { methods: POST_ONLY }),
-  deleteFormField: adminAction(async (data, req) => {
-    const validData = await validate(deleteFormFieldSchema, data);
-    return await deleteFormField(validData, req);
-  }, { methods: POST_ONLY }),
-  reorderFormFields: adminAction(async (data, req) => {
-    const validData = await validate(reorderIdsSchema, data);
-    return await reorderFormFields(validData, req);
-  }, { methods: POST_ONLY }),
+  sendLineFlexMessage: adminPost(
+    sendLineFlexMessageSchema,
+    sendLineFlexMessage,
+  ),
+  addFormField: adminPost(addFormFieldSchema, addFormField),
+  updateFormField: adminPost(
+    updateFormFieldSchema,
+    updateFormField,
+  ),
+  deleteFormField: adminPost(
+    deleteFormFieldSchema,
+    deleteFormField,
+  ),
+  reorderFormFields: adminPost(
+    reorderIdsSchema,
+    reorderFormFields,
+  ),
   uploadAsset: adminAction(async (data, req) => await uploadAsset(data, req), {
     methods: POST_ONLY,
   }),
@@ -413,22 +433,22 @@ export const actionMap: Record<string, ActionConfig> = {
       rateLimit: PAYMENT_ACTION_RATE_LIMIT,
     },
   ),
-  addBankAccount: adminAction(async (data, req) => {
-    const validData = await validate(addBankAccountSchema, data);
-    return await addBankAccount(validData, req);
-  }, { methods: POST_ONLY }),
-  updateBankAccount: adminAction(async (data, req) => {
-    const validData = await validate(updateBankAccountSchema, data);
-    return await updateBankAccount(validData, req);
-  }, { methods: POST_ONLY }),
-  deleteBankAccount: adminAction(async (data, req) => {
-    const validData = await validate(deleteBankAccountSchema, data);
-    return await deleteBankAccount(validData, req);
-  }, { methods: POST_ONLY }),
-  reorderBankAccounts: adminAction(async (data, req) => {
-    const validData = await validate(reorderIdsSchema, data);
-    return await reorderBankAccounts(validData, req);
-  }, { methods: POST_ONLY }),
+  addBankAccount: adminPost(
+    addBankAccountSchema,
+    addBankAccount,
+  ),
+  updateBankAccount: adminPost(
+    updateBankAccountSchema,
+    updateBankAccount,
+  ),
+  deleteBankAccount: adminPost(
+    deleteBankAccountSchema,
+    deleteBankAccount,
+  ),
+  reorderBankAccounts: adminPost(
+    reorderIdsSchema,
+    reorderBankAccounts,
+  ),
 };
 
 export function shouldAuditAction(actionConfig: ActionConfig): boolean {

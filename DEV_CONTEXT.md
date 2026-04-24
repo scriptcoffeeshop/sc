@@ -79,6 +79,7 @@
 - dashboard SweetAlert/form modal 的 input/select/textarea/checkbox 讀值已集中到 `dashboardFormControls.ts`；orders bulk/status、form fields、bank accounts 不再各自維護 DOM 取值 helper。
 - 後端 Email template 與 LINE Flex 的配送文字判斷已集中到共用 helper；LINE Flex 訂單狀態通知的欄位 row / separator 組裝也已抽 helper，避免每個欄位重複手寫 Flex JSON。
 - 後端報價引擎 `api/quote.ts` 的商品規格解析與單價決定已抽成純 helper，主計價迴圈專注於 quote line 組裝。
+- 後端 action routing 的 schema 驗證樣板已集中到 `publicPost` / `authPost` / `adminPost` helper；action map 不再逐筆手寫 `validate(schema, data)`。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 表單 DOM 讀寫 helper 已集中在 `storefrontDeliveryDom.ts`；主入口、送出配送資訊與發票/轉帳偏好不再各自維護 input/select/checkbox 讀取邏輯。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。
@@ -96,6 +97,7 @@
 - Supabase Edge Function production code 的直接 JSON 解析已集中到 `utils/json.ts`；settings/quote/order/payment/request/JWT/LINE/JKO/user profile 路徑共用 record/array/text helper。
 - 後端 Email template 與 LINE Flex 的配送文字判斷已集中到共用 helper；訂單成立、出貨通知、處理中通知與 LINE 訂單狀態通知不再各自拼接宅配/超商地址文案，LINE Flex 欄位 row 也已改走 helper 組裝。
 - 後端報價引擎已把商品規格解析、規格啟用判斷與單價決定從主計價迴圈抽成 `resolveQuoteProductPrice()` helper，既有 quote tests 保護規格、無效付款與折扣計算。
+- 後端 `routing/action-map.ts` 已把 POST + schema 驗證的重複樣板收斂為 typed helper，新增/調整 action 時比較不容易漏掉方法限制或驗證。
 
 ### 視覺與互動
 
