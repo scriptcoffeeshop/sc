@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { districtData } from "../../lib/appConfig.ts";
 import {
   getDeliveryIconFallbackKey,
   getIconUrlFromConfig,
@@ -9,6 +10,11 @@ import {
 } from "./storefrontModels.ts";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
+import {
+  getStorefrontLocalDeliveryAddress,
+  setStorefrontLocalDeliveryAddress,
+  type StorefrontLocalDeliveryAddress,
+} from "./storefrontDeliveryFormState.ts";
 
 interface StorefrontDeliveryPaymentConfig {
   cod?: boolean;
@@ -53,6 +59,10 @@ export { normalizeStorefrontDeliveryConfig };
 
 export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
   const deliveryOptions = ref<StorefrontDeliveryOption[]>([]);
+  const localDeliveryAddress = ref<StorefrontLocalDeliveryAddress>(
+    getStorefrontLocalDeliveryAddress(),
+  );
+  const localDistrictOptions = ref<string[]>([]);
   const selectedStore = ref<StorefrontSelectedStore>({
     storeId: "",
     storeName: "",
@@ -72,6 +82,39 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
       storeName: "",
       storeAddress: "",
     };
+    refreshLocalDistrictOptions();
+  }
+
+  function refreshLocalDistrictOptions() {
+    const city = localDeliveryAddress.value.city;
+    localDistrictOptions.value = Array.isArray(districtData[city])
+      ? districtData[city]
+      : [];
+    if (
+      localDeliveryAddress.value.district &&
+      !localDistrictOptions.value.includes(localDeliveryAddress.value.district)
+    ) {
+      updateLocalDeliveryAddress("district", "");
+    }
+  }
+
+  function updateLocalDeliveryAddress(
+    field: keyof StorefrontLocalDeliveryAddress,
+    value: string,
+  ) {
+    const patch: Partial<StorefrontLocalDeliveryAddress> = {
+      [field]: String(value || ""),
+    };
+    if (field === "city") patch.district = "";
+    localDeliveryAddress.value = setStorefrontLocalDeliveryAddress(patch);
+    refreshLocalDistrictOptions();
+  }
+
+  function handleLocalDeliveryAddressUpdated(event: Event) {
+    const detail = (event as CustomEvent<Partial<StorefrontLocalDeliveryAddress>>)
+      .detail || {};
+    localDeliveryAddress.value = setStorefrontLocalDeliveryAddress(detail);
+    refreshLocalDistrictOptions();
   }
 
   function handleSelectDelivery(method: string) {
@@ -93,6 +136,8 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
 
   return {
     deliveryOptions,
+    localDeliveryAddress,
+    localDistrictOptions,
     selectedStore,
     resolveDeliveryIcon,
     syncDeliveryState,
@@ -100,5 +145,7 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     handleSelectDelivery,
     handleOpenStoreMap,
     handleClearSelectedStore,
+    updateLocalDeliveryAddress,
+    handleLocalDeliveryAddressUpdated,
   };
 }

@@ -10,13 +10,16 @@ import TwCitySelector from "../../lib/twCitySelector.js";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import {
   buildFormBody,
-  getSelectElement,
-  getSelectValue,
   parseDeliveryConfig,
   parseDeliveryPrefs,
   setInputValue,
   type DeliveryPrefs,
 } from "./storefrontDeliveryDom.ts";
+import {
+  emitStorefrontLocalDeliveryAddressUpdated,
+  getStorefrontLocalDeliveryAddress,
+  setStorefrontLocalDeliveryAddress,
+} from "./storefrontDeliveryFormState.ts";
 import {
   applyStoreSelection,
   clearSelectedStore,
@@ -91,21 +94,12 @@ export function selectDelivery(
 
 /** 更新地區下拉 (限新竹使用) */
 export function updateDistricts() {
-  const city = getSelectValue("delivery-city");
-  const distSelect = getSelectElement("delivery-district");
-  if (!distSelect) return;
-  distSelect.replaceChildren();
-  const placeholderOption = document.createElement("option");
-  placeholderOption.value = "";
-  placeholderOption.textContent = "請選擇";
-  distSelect.appendChild(placeholderOption);
-  if (city && districtData[city]) {
-    districtData[city].forEach((d) => {
-      const option = document.createElement("option");
-      option.value = String(d);
-      option.textContent = String(d);
-      distSelect.appendChild(option);
-    });
+  const current = getStorefrontLocalDeliveryAddress();
+  const options = Array.isArray(districtData[current.city])
+    ? districtData[current.city]
+    : [];
+  if (current.district && !options.includes(current.district)) {
+    setStorefrontLocalDeliveryAddress({ district: "" });
   }
 }
 
@@ -309,22 +303,12 @@ export function loadDeliveryPrefs() {
       else selectDelivery(method);
 
       if (method === "delivery") {
-        if (prefs.city) {
-          const cityEl = getSelectElement("delivery-city");
-          if (cityEl) cityEl.value = String(prefs.city || "");
-          populateDistricts();
-          if (prefs.district) {
-            const districtEl = getSelectElement("delivery-district");
-            if (districtEl) districtEl.value = String(prefs.district || "");
-          }
-        }
-        if (prefs.address) {
-          setInputValue("delivery-detail-address", prefs.address);
-        }
-        const deliveryCompanyEl = document.getElementById("delivery-company");
-        if (deliveryCompanyEl instanceof HTMLInputElement) {
-          deliveryCompanyEl.value = String(prefs.companyOrBuilding || "").trim();
-        }
+        emitStorefrontLocalDeliveryAddressUpdated({
+          city: String(prefs.city || ""),
+          district: String(prefs.district || ""),
+          address: String(prefs.address || ""),
+          companyOrBuilding: String(prefs.companyOrBuilding || "").trim(),
+        });
       } else if (method === "home_delivery") {
         // home_delivery 的 district 可能是 "300 東區"，回填時需拆出區域名稱
         const countyEl = document.querySelector(".county");

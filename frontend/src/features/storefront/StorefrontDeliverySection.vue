@@ -60,7 +60,12 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
           <label class="block text-sm text-gray-600 mb-1">縣市</label>
-          <select id="delivery-city" class="input-field">
+          <select
+            id="delivery-city"
+            class="input-field"
+            :value="localDeliveryAddress.city"
+            @change="handleLocalAddressInput('city', $event)"
+          >
             <option value="">請選擇</option>
             <option value="新竹市">新竹市</option>
             <option value="竹北市">竹北市</option>
@@ -68,8 +73,20 @@
         </div>
         <div>
           <label class="block text-sm text-gray-600 mb-1">區域</label>
-          <select id="delivery-district" class="input-field">
-            <option value="">請先選擇縣市</option>
+          <select
+            id="delivery-district"
+            class="input-field"
+            :value="localDeliveryAddress.district"
+            @change="handleLocalAddressInput('district', $event)"
+          >
+            <option value="">{{ localDistrictOptions.length ? "請選擇" : "請先選擇縣市" }}</option>
+            <option
+              v-for="district in localDistrictOptions"
+              :key="district"
+              :value="district"
+            >
+              {{ district }}
+            </option>
           </select>
         </div>
       </div>
@@ -80,6 +97,8 @@
           type="text"
           class="input-field"
           placeholder="路/街、巷、弄、號、樓"
+          :value="localDeliveryAddress.address"
+          @input="handleLocalAddressInput('address', $event)"
         >
       </div>
     </div>
@@ -214,6 +233,7 @@
 import { computed } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import type { StorefrontDeliveryOption } from "./useStorefrontDelivery";
+import type { StorefrontLocalDeliveryAddress } from "./storefrontDeliveryFormState";
 import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
 import type { StorefrontSectionTitleView } from "./useStorefrontBranding";
 import { normalizeStorefrontBranding } from "./useStorefrontBranding.ts";
@@ -222,17 +242,13 @@ type DeliveryIconResolver = (
   option: StorefrontDeliveryOption,
 ) => { url?: string } | null | undefined;
 
-defineEmits<{
-  "select-delivery": [deliveryId: string];
-  "open-store-map": [];
-  "clear-selected-store": [];
-}>();
-
 const props = withDefaults(
   defineProps<{
     deliveryOptions?: StorefrontDeliveryOption[];
     selectedDelivery?: string;
     selectedStore?: StorefrontSelectedStore;
+    localDeliveryAddress?: StorefrontLocalDeliveryAddress;
+    localDistrictOptions?: string[];
     sectionTitle?: StorefrontSectionTitleView;
     selectedCheckIconUrl: string;
     resolveDeliveryIcon?: DeliveryIconResolver | null;
@@ -245,10 +261,42 @@ const props = withDefaults(
       storeName: "",
       storeAddress: "",
     }),
+    localDeliveryAddress: () => ({
+      city: "",
+      district: "",
+      address: "",
+      companyOrBuilding: "",
+    }),
+    localDistrictOptions: () => [],
     sectionTitle: () => normalizeStorefrontBranding({}).sections.delivery,
     resolveDeliveryIcon: null,
   },
 );
+
+const emit = defineEmits<{
+  "select-delivery": [deliveryId: string];
+  "open-store-map": [];
+  "clear-selected-store": [];
+  "update-local-delivery-address": [
+    field: keyof StorefrontLocalDeliveryAddress,
+    value: string,
+  ];
+}>();
+
+function handleLocalAddressInput(
+  field: keyof StorefrontLocalDeliveryAddress,
+  event: Event,
+) {
+  const target = event.target;
+  if (
+    !(target instanceof HTMLInputElement) &&
+    !(target instanceof HTMLSelectElement)
+  ) {
+    emit("update-local-delivery-address", field, "");
+    return;
+  }
+  emit("update-local-delivery-address", field, target?.value || "");
+}
 
 function getDeliveryIcon(option: StorefrontDeliveryOption) {
   const resolvedIcon = props.resolveDeliveryIcon?.(option) || {};

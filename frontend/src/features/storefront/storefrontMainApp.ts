@@ -6,7 +6,6 @@ import { loadCart, updateCartUI } from "./storefrontCartStore.ts";
 import {
   checkStoreToken,
   loadDeliveryPrefs,
-  updateDistricts,
 } from "./storefrontDeliveryActions.ts";
 import {
   getFormControlValue,
@@ -40,13 +39,6 @@ const returnActions = createStorefrontMainAppReturns({
   getErrorMessage: getStorefrontErrorMessage,
 });
 
-function initMainDomBindings() {
-  const deliveryCity = document.getElementById("delivery-city");
-  if (deliveryCity) {
-    deliveryCity.addEventListener("change", updateDistricts);
-  }
-}
-
 function syncDynamicFieldDefaults() {
   authActions.prefillUserFields();
 }
@@ -67,7 +59,6 @@ export async function initMainApp() {
   if (mainAppInitialized) return;
   mainAppInitialized = true;
 
-  initMainDomBindings();
   initReceiptRequestUi();
 
   const urlParams = new URLSearchParams(location.search);

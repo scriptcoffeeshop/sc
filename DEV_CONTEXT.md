@@ -190,6 +190,7 @@
 - storefront 送單核心表單狀態已抽離：`storefrontOrderFormState.ts` 管理政策同意、訂單備註與匯款末五碼，`storefrontOrderSubmit.ts` 不再讀取 `policy-agree`、`order-note`、`transfer-last5` DOM。
 - storefront shell 關閉我的訂單已完全走 Vue 狀態：`useStorefrontShell.ts` 移除 `my-orders-modal` DOM fallback，固定委派 `closeOrderHistory`。
 - storefront 動態欄位值已改由 Vue 狀態收集：`StorefrontDynamicFields.vue` emit 欄位值、`storefrontDynamicFieldValues.ts` 保存可提交狀態，`storefrontFormRenderer.ts` 不再查詢 `field-*` DOM。
+- storefront 新竹配送地址已改由 Vue 狀態管理：`storefrontDeliveryFormState.ts` 保存縣市/區域/詳細地址，`StorefrontDeliverySection.vue` 依狀態產生區域選項，送單不再讀取 `delivery-city`/`delivery-district` DOM。
 
 ### 2026-04-24
 

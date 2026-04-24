@@ -1,5 +1,6 @@
 import type { DeliveryMethod, SubmitDeliveryInfo, SubmitDeliveryInfoResult } from "../../types";
 import { getFormControlValue } from "./storefrontDeliveryDom.ts";
+import { getStorefrontLocalDeliveryAddress } from "./storefrontDeliveryFormState.ts";
 
 export const SUBMIT_DELIVERY_METHOD_TEXT = {
   delivery: "配送到府(限新竹)",
@@ -21,10 +22,11 @@ export function collectSubmitDeliveryInfo(
   deliveryMethod: DeliveryMethod | string,
 ): SubmitDeliveryInfoResult {
   if (deliveryMethod === "delivery") {
-    const city = getFormControlValue("delivery-city");
-    const district = getFormControlValue("delivery-district");
-    const addr = getFormControlValue("delivery-detail-address").trim();
-    const companyOrBuilding = getFormControlValue("delivery-company").trim();
+    const localAddress = getStorefrontLocalDeliveryAddress();
+    const city = localAddress.city.trim();
+    const district = localAddress.district.trim();
+    const addr = localAddress.address.trim();
+    const companyOrBuilding = localAddress.companyOrBuilding.trim();
     if (!city) return { deliveryInfo: null, error: "請選擇縣市" };
     if (!addr) return { deliveryInfo: null, error: "請填寫詳細地址" };
     return {

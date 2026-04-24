@@ -85,6 +85,28 @@ describe("useStorefrontDelivery", () => {
     expect(deps.clearSelectedStore).toHaveBeenCalledTimes(1);
   });
 
+  it("tracks local delivery address and district options with Vue state", () => {
+    const delivery = useStorefrontDelivery();
+
+    delivery.updateLocalDeliveryAddress("city", "新竹市");
+    expect(delivery.localDeliveryAddress.value).toMatchObject({
+      city: "新竹市",
+      district: "",
+    });
+    expect(delivery.localDistrictOptions.value).toEqual([
+      "東區",
+      "北區",
+      "香山區",
+    ]);
+
+    delivery.updateLocalDeliveryAddress("district", "東區");
+    delivery.updateLocalDeliveryAddress("address", "測試路 1 號");
+    expect(delivery.localDeliveryAddress.value).toMatchObject({
+      district: "東區",
+      address: "測試路 1 號",
+    });
+  });
+
   it("resolves delivery icons through configured url or default icon", () => {
     const delivery = useStorefrontDelivery();
 

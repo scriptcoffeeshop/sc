@@ -25,12 +25,15 @@
         :delivery-options="deliveryOptions"
         :selected-delivery="selectedDelivery"
         :selected-store="selectedStore"
+        :local-delivery-address="localDeliveryAddress"
+        :local-district-options="localDistrictOptions"
         :section-title="branding.sections.delivery"
         :selected-check-icon-url="selectedCheckIconUrl"
         :resolve-delivery-icon="resolveDeliveryIcon"
         @select-delivery="handleSelectDelivery"
         @open-store-map="handleOpenStoreMap"
         @clear-selected-store="handleClearSelectedStore"
+        @update-local-delivery-address="updateLocalDeliveryAddress"
       />
 
       <StorefrontDynamicFields
@@ -342,12 +345,16 @@ const {
 } = useStorefrontLoadState({ reload: () => location.reload() });
 const {
   deliveryOptions,
+  localDeliveryAddress,
+  localDistrictOptions,
   selectedStore,
   resolveDeliveryIcon,
   refreshDeliveryState,
   handleSelectDelivery,
   handleOpenStoreMap,
   handleClearSelectedStore,
+  updateLocalDeliveryAddress,
+  handleLocalDeliveryAddressUpdated,
 } = useStorefrontDelivery({
   clearSelectedStore,
   selectDelivery,
@@ -498,6 +505,10 @@ onMounted(() => {
     "coffee:dynamic-field-values-updated",
     handleDynamicFieldValuesUpdated,
   );
+  window.addEventListener(
+    "coffee:local-delivery-address-updated",
+    handleLocalDeliveryAddressUpdated,
+  );
 
   syncCartSnapshot();
 
@@ -528,6 +539,10 @@ onBeforeUnmount(() => {
   window.removeEventListener(
     "coffee:dynamic-field-values-updated",
     handleDynamicFieldValuesUpdated,
+  );
+  window.removeEventListener(
+    "coffee:local-delivery-address-updated",
+    handleLocalDeliveryAddressUpdated,
   );
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;
