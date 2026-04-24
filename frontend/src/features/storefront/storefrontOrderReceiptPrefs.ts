@@ -1,4 +1,5 @@
 import { state } from "../../lib/appState.ts";
+import { tryParseJsonRecord } from "../../lib/jsonUtils.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import type { PaymentMethod, ReceiptInfo } from "../../types";
 
@@ -26,11 +27,7 @@ function parseStoredReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (typeof raw === "string") {
     const str = raw.trim();
     if (!str) return null;
-    try {
-      return normalizeReceiptInfo(JSON.parse(str));
-    } catch (_error) {
-      return null;
-    }
+    return normalizeReceiptInfo(tryParseJsonRecord(str));
   }
   return normalizeReceiptInfo(raw);
 }

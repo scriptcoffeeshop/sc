@@ -1,3 +1,5 @@
+import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
+
 export interface DashboardProductSpec {
   key: string;
   label: string;
@@ -62,20 +64,30 @@ export function cloneSpecs(
   }));
 }
 
+function parseProductSpecs(value: unknown): DashboardProductSpec[] {
+  const parsedSpecs = parseJsonArray(value).map((item) => {
+    const spec = asJsonRecord(item);
+    return {
+      key: String(spec.key || ""),
+      label: String(spec.label || ""),
+      price: Number(spec.price) || 0,
+      enabled: Boolean(spec.enabled),
+    };
+  });
+  return cloneSpecs(parsedSpecs);
+}
+
 export function getProductPriceLines(
   product: DashboardProductRecord,
 ): DashboardProductViewModel["priceLines"] {
-  try {
-    const specs = product.specs ? JSON.parse(product.specs) : [];
-    const enabledSpecs = specs.filter((spec: DashboardProductSpec) => spec.enabled);
-    if (enabledSpecs.length > 0) {
-      return enabledSpecs.map((spec: DashboardProductSpec) => ({
-        label: spec.label || "",
-        price: Number(spec.price) || 0,
-        isSpec: true,
-      }));
-    }
-  } catch (_error) {
+  const enabledSpecs = parseProductSpecs(product.specs)
+    .filter((spec) => spec.enabled);
+  if (enabledSpecs.length > 0) {
+    return enabledSpecs.map((spec) => ({
+      label: spec.label || "",
+      price: Number(spec.price) || 0,
+      isSpec: true,
+    }));
   }
   return [{ label: "", price: Number(product.price) || 0, isSpec: false }];
 }
@@ -145,11 +157,7 @@ export function fillProductFormState(
   productForm.roastLevel = product.roastLevel || "";
   productForm.enabled = Boolean(product.enabled);
 
-  let specs: DashboardProductSpec[] = [];
-  try {
-    if (product.specs) specs = JSON.parse(product.specs);
-  } catch (_error) {
-  }
+  const specs = parseProductSpecs(product.specs);
   productForm.specs = specs.length ? cloneSpecs(specs) : cloneSpecs();
 }
 

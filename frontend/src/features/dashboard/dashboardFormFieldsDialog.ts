@@ -1,3 +1,4 @@
+import { parseJsonRecord } from "../../lib/jsonUtils.ts";
 import {
   escapeHtml,
   FIELD_TYPE_LABELS,
@@ -53,13 +54,7 @@ export function renderDeliveryVisibilityCheckboxes(
     return;
   }
 
-  let visibility: Record<string, boolean> = {};
-  if (existingVisibility) {
-    try {
-      visibility = JSON.parse(existingVisibility);
-    } catch (_error) {
-    }
-  }
+  const visibility = parseJsonRecord(existingVisibility);
 
   const fragment = document.createDocumentFragment();
   deliveryOptions.forEach((option) => {

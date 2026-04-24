@@ -1,4 +1,5 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
+import { tryParseJsonRecord } from "../../lib/jsonUtils.ts";
 import type {
   DashboardSessionServices,
   SessionUser,
@@ -171,15 +172,17 @@ async function checkLogin() {
     return;
   }
 
-  try {
-    currentUser.value = JSON.parse(savedAdmin) as SessionUser;
-    await enterAdmin(defaultTab);
-  } catch (_error) {
+  const storedAdmin = tryParseJsonRecord(savedAdmin);
+  const userId = String(storedAdmin?.userId || "").trim();
+  if (!userId) {
     clearStoredSession();
     currentUser.value = null;
     activeTab.value = defaultTab;
     initialDataLoaded = false;
+    return;
   }
+  currentUser.value = { ...storedAdmin, userId } as SessionUser;
+  await enterAdmin(defaultTab);
 }
 
 async function bootstrapFromWindow() {

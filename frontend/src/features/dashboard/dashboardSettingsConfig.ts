@@ -1,3 +1,8 @@
+import {
+  asJsonRecord,
+  parseJsonArray as parseLooseJsonArray,
+  parseJsonRecord as parseLooseJsonRecord,
+} from "../../lib/jsonUtils.ts";
 import type {
   DashboardDeliveryOption,
   DashboardPaymentOption,
@@ -71,34 +76,21 @@ interface DashboardSettingsStateSnapshot {
 }
 
 function asRecord(value: unknown): DashboardSettingsRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as DashboardSettingsRecord
-    : {};
+  return asJsonRecord(value);
 }
 
-function parseJsonRecord(value: unknown): DashboardSettingsRecord {
-  if (!String(value || "").trim()) return {};
-  try {
-    return asRecord(JSON.parse(String(value)));
-  } catch (_error) {
-    return {};
-  }
+function parseSettingsRecord(value: unknown): DashboardSettingsRecord {
+  return parseLooseJsonRecord(value);
 }
 
-function parseJsonArray(value: unknown): DashboardSettingsRecord[] {
-  if (!String(value || "").trim()) return [];
-  try {
-    const parsed = JSON.parse(String(value));
-    return Array.isArray(parsed) ? parsed.map(asRecord) : [];
-  } catch (_error) {
-    return [];
-  }
+function parseSettingsRecordArray(value: unknown): DashboardSettingsRecord[] {
+  return parseLooseJsonArray(value).map(asRecord);
 }
 
 function buildLegacyRoutingConfig(
   settings: DashboardSettingsRecord,
 ): Record<string, DashboardPaymentRouting> {
-  const routingConfig = parseJsonRecord(settings.payment_routing_config);
+  const routingConfig = parseSettingsRecord(settings.payment_routing_config);
   if (Object.keys(routingConfig).length) {
     return routingConfig as Record<string, DashboardPaymentRouting>;
   }
@@ -239,7 +231,7 @@ export function migrateLegacyDeliveryConfig(
   settings: DashboardSettingsRecord,
   deps: DashboardSettingsConfigDeps,
 ): DashboardDeliveryOption[] {
-  const deliveryConfig = parseJsonArray(settings.delivery_options_config);
+  const deliveryConfig = parseSettingsRecordArray(settings.delivery_options_config);
   if (deliveryConfig.length) {
     return deliveryConfig.map((item) => deps.normalizeDeliveryOption(item));
   }
@@ -344,7 +336,7 @@ export function buildSettingsStateFromConfig(
   | "paymentOptions"
   | "deliveryOptions"
 > {
-  const parsedPaymentOptions = parseJsonRecord(settings.payment_options_config);
+  const parsedPaymentOptions = parseSettingsRecord(settings.payment_options_config);
 
   return {
     brandingSettings: {

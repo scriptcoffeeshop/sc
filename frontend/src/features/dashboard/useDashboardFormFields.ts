@@ -1,4 +1,5 @@
 import { computed, nextTick, ref } from "vue";
+import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
 import {
   buildAddFieldModalHtml,
   buildEditFieldModalHtml,
@@ -92,17 +93,14 @@ function getDeliveryOptionsFromSettings(): DashboardDeliveryOptionLike[] {
   ).trim();
   if (!configStr) return [];
 
-  try {
-    const parsed = JSON.parse(configStr);
-    return Array.isArray(parsed)
-      ? parsed.map((option) => ({
-        id: option?.id,
-        label: option?.label || option?.id,
-      }))
-      : [];
-  } catch (_error) {
-    return [];
-  }
+  return parseJsonArray(configStr).map((option) => {
+    const record = asJsonRecord(option);
+    const id = typeof record.id === "number" ? record.id : String(record.id || "");
+    return {
+      id,
+      label: String(record.label || id),
+    };
+  });
 }
 
 function getFormFieldById(id: number): DashboardFormField | undefined {

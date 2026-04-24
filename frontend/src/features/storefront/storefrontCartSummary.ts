@@ -1,3 +1,5 @@
+import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
+
 export interface StorefrontCartItemLike {
   productId?: number | string;
   specKey?: string;
@@ -106,18 +108,14 @@ export function getDeliveryMeta(
     selectedDelivery: selectedDelivery || "",
     deliveryName: "該配送方式",
   };
-  try {
-    const parsed = JSON.parse(String(deliveryOptionsConfig || "[]"));
-    const selected = Array.isArray(parsed)
-      ? parsed.find((opt) => opt?.id === selectedDelivery)
-      : null;
-    if (selected?.name) {
-      return {
-        selectedDelivery: selectedDelivery || "",
-        deliveryName: String(selected.name),
-      };
-    }
-  } catch (_error) {
+  const selected = parseJsonArray(deliveryOptionsConfig)
+    .map(asJsonRecord)
+    .find((option) => option.id === selectedDelivery);
+  if (selected?.name) {
+    return {
+      selectedDelivery: selectedDelivery || "",
+      deliveryName: String(selected.name),
+    };
   }
   return fallback;
 }

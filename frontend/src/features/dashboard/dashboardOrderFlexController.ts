@@ -1,3 +1,4 @@
+import { tryParseJsonArray } from "../../lib/jsonUtils.ts";
 import type { DashboardOrderRecord } from "./dashboardOrderTypes";
 import type {
   DashboardLineFlexMessage,
@@ -27,13 +28,12 @@ function isFlexHistoryItem(value: unknown): value is FlexHistoryItem {
 function readFlexHistory(): FlexHistoryItem[] {
   const rawHistory = globalThis.localStorage?.getItem(FLEX_HISTORY_KEY);
   if (!rawHistory) return [];
-  try {
-    const history = JSON.parse(rawHistory);
-    return Array.isArray(history) ? history.filter(isFlexHistoryItem) : [];
-  } catch (error) {
-    console.warn("[dashboard] 無法解析 LINE Flex 歷史紀錄", error);
+  const history = tryParseJsonArray(rawHistory);
+  if (!history) {
+    console.warn("[dashboard] 無法解析 LINE Flex 歷史紀錄");
     return [];
   }
+  return history.filter(isFlexHistoryItem);
 }
 
 function writeFlexHistory(history: FlexHistoryItem[]) {

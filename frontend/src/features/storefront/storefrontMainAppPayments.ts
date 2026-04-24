@@ -1,5 +1,6 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
+import { parseJsonRecord } from "../../lib/jsonUtils.ts";
 import {
   getPaymentIconFallbackKey,
   setIconElement,
@@ -25,16 +26,7 @@ type StorefrontMainAppPaymentsDeps = {
 };
 
 function parsePaymentOptionsConfig(value: unknown) {
-  const raw = String(value || "").trim();
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed as Record<string, Record<string, unknown>>
-      : {};
-  } catch (_error) {
-    return {};
-  }
+  return parseJsonRecord(value) as Record<string, Record<string, unknown>>;
 }
 
 export function createStorefrontMainAppPayments(

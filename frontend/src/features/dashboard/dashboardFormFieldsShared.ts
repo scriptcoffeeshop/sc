@@ -1,3 +1,9 @@
+import {
+  parseJsonArray,
+  parseJsonRecord,
+  tryParseJsonRecord,
+} from "../../lib/jsonUtils.ts";
+
 export type DashboardFormFieldType =
   | "text"
   | "email"
@@ -58,19 +64,12 @@ export function getHiddenDeliveryMethodsText(
   deliveryVisibility: string | null | undefined,
 ): string {
   if (!deliveryVisibility) return "";
-  try {
-    const visibilityConfig = JSON.parse(deliveryVisibility) as Record<
-      string,
-      boolean
-    >;
-    const hiddenDeliveryMethods = Object.entries(visibilityConfig)
-      .filter(([, visible]) => visible === false)
-      .map(([deliveryMethod]) => deliveryMethod);
-    if (!hiddenDeliveryMethods.length) return "";
-    return `在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
-  } catch (_error) {
-    return "";
-  }
+  const visibilityConfig = parseJsonRecord(deliveryVisibility);
+  const hiddenDeliveryMethods = Object.entries(visibilityConfig)
+    .filter(([, visible]) => visible === false)
+    .map(([deliveryMethod]) => deliveryMethod);
+  if (!hiddenDeliveryMethods.length) return "";
+  return `在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
 }
 
 export function buildFormFieldViewModel(
@@ -97,11 +96,7 @@ export function buildFormFieldViewModel(
 }
 
 export function parseFieldOptionsText(options: string | null | undefined): string {
-  try {
-    return JSON.parse(String(options || "[]")).join(",");
-  } catch (_error) {
-    return "";
-  }
+  return parseJsonArray(options).map((value) => String(value)).join(",");
 }
 
 export function serializeFieldOptions(rawValue: string): string {
@@ -116,12 +111,10 @@ export function normalizeDeliveryVisibilityValue(
   rawValue: string | null | undefined,
 ): string | null | undefined {
   if (!rawValue) return rawValue;
-  try {
-    const visibility = JSON.parse(rawValue) as Record<string, boolean>;
-    if (Object.values(visibility).every((value) => value === true)) {
-      return null;
-    }
-  } catch (_error) {
+  const visibility = tryParseJsonRecord(rawValue);
+  if (!visibility) {
+    return rawValue;
   }
+  if (Object.values(visibility).every((value) => value === true)) return null;
   return rawValue;
 }

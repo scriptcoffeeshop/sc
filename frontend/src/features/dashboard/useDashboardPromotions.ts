@@ -1,4 +1,5 @@
 import { computed, nextTick, reactive, ref } from "vue";
+import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
 import type {
   DashboardAuthFetch,
   DashboardSwal,
@@ -226,12 +227,14 @@ function togglePromotionTarget(
 }
 
 function parseProductSpecs(product: DashboardProductRecord): DashboardProductSpec[] {
-  try {
-    const parsed = product?.specs ? JSON.parse(String(product.specs)) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (_error) {
-    return [];
-  }
+  return parseJsonArray(product?.specs).map((item) => {
+    const spec = asJsonRecord(item);
+    return {
+      key: String(spec.key || ""),
+      label: String(spec.label || ""),
+      price: Number(spec.price) || 0,
+    };
+  });
 }
 
 const promotionProductGroups = computed(() => {
