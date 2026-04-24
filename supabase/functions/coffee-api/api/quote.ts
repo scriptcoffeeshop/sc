@@ -48,6 +48,8 @@ export type QuotePayload = {
 export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
 
 type PaymentAvailability = Record<PaymentMethod, boolean>;
+type QuoteProductRow = Record<string, unknown>;
+type QuoteProductSpec = Record<string, unknown>;
 
 export type QuoteResult =
   | { success: true; quote: QuotePayload }
@@ -203,11 +205,81 @@ function parseRequestItems(data: Record<string, unknown>): QuoteRequestItem[] {
   }).filter((item) => Number.isFinite(item.productId) && item.productId > 0);
 }
 
+type QuoteProductPriceResult =
+  | { success: true; unitPrice: number; specLabel: string }
+  | { success: false; error: string };
+
+function parseProductSpecs(
+  product: QuoteProductRow,
+): QuoteProductSpec[] | null {
+  if (!product.specs) return [];
+  if (typeof product.specs === "string") {
+    return tryParseJsonArray<QuoteProductSpec>(product.specs);
+  }
+  if (Array.isArray(product.specs)) return product.specs as QuoteProductSpec[];
+  return [];
+}
+
+function resolveQuoteProductPrice(
+  product: QuoteProductRow,
+  specKey: string,
+): QuoteProductPriceResult {
+  if (!product.specs) {
+    if (specKey && specKey !== "default") {
+      return {
+        success: false,
+        error: `商品「${product.name}」無可選規格，請重新整理商品列表`,
+      };
+    }
+    return {
+      success: true,
+      unitPrice: Number(product.price) || 0,
+      specLabel: "",
+    };
+  }
+
+  if (!specKey) {
+    return { success: false, error: `商品「${product.name}」必須選擇規格` };
+  }
+
+  const specList = parseProductSpecs(product);
+  if (!specList) {
+    return { success: false, error: `商品「${product.name}」規格解析失敗` };
+  }
+
+  try {
+    const spec = specList.find((s: QuoteProductSpec) =>
+      String(s.key) === specKey ||
+      String(s.label || "") === specKey ||
+      String(s.name || "") === specKey
+    );
+    if (!spec) {
+      return {
+        success: false,
+        error: `商品「${product.name}」的規格「${specKey}」不存在`,
+      };
+    }
+    if (spec.enabled === false) {
+      return {
+        success: false,
+        error: `商品「${product.name}」的規格「${specKey}」已停止供應`,
+      };
+    }
+    return {
+      success: true,
+      unitPrice: Number(spec.price ?? product.price) || 0,
+      specLabel: String(spec.label || specKey),
+    };
+  } catch (_error) {
+    return { success: false, error: `商品「${product.name}」規格解析失敗` };
+  }
+}
+
 export type ComputeOrderQuoteParams = {
   cartItems: QuoteRequestItem[];
   requestedDeliveryMethod: string;
   requestedPaymentMethod: PaymentMethod | "";
-  products: Record<string, unknown>[];
+  products: QuoteProductRow[];
   deliveryConfig: Record<string, unknown>[];
   activePromos: Record<string, unknown>[];
   promoNow?: Date;
@@ -235,8 +307,8 @@ export function computeOrderQuote(
     return { success: false, error: "無效的配送方式" };
   }
 
-  const productMap = new Map<number, Record<string, unknown>>(
-    products.map((p: Record<string, unknown>) => [Number(p.id), p]),
+  const productMap = new Map<number, QuoteProductRow>(
+    products.map((p: QuoteProductRow) => [Number(p.id), p]),
   );
 
   const quoteItems: QuoteLineItem[] = [];
@@ -251,62 +323,22 @@ export function computeOrderQuote(
       return { success: false, error: `商品「${product.name}」已下架` };
     }
 
-    let unitPrice = Number(product.price) || 0;
-    let specLabel = "";
     const specKey = String(item.specKey || "");
-
-    if (product.specs) {
-      if (!specKey) {
-        return { success: false, error: `商品「${product.name}」必須選擇規格` };
-      }
-      const specList = typeof product.specs === "string"
-        ? tryParseJsonArray<Record<string, unknown>>(product.specs)
-        : Array.isArray(product.specs)
-        ? product.specs as Record<string, unknown>[]
-        : [];
-      if (!specList) {
-        return { success: false, error: `商品「${product.name}」規格解析失敗` };
-      }
-      try {
-        const spec = specList.find((s: Record<string, unknown>) =>
-          String(s.key) === specKey ||
-          String(s.label || "") === specKey ||
-          String(s.name || "") === specKey
-        );
-        if (!spec) {
-          return {
-            success: false,
-            error: `商品「${product.name}」的規格「${specKey}」不存在`,
-          };
-        }
-        if (spec.enabled === false) {
-          return {
-            success: false,
-            error: `商品「${product.name}」的規格「${specKey}」已停止供應`,
-          };
-        }
-        unitPrice = Number(spec.price ?? product.price) || 0;
-        specLabel = String(spec.label || specKey);
-      } catch (_error) {
-        return { success: false, error: `商品「${product.name}」規格解析失敗` };
-      }
-    } else if (specKey && specKey !== "default") {
-      return {
-        success: false,
-        error: `商品「${product.name}」無可選規格，請重新整理商品列表`,
-      };
+    const priceResult = resolveQuoteProductPrice(product, specKey);
+    if (!priceResult.success) {
+      return { success: false, error: priceResult.error };
     }
 
     const qty = Math.max(1, Math.floor(Number(item.qty) || 1));
-    const lineTotal = qty * unitPrice;
+    const lineTotal = qty * priceResult.unitPrice;
     subtotal += lineTotal;
     quoteItems.push({
       productId: item.productId,
       productName: String(product.name || ""),
       specKey,
-      specLabel,
+      specLabel: priceResult.specLabel,
       qty,
-      unitPrice,
+      unitPrice: priceResult.unitPrice,
       lineTotal,
     });
   }
