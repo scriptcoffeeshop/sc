@@ -132,8 +132,8 @@ function validateIconFile(file?: File | null): file is File {
   return true;
 }
 
-async function fileToBase64(file) {
-  return await new Promise((resolve, reject) => {
+async function fileToBase64(file: Blob): Promise<string> {
+  return await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
       const value = String(reader.result || "");
@@ -165,6 +165,37 @@ async function uploadAssetFile(
     }),
   });
   return await response.json() as DashboardUploadAssetResponse;
+}
+
+interface UploadValidatedIconFileOptions {
+  settingKey?: string;
+  errorMessage: string;
+  successTitle: string;
+  applyUrl: (url?: string) => void;
+  clearPreview: () => void;
+}
+
+async function uploadValidatedIconFile(
+  file: File,
+  options: UploadValidatedIconFileOptions,
+): Promise<boolean> {
+  openLoadingModal();
+  try {
+    const data = await uploadAssetFile(file, options.settingKey || "");
+    if (!data.success) {
+      throw new Error(data.error || options.errorMessage);
+    }
+    options.applyUrl(data.url);
+    options.clearPreview();
+    closeLoadingModal();
+    getServices().Toast.fire({ icon: "success", title: options.successTitle });
+    return true;
+  } catch (error) {
+    closeLoadingModal();
+    const message = getDashboardErrorMessage(error, options.errorMessage);
+    getServices().Swal.fire("錯誤", message, "error");
+    return false;
+  }
 }
 
 function openLoadingModal() {
@@ -280,30 +311,18 @@ async function handleSiteIconSelection(file?: File | null) {
   if (!validateIconFile(file)) return false;
 
   replaceSitePreviewOverride(buildObjectPreviewUrl(file));
-  openLoadingModal();
-  try {
-    const data = await uploadAssetFile(file, "site_icon_url");
-    if (!data.success) {
-      throw new Error(data.error || "品牌 Logo 上傳失敗");
-    }
-
-    brandingSettings.value = {
-      ...brandingSettings.value,
-      siteIconUrl: normalizeIconPath(data.url),
-    };
-    replaceSitePreviewOverride("");
-    closeLoadingModal();
-    getServices().Toast.fire({
-      icon: "success",
-      title: "品牌 Logo 已上傳！請記得點擊儲存設定。",
-    });
-    return true;
-  } catch (error) {
-    closeLoadingModal();
-    const message = getDashboardErrorMessage(error, "品牌 Logo 上傳失敗");
-    getServices().Swal.fire("錯誤", message, "error");
-    return false;
-  }
+  return await uploadValidatedIconFile(file, {
+    settingKey: "site_icon_url",
+    errorMessage: "品牌 Logo 上傳失敗",
+    successTitle: "品牌 Logo 已上傳！請記得點擊儲存設定。",
+    applyUrl: (url) => {
+      brandingSettings.value = {
+        ...brandingSettings.value,
+        siteIconUrl: normalizeIconPath(url),
+      };
+    },
+    clearPreview: () => replaceSitePreviewOverride(""),
+  });
 }
 
 function resetSiteIcon() {
@@ -321,67 +340,35 @@ function resetSiteIcon() {
 async function uploadSectionIconFile(section: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
 
-  openLoadingModal();
-  try {
-    const data = await uploadAssetFile(file, sectionIconSettingKey(section));
-    if (!data.success) {
-      throw new Error(data.error || "區塊圖示上傳失敗");
-    }
-    setSectionIconUrl(section, data.url);
-    replaceSectionPreviewOverride(section, "");
-    closeLoadingModal();
-    getServices().Toast.fire({ icon: "success", title: "區塊圖示已更新" });
-    return true;
-  } catch (error) {
-    closeLoadingModal();
-    const message = getDashboardErrorMessage(error, "區塊圖示上傳失敗");
-    getServices().Swal.fire("錯誤", message, "error");
-    return false;
-  }
+  return await uploadValidatedIconFile(file, {
+    settingKey: sectionIconSettingKey(section),
+    errorMessage: "區塊圖示上傳失敗",
+    successTitle: "區塊圖示已更新",
+    applyUrl: (url) => setSectionIconUrl(section, url),
+    clearPreview: () => replaceSectionPreviewOverride(section, ""),
+  });
 }
 
 async function uploadPaymentIconFile(method: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
 
-  openLoadingModal();
-  try {
-    const data = await uploadAssetFile(file, "");
-    if (!data.success) {
-      throw new Error(data.error || "付款圖示上傳失敗");
-    }
-    setPaymentIconUrl(method, data.url);
-    replacePaymentPreviewOverride(method, "");
-    closeLoadingModal();
-    getServices().Toast.fire({ icon: "success", title: "付款圖示已更新" });
-    return true;
-  } catch (error) {
-    closeLoadingModal();
-    const message = getDashboardErrorMessage(error, "付款圖示上傳失敗");
-    getServices().Swal.fire("錯誤", message, "error");
-    return false;
-  }
+  return await uploadValidatedIconFile(file, {
+    errorMessage: "付款圖示上傳失敗",
+    successTitle: "付款圖示已更新",
+    applyUrl: (url) => setPaymentIconUrl(method, url),
+    clearPreview: () => replacePaymentPreviewOverride(method, ""),
+  });
 }
 
 async function uploadDeliveryIconFile(deliveryId: string, file?: File | null) {
   if (!validateIconFile(file)) return false;
 
-  openLoadingModal();
-  try {
-    const data = await uploadAssetFile(file, "");
-    if (!data.success) {
-      throw new Error(data.error || "物流圖示上傳失敗");
-    }
-    setDeliveryIconUrl(deliveryId, data.url);
-    replaceDeliveryPreviewOverride(deliveryId, "");
-    closeLoadingModal();
-    getServices().Toast.fire({ icon: "success", title: "物流圖示已更新" });
-    return true;
-  } catch (error) {
-    closeLoadingModal();
-    const message = getDashboardErrorMessage(error, "物流圖示上傳失敗");
-    getServices().Swal.fire("錯誤", message, "error");
-    return false;
-  }
+  return await uploadValidatedIconFile(file, {
+    errorMessage: "物流圖示上傳失敗",
+    successTitle: "物流圖示已更新",
+    applyUrl: (url) => setDeliveryIconUrl(deliveryId, url),
+    clearPreview: () => replaceDeliveryPreviewOverride(deliveryId, ""),
+  });
 }
 
 function applyIconFromLibrary(targetKey: string, iconKey: string, rawUrl = "") {
