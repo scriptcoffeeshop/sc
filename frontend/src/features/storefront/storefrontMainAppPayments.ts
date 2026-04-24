@@ -24,6 +24,19 @@ type StorefrontMainAppPaymentsDeps = {
   applySavedOrderFormPrefs: () => void;
 };
 
+function parsePaymentOptionsConfig(value: unknown) {
+  const raw = String(value || "").trim();
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, Record<string, unknown>>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
 export function createStorefrontMainAppPayments(
   deps: StorefrontMainAppPaymentsDeps,
 ) {
@@ -101,13 +114,9 @@ export function createStorefrontMainAppPayments(
 
     setStorefrontAppSettings(settings);
 
-    const paymentOptionsStr = String(settings.payment_options_config || "");
-    let paymentOptions: Record<string, Record<string, unknown>> = {};
-    if (paymentOptionsStr) {
-      try {
-        paymentOptions = JSON.parse(paymentOptionsStr);
-      } catch {}
-    }
+    const paymentOptions = parsePaymentOptionsConfig(
+      settings.payment_options_config,
+    );
 
     const paymentOptionsElement = document.getElementById("payment-options");
     if (paymentOptionsElement?.dataset?.vueManaged !== "true") {

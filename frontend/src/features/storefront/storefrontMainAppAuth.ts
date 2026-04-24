@@ -16,6 +16,31 @@ import { loadDeliveryPrefs } from "./storefrontDeliveryActions.ts";
 
 type StringRecord = Record<string, unknown>;
 
+function asStringRecord(value: unknown): StringRecord {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as StringRecord
+    : {};
+}
+
+function parseStringRecord(value: unknown): StringRecord {
+  if (!value) return {};
+  if (typeof value !== "string") return asStringRecord(value);
+  try {
+    return asStringRecord(JSON.parse(value));
+  } catch {
+    return {};
+  }
+}
+
+function parseStringArray(value: unknown): string[] {
+  try {
+    const parsed = JSON.parse(String(value || "[]"));
+    return Array.isArray(parsed) ? parsed.map((item) => String(item || "")) : [];
+  } catch {
+    return [];
+  }
+}
+
 type StorefrontMainAppAuthDeps = {
   getInputElement: (id: string) => HTMLInputElement | null;
   getFormControlValue: (id: string) => string;
@@ -35,14 +60,7 @@ export function createStorefrontMainAppAuth(
     if (phoneEl && user.phone) phoneEl.value = String(user.phone);
     if (emailEl && user.email) emailEl.value = String(user.email);
 
-    let customDefaults: StringRecord = {};
-    if (user.defaultCustomFields) {
-      try {
-        customDefaults = typeof user.defaultCustomFields === "string"
-          ? JSON.parse(user.defaultCustomFields)
-          : user.defaultCustomFields as StringRecord;
-      } catch {}
-    }
+    const customDefaults = parseStringRecord(user.defaultCustomFields);
 
     for (const [key, value] of Object.entries(customDefaults)) {
       const element = document.getElementById(`field-${key}`);
@@ -154,14 +172,7 @@ export function createStorefrontMainAppAuth(
       field.enabled && field.field_type !== "section_title"
     );
 
-    let customDefaults: StringRecord = {};
-    if (user.defaultCustomFields) {
-      try {
-        customDefaults = typeof user.defaultCustomFields === "string"
-          ? JSON.parse(user.defaultCustomFields)
-          : user.defaultCustomFields as StringRecord;
-      } catch {}
-    }
+    const customDefaults = parseStringRecord(user.defaultCustomFields);
 
     let fieldsHtml = "";
     for (const field of fields) {
@@ -176,10 +187,7 @@ export function createStorefrontMainAppAuth(
       const escapedPlaceholder = escapeHtml(field.placeholder || "");
 
       if (field.field_type === "select") {
-        let options: string[] = [];
-        try {
-          options = JSON.parse(String(field.options || "[]"));
-        } catch {}
+        const options = parseStringArray(field.options);
         fieldsHtml += `<div style="margin-bottom:12px">
                 <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
                 <select id="profile-${key}" class="swal2-select" style="margin:0;width:100%">

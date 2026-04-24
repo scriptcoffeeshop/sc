@@ -45,6 +45,17 @@ function normalizeStoreRecord(value: unknown): StoreRecord {
   };
 }
 
+function parseDeliveryConfig(value: unknown): StorefrontDeliveryOption[] {
+  const raw = String(value || "").trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed as StorefrontDeliveryOption[] : [];
+  } catch {
+    return [];
+  }
+}
+
 function getInputElement(id: string): HTMLInputElement | null {
   const element = document.getElementById(id);
   return element instanceof HTMLInputElement ? element : null;
@@ -138,18 +149,9 @@ export function selectDelivery(method, e = null, options: { skipQuote?: boolean 
   // 處理付款方式選項（根據新版陣列設定動態更新顯示與選取）
   if (storefrontRuntime.updatePaymentOptionsState) {
     // 從 appSettings 重新抓取
-    const deliveryConfigStr =
-      storefrontRuntime.appSettings?.delivery_options_config || "";
-    let deliveryConfig: StorefrontDeliveryOption[] = [];
-    if (deliveryConfigStr) {
-      try {
-        const parsed = JSON.parse(deliveryConfigStr);
-        deliveryConfig = Array.isArray(parsed)
-          ? parsed as StorefrontDeliveryOption[]
-          : [];
-      } catch {}
-    }
-    storefrontRuntime.updatePaymentOptionsState(deliveryConfig);
+    storefrontRuntime.updatePaymentOptionsState(
+      parseDeliveryConfig(storefrontRuntime.appSettings?.delivery_options_config),
+    );
   }
 
   // 切換配送方式後，先更新畫面，再重新向後端取得 quote

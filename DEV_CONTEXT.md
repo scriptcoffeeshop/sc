@@ -200,6 +200,7 @@
 - dashboard 訂單 state/view/export/selection 已共用 `dashboardOrderTypes.ts`，`useDashboardOrders` 不再以 `ref<any[]>` 保存訂單，批次操作服務也改用明確介面。
 - production frontend 已清除明顯 `any` 型別債：dashboard 訂單 payload、促銷 payload 與 LINE Flex content 改用 `unknown` / `FlexContent` 型別。
 - storefront cart storage 解析已改為明確 fallback helper，壞掉的 `coffee_cart` JSON 會回到空購物車並有 unit test 保護。
+- storefront 登入預設欄位、付款/配送設定解析與送單後偏好同步已移除空 `catch {}`，改為具名 parse/persist/background sync helper。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。

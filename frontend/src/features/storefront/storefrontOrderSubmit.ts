@@ -25,6 +25,27 @@ import {
 } from "../../lib/swalDialogs.ts";
 import type { PaymentMethod, SubmitDeliveryInfo } from "../../types";
 
+function persistOrderDraftPreference(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function syncUserProfileInBackground(payload: Record<string, unknown>) {
+  try {
+    void authFetch(`${API_URL}?action=updateUserProfile`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }).catch(() => undefined);
+  } catch {
+    return false;
+  }
+  return true;
+}
+
 /** 送出訂單 */
 export async function submitOrder(): Promise<void> {
   const u = state.currentUser;
@@ -251,46 +272,37 @@ export async function submitOrder(): Promise<void> {
         : "";
       u.defaultReceiptInfo = receiptInfo ? JSON.stringify(receiptInfo) : "";
       localStorage.setItem("coffee_user", JSON.stringify(u));
-      try {
-        localStorage.setItem(
-          "coffee_delivery_prefs",
-          JSON.stringify({ method: deliveryMethod, ...deliveryInfo }),
-        );
-      } catch {}
+      persistOrderDraftPreference("coffee_delivery_prefs", {
+        method: deliveryMethod,
+        ...deliveryInfo,
+      });
 
       // 背景同步使用者資料到後端
-      try {
-        authFetch(`${API_URL}?action=updateUserProfile`, {
-          method: "POST",
-          body: JSON.stringify({
-            phone: phone || "",
-            email: email || "",
-            defaultCustomFields: customFieldsJson || "{}",
-            defaultDeliveryMethod: deliveryMethod || "",
-            defaultCity: isDeliveryAddress ? String(deliveryInfo.city || "") : "",
-            defaultDistrict: isDeliveryAddress
-              ? String(deliveryInfo.district || "")
-              : "",
-            defaultAddress: isDeliveryAddress
-              ? String(deliveryInfo.address || "")
-              : "",
-            defaultStoreId: isStorePickup
-              ? String(deliveryInfo.storeId || "")
-              : "",
-            defaultStoreName: isStorePickup
-              ? String(deliveryInfo.storeName || "")
-              : "",
-            defaultStoreAddress: isStorePickup
-              ? String(deliveryInfo.storeAddress || "")
-              : "",
-            defaultPaymentMethod: paymentMethod || "",
-            defaultTransferAccountLast5: paymentMethod === "transfer"
-              ? transferAccountLast5
-              : "",
-            defaultReceiptInfo: receiptInfo || "",
-          }),
-        }).catch(() => {});
-      } catch {}
+      syncUserProfileInBackground({
+        phone: phone || "",
+        email: email || "",
+        defaultCustomFields: customFieldsJson || "{}",
+        defaultDeliveryMethod: deliveryMethod || "",
+        defaultCity: isDeliveryAddress ? String(deliveryInfo.city || "") : "",
+        defaultDistrict: isDeliveryAddress
+          ? String(deliveryInfo.district || "")
+          : "",
+        defaultAddress: isDeliveryAddress
+          ? String(deliveryInfo.address || "")
+          : "",
+        defaultStoreId: isStorePickup ? String(deliveryInfo.storeId || "") : "",
+        defaultStoreName: isStorePickup
+          ? String(deliveryInfo.storeName || "")
+          : "",
+        defaultStoreAddress: isStorePickup
+          ? String(deliveryInfo.storeAddress || "")
+          : "",
+        defaultPaymentMethod: paymentMethod || "",
+        defaultTransferAccountLast5: paymentMethod === "transfer"
+          ? transferAccountLast5
+          : "",
+        defaultReceiptInfo: receiptInfo || "",
+      });
 
       const resetOrderDraft = () => {
         clearCart();
