@@ -55,9 +55,11 @@
       <div class="mb-4">
         <label class="flex items-start gap-2 cursor-pointer select-none">
           <input
+            v-model="policyAgreed"
             type="checkbox"
             id="policy-agree"
             class="mt-1 w-4 h-4 rounded accent-[#3C2415] shrink-0"
+            @change="handlePolicyAgreementChanged"
           >
           <span class="text-sm text-gray-600">
             我已閱讀並同意
@@ -69,7 +71,11 @@
             >隱私權政策及退換貨政策</a>
           </span>
         </label>
-        <p id="policy-agree-hint" class="hidden text-xs text-red-500 mt-1 ml-6">
+        <p
+          id="policy-agree-hint"
+          class="text-xs text-red-500 mt-1 ml-6"
+          :class="{ hidden: !showPolicyHint }"
+        >
           請先勾選同意政策後才能送出訂單
         </p>
       </div>
@@ -227,6 +233,7 @@ import { useStorefrontAnnouncement } from "../features/storefront/useStorefrontA
 import { useStorefrontBranding } from "../features/storefront/useStorefrontBranding.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
+import { useStorefrontPolicyAgreement } from "../features/storefront/useStorefrontPolicyAgreement.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontShell } from "../features/storefront/useStorefrontShell.ts";
 import { authFetch } from "../lib/auth.ts";
@@ -358,6 +365,12 @@ const {
   refreshBrandingState,
 } = useStorefrontBranding({ getStorefrontUiSnapshot });
 const {
+  policyAgreed,
+  showPolicyHint,
+  handlePolicyAgreementChanged,
+  handlePolicyHintUpdated,
+} = useStorefrontPolicyAgreement();
+const {
   currentUser: dynamicFieldsCurrentUser,
   selectedDelivery: dynamicFieldsSelectedDelivery,
   visibleFormFields,
@@ -419,6 +432,10 @@ onMounted(() => {
 
   window.addEventListener("coffee:cart-updated", handleCartUpdated);
   window.addEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
+  window.addEventListener(
+    "coffee:policy-agree-hint-updated",
+    handlePolicyHintUpdated,
+  );
 
   syncCartSnapshot();
 
@@ -430,6 +447,10 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("coffee:cart-updated", handleCartUpdated);
   window.removeEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
+  window.removeEventListener(
+    "coffee:policy-agree-hint-updated",
+    handlePolicyHintUpdated,
+  );
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;
 });

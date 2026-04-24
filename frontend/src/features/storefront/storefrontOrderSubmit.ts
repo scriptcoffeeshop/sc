@@ -134,6 +134,15 @@ function resetOrderDraft() {
   applySavedOrderFormPrefs();
 }
 
+function setPolicyAgreeHintVisible(visible: boolean) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent("coffee:policy-agree-hint-updated", {
+      detail: { visible },
+    }),
+  );
+}
+
 /** 送出訂單 */
 export async function submitOrder(): Promise<void> {
   const u = state.currentUser;
@@ -146,14 +155,13 @@ export async function submitOrder(): Promise<void> {
   const policyCheckbox = document.getElementById(
     "policy-agree",
   ) as HTMLInputElement | null;
-  const policyHint = document.getElementById("policy-agree-hint");
   if (policyCheckbox && !policyCheckbox.checked) {
-    if (policyHint) policyHint.classList.remove("hidden");
+    setPolicyAgreeHintVisible(true);
     policyCheckbox.focus();
     showWarning("提醒", "請先閱讀並勾選同意隱私權政策及退換貨政策");
     return;
   }
-  if (policyHint) policyHint.classList.add("hidden");
+  setPolicyAgreeHintVisible(false);
 
   // 動態欄位驗證
   const fieldsResult = collectDynamicFields(state.formFields);
