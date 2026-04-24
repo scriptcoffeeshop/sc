@@ -122,6 +122,7 @@
 - storefront `products-container` / `dynamic-fields-container` / `cart-items` / `total-price` / `cart-discount-details` / `cart-shipping-notice` / `delivery-options-list` / `bank-accounts-list` 不得退回 imperative `innerHTML` renderer
 - storefront「我的訂單」不得將 API 回傳內容當 HTML 插入 DOM，惡意 `<script>` / `<img onerror>` payload 只能以文字顯示
 - storefront checkout smoke 已覆蓋 LINE Pay / 街口支付付款彈窗不得重複「稍後付款可到我的訂單」文案，以及「我的訂單」內待付款提示不得再出現「可到我的訂單」。
+- `tests/e2e/smoke/storefront-checkout.spec.ts` 使用 `gotoMain()` 以 `domcontentloaded` + 產品容器可見作為導頁完成條件，避免 CI 偶發卡在 `page.goto("/main.html")` 等待完整 `load` 事件。
 - 2026-04-22 另補深度 unit test：`useDashboardOrders` 現在覆蓋篩選組合、批次勾選邊界與 shipped tracking URL 驗證；`useDashboardFormFields` 補了 delivery visibility normalize 與 Sortable reorder；`useDashboardSettings` 補 cached `linepay_sandbox` 與自訂配送方式狀態；`useStorefrontCart` 補零數量邊界、固定運費與多促銷疊加。
 
 ---

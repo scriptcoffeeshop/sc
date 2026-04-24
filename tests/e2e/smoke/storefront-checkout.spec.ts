@@ -1,10 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   API_URL,
   fulfillJson,
   installGlobalStubs,
   installMainRoutes,
 } from "../support/smoke-fixtures";
+
+async function gotoMain(page: Page) {
+  await page.goto("/main.html", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("#products-container")).toBeVisible();
+}
 
 test.describe("smoke / storefront checkout", () => {
   test("storefront submit order happy path works", async ({ page }) => {
@@ -35,7 +40,7 @@ test.describe("smoke / storefront checkout", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoMain(page);
 
     let quoteResBody: any = null;
     page.on("response", async (res) => {
@@ -121,7 +126,7 @@ test.describe("smoke / storefront checkout", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoMain(page);
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
@@ -207,7 +212,7 @@ test.describe("smoke / storefront checkout", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoMain(page);
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
@@ -299,7 +304,7 @@ test.describe("smoke / storefront checkout", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoMain(page);
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
@@ -439,7 +444,7 @@ test.describe("smoke / storefront checkout", () => {
       localStorage.setItem("coffee_jwt", "mock-token");
     });
 
-    await page.goto("/main.html");
+    await gotoMain(page);
     await page.getByRole("button", { name: "我的訂單" }).click();
 
     const ordersList = page.locator("#my-orders-list");
