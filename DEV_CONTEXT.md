@@ -168,6 +168,7 @@
 - `ci.yml` 的 `workflow_dispatch` 新增 `deploy` boolean input，預設為 `true`；現在在 `main/master` 手動觸發 workflow 會連同 `Deploy Frontend` / `Deploy Supabase` 一起跑，不再只有 test job。
 - `frontend/src/features/storefront/storefrontMainApp.ts` 已收斂成組裝層，auth/profile、quote/payment/bank account、LINE Pay/街口回跳分別拆到 `storefrontMainAppAuth.ts`、`storefrontMainAppPayments.ts`、`storefrontMainAppReturns.ts`。
 - storefront 付款主流程已再收斂：`storefrontMainAppPayments.ts` 的 quote refresh / 計價請求拆到 `storefrontQuoteManager.ts`，轉帳帳號 DOM fallback 與複製帳號互動拆到 `storefrontBankAccountsUi.ts`。
+- storefront 付款顯示文案已改成 method/status 對照表；LINE Pay、街口、轉帳的付款狀態 guide 不再靠長串條件分支維護，並補 unit test 保護我的訂單付款文案與付款連結 sanitization。
 - `tests/e2e/support/smoke-fixtures.ts` 已改成相容 barrel export，實際實作拆到 `smoke-shared.ts`、`smoke-color.ts`、`smoke-global-stubs.ts`、`smoke-main-routes.ts`、`smoke-dashboard-routes.ts`，降低單檔回歸風險。
 - dashboard smoke route support 已再拆分：`smoke-dashboard-routes.ts` 現在只保留 dispatcher，實際 state/defaults 與 access/catalog/orders/members/settings handlers 分散到 `smoke-dashboard-state.ts`、`smoke-dashboard-access-routes.ts`、`smoke-dashboard-catalog-routes.ts`、`smoke-dashboard-orders-routes.ts`、`smoke-dashboard-members-routes.ts`、`smoke-dashboard-settings-routes.ts`。
 - storefront smoke route support 也已跟上：`smoke-main-routes.ts` 改成 dispatcher，default state/init payload/quote payload 抽到 `smoke-main-state.ts`，前後台 smoke support 結構已趨於一致。
