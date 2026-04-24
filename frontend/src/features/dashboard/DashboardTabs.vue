@@ -56,6 +56,16 @@
           <span class="tab-with-icon"><Settings class="ui-tab-icon" aria-hidden="true" />系統設定</span>
         </button>
       </TabsTrigger>
+      <TabsTrigger value="checkout-settings" as-child>
+        <button
+          id="tab-checkout-settings"
+          data-tab="checkout-settings"
+          class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
+          :class="activeTab === 'checkout-settings' ? 'tab-active' : 'ui-text-strong'"
+        >
+          <span class="tab-with-icon"><CreditCard class="ui-tab-icon" aria-hidden="true" />付款與取貨</span>
+        </button>
+      </TabsTrigger>
       <TabsTrigger value="icon-library" as-child>
         <button
           id="tab-icon-library"
@@ -102,6 +112,7 @@
 
 <script setup>
 import {
+  CreditCard,
   FileText,
   FolderOpen,
   Gift,

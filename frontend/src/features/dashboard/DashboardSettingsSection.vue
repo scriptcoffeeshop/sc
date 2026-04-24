@@ -7,8 +7,6 @@
     <DashboardBrandingSettingsCard />
     <DashboardSectionTitlesSettingsCard />
     <DashboardStorefrontStatusSettingsCard />
-    <DashboardDeliveryPaymentSettingsCard />
-    <DashboardPaymentOptionsSettingsCard />
     <DashboardBankAccountsSettingsCard />
 
     <div class="text-center">
@@ -22,8 +20,6 @@
 <script setup>
 import DashboardBankAccountsSettingsCard from "./DashboardBankAccountsSettingsCard.vue";
 import DashboardBrandingSettingsCard from "./DashboardBrandingSettingsCard.vue";
-import DashboardDeliveryPaymentSettingsCard from "./DashboardDeliveryPaymentSettingsCard.vue";
-import DashboardPaymentOptionsSettingsCard from "./DashboardPaymentOptionsSettingsCard.vue";
 import DashboardSectionTitlesSettingsCard from "./DashboardSectionTitlesSettingsCard.vue";
 import DashboardStorefrontStatusSettingsCard from "./DashboardStorefrontStatusSettingsCard.vue";
 import {

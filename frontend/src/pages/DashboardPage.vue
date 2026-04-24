@@ -57,6 +57,7 @@
     <DashboardCategoriesSection />
     <DashboardPromotionsSection />
     <DashboardSettingsSection />
+    <DashboardCheckoutSettingsSection />
     <DashboardIconLibrarySection
       :categories="iconLibraryCategories"
       :items="filteredIconCatalog"
@@ -82,6 +83,7 @@ import UiButton from "../components/ui/button/Button.vue";
 import UiCard from "../components/ui/card/Card.vue";
 import DashboardBlacklistSection from "../features/dashboard/DashboardBlacklistSection.vue";
 import DashboardCategoriesSection from "../features/dashboard/DashboardCategoriesSection.vue";
+import DashboardCheckoutSettingsSection from "../features/dashboard/DashboardCheckoutSettingsSection.vue";
 import DashboardFormFieldsSection from "../features/dashboard/DashboardFormFieldsSection.vue";
 import DashboardIconLibrarySection from "../features/dashboard/DashboardIconLibrarySection.vue";
 import DashboardOrdersSection from "../features/dashboard/DashboardOrdersSection.vue";

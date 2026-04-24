@@ -55,7 +55,7 @@
   - `settings` / `settings icons` 已改成 Vue-owned state/actions（`useDashboardSettings.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`）；`useDashboardSettings.ts` 的純設定轉換/預設值/legacy migration 已開始抽到 `dashboardSettingsConfig.ts`
 - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
-  - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、delivery/payment routing、payment options、bank accounts 六個卡片元件
+  - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、bank accounts 等卡片元件；取貨方式與付款對應、金流選項顯示已抽到獨立 `付款與取貨` 頁籤 (`DashboardCheckoutSettingsSection.vue`)
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，`js/dashboard-app.js` 現在只剩薄相容殼
   - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
@@ -146,6 +146,7 @@
 - storefront smoke route support 也已跟上：`smoke-main-routes.ts` 改成 dispatcher，default state/init payload/quote payload 抽到 `smoke-main-state.ts`，前後台 smoke support 結構已趨於一致。
 - storefront cart 熱區也開始收斂：新增 `storefrontCartSummary.ts` 集中 cart/quote 對齊、摘要金額、配送 badge/notice 與 delivery meta helper；`storefrontCartStore.ts` 與 `useStorefrontCart.ts` 已共用同一套摘要/配送判斷，並補 `storefrontCartSummary.test.js` 保護 quote 漂移 fallback、免運 badge 與配送名稱解析。
 - storefront cart DOM renderer 已再拆出 `storefrontCartUi.ts`：購物車品項列、總額 badge、運費提示與優惠明細 UI builder 不再混在 `storefrontCartStore.ts`，並新增 `storefrontCartUi.test.js` 保護 action dataset、文字安全渲染、運費/免運提示與空狀態隱藏。
+- 後台設定資訊架構已調整：取貨方式與付款對應設定、金流選項顯示設定從 `系統設定` 抽到獨立 `付款與取貨` 頁籤，仍共用 `useDashboardSettings.ts` / `saveSettings()`；dashboard settings smoke 已覆蓋新頁籤可載入、增刪取貨方式、儲存 delivery/payment config 與 LINE Pay sandbox。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。

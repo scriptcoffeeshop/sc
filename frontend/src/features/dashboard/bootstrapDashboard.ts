@@ -105,6 +105,7 @@ const dashboardTabs = [
   "categories",
   "promotions",
   "settings",
+  "checkout-settings",
   "icon-library",
   "users",
   "blacklist",
@@ -131,6 +132,7 @@ function createSettingsTabLoaders(
 ): DashboardTabLoaderMap {
   return {
     settings: () => deps.loadSettings(),
+    "checkout-settings": () => deps.loadSettings(),
     "icon-library": () => deps.loadSettings(),
     formfields: () => deps.loadFormFields(),
   };

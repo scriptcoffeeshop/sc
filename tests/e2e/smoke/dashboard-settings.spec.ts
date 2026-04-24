@@ -5,7 +5,7 @@ import {
 } from "../support/smoke-fixtures";
 
 test.describe("smoke / dashboard settings", () => {
-  test("dashboard settings keeps delivery routing rows visible", async ({ page }) => {
+  test("dashboard checkout settings keeps delivery routing rows visible", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
@@ -22,15 +22,15 @@ test.describe("smoke / dashboard settings", () => {
     });
 
     await page.goto("/dashboard.html");
-    await page.locator("#tab-settings").click();
+    await page.locator("#tab-checkout-settings").click();
 
     const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
     await expect(deliveryRows).toHaveCount(1);
     await expect(deliveryRows.first().locator(".do-name")).toHaveValue("配送到府");
-    await expect(page.locator("#s-icon-url-display")).toContainText("未設定");
+    await expect(page.locator("#payment-options-table")).toContainText("linepay");
   });
 
-  test("dashboard settings can add and remove delivery routing rows", async ({ page }) => {
+  test("dashboard checkout settings can add and remove delivery routing rows", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
@@ -58,7 +58,7 @@ test.describe("smoke / dashboard settings", () => {
     });
 
     await page.goto("/dashboard.html");
-    await page.locator("#tab-settings").click();
+    await page.locator("#tab-checkout-settings").click();
 
     const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
     await expect(deliveryRows).toHaveCount(1);
@@ -114,7 +114,6 @@ test.describe("smoke / dashboard settings", () => {
     await page.locator('input[name="s-open"][value="false"]').check();
     await page.locator("#s-products-title").fill("精品豆專區");
     await page.locator("#s-products-color").fill("#cb4b16");
-    await page.locator("#s-linepay-sandbox").uncheck();
     await page.getByRole("button", { name: "儲存設定" }).click();
 
     await expect.poll(() => updatePayload?.settings?.site_title).toBe("新的品牌名稱");
@@ -124,6 +123,52 @@ test.describe("smoke / dashboard settings", () => {
     expect(updatePayload?.settings?.is_open).toBe("false");
     expect(updatePayload?.settings?.products_section_title).toBe("精品豆專區");
     expect(updatePayload?.settings?.products_section_color).toBe("#cb4b16");
+  });
+
+  test("dashboard checkout settings save sends routing and payment option state", async ({ page }) => {
+    let updatePayload: any = null;
+
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page, {
+      onUpdateSettings: (request) => {
+        updatePayload = request.postDataJSON();
+      },
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-checkout-settings").click();
+
+    const firstDeliveryRow = page.locator("#delivery-routing-table .delivery-option-row")
+      .first();
+    await firstDeliveryRow.locator(".do-name").fill("新的取貨名稱");
+    await page.locator("#po-linepay-name").fill("LINE Pay 快速付款");
+    await page.locator("#s-linepay-sandbox").uncheck();
+    await page.locator("#checkout-settings-section").getByRole("button", {
+      name: "儲存設定",
+    }).click();
+
+    await expect.poll(() => updatePayload?.settings?.delivery_options_config)
+      .toBeTruthy();
+    const deliveryConfig = JSON.parse(
+      updatePayload?.settings?.delivery_options_config || "[]",
+    );
+    const paymentConfig = JSON.parse(
+      updatePayload?.settings?.payment_options_config || "{}",
+    );
+    expect(deliveryConfig[0]?.name).toBe("新的取貨名稱");
+    expect(paymentConfig.linepay?.name).toBe("LINE Pay 快速付款");
     expect(updatePayload?.settings?.linepay_sandbox).toBe("false");
   });
 
