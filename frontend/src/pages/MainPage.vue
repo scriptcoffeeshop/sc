@@ -415,7 +415,6 @@ const {
   handleStorefrontLogout: logoutFromShell,
   handleShowProfile: showProfileFromShell,
 } = useStorefrontShell({
-  document,
   closeAnnouncement,
   startMainLogin,
   logoutCurrentUser,

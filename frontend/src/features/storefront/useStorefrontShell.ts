@@ -1,5 +1,4 @@
 interface StorefrontShellDeps {
-  document?: Document;
   closeAnnouncement?: () => void;
   startMainLogin?: () => Promise<unknown> | unknown;
   logoutCurrentUser?: () => void;
@@ -30,11 +29,7 @@ export function useStorefrontShell(deps: StorefrontShellDeps = {}) {
   }
 
   function handleCloseOrdersModal() {
-    if (deps.closeOrderHistory) {
-      deps.closeOrderHistory();
-      return;
-    }
-    deps.document?.getElementById?.("my-orders-modal")?.classList.add("hidden");
+    return deps.closeOrderHistory?.();
   }
 
   return {

@@ -6,9 +6,6 @@ describe("useStorefrontShell", () => {
     const closeOrderHistory = vi.fn();
     const profilePromise = Promise.resolve("saved");
     const deps = {
-      document: {
-        getElementById: vi.fn(() => null),
-      },
       closeAnnouncement: vi.fn(),
       startMainLogin: vi.fn(),
       logoutCurrentUser: vi.fn(),
