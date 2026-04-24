@@ -1,3 +1,4 @@
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type {
   DashboardAuthFetch,
@@ -21,12 +22,6 @@ type OrderStatusControllerDeps = {
   esc: (value: unknown) => string;
   orderStatusLabel: Record<string, string>;
 };
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
 
 function getFormControlValue(id: string): string {
   const element = document.getElementById(id);
@@ -108,7 +103,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
           deps.loadOrders();
           return;
         }
-        const shippingInfoRecord = asRecord(shippingInfo);
+        const shippingInfoRecord = asJsonRecord(shippingInfo);
         trackingNumber = String(shippingInfoRecord.trackingNumber || "");
         shippingProvider = String(shippingInfoRecord.shippingProvider || "");
         trackingUrl = String(shippingInfoRecord.trackingUrl || "");
@@ -143,7 +138,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
           deps.loadOrders();
           return;
         }
-        cancelReason = String(asRecord(cancelInfo).cancelReason || "").trim();
+        cancelReason = String(asJsonRecord(cancelInfo).cancelReason || "").trim();
       } else {
         const confirmation = await deps.Swal.fire({
           title: "確認變更訂單狀態",

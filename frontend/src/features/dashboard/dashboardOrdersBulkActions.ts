@@ -1,3 +1,4 @@
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { getFormControlValue } from "./dashboardOrdersView.ts";
 import type { DashboardOrderServices } from "./dashboardOrderTypes.ts";
@@ -16,12 +17,6 @@ type CreateDashboardOrdersBulkActionsOptions = {
 export function createDashboardOrdersBulkActions(
   options: CreateDashboardOrdersBulkActionsOptions,
 ) {
-  function asRecord(value: unknown): Record<string, unknown> {
-    return value && typeof value === "object" && !Array.isArray(value)
-      ? value as Record<string, unknown>
-      : {};
-  }
-
   async function batchUpdateOrders() {
     const { API_URL, Swal, Toast, authFetch, getAuthUserId } = options
       .getServices();
@@ -79,7 +74,7 @@ export function createDashboardOrdersBulkActions(
         },
       });
       if (!isConfirmed) return;
-      const shippingInfo = asRecord(value);
+      const shippingInfo = asJsonRecord(value);
       trackingNumber = String(shippingInfo.trackingNumber || "");
       shippingProvider = String(shippingInfo.shippingProvider || "");
       trackingUrl = String(shippingInfo.trackingUrl || "");
