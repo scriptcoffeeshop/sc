@@ -173,6 +173,7 @@
 - storefront 轉帳帳號 DOM fallback renderer 已移除：`storefrontBankAccountsUi.ts` 改為 `storefrontBankAccountsState.ts` 純狀態 helper，畫面與複製互動由 `StorefrontPaymentSection.vue` / `useStorefrontPayment.ts` 負責。
 - storefront「我的訂單」legacy fallback 已移除；`showMyOrders` 相容出口不再存在，開啟、載入、錯誤/空狀態與複製物流單號都由 `useStorefrontOrderHistory.ts` + `StorefrontOrderHistoryModal.vue` 管理。
 - storefront 門市搜尋彈窗改由 `StorefrontStoreSearchPicker.vue` 掛在 SweetAlert 容器內，搜尋輸入、結果列表與門市點選不再由 `storefrontStoreSearch.ts` 手動 `createElement/addEventListener`。
+- storefront 配送子區塊顯示已改由 `StorefrontDeliverySection.vue` 依 `selectedDelivery` 綁定 class，`selectDelivery()` 不再手動替配送/宅配/超商/來店區塊加減 `hidden`。
 
 ### 2026-04-24
 

@@ -43,7 +43,11 @@
       </div>
     </div>
 
-    <div id="delivery-address-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
+    <div
+      id="delivery-address-section"
+      class="fade-in p-4 rounded-xl ui-card-section"
+      :class="{ hidden: selectedDelivery !== 'delivery' }"
+    >
       <h3 class="font-semibold mb-3" style="color: var(--primary)">
         <span class="tab-with-icon"><img src="../../../../icons/location-pin.png" alt="" class="ui-icon-inline">配送地址 (限新竹市/竹北市)</span>
       </h3>
@@ -74,7 +78,11 @@
       </div>
     </div>
 
-    <div id="home-delivery-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
+    <div
+      id="home-delivery-section"
+      class="fade-in p-4 rounded-xl ui-card-section"
+      :class="{ hidden: selectedDelivery !== 'home_delivery' }"
+    >
       <h3 class="font-semibold mb-3" style="color: var(--primary)">
         <span class="tab-with-icon"><img src="../../../../icons/shipping-box.png" alt="" class="ui-icon-inline">全台宅配地址</span>
       </h3>
@@ -111,7 +119,11 @@
       </div>
     </div>
 
-    <div id="store-pickup-section" class="hidden fade-in p-4 rounded-xl ui-card-section">
+    <div
+      id="store-pickup-section"
+      class="fade-in p-4 rounded-xl ui-card-section"
+      :class="{ hidden: !isStorePickupDelivery }"
+    >
       <h3 class="font-semibold mb-3" style="color: var(--primary)">
         <span class="tab-with-icon"><img src="../../../../icons/store-front.png" alt="" class="ui-icon-inline">取貨門市資訊</span>
       </h3>
@@ -145,7 +157,11 @@
       <input type="hidden" id="store-id-input">
     </div>
 
-    <div id="in-store-section" class="hidden fade-in p-4 rounded-xl ui-card-section mt-4">
+    <div
+      id="in-store-section"
+      class="fade-in p-4 rounded-xl ui-card-section mt-4"
+      :class="{ hidden: selectedDelivery !== 'in_store' }"
+    >
       <h3 class="font-semibold mb-3 text-gray-800">
         <span class="tab-with-icon"><img src="../../../../icons/store-front.png" alt="" class="ui-icon-inline">門市資訊</span>
       </h3>
@@ -179,6 +195,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import type { StorefrontDeliveryOption } from "./useStorefrontDelivery";
 
@@ -212,4 +229,9 @@ function getDeliveryIcon(option: StorefrontDeliveryOption) {
     url: String(resolvedIcon.url || "").trim(),
   };
 }
+
+const isStorePickupDelivery = computed(() =>
+  Boolean(props.selectedDelivery) &&
+  !["delivery", "home_delivery", "in_store"].includes(props.selectedDelivery)
+);
 </script>

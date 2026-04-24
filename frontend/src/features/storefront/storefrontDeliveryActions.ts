@@ -51,40 +51,18 @@ if (document.readyState === "loading") {
 }
 
 /** 選擇配送方式 */
-export function selectDelivery(method, e = null, options: { skipQuote?: boolean } = {}) {
+export function selectDelivery(
+  method,
+  _event = null,
+  options: { skipQuote?: boolean } = {},
+) {
   state.selectedDelivery = method;
   state.orderQuote = null;
   state.quoteError = "";
-  document.querySelectorAll(".delivery-option").forEach((el) =>
-    el.classList.remove("active")
-  );
 
-  // 如果有傳入 event 則使用目前的 target，否則透過 method 尋找對應的選項元素
-  if (
-    e && e.currentTarget && typeof e.currentTarget.classList !== "undefined"
-  ) {
-    e.currentTarget.classList.add("active");
-  } else {
-    const btn = document.querySelector(`.delivery-option[data-id="${method}"]`);
-    if (btn) btn.classList.add("active");
-  }
-
-  document.getElementById("delivery-address-section").classList.add("hidden");
-  document.getElementById("store-pickup-section").classList.add("hidden");
-  document.getElementById("in-store-section").classList.add("hidden");
-  document.getElementById("home-delivery-section").classList.add("hidden");
-
-  if (method === "delivery") {
-    document.getElementById("delivery-address-section").classList.remove(
-      "hidden",
-    );
-  } else if (method === "home_delivery") {
+  if (method === "home_delivery") {
     initCitySelector(); // 確保使用者點擊時，如果尚未初始化，則再初始化一次
-    document.getElementById("home-delivery-section").classList.remove("hidden");
-  } else if (method === "in_store") {
-    document.getElementById("in-store-section").classList.remove("hidden");
-  } else {
-    document.getElementById("store-pickup-section").classList.remove("hidden");
+  } else if (method !== "delivery" && method !== "in_store") {
     resetStoreListCache();
     clearSelectedStore();
   }
