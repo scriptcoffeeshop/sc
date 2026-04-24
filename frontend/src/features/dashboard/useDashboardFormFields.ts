@@ -100,7 +100,7 @@ function getDeliveryOptionsFromSettings(): DashboardDeliveryOptionLike[] {
         label: option?.label || option?.id,
       }))
       : [];
-  } catch {
+  } catch (_error) {
     return [];
   }
 }

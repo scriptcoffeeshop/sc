@@ -68,7 +68,7 @@ export function getHiddenDeliveryMethodsText(
       .map(([deliveryMethod]) => deliveryMethod);
     if (!hiddenDeliveryMethods.length) return "";
     return `在 ${hiddenDeliveryMethods.join(", ")} 時隱藏`;
-  } catch {
+  } catch (_error) {
     return "";
   }
 }
@@ -99,7 +99,7 @@ export function buildFormFieldViewModel(
 export function parseFieldOptionsText(options: string | null | undefined): string {
   try {
     return JSON.parse(String(options || "[]")).join(",");
-  } catch {
+  } catch (_error) {
     return "";
   }
 }
@@ -121,7 +121,7 @@ export function normalizeDeliveryVisibilityValue(
     if (Object.values(visibility).every((value) => value === true)) {
       return null;
     }
-  } catch {
+  } catch (_error) {
   }
   return rawValue;
 }

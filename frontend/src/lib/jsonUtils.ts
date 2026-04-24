@@ -13,7 +13,7 @@ export function parseJsonArray(value: unknown): unknown[] {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch (_error) {
     return [];
   }
 }
@@ -26,7 +26,7 @@ export function parseJsonRecord(value: unknown): JsonRecord {
   if (!raw) return {};
   try {
     return asJsonRecord(JSON.parse(raw));
-  } catch {
+  } catch (_error) {
     return {};
   }
 }

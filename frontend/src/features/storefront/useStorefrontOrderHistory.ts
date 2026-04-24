@@ -110,7 +110,7 @@ function normalizeTrackingUrl(url: unknown) {
     const parsed = new URL(raw);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
     return parsed.toString();
-  } catch {
+  } catch (_error) {
     return "";
   }
 }
@@ -332,7 +332,7 @@ export function useStorefrontOrderHistory(
     try {
       await writeClipboard(normalizedTrackingNumber);
       toast.fire({ icon: "success", title: "單號已複製" });
-    } catch {
+    } catch (_error) {
       await swal.fire("錯誤", "複製失敗，請手動複製", "error");
     }
   }

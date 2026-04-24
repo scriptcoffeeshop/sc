@@ -72,6 +72,7 @@
 - storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 也改成掛載同一張 Vue 卡片，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
 - storefront legacy `js/*.js` 前台檔案已改為相容 re-export；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - storefront 高流量 JSON fallback 已集中到 `frontend/src/lib/jsonUtils.ts`；cart/model/dynamic-fields/delivery/auth 路徑不再各自散落 `JSON.parse + catch {}`。
+- frontend production code 已移除匿名 `catch {}`；目前 fallback 行為維持不變，錯誤變數統一命名為 `_error`，方便後續集中補觀測與解析 helper。
 - 原則：新功能以 Vue-first 為主；legacy 只接受 hotfix、相容 glue 或部署修正。
 - 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
 - `tw-city-selector` 已由 CDN 改為 npm bundle（`frontend/src/lib/twCitySelector.js` + `frontend/src/features/storefront/storefrontDeliveryActions.ts`），`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
@@ -160,6 +161,7 @@
 - 前台配送方式卡片的說明文字已跟進後台 textarea，多行內容以 `white-space: pre-line` 呈現；storefront smoke 已覆蓋後端換行說明不被壓成一行。
 - 後台設定 UI CSS 已再收斂：區塊標題/金流卡片共用 `settings-config-*` 樣式，並移除已無元件使用的 `settings-routing-table` / `settings-payment-table` / `settings-responsive-wrap` 手機表格相容樣式。
 - Supabase Edge Function production code 已移除匿名 `catch {}`，改為統一 `_error` binding；本輪通過 `npm run fmt:check`、`npm run lint`、`npm run check`、`npm run test`、`npm run guardrails` 與 `git diff --check`。
+- frontend production code 已移除匿名 `catch {}`，改為統一 `_error` binding；本輪通過 `npm run lint:frontend`、`npm run typecheck`、`npm run build`、`npm run test:unit`、`npm run guardrails` 與 `git diff --check`。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。

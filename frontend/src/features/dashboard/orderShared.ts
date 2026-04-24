@@ -69,7 +69,7 @@ export function normalizeTrackingUrl(url: unknown): string {
     const parsed = new URL(raw);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
     return parsed.toString();
-  } catch {
+  } catch (_error) {
     return "";
   }
 }

@@ -57,7 +57,7 @@ export function renderDeliveryVisibilityCheckboxes(
   if (existingVisibility) {
     try {
       visibility = JSON.parse(existingVisibility);
-    } catch {
+    } catch (_error) {
     }
   }
 

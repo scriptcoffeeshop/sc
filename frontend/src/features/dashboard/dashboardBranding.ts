@@ -32,7 +32,7 @@ function cacheDashboardPublicBranding(
       resolved_logo_url: String(resolvedLogoUrl || "").trim(),
     };
     window.localStorage.setItem(cacheKey, JSON.stringify(payload));
-  } catch {
+  } catch (_error) {
   }
 }
 
@@ -95,7 +95,7 @@ export function createDashboardBrandingController(
       const result = await response.json();
       if (!result?.success || !result?.settings) return;
       applyDashboardBranding(result.settings);
-    } catch {
+    } catch (_error) {
       // ignore branding prefetch failures on login page
     }
   }

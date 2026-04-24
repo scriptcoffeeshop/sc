@@ -136,7 +136,7 @@ export function normalizeIconPath(rawUrl = "") {
           return normalizedPath;
         }
       }
-    } catch {
+    } catch (_error) {
       return value;
     }
     return value;

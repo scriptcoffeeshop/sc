@@ -31,7 +31,7 @@ async function copyTrackingNumber(trackingNumber) {
   try {
     await navigator.clipboard.writeText(normalizedTrackingNumber);
     Toast.fire({ icon: "success", title: "單號已複製" });
-  } catch {
+  } catch (_error) {
     await Swal.fire("錯誤", "複製失敗，請手動複製", "error");
   }
 }

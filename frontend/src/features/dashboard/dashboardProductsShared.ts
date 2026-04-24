@@ -75,7 +75,7 @@ export function getProductPriceLines(
         isSpec: true,
       }));
     }
-  } catch {
+  } catch (_error) {
   }
   return [{ label: "", price: Number(product.price) || 0, isSpec: false }];
 }
@@ -148,7 +148,7 @@ export function fillProductFormState(
   let specs: DashboardProductSpec[] = [];
   try {
     if (product.specs) specs = JSON.parse(product.specs);
-  } catch {
+  } catch (_error) {
   }
   productForm.specs = specs.length ? cloneSpecs(specs) : cloneSpecs();
 }

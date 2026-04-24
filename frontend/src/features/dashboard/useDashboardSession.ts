@@ -174,7 +174,7 @@ async function checkLogin() {
   try {
     currentUser.value = JSON.parse(savedAdmin) as SessionUser;
     await enterAdmin(defaultTab);
-  } catch {
+  } catch (_error) {
     clearStoredSession();
     currentUser.value = null;
     activeTab.value = defaultTab;

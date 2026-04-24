@@ -32,7 +32,7 @@ function parsePaymentOptionsConfig(value: unknown) {
     return parsed && typeof parsed === "object" && !Array.isArray(parsed)
       ? parsed as Record<string, Record<string, unknown>>
       : {};
-  } catch {
+  } catch (_error) {
     return {};
   }
 }

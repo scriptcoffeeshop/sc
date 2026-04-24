@@ -132,7 +132,7 @@ export function applyBranding(settings) {
         STOREFRONT_PUBLIC_BRANDING_CACHE_KEY,
         JSON.stringify(payload),
       );
-    } catch {
+    } catch (_error) {
     }
   }
 

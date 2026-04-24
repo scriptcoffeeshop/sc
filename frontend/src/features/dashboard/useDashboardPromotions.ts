@@ -229,7 +229,7 @@ function parseProductSpecs(product: DashboardProductRecord): DashboardProductSpe
   try {
     const parsed = product?.specs ? JSON.parse(String(product.specs)) : [];
     return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  } catch (_error) {
     return [];
   }
 }

@@ -28,7 +28,7 @@ import type { PaymentMethod, SubmitDeliveryInfo } from "../../types";
 function persistOrderDraftPreference(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch {
+  } catch (_error) {
     return false;
   }
   return true;
@@ -40,7 +40,7 @@ function syncUserProfileInBackground(payload: Record<string, unknown>) {
       method: "POST",
       body: JSON.stringify(payload),
     }).catch(() => undefined);
-  } catch {
+  } catch (_error) {
     return false;
   }
   return true;

@@ -28,7 +28,7 @@ function parseStoredReceiptInfo(raw: unknown): ReceiptInfo | null {
     if (!str) return null;
     try {
       return normalizeReceiptInfo(JSON.parse(str));
-    } catch {
+    } catch (_error) {
       return null;
     }
   }

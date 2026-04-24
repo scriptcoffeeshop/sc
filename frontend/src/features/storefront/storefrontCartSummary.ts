@@ -117,7 +117,7 @@ export function getDeliveryMeta(
         deliveryName: String(selected.name),
       };
     }
-  } catch {
+  } catch (_error) {
   }
   return fallback;
 }

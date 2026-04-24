@@ -80,7 +80,7 @@ function parseJsonRecord(value: unknown): DashboardSettingsRecord {
   if (!String(value || "").trim()) return {};
   try {
     return asRecord(JSON.parse(String(value)));
-  } catch {
+  } catch (_error) {
     return {};
   }
 }
@@ -90,7 +90,7 @@ function parseJsonArray(value: unknown): DashboardSettingsRecord[] {
   try {
     const parsed = JSON.parse(String(value));
     return Array.isArray(parsed) ? parsed.map(asRecord) : [];
-  } catch {
+  } catch (_error) {
     return [];
   }
 }
