@@ -147,28 +147,13 @@ async function cleanupOldStoreSelections() {
   );
 }
 
-export async function createStoreMapSession(
-  deliveryMethod: string,
-  clientUrl: string = "",
-) {
-  const subType = MAP_SUBTYPE_MAP[deliveryMethod] ||
-    MAP_SUBTYPE_MAP[String(deliveryMethod || "").toUpperCase()];
-  if (!subType) return { success: false, error: "請先選擇 7-11 或全家取貨" };
-
+async function createStoreSelectionSession(
+  logisticsSubType: string,
+  clientUrl: string,
+): Promise<
+  { success: true; token: string } | { success: false; error: string }
+> {
   const token = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
-  const callbackUrl =
-    `${SUPABASE_URL}/functions/v1/coffee-api?action=storeMapCallback`;
-
-  const params: Record<string, string> = {
-    MerchantID: ECPAY_MERCHANT_ID,
-    LogisticsType: "CVS",
-    LogisticsSubType: subType,
-    IsCollection: "Y",
-    ServerReplyURL: callbackUrl,
-    ExtraData: token,
-    Device: "1",
-  };
-  params.CheckMacValue = await generateCheckMacValue(params);
 
   try {
     await cleanupOldStoreSelections();
@@ -179,7 +164,7 @@ export async function createStoreMapSession(
     cvs_store_id: "",
     cvs_store_name: "",
     cvs_address: "",
-    logistics_sub_type: subType,
+    logistics_sub_type: logisticsSubType,
     extra_data: clientUrl,
     created_at: new Date().toISOString(),
   });
@@ -187,11 +172,107 @@ export async function createStoreMapSession(
     return { success: false, error: "建立門市地圖會話失敗：" + error.message };
   }
 
+  return { success: true, token };
+}
+
+async function getAllowedStoreSelectionClientUrl(
+  token: string,
+): Promise<string> {
+  const { data: selection } = await supabase.from("coffee_store_selections")
+    .select("extra_data").eq("token", token).maybeSingle();
+  const clientUrl = String(selection?.extra_data || "").trim();
+  if (!clientUrl) return "";
+
+  try {
+    const url = new URL(clientUrl);
+    return ALLOWED_REDIRECT_ORIGINS.includes(url.origin) ? clientUrl : "";
+  } catch (_error) {
+    return "";
+  }
+}
+
+function getDataValue(data: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = data[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+
+function buildStoreSelectionSuccessHtml(params: {
+  title: string;
+  heading: string;
+  storeName: string;
+  storeAddress: string;
+  clientUrl: string;
+  token: string;
+}): string {
+  const safeName = escapeHtml(params.storeName || "（未提供門市名稱）");
+  const safeAddr = escapeHtml(params.storeAddress || "（未提供門市地址）");
+  const redirectScript = buildRedirectScript(params.clientUrl, params.token);
+
+  return `<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(params.title)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #f6f9f6; color: #1f2937; }
+    .card { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
+    h3 { margin: 0 0 12px; color: #0f5132; }
+    p { margin: 8px 0; line-height: 1.5; }
+    .hint { color: #6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h3>${escapeHtml(params.heading)}</h3>
+    <p><strong>門市：</strong>${safeName}</p>
+    <p><strong>地址：</strong>${safeAddr}</p>
+    <p class="hint">正在將您導回訂購頁面...</p>
+  </div>
+  <script>
+    if (window.opener && window.opener !== window) {
+      window.opener.postMessage('store_selected', '*');
+      window.close();
+    } else {
+      ${redirectScript}
+    }
+  </script>
+</body>
+</html>`;
+}
+
+export async function createStoreMapSession(
+  deliveryMethod: string,
+  clientUrl: string = "",
+) {
+  const subType = MAP_SUBTYPE_MAP[deliveryMethod] ||
+    MAP_SUBTYPE_MAP[String(deliveryMethod || "").toUpperCase()];
+  if (!subType) return { success: false, error: "請先選擇 7-11 或全家取貨" };
+
+  const callbackUrl =
+    `${SUPABASE_URL}/functions/v1/coffee-api?action=storeMapCallback`;
+  const session = await createStoreSelectionSession(subType, clientUrl);
+  if (!session.success) return session;
+
+  const params: Record<string, string> = {
+    MerchantID: ECPAY_MERCHANT_ID,
+    LogisticsType: "CVS",
+    LogisticsSubType: subType,
+    IsCollection: "Y",
+    ServerReplyURL: callbackUrl,
+    ExtraData: session.token,
+    Device: "1",
+  };
+  params.CheckMacValue = await generateCheckMacValue(params);
+
   const mapUrl = ECPAY_IS_STAGE
     ? "https://logistics-stage.ecpay.com.tw/Express/map"
     : "https://logistics.ecpay.com.tw/Express/map";
 
-  return { success: true, token, mapUrl, params };
+  return { success: true, token: session.token, mapUrl, params };
 }
 
 export async function getStoreSelection(token: string) {
@@ -223,32 +304,7 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
   const token = String(data.ExtraData || "");
   if (!token) return new Response("Miss Token", { status: 400 });
 
-  let clientUrl = "";
-  const { data: selection } = await supabase.from("coffee_store_selections")
-    .select("extra_data").eq("token", token).maybeSingle();
-  if (selection && selection.extra_data) {
-    clientUrl = selection.extra_data;
-  }
-
-  if (clientUrl) {
-    try {
-      const u = new URL(clientUrl);
-      if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
-        clientUrl = "";
-      }
-    } catch (_error) {
-      clientUrl = "";
-    }
-  }
-
-  const getDataValue = (d: Record<string, unknown>, keys: string[]) => {
-    for (const k of keys) {
-      const v = d[k];
-      if (typeof v === "string" && v.trim()) return v.trim();
-    }
-    return "";
-  };
-
+  const clientUrl = await getAllowedStoreSelectionClientUrl(token);
   const storeId = getDataValue(data, [
     "CVSStoreID",
     "CvsStoreID",
@@ -286,41 +342,14 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
     );
   }
 
-  const safeName = escapeHtml(storeName || "（未提供門市名稱）");
-  const safeAddr = escapeHtml(storeAddress || "（未提供門市地址）");
-  const redirectScript = buildRedirectScript(clientUrl, token);
-
-  return htmlResponse(`<!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>門市選擇完成</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #f6f9f6; color: #1f2937; }
-    .card { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
-    h3 { margin: 0 0 12px; color: #0f5132; }
-    p { margin: 8px 0; line-height: 1.5; }
-    .hint { color: #6b7280; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h3>門市選擇成功</h3>
-    <p><strong>門市：</strong>${safeName}</p>
-    <p><strong>地址：</strong>${safeAddr}</p>
-    <p class="hint">正在將您導回訂購頁面...</p>
-  </div>
-  <script>
-    if (window.opener && window.opener !== window) {
-      window.opener.postMessage('store_selected', '*');
-      window.close();
-    } else {
-      ${redirectScript}
-    }
-  </script>
-</body>
-</html>`);
+  return htmlResponse(buildStoreSelectionSuccessHtml({
+    title: "門市選擇完成",
+    heading: "門市選擇成功",
+    storeName,
+    storeAddress,
+    clientUrl,
+    token,
+  }));
 }
 
 // ============================================
@@ -334,30 +363,14 @@ export async function handleStoreMapCallback(data: Record<string, unknown>) {
 export async function createPcscMapSession(
   clientUrl: string = "",
 ) {
-  const token = crypto.randomUUID().replace(/-/g, "").slice(0, 20);
   const callbackUrl =
     `${SUPABASE_URL}/functions/v1/coffee-api?action=pcscMapCallback`;
-
-  try {
-    await cleanupOldStoreSelections();
-  } catch (_e) { /* ignore */ }
-
-  const { error } = await supabase.from("coffee_store_selections").upsert({
-    token,
-    cvs_store_id: "",
-    cvs_store_name: "",
-    cvs_address: "",
-    logistics_sub_type: "UNIMARTC2C",
-    extra_data: clientUrl,
-    created_at: new Date().toISOString(),
-  });
-  if (error) {
-    return { success: false, error: "建立門市地圖會話失敗：" + error.message };
-  }
+  const session = await createStoreSelectionSession("UNIMARTC2C", clientUrl);
+  if (!session.success) return session;
 
   return {
     success: true,
-    token,
+    token: session.token,
     callbackUrl,
     eshopid: "870",
   };
@@ -382,29 +395,10 @@ export async function handlePcscMapCallback(
     );
   }
 
-  let clientUrl = "";
-  const { data: selection } = await supabase.from("coffee_store_selections")
-    .select("extra_data").eq("token", token).maybeSingle();
-  if (selection && selection.extra_data) {
-    clientUrl = selection.extra_data;
-  }
-
-  if (clientUrl) {
-    try {
-      const u = new URL(clientUrl);
-      if (!ALLOWED_REDIRECT_ORIGINS.includes(u.origin)) {
-        clientUrl = "";
-      }
-    } catch (_error) {
-      clientUrl = "";
-    }
-  }
-
-  const storeId = String(data.storeid || data.StoreID || "").trim();
-  const storeName = String(data.storename || data.StoreName || "").trim();
-  const storeAddress = String(
-    data.storeaddress || data.StoreAddress || "",
-  ).trim();
+  const clientUrl = await getAllowedStoreSelectionClientUrl(token);
+  const storeId = getDataValue(data, ["storeid", "StoreID"]);
+  const storeName = getDataValue(data, ["storename", "StoreName"]);
+  const storeAddress = getDataValue(data, ["storeaddress", "StoreAddress"]);
 
   const { error } = await supabase.from("coffee_store_selections").update({
     cvs_store_id: storeId,
@@ -422,39 +416,12 @@ export async function handlePcscMapCallback(
     );
   }
 
-  const safeName = escapeHtml(storeName || "（未提供門市名稱）");
-  const safeAddr = escapeHtml(storeAddress || "（未提供門市地址）");
-  const redirectScript = buildRedirectScript(clientUrl, token);
-
-  return htmlResponse(`<!doctype html>
-<html lang="zh-Hant">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>7-11 門市選擇完成</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 24px; background: #f6f9f6; color: #1f2937; }
-    .card { max-width: 560px; margin: 40px auto; background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,.08); }
-    h3 { margin: 0 0 12px; color: #0f5132; }
-    p { margin: 8px 0; line-height: 1.5; }
-    .hint { color: #6b7280; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h3>7-11 門市選擇成功</h3>
-    <p><strong>門市：</strong>${safeName}</p>
-    <p><strong>地址：</strong>${safeAddr}</p>
-    <p class="hint">正在將您導回訂購頁面...</p>
-  </div>
-  <script>
-    if (window.opener && window.opener !== window) {
-      window.opener.postMessage('store_selected', '*');
-      window.close();
-    } else {
-      ${redirectScript}
-    }
-  </script>
-</body>
-</html>`);
+  return htmlResponse(buildStoreSelectionSuccessHtml({
+    title: "7-11 門市選擇完成",
+    heading: "7-11 門市選擇成功",
+    storeName,
+    storeAddress,
+    clientUrl,
+    token,
+  }));
 }

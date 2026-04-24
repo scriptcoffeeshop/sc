@@ -81,6 +81,7 @@
 - 後端報價引擎 `api/quote.ts` 的商品規格解析與單價決定已抽成純 helper，主計價迴圈專注於 quote line 組裝。
 - 後端 action routing 的 schema 驗證樣板已集中到 `publicPost` / `authPost` / `adminPost` helper；action map 不再逐筆手寫 `validate(schema, data)`。
 - 後端下單流程 `api/order-submit.ts` 已抽出訂單編號、超商類型與付款建單失敗狀態更新 helper，主流程少一層重複更新語句。
+- 後端門市地圖 `api/stores.ts` 已共用門市 session 建立、clientUrl allowlist 驗證、callback 欄位取值與成功頁 HTML；綠界/PCSC callback 不再各自複製導回頁。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 表單 DOM 讀寫 helper 已集中在 `storefrontDeliveryDom.ts`；主入口、送出配送資訊與發票/轉帳偏好不再各自維護 input/select/checkbox 讀取邏輯。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。
@@ -100,6 +101,7 @@
 - 後端報價引擎已把商品規格解析、規格啟用判斷與單價決定從主計價迴圈抽成 `resolveQuoteProductPrice()` helper，既有 quote tests 保護規格、無效付款與折扣計算。
 - 後端 `routing/action-map.ts` 已把 POST + schema 驗證的重複樣板收斂為 typed helper，新增/調整 action 時比較不容易漏掉方法限制或驗證。
 - 後端 `submitOrder` 已把付款建單失敗時的訂單狀態更新收成 `markPaymentRequestFailed()`，LINE Pay / 街口支付分支不再各自手寫相同 update payload。
+- 後端超商地圖 callback 已把 PCSC 與綠界共用的 clientUrl 驗證與成功頁組裝集中，保留各自欄位 mapping，但降低 POST/GET callback 相容流程漂移。
 
 ### 視覺與互動
 
