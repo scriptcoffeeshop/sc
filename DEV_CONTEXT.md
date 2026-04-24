@@ -139,12 +139,14 @@
 
 - `ci.yml` 的 `workflow_dispatch` 新增 `deploy` boolean input，預設為 `true`；現在在 `main/master` 手動觸發 workflow 會連同 `Deploy Frontend` / `Deploy Supabase` 一起跑，不再只有 test job。
 - `frontend/src/features/storefront/storefrontMainApp.ts` 已收斂成組裝層，auth/profile、quote/payment/bank account、LINE Pay/街口回跳分別拆到 `storefrontMainAppAuth.ts`、`storefrontMainAppPayments.ts`、`storefrontMainAppReturns.ts`。
+- storefront 付款主流程已再收斂：`storefrontMainAppPayments.ts` 的 quote refresh / 計價請求拆到 `storefrontQuoteManager.ts`，轉帳帳號 DOM fallback 與複製帳號互動拆到 `storefrontBankAccountsUi.ts`。
 - `tests/e2e/support/smoke-fixtures.ts` 已改成相容 barrel export，實際實作拆到 `smoke-shared.ts`、`smoke-color.ts`、`smoke-global-stubs.ts`、`smoke-main-routes.ts`、`smoke-dashboard-routes.ts`，降低單檔回歸風險。
 - dashboard smoke route support 已再拆分：`smoke-dashboard-routes.ts` 現在只保留 dispatcher，實際 state/defaults 與 access/catalog/orders/members/settings handlers 分散到 `smoke-dashboard-state.ts`、`smoke-dashboard-access-routes.ts`、`smoke-dashboard-catalog-routes.ts`、`smoke-dashboard-orders-routes.ts`、`smoke-dashboard-members-routes.ts`、`smoke-dashboard-settings-routes.ts`。
 - `frontend/src/features/dashboard/useDashboardOrders.ts` 已收斂成 orchestration layer；篩選/摘要與 view model、選取狀態同步、CSV 匯出、批次更新/刪除分別搬到 `dashboardOrdersView.ts`、`dashboardOrdersSelection.ts`、`dashboardOrdersExport.ts`、`dashboardOrdersBulkActions.ts`。
 - dashboard 設定模組開始收斂：`useDashboardSettings.ts` 已改成較薄的 state/action 組裝層，純設定轉換、section defaults、legacy delivery migration、payload 組裝抽到 `dashboardSettingsConfig.ts`；`bootstrapDashboard.ts` 的 tab loader 依賴型別也補上，減少 `Record<string, any>`。
 - dashboard 表單欄位模組開始收斂：`useDashboardFormFields.ts` 已保留 action orchestration，field view model、欄位選項序列化、delivery visibility 正規化與 modal DOM helper 分別拆到 `dashboardFormFieldsShared.ts`、`dashboardFormFieldsDialog.ts`，並新增 helper unit test 保護拆分行為。
 - E2E 支援層下一段已收斂：`tests/e2e/support/smoke-dashboard-routes.ts` 從單檔 800+ 行拆成 dispatcher + 多個 domain handler，dashboard smoke 回歸仍通過，後續要補 route stub 時可直接改對應 domain 檔，不必再回到單一大檔。
+- storefront 付款熱區也已開始降溫：`storefrontMainAppPayments.ts` 保留 settings/payment orchestration，quote manager 與 bank account fallback UI 拆出獨立 helper，storefront smoke / checkout 回歸仍通過。
 - 前端靜態檢查已補齊：新增 `eslint.config.mjs` 與 `npm run lint:frontend`，`ci-local` 與 GitHub Actions test job 都會執行 Vue/TypeScript 前端 lint。
 - `guardrails` 新增 `scripts/check_dev_context_sync.py`，會比對 `DEV_CONTEXT.md` 的「最後更新」與 `.frontend-version` / 最新變更節點，降低文件與實際狀態漂移。
 - 本輪驗證已通過：`npm run lint:frontend`、`npm run typecheck`、`npm run test:unit`、`npm run build`、`npm run ci-local`。
