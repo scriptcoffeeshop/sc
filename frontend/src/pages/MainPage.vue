@@ -37,6 +37,8 @@
         :fields="visibleFormFields"
         :selected-delivery="selectedDelivery || dynamicFieldsSelectedDelivery"
         :current-user="dynamicFieldsCurrentUser"
+        :field-values="dynamicFieldValues"
+        @update-field-value="updateDynamicFieldValue"
       />
 
       <StorefrontPaymentSection
@@ -404,8 +406,11 @@ const {
 const {
   currentUser: dynamicFieldsCurrentUser,
   selectedDelivery: dynamicFieldsSelectedDelivery,
+  fieldValues: dynamicFieldValues,
   visibleFormFields,
   refreshDynamicFieldsState,
+  updateDynamicFieldValue,
+  handleDynamicFieldValuesUpdated,
 } = useStorefrontDynamicFields({ getStorefrontUiSnapshot });
 const {
   handleCloseAnnouncement,
@@ -489,6 +494,10 @@ onMounted(() => {
     "coffee:order-form-state-updated",
     handleOrderFormStateUpdated,
   );
+  window.addEventListener(
+    "coffee:dynamic-field-values-updated",
+    handleDynamicFieldValuesUpdated,
+  );
 
   syncCartSnapshot();
 
@@ -515,6 +524,10 @@ onBeforeUnmount(() => {
   window.removeEventListener(
     "coffee:order-form-state-updated",
     handleOrderFormStateUpdated,
+  );
+  window.removeEventListener(
+    "coffee:dynamic-field-values-updated",
+    handleDynamicFieldValuesUpdated,
   );
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;

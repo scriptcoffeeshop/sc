@@ -15,6 +15,10 @@ import {
   applySavedOrderFormPrefs,
 } from "./storefrontOrderActions.ts";
 import { loadDeliveryPrefs } from "./storefrontDeliveryActions.ts";
+import {
+  buildInitialDynamicFieldValues,
+  emitStorefrontDynamicFieldValuesUpdated,
+} from "./storefrontDynamicFieldValues.ts";
 
 type StringRecord = Record<string, unknown>;
 
@@ -27,7 +31,6 @@ function parseStringArray(value: unknown): string[] {
 }
 
 type StorefrontMainAppAuthDeps = {
-  getInputElement: (id: string) => HTMLInputElement | null;
   getFormControlValue: (id: string) => string;
   getErrorMessage: (error: unknown, fallback?: string) => string;
   updateFormState: () => void;
@@ -39,25 +42,9 @@ export function createStorefrontMainAppAuth(
   function prefillUserFields() {
     if (!state.currentUser) return;
 
-    const user = state.currentUser;
-    const phoneEl = deps.getInputElement("field-phone");
-    const emailEl = deps.getInputElement("field-email");
-    if (phoneEl && user.phone) phoneEl.value = String(user.phone);
-    if (emailEl && user.email) emailEl.value = String(user.email);
-
-    const customDefaults = parseStringRecord(user.defaultCustomFields);
-
-    for (const [key, value] of Object.entries(customDefaults)) {
-      const element = document.getElementById(`field-${key}`);
-      if (
-        value &&
-        (element instanceof HTMLInputElement ||
-          element instanceof HTMLTextAreaElement ||
-          element instanceof HTMLSelectElement)
-      ) {
-        element.value = String(value);
-      }
-    }
+    emitStorefrontDynamicFieldValuesUpdated(
+      buildInitialDynamicFieldValues(state.formFields, state.currentUser),
+    );
   }
 
   function showUserInfo() {
@@ -247,10 +234,9 @@ export function createStorefrontMainAppAuth(
     localStorage.removeItem("coffee_user");
     localStorage.removeItem("coffee_jwt");
 
-    const phoneEl = deps.getInputElement("field-phone");
-    const emailEl = deps.getInputElement("field-email");
-    if (phoneEl) phoneEl.value = "";
-    if (emailEl) emailEl.value = "";
+    emitStorefrontDynamicFieldValuesUpdated(
+      buildInitialDynamicFieldValues(state.formFields, null),
+    );
     deps.updateFormState();
   }
 

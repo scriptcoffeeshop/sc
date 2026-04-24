@@ -26,6 +26,7 @@
               type="checkbox"
               class="w-4 h-4"
               :checked="isCheckboxChecked(field)"
+              @change="handleCheckboxChange(field, $event)"
             >
             {{ field.label }}
           </label>
@@ -44,7 +45,8 @@
             rows="2"
             :placeholder="field.placeholder || ''"
             :required="!!field.required"
-            :value="initialValue(field)"
+            :value="fieldValue(field)"
+            @input="handleFieldInput(field, $event)"
           ></textarea>
 
           <select
@@ -52,7 +54,8 @@
             :id="fieldId(field)"
             class="input-field"
             :required="!!field.required"
-            :value="initialValue(field)"
+            :value="fieldValue(field)"
+            @change="handleFieldInput(field, $event)"
           >
             <option value="">請選擇</option>
             <option
@@ -71,7 +74,8 @@
             class="input-field"
             :placeholder="field.placeholder || ''"
             :required="!!field.required"
-            :value="initialValue(field)"
+            :value="fieldValue(field)"
+            @input="handleFieldInput(field, $event)"
           >
         </template>
       </div>
@@ -94,11 +98,13 @@ const props = withDefaults(
     fields?: StorefrontDynamicField[];
     selectedDelivery?: string;
     currentUser?: SessionUser | null;
+    fieldValues?: Record<string, string>;
   }>(),
   {
     fields: () => [],
     selectedDelivery: "",
     currentUser: null,
+    fieldValues: () => ({}),
   },
 );
 
@@ -106,13 +112,51 @@ function fieldId(field: StorefrontDynamicField) {
   return `field-${String(field?.field_key || "")}`;
 }
 
+function fieldKey(field: StorefrontDynamicField) {
+  return String(field?.field_key || "");
+}
+
 function initialValue(field: StorefrontDynamicField) {
   return getInitialDynamicFieldValue(field, props.currentUser);
 }
 
+function fieldValue(field: StorefrontDynamicField) {
+  const key = fieldKey(field);
+  if (!key) return "";
+  return Object.prototype.hasOwnProperty.call(props.fieldValues, key)
+    ? String(props.fieldValues[key] || "")
+    : initialValue(field);
+}
+
 function isCheckboxChecked(field: StorefrontDynamicField) {
-  const value = initialValue(field);
+  const value = fieldValue(field);
   return value === "true" || value === "是";
+}
+
+const emit = defineEmits<{
+  "update-field-value": [fieldKey: string, value: string];
+}>();
+
+function getFieldControl(event: Event) {
+  const target = event.target;
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  ) {
+    return target;
+  }
+  return null;
+}
+
+function handleFieldInput(field: StorefrontDynamicField, event: Event) {
+  const target = getFieldControl(event);
+  emit("update-field-value", fieldKey(field), target?.value || "");
+}
+
+function handleCheckboxChange(field: StorefrontDynamicField, event: Event) {
+  const target = event.target instanceof HTMLInputElement ? event.target : null;
+  emit("update-field-value", fieldKey(field), target?.checked ? "是" : "否");
 }
 
 const visibleFields = computed(() =>

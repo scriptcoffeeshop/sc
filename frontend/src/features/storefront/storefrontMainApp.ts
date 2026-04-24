@@ -10,7 +10,6 @@ import {
 } from "./storefrontDeliveryActions.ts";
 import {
   getFormControlValue,
-  getInputElement,
 } from "./storefrontDeliveryDom.ts";
 import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 import {
@@ -26,7 +25,6 @@ import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 let paymentActions: ReturnType<typeof createStorefrontMainAppPayments>;
 
 const authActions = createStorefrontMainAppAuth({
-  getInputElement,
   getFormControlValue,
   getErrorMessage: getStorefrontErrorMessage,
   updateFormState: () => paymentActions.updateFormState(),

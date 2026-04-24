@@ -189,6 +189,7 @@
 - storefront 初始化載入失敗畫面已改由 Vue 商品區塊顯示：`storefrontMainAppPayments.ts` 改發 `coffee:storefront-load-error-updated`，`StorefrontProductGrid.vue` 負責錯誤訊息與重試按鈕。
 - storefront 送單核心表單狀態已抽離：`storefrontOrderFormState.ts` 管理政策同意、訂單備註與匯款末五碼，`storefrontOrderSubmit.ts` 不再讀取 `policy-agree`、`order-note`、`transfer-last5` DOM。
 - storefront shell 關閉我的訂單已完全走 Vue 狀態：`useStorefrontShell.ts` 移除 `my-orders-modal` DOM fallback，固定委派 `closeOrderHistory`。
+- storefront 動態欄位值已改由 Vue 狀態收集：`StorefrontDynamicFields.vue` emit 欄位值、`storefrontDynamicFieldValues.ts` 保存可提交狀態，`storefrontFormRenderer.ts` 不再查詢 `field-*` DOM。
 
 ### 2026-04-24
 

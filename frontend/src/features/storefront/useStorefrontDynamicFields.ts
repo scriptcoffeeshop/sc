@@ -2,6 +2,14 @@ import { computed, ref } from "vue";
 import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import type { SessionUser } from "../../types/session";
 import type { StorefrontUiSnapshot } from "./storefrontUiSnapshot";
+import {
+  buildInitialDynamicFieldValues,
+  getInitialDynamicFieldValue,
+  getStorefrontDynamicFieldValues,
+  replaceStorefrontDynamicFieldValues,
+  setStorefrontDynamicFieldValue,
+  type StorefrontDynamicFieldValues,
+} from "./storefrontDynamicFieldValues.ts";
 
 export interface StorefrontDynamicField {
   id?: number | string;
@@ -20,12 +28,6 @@ interface StorefrontDynamicFieldsDeps {
   getStorefrontUiSnapshot?: () => Partial<StorefrontUiSnapshot>;
 }
 
-function parseUserCustomDefaults(currentUser: SessionUser | null) {
-  const rawDefaults = currentUser?.defaultCustomFields;
-  if (!rawDefaults) return {};
-  return parseJsonRecord(rawDefaults);
-}
-
 export function parseDynamicFieldOptions(field: StorefrontDynamicField) {
   return parseJsonArray(field.options).map((item) => String(item || ""));
 }
@@ -39,16 +41,10 @@ export function isDynamicFieldVisibleForDelivery(
   return visibility[selectedDelivery] !== false;
 }
 
-export function getInitialDynamicFieldValue(
-  field: StorefrontDynamicField,
-  currentUser: SessionUser | null,
-) {
-  const key = String(field.field_key || "");
-  if (!key || !currentUser) return "";
-  if (key === "phone") return String(currentUser.phone || "");
-  if (key === "email") return String(currentUser.email || "");
-  const customDefaults = parseUserCustomDefaults(currentUser);
-  return String(customDefaults[key] || "");
+export { getInitialDynamicFieldValue };
+
+export interface StorefrontDynamicFieldValuesEvent extends Event {
+  detail?: StorefrontDynamicFieldValues;
 }
 
 export function useStorefrontDynamicFields(
@@ -57,6 +53,10 @@ export function useStorefrontDynamicFields(
   const formFields = ref<StorefrontDynamicField[]>([]);
   const currentUser = ref<SessionUser | null>(null);
   const selectedDelivery = ref("");
+  const fieldValues = ref<StorefrontDynamicFieldValues>(
+    getStorefrontDynamicFieldValues(),
+  );
+  let lastUserId = "";
 
   const visibleFormFields = computed(() =>
     formFields.value
@@ -67,23 +67,64 @@ export function useStorefrontDynamicFields(
   );
 
   function syncDynamicFieldsState(snapshot: Partial<StorefrontUiSnapshot> = {}) {
-    formFields.value = Array.isArray(snapshot.formFields)
+    const nextFields = Array.isArray(snapshot.formFields)
       ? snapshot.formFields
       : [];
-    currentUser.value = snapshot.currentUser || null;
+    const nextUser = snapshot.currentUser || null;
+    const nextUserId = String(nextUser?.userId || "");
+    const resetDefaults = nextUserId !== lastUserId;
+    lastUserId = nextUserId;
+    formFields.value = nextFields;
+    currentUser.value = nextUser;
     selectedDelivery.value = String(snapshot.selectedDelivery || "");
+    const defaults = buildInitialDynamicFieldValues(nextFields, nextUser);
+    const existing = resetDefaults ? {} : fieldValues.value;
+    const nextValues: StorefrontDynamicFieldValues = {};
+
+    for (const field of nextFields) {
+      const key = String(field?.field_key || "");
+      if (
+        !key ||
+        field?.field_type === "section_title" ||
+        field?.enabled === false ||
+        !isDynamicFieldVisibleForDelivery(field, selectedDelivery.value)
+      ) continue;
+      nextValues[key] = Object.prototype.hasOwnProperty.call(existing, key)
+        ? String(existing[key] || "")
+        : String(defaults[key] || "");
+    }
+
+    fieldValues.value = replaceStorefrontDynamicFieldValues(nextValues);
   }
 
   function refreshDynamicFieldsState() {
     syncDynamicFieldsState(deps.getStorefrontUiSnapshot?.() || {});
   }
 
+  function updateDynamicFieldValue(fieldKey: string, value: string) {
+    fieldValues.value = setStorefrontDynamicFieldValue(fieldKey, value);
+  }
+
+  function handleDynamicFieldValuesUpdated(event: Event) {
+    const detail = (event as StorefrontDynamicFieldValuesEvent).detail || {};
+    const nextValues: StorefrontDynamicFieldValues = { ...fieldValues.value };
+    for (const field of visibleFormFields.value) {
+      const key = String(field?.field_key || "");
+      if (!key || !Object.prototype.hasOwnProperty.call(detail, key)) continue;
+      nextValues[key] = String(detail[key] || "");
+    }
+    fieldValues.value = replaceStorefrontDynamicFieldValues(nextValues);
+  }
+
   return {
     formFields,
     currentUser,
     selectedDelivery,
+    fieldValues,
     visibleFormFields,
     syncDynamicFieldsState,
     refreshDynamicFieldsState,
+    updateDynamicFieldValue,
+    handleDynamicFieldValuesUpdated,
   };
 }

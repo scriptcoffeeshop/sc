@@ -9,28 +9,26 @@ import { isValidEmail } from "../../lib/sharedUtils.ts";
  * @param {Array} fields - coffee_form_fields 記錄
  * @returns {{ valid: boolean, data: Object, error: string }}
  */
-export function collectDynamicFields(fields) {
+export function collectDynamicFields(fields, values = {}) {
   const data = {};
 
   for (const f of (fields || [])) {
     if (f.field_type === "section_title") continue;
+    if (f.enabled === false) continue;
 
-    const fieldId = `field-${f.field_key}`;
-    const el = document.getElementById(fieldId);
-    // 跳過 DOM 中不存在的欄位（可能因配送方式而被隱藏）
-    if (!el) continue;
+    const fieldKey = String(f.field_key || "");
+    // 跳過狀態中不存在的欄位（可能因配送方式而被隱藏）
+    if (!fieldKey || !Object.prototype.hasOwnProperty.call(values, fieldKey)) {
+      continue;
+    }
 
     let value;
     if (f.field_type === "checkbox") {
-      value = el instanceof HTMLInputElement && el.checked ? "是" : "否";
-    } else if (
-      el instanceof HTMLInputElement ||
-      el instanceof HTMLTextAreaElement ||
-      el instanceof HTMLSelectElement
-    ) {
-      value = el.value.trim();
+      value = values[fieldKey] === "是" || values[fieldKey] === "true"
+        ? "是"
+        : "否";
     } else {
-      value = "";
+      value = String(values[fieldKey] || "").trim();
     }
 
     // 驗證必填
@@ -54,7 +52,7 @@ export function collectDynamicFields(fields) {
       };
     }
 
-    data[f.field_key] = value;
+    data[fieldKey] = value;
   }
 
   return { valid: true, data, error: "" };

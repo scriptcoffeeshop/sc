@@ -4,6 +4,7 @@ import { escapeHtml, isValidEmail } from "../../lib/sharedUtils.ts";
 import { state } from "../../lib/appState.ts";
 import { cart, clearCart } from "./storefrontCartStore.ts";
 import { collectDynamicFields } from "./storefrontFormRenderer.ts";
+import { getStorefrontDynamicFieldValues } from "./storefrontDynamicFieldValues.ts";
 import Swal from "../../lib/swal.ts";
 import {
   buildSubmitDeliveryInfo,
@@ -162,7 +163,10 @@ export async function submitOrder(): Promise<void> {
   setPolicyAgreeHintVisible(false);
 
   // 動態欄位驗證
-  const fieldsResult = collectDynamicFields(state.formFields);
+  const fieldsResult = collectDynamicFields(
+    state.formFields,
+    getStorefrontDynamicFieldValues(),
+  );
   if (!fieldsResult.valid) {
     showError("錯誤", fieldsResult.error);
     return;

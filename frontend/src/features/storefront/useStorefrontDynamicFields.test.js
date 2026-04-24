@@ -47,6 +47,9 @@ describe("useStorefrontDynamicFields", () => {
 
     expect(dynamicFields.visibleFormFields.value.map((field) => field.field_key))
       .toEqual(["phone"]);
+    expect(dynamicFields.fieldValues.value).toEqual({
+      phone: "0912345678",
+    });
     expect(getInitialDynamicFieldValue(
       dynamicFields.formFields.value[0],
       dynamicFields.currentUser.value,
@@ -67,5 +70,26 @@ describe("useStorefrontDynamicFields", () => {
     expect(isDynamicFieldVisibleForDelivery({
       delivery_visibility: "not-json",
     }, "delivery")).toBe(true);
+  });
+
+  it("updates field values and receives profile default events", () => {
+    const dynamicFields = useStorefrontDynamicFields();
+
+    dynamicFields.syncDynamicFieldsState({
+      formFields: [{
+        field_key: "phone",
+        field_type: "tel",
+        enabled: true,
+      }],
+    });
+    dynamicFields.updateDynamicFieldValue("phone", "0912000000");
+    expect(dynamicFields.fieldValues.value.phone).toBe("0912000000");
+
+    dynamicFields.handleDynamicFieldValuesUpdated(
+      new CustomEvent("coffee:dynamic-field-values-updated", {
+        detail: { phone: "0988000000" },
+      }),
+    );
+    expect(dynamicFields.fieldValues.value).toEqual({ phone: "0988000000" });
   });
 });
