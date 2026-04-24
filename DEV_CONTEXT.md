@@ -203,6 +203,7 @@
 - storefront 登入預設欄位、付款/配送設定解析與送單後偏好同步已移除空 `catch {}`，改為具名 parse/persist/background sync helper。
 - dashboard 訂單狀態 controller 已補上 deps/order 型別與安全錯誤訊息 fallback，狀態更新、退款、確認收款不再依賴隱式 any。
 - dashboard promotions composable 已補上 promotion/product/service/sortable 型別，活動目標商品、排序與儲存流程不再依賴隱式 services/null 型別。
+- dashboard bank accounts composable 已補上 account/service/sortable 型別與 API normalize，匯款帳號排序與 CRUD 不再依賴隱式 services/null 型別。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。

@@ -1,10 +1,9 @@
 import { nextTick, ref } from "vue";
-
-const bankAccounts = ref([]);
-
-let services = null;
-let bankAccountsListElement = null;
-let bankAccountsSortable = null;
+import type {
+  DashboardAuthFetch,
+  DashboardSwal,
+  DashboardToast,
+} from "./dashboardOrderTypes.ts";
 
 interface BankAccountFormValues {
   bankCode?: string;
@@ -13,11 +12,89 @@ interface BankAccountFormValues {
   accountName?: string;
 }
 
-function getServices() {
+type BankAccountRecord = BankAccountFormValues & {
+  id: number | string;
+  enabled?: boolean;
+};
+
+type BankAccountsSortableEvent = {
+  oldIndex?: number;
+  newIndex?: number;
+};
+
+type BankAccountsSortableInstance = {
+  destroy: () => void;
+};
+
+type BankAccountsSortableOptions = {
+  handle: string;
+  animation: number;
+  ghostClass: string;
+  onEnd: (event: BankAccountsSortableEvent) => void | Promise<void>;
+};
+
+type BankAccountsSortableFactory = {
+  create?: (
+    element: Element,
+    options: BankAccountsSortableOptions,
+  ) => BankAccountsSortableInstance;
+};
+
+type BankAccountsSortableConstructor = new (
+  element: Element,
+  options: BankAccountsSortableOptions,
+) => BankAccountsSortableInstance;
+
+type DashboardBankAccountsServices = {
+  API_URL: string;
+  authFetch: DashboardAuthFetch;
+  getAuthUserId: () => string;
+  Toast: DashboardToast;
+  Swal: DashboardSwal;
+  Sortable?: BankAccountsSortableFactory | BankAccountsSortableConstructor | null;
+};
+
+const bankAccounts = ref<BankAccountRecord[]>([]);
+
+let services: DashboardBankAccountsServices | null = null;
+let bankAccountsListElement: HTMLElement | null = null;
+let bankAccountsSortable: BankAccountsSortableInstance | null = null;
+
+function getServices(): DashboardBankAccountsServices {
   if (!services) {
     throw new Error("Dashboard bank accounts services 尚未初始化");
   }
   return services;
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message || fallback : fallback;
+}
+
+function normalizeBankAccount(value: unknown): BankAccountRecord {
+  const record = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  return {
+    id: record.id as number | string,
+    bankCode: String(record.bankCode || ""),
+    bankName: String(record.bankName || ""),
+    accountNumber: String(record.accountNumber || ""),
+    accountName: String(record.accountName || ""),
+    enabled: record.enabled === undefined ? undefined : Boolean(record.enabled),
+  };
+}
+
+function hasSortableCreate(
+  sortable: DashboardBankAccountsServices["Sortable"],
+): sortable is BankAccountsSortableFactory {
+  return Boolean(sortable && typeof sortable === "object" && sortable.create);
+}
+
+function isSortableConstructor(
+  sortable: DashboardBankAccountsServices["Sortable"],
+): sortable is BankAccountsSortableConstructor {
+  return typeof sortable === "function";
 }
 
 function getFormInputValue(id: string): string {
@@ -31,7 +108,7 @@ function destroyBankAccountsSortable() {
   bankAccountsSortable = null;
 }
 
-async function reorderBankAccounts(ids) {
+async function reorderBankAccounts(ids: number[]) {
   const { API_URL, authFetch, getAuthUserId, Toast } = getServices();
   const response = await authFetch(`${API_URL}?action=reorderBankAccounts`, {
     method: "POST",
@@ -70,18 +147,18 @@ async function syncBankAccountsSortable() {
       try {
         await reorderBankAccounts(ids);
       } catch (error) {
-        Swal.fire("錯誤", error?.message || "排序更新失敗", "error");
+        Swal.fire("錯誤", getErrorMessage(error, "排序更新失敗"), "error");
         await loadBankAccounts();
       }
     },
   };
 
-  if (Sortable?.create) {
+  if (hasSortableCreate(Sortable)) {
     bankAccountsSortable = Sortable.create(bankAccountsListElement, createOptions);
     return;
   }
 
-  if (typeof Sortable === "function") {
+  if (isSortableConstructor(Sortable)) {
     bankAccountsSortable = new Sortable(bankAccountsListElement, createOptions);
   }
 }
@@ -91,7 +168,7 @@ async function queueBankAccountsSync() {
   await syncBankAccountsSortable();
 }
 
-function registerBankAccountsListElement(element) {
+function registerBankAccountsListElement(element: HTMLElement | null) {
   bankAccountsListElement = element || null;
   if (!bankAccountsListElement) {
     destroyBankAccountsSortable();
@@ -108,7 +185,9 @@ async function loadBankAccounts() {
     );
     const data = await response.json();
     if (!data.success) return;
-    bankAccounts.value = Array.isArray(data.accounts) ? data.accounts : [];
+    bankAccounts.value = Array.isArray(data.accounts)
+      ? data.accounts.map(normalizeBankAccount)
+      : [];
     await queueBankAccountsSync();
   } catch (error) {
     console.error(error);
@@ -183,11 +262,11 @@ async function showAddBankAccountModal() {
     Toast.fire({ icon: "success", title: "帳號已新增" });
     await loadBankAccounts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "新增失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "新增失敗"), "error");
   }
 }
 
-async function editBankAccount(id) {
+async function editBankAccount(id: number | string) {
   const bankAccount = bankAccounts.value.find((account) => account.id === id);
   if (!bankAccount) return;
 
@@ -214,11 +293,11 @@ async function editBankAccount(id) {
     Toast.fire({ icon: "success", title: "帳號已更新" });
     await loadBankAccounts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "更新失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "更新失敗"), "error");
   }
 }
 
-async function deleteBankAccount(id) {
+async function deleteBankAccount(id: number | string) {
   const confirmation = await getServices().Swal.fire({
     title: "刪除帳號？",
     icon: "warning",
@@ -245,11 +324,13 @@ async function deleteBankAccount(id) {
     Toast.fire({ icon: "success", title: "帳號已刪除" });
     await loadBankAccounts();
   } catch (error) {
-    getServices().Swal.fire("錯誤", error?.message || "刪除失敗", "error");
+    getServices().Swal.fire("錯誤", getErrorMessage(error, "刪除失敗"), "error");
   }
 }
 
-export function configureDashboardBankAccountsServices(nextServices) {
+export function configureDashboardBankAccountsServices(
+  nextServices: DashboardBankAccountsServices,
+) {
   services = {
     ...services,
     ...nextServices,
