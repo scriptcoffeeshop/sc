@@ -1,7 +1,9 @@
 import { authFetch, loginWithLine } from "../../lib/auth.ts";
 import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
+import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import { escapeHtml, isValidEmail, Toast } from "../../lib/sharedUtils.ts";
+import type { SessionUser } from "../../types/session";
 import {
   closeDialog,
   showDialog,
@@ -16,29 +18,12 @@ import { loadDeliveryPrefs } from "./storefrontDeliveryActions.ts";
 
 type StringRecord = Record<string, unknown>;
 
-function asStringRecord(value: unknown): StringRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as StringRecord
-    : {};
-}
-
 function parseStringRecord(value: unknown): StringRecord {
-  if (!value) return {};
-  if (typeof value !== "string") return asStringRecord(value);
-  try {
-    return asStringRecord(JSON.parse(value));
-  } catch {
-    return {};
-  }
+  return parseJsonRecord(value);
 }
 
 function parseStringArray(value: unknown): string[] {
-  try {
-    const parsed = JSON.parse(String(value || "[]"));
-    return Array.isArray(parsed) ? parsed.map((item) => String(item || "")) : [];
-  } catch {
-    return [];
-  }
+  return parseJsonArray(value).map((item) => String(item || ""));
 }
 
 type StorefrontMainAppAuthDeps = {
@@ -151,13 +136,18 @@ export function createStorefrontMainAppAuth(
     const saved = localStorage.getItem("coffee_user");
     const token = localStorage.getItem("coffee_jwt");
     if (saved && token) {
-      try {
-        state.currentUser = JSON.parse(saved);
+      const savedUser = parseJsonRecord(saved);
+      const userId = String(savedUser.userId || "");
+      if (userId) {
+        state.currentUser = {
+          ...savedUser,
+          userId,
+        } as SessionUser;
         showUserInfo();
-      } catch {
-        localStorage.removeItem("coffee_user");
-        localStorage.removeItem("coffee_jwt");
+        return;
       }
+      localStorage.removeItem("coffee_user");
+      localStorage.removeItem("coffee_jwt");
       return;
     }
 

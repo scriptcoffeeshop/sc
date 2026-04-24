@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import type { SessionUser } from "../../types/session";
 import type { StorefrontUiSnapshot } from "./storefrontUiSnapshot";
 
@@ -22,26 +23,11 @@ interface StorefrontDynamicFieldsDeps {
 function parseUserCustomDefaults(currentUser: SessionUser | null) {
   const rawDefaults = currentUser?.defaultCustomFields;
   if (!rawDefaults) return {};
-  if (typeof rawDefaults === "object" && !Array.isArray(rawDefaults)) {
-    return rawDefaults as Record<string, unknown>;
-  }
-  try {
-    const parsed = JSON.parse(String(rawDefaults));
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : {};
-  } catch {
-    return {};
-  }
+  return parseJsonRecord(rawDefaults);
 }
 
 export function parseDynamicFieldOptions(field: StorefrontDynamicField) {
-  try {
-    const parsed = JSON.parse(String(field.options || "[]"));
-    return Array.isArray(parsed) ? parsed.map((item) => String(item || "")) : [];
-  } catch {
-    return [];
-  }
+  return parseJsonArray(field.options).map((item) => String(item || ""));
 }
 
 export function isDynamicFieldVisibleForDelivery(
@@ -49,12 +35,8 @@ export function isDynamicFieldVisibleForDelivery(
   selectedDelivery: string,
 ) {
   if (!selectedDelivery || !field.delivery_visibility) return true;
-  try {
-    const visibility = JSON.parse(String(field.delivery_visibility));
-    return visibility?.[selectedDelivery] !== false;
-  } catch {
-    return true;
-  }
+  const visibility = parseJsonRecord(field.delivery_visibility);
+  return visibility[selectedDelivery] !== false;
 }
 
 export function getInitialDynamicFieldValue(

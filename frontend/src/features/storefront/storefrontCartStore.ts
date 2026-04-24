@@ -3,6 +3,7 @@
 // ============================================
 
 import { state } from "../../lib/appState.ts";
+import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
 import Swal from "../../lib/swal.ts";
 import {
   calcCartSummaryFromState,
@@ -22,25 +23,11 @@ import { storefrontRuntime } from "./storefrontRuntime.ts";
 export let cart = [];
 
 function parseStoredCart(rawCart) {
-  if (!rawCart) return [];
-  try {
-    const parsed = JSON.parse(rawCart);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return parseJsonArray(rawCart);
 }
 
 function parseProductSpecs(specsValue) {
-  try {
-    const specsSource = typeof specsValue === "string"
-      ? specsValue
-      : JSON.stringify(specsValue || []);
-    const parsed = JSON.parse(specsSource);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return parseJsonArray(specsValue).map(asJsonRecord);
 }
 
 function triggerQuoteRefresh() {
@@ -100,7 +87,8 @@ export function loadCart() {
     cart = parseStoredCart(localStorage.getItem("coffee_cart"));
     updateCartUI();
     triggerQuoteRefresh();
-  } catch {
+  } catch (error) {
+    console.warn("[storefront] 無法讀取購物車快取", error);
     cart = [];
     updateCartUI();
     triggerQuoteRefresh();
@@ -347,20 +335,16 @@ export function getShippingConfig() {
   ) {
     return null;
   }
-  try {
-    const config = JSON.parse(
-      storefrontRuntime.appSettings.delivery_options_config,
-    );
-    const sel = config.find((opt) => opt.id === state.selectedDelivery);
-    return sel
-      ? {
-        fee: parseInt(sel.fee) || 0,
-        freeThreshold: parseInt(sel.free_threshold) || 0,
-      }
-      : { fee: 0, freeThreshold: 0 };
-  } catch {
-    return { fee: 0, freeThreshold: 0 };
-  }
+  const config = parseJsonArray(
+    storefrontRuntime.appSettings.delivery_options_config,
+  ).map(asJsonRecord);
+  const sel = config.find((opt) => opt.id === state.selectedDelivery);
+  return sel
+    ? {
+      fee: Number(sel.fee) || 0,
+      freeThreshold: Number(sel.free_threshold) || 0,
+    }
+    : { fee: 0, freeThreshold: 0 };
 }
 
 /** 計算購物車所有金額 */

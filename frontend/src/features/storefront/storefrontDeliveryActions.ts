@@ -3,6 +3,7 @@
 // ============================================
 
 import { API_URL, districtData } from "../../lib/appConfig.ts";
+import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
 import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
@@ -28,12 +29,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 function parseDeliveryPrefs(rawPrefs: string | null): DeliveryPrefs {
-  if (!rawPrefs) return {};
-  try {
-    return asRecord(JSON.parse(rawPrefs));
-  } catch {
-    return {};
-  }
+  return parseJsonRecord(rawPrefs);
 }
 
 function normalizeStoreRecord(value: unknown): StoreRecord {
@@ -46,14 +42,7 @@ function normalizeStoreRecord(value: unknown): StoreRecord {
 }
 
 function parseDeliveryConfig(value: unknown): StorefrontDeliveryOption[] {
-  const raw = String(value || "").trim();
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed as StorefrontDeliveryOption[] : [];
-  } catch {
-    return [];
-  }
+  return parseJsonArray(value) as StorefrontDeliveryOption[];
 }
 
 function getInputElement(id: string): HTMLInputElement | null {

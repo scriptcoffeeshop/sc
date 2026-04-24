@@ -1,4 +1,9 @@
-type JsonRecord = Record<string, unknown>;
+import {
+  asJsonRecord,
+  parseJsonArray,
+  parseJsonRecord,
+  type JsonRecord,
+} from "../../lib/jsonUtils.ts";
 
 interface StorefrontProductInput {
   id?: unknown;
@@ -58,25 +63,14 @@ export interface StorefrontDeliveryOption extends JsonRecord {
 }
 
 function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as JsonRecord
-    : {};
+  return asJsonRecord(value);
 }
 
 export function parseEnabledProductSpecs(
   product: StorefrontProductInput = {},
 ): StorefrontProductSpec[] {
-  let specs: StorefrontProductSpecInput[] = [];
-  try {
-    const parsed = Array.isArray(product.specs)
-      ? product.specs
-      : JSON.parse(String(product.specs || "[]"));
-    specs = Array.isArray(parsed)
-      ? parsed.map((spec) => asRecord(spec) as StorefrontProductSpecInput)
-      : [];
-  } catch {
-    specs = [];
-  }
+  const specs = parseJsonArray(product.specs)
+    .map((spec) => asRecord(spec) as StorefrontProductSpecInput);
 
   const enabledSpecs = specs.filter((spec) => spec && spec.enabled !== false);
   if (enabledSpecs.length) {
@@ -128,30 +122,6 @@ export function buildStorefrontProductsViewModel(
   }));
 }
 
-function parseJsonArray(value: unknown): unknown[] {
-  const raw = String(value || "").trim();
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function parseJsonObject(value: unknown): JsonRecord {
-  const raw = String(value || "").trim();
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? parsed
-      : {};
-  } catch {
-    return {};
-  }
-}
-
 function normalizeDeliveryPaymentConfig(
   payment: JsonRecord = {},
 ): StorefrontPaymentConfig {
@@ -193,7 +163,7 @@ export function normalizeStorefrontDeliveryConfig(
     );
   }
 
-  let paymentRoutingConfig = parseJsonObject(
+  let paymentRoutingConfig = parseJsonRecord(
     settings.payment_routing_config,
   ) as Record<string, JsonRecord>;
   if (!Object.keys(paymentRoutingConfig).length) {
