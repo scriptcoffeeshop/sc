@@ -1,54 +1,18 @@
 import { computed, nextTick, reactive, ref } from "vue";
-import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
 import type {
   DashboardAuthFetch,
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
-
-type PromotionTargetItem = {
-  productId: number;
-  specKey: string;
-};
-
-type DashboardPromotionRecord = Record<string, unknown> & {
-  id?: number | string;
-  name?: string;
-  type?: string;
-  targetItems?: PromotionTargetItem[];
-  targetProductIds?: Array<number | string>;
-  minQuantity?: number | string;
-  discountType?: string;
-  discountValue?: number | string;
-  enabled?: boolean;
-  startTime?: string | null;
-  endTime?: string | null;
-};
-
-type DashboardProductRecord = Record<string, unknown> & {
-  id?: number | string;
-  category?: string;
-  name?: string;
-  price?: number | string;
-  specs?: string;
-};
-
-type DashboardProductSpec = {
-  key?: string;
-  label?: string;
-  price?: number | string;
-};
-
-type PromotionFormState = {
-  id: string;
-  name: string;
-  type: string;
-  minQuantity: number;
-  discountType: string;
-  discountValue: number;
-  enabled: boolean;
-  targetItems: PromotionTargetItem[];
-};
+import {
+  buildPromotionProductGroups,
+  buildPromotionViewModel,
+  normalizePromotion,
+  normalizeTargetItems,
+  type DashboardProductRecord,
+  type DashboardPromotionRecord,
+  type PromotionFormState,
+} from "./dashboardPromotionsShared.ts";
 
 type PromotionSortableEvent = {
   oldIndex?: number;
@@ -111,33 +75,11 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message || fallback : fallback;
 }
 
-function normalizePromotion(value: unknown): DashboardPromotionRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as DashboardPromotionRecord
-    : {};
-}
-
 function syncPromotionsMap(nextPromotions = promotions.value) {
   promotionsMap = {};
   (Array.isArray(nextPromotions) ? nextPromotions : []).forEach((promotion) => {
     promotionsMap[String(promotion.id || "")] = promotion;
   });
-}
-
-function buildPromotionViewModel(promotion: DashboardPromotionRecord) {
-  const isPercent = promotion?.discountType === "percent";
-  const enabled = Boolean(promotion?.enabled);
-  return {
-    id: Number(promotion?.id) || 0,
-    name: String(promotion?.name || ""),
-    conditionText: `任選 ${Number(promotion?.minQuantity) || 0} 件`,
-    discountText: isPercent
-      ? `${promotion?.discountValue} 折`
-      : `折 $${promotion?.discountValue}`,
-    enabled,
-    statusLabel: enabled ? "啟用" : "未啟用",
-    statusClass: enabled ? "ui-text-success" : "ui-text-muted",
-  };
 }
 
 const promotionsView = computed(() =>
@@ -149,30 +91,6 @@ const promotionsView = computed(() =>
 const promotionModalTitle = computed(() =>
   promotionForm.id ? "編輯活動" : "新增活動"
 );
-
-function normalizeTargetItems(sourcePromotion: DashboardPromotionRecord) {
-  const targetItems = Array.isArray(sourcePromotion?.targetItems)
-    ? sourcePromotion.targetItems
-    : [];
-  if (targetItems.length > 0) {
-    return targetItems.map((item) => ({
-      productId: Number(item?.productId) || 0,
-      specKey: String(item?.specKey || ""),
-    })).filter((item) => item.productId > 0);
-  }
-
-  if (
-    Array.isArray(sourcePromotion?.targetProductIds) &&
-    sourcePromotion.targetProductIds.length > 0
-  ) {
-    return sourcePromotion.targetProductIds.map((targetId) => ({
-      productId: Number(targetId) || 0,
-      specKey: "",
-    })).filter((item) => item.productId > 0);
-  }
-
-  return [];
-}
 
 function resetPromotionForm() {
   promotionForm.id = "";
@@ -226,49 +144,10 @@ function togglePromotionTarget(
   promotionForm.targetItems = nextItems;
 }
 
-function parseProductSpecs(product: DashboardProductRecord): DashboardProductSpec[] {
-  return parseJsonArray(product?.specs).map((item) => {
-    const spec = asJsonRecord(item);
-    return {
-      key: String(spec.key || ""),
-      label: String(spec.label || ""),
-      price: Number(spec.price) || 0,
-    };
-  });
-}
-
 const promotionProductGroups = computed(() => {
   const { getProducts } = getServices();
   const products = Array.isArray(getProducts?.()) ? getProducts() : [];
-
-  return products.map((product) => {
-    const specs = parseProductSpecs(product);
-    if (!specs.length) {
-      return {
-        productId: Number(product?.id) || 0,
-        category: String(product?.category || ""),
-        name: String(product?.name || ""),
-        options: [{
-          productId: Number(product?.id) || 0,
-          specKey: "",
-          label: `${product?.name || ""}`,
-          price: Number(product?.price) || 0,
-        }],
-      };
-    }
-
-    return {
-      productId: Number(product?.id) || 0,
-      category: String(product?.category || ""),
-      name: String(product?.name || ""),
-      options: specs.map((spec) => ({
-        productId: Number(product?.id) || 0,
-        specKey: String(spec?.key || ""),
-        label: String(spec?.label || ""),
-        price: Number(spec?.price) || 0,
-      })),
-    };
-  }).filter((group) => group.productId > 0);
+  return buildPromotionProductGroups(products);
 });
 
 function destroyPromotionSortable() {
