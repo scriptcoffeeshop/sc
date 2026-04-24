@@ -8,6 +8,7 @@ import {
   normalizeStorefrontDeliveryOption,
 } from "./storefrontModels.ts";
 import type { DashboardSettingsRecord } from "../../types/settings";
+import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
 
 interface StorefrontDeliveryPaymentConfig {
   cod?: boolean;
@@ -31,6 +32,7 @@ export interface StorefrontDeliveryOption {
 interface StorefrontDeliverySnapshot {
   deliveryConfig?: StorefrontDeliveryOption[];
   settings?: DashboardSettingsRecord;
+  selectedStore?: StorefrontSelectedStore;
 }
 
 interface StorefrontDeliveryDeps {
@@ -51,6 +53,11 @@ export { normalizeStorefrontDeliveryConfig };
 
 export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
   const deliveryOptions = ref<StorefrontDeliveryOption[]>([]);
+  const selectedStore = ref<StorefrontSelectedStore>({
+    storeId: "",
+    storeName: "",
+    storeAddress: "",
+  });
 
   function syncDeliveryState(snapshot: StorefrontDeliverySnapshot = {}) {
     const deliveryConfig = Array.isArray(snapshot.deliveryConfig) &&
@@ -60,6 +67,11 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     deliveryOptions.value = deliveryConfig.map((option) =>
       normalizeStorefrontDeliveryOption(option)
     ).filter((item) => item && item.enabled !== false);
+    selectedStore.value = snapshot.selectedStore || {
+      storeId: "",
+      storeName: "",
+      storeAddress: "",
+    };
   }
 
   function handleSelectDelivery(method: string) {
@@ -81,6 +93,7 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
 
   return {
     deliveryOptions,
+    selectedStore,
     resolveDeliveryIcon,
     syncDeliveryState,
     refreshDeliveryState,

@@ -135,12 +135,22 @@
           點擊後將開啟超商地圖選擇門市
         </p>
       </div>
-      <div id="store-selected-info" class="hidden store-info-card mb-3">
+      <div
+        v-if="selectedStore.storeName"
+        id="store-selected-info"
+        class="store-info-card mb-3"
+      >
         <div class="flex justify-between items-start">
           <div>
-            <p id="selected-store-name" class="font-semibold"></p>
-            <p id="selected-store-address" class="text-sm text-gray-600"></p>
-            <p id="selected-store-id" class="text-xs text-gray-400"></p>
+            <p id="selected-store-name" class="font-semibold">
+              {{ selectedStore.storeName }}
+            </p>
+            <p id="selected-store-address" class="text-sm text-gray-600">
+              {{ selectedStore.storeAddress }}
+            </p>
+            <p id="selected-store-id" class="text-xs text-gray-400">
+              門市代號：{{ selectedStore.storeId }}
+            </p>
           </div>
           <UiButton
             variant="ghost"
@@ -152,9 +162,9 @@
           </UiButton>
         </div>
       </div>
-      <input type="hidden" id="store-name-input">
-      <input type="hidden" id="store-address-input">
-      <input type="hidden" id="store-id-input">
+      <input type="hidden" id="store-name-input" :value="selectedStore.storeName">
+      <input type="hidden" id="store-address-input" :value="selectedStore.storeAddress">
+      <input type="hidden" id="store-id-input" :value="selectedStore.storeId">
     </div>
 
     <div
@@ -198,6 +208,7 @@
 import { computed } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import type { StorefrontDeliveryOption } from "./useStorefrontDelivery";
+import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
 
 type DeliveryIconResolver = (
   option: StorefrontDeliveryOption,
@@ -213,12 +224,18 @@ const props = withDefaults(
   defineProps<{
     deliveryOptions?: StorefrontDeliveryOption[];
     selectedDelivery?: string;
+    selectedStore?: StorefrontSelectedStore;
     selectedCheckIconUrl: string;
     resolveDeliveryIcon?: DeliveryIconResolver | null;
   }>(),
   {
     deliveryOptions: () => [],
     selectedDelivery: "",
+    selectedStore: () => ({
+      storeId: "",
+      storeName: "",
+      storeAddress: "",
+    }),
     resolveDeliveryIcon: null,
   },
 );

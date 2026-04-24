@@ -6,11 +6,13 @@ import { state } from "../../lib/appState.ts";
 import StorefrontStoreSearchPicker from "./StorefrontStoreSearchPicker.vue";
 import {
   normalizeStoreRecord,
-  setElementText,
-  setInputValue,
   type StoreRecord,
 } from "./storefrontDeliveryDom.ts";
 import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
+import {
+  clearStorefrontSelectedStore,
+  setStorefrontSelectedStore,
+} from "./storefrontSelectedStoreState.ts";
 
 let allStores: StoreRecord[] = [];
 let storeListLoaded = false;
@@ -22,13 +24,7 @@ export function resetStoreListCache(): void {
 
 /** 清除已選門市 */
 export function clearSelectedStore(): void {
-  document.getElementById("store-selected-info")?.classList.add("hidden");
-  setInputValue("store-name-input", "");
-  setInputValue("store-address-input", "");
-  setInputValue("store-id-input", "");
-  setElementText("selected-store-name", "");
-  setElementText("selected-store-address", "");
-  setElementText("selected-store-id", "");
+  clearStorefrontSelectedStore();
 }
 
 /** 套用門市選擇結果 */
@@ -37,13 +33,7 @@ export function applyStoreSelection(data: {
   storeName?: unknown;
   storeAddress?: unknown;
 }): void {
-  setElementText("selected-store-name", data.storeName);
-  setElementText("selected-store-address", data.storeAddress);
-  setElementText("selected-store-id", "門市代號：" + String(data.storeId || ""));
-  setInputValue("store-name-input", data.storeName);
-  setInputValue("store-address-input", data.storeAddress);
-  setInputValue("store-id-input", data.storeId);
-  document.getElementById("store-selected-info")?.classList.remove("hidden");
+  setStorefrontSelectedStore(data);
   Toast.fire({ icon: "success", title: "已選擇門市：" + data.storeName });
 }
 

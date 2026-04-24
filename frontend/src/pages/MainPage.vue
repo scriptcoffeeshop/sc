@@ -20,6 +20,7 @@
       <StorefrontDeliverySection
         :delivery-options="deliveryOptions"
         :selected-delivery="selectedDelivery"
+        :selected-store="selectedStore"
         :selected-check-icon-url="selectedCheckIconUrl"
         :resolve-delivery-icon="resolveDeliveryIcon"
         @select-delivery="handleSelectDelivery"
@@ -297,6 +298,7 @@ const {
 } = useStorefrontProducts({ getStorefrontUiSnapshot });
 const {
   deliveryOptions,
+  selectedStore,
   resolveDeliveryIcon,
   refreshDeliveryState,
   handleSelectDelivery,
@@ -375,6 +377,10 @@ function handleCartUpdated(event: Event) {
   syncStorefrontUiState();
 }
 
+function handleSelectedStoreUpdated() {
+  refreshDeliveryState();
+}
+
 watch(isCartDrawerOpen, (open) => {
   document.body.style.overflow = open ? "hidden" : originalBodyOverflow;
 });
@@ -393,6 +399,7 @@ onMounted(() => {
   document.body.className = "p-4 md:p-6";
 
   window.addEventListener("coffee:cart-updated", handleCartUpdated);
+  window.addEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
 
   const productsContainer = document.getElementById("products-container");
   const cartContainer = document.getElementById("cart-items");
@@ -408,6 +415,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("coffee:cart-updated", handleCartUpdated);
+  window.removeEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;
 });

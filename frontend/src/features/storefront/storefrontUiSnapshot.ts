@@ -6,6 +6,10 @@ import {
 import type { SessionUser } from "../../types/session";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { Product } from "../../types/core";
+import {
+  getStorefrontSelectedStore,
+  type StorefrontSelectedStore,
+} from "./storefrontSelectedStoreState.ts";
 
 interface StorefrontCategoryRecord {
   name?: string;
@@ -48,6 +52,7 @@ export interface StorefrontUiSnapshot {
   availablePaymentMethods: StorefrontPaymentAvailability;
   bankAccounts: StorefrontBankAccount[];
   selectedBankAccountId: string;
+  selectedStore: StorefrontSelectedStore;
 }
 
 function cloneArrayItems<T extends Record<string, unknown>>(items: unknown): T[] {
@@ -106,5 +111,6 @@ export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {
     availablePaymentMethods: { ...storefrontRuntime.availablePaymentMethods },
     bankAccounts: cloneArrayItems<StorefrontBankAccount>(state.bankAccounts),
     selectedBankAccountId: String(state.selectedBankAccountId || ""),
+    selectedStore: getStorefrontSelectedStore(),
   };
 }
