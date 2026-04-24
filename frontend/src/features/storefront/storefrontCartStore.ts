@@ -21,6 +21,28 @@ import { storefrontRuntime } from "./storefrontRuntime.ts";
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
 export let cart = [];
 
+function parseStoredCart(rawCart) {
+  if (!rawCart) return [];
+  try {
+    const parsed = JSON.parse(rawCart);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseProductSpecs(specsValue) {
+  try {
+    const specsSource = typeof specsValue === "string"
+      ? specsValue
+      : JSON.stringify(specsValue || []);
+    const parsed = JSON.parse(specsSource);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function triggerQuoteRefresh() {
   if (storefrontRuntime.scheduleQuoteRefresh) {
     storefrontRuntime.scheduleQuoteRefresh({ silent: true });
@@ -75,24 +97,21 @@ export function getCartSnapshot() {
 
 export function loadCart() {
   try {
-    const d = localStorage.getItem("coffee_cart");
-    cart = d ? JSON.parse(d) : [];
+    cart = parseStoredCart(localStorage.getItem("coffee_cart"));
     updateCartUI();
     triggerQuoteRefresh();
-  } catch {}
+  } catch {
+    cart = [];
+    updateCartUI();
+    triggerQuoteRefresh();
+  }
 }
 
 /** 加入購物車 */
 export function addToCart(productId, specKey) {
   const p = state.products.find((x) => x.id === productId);
   if (!p) return;
-  let specs = [];
-  try {
-    const specsSource = typeof p.specs === "string"
-      ? p.specs
-      : JSON.stringify(p.specs || []);
-    specs = JSON.parse(specsSource);
-  } catch {}
+  const specs = parseProductSpecs(p.specs);
   const spec = specs.find((s) => s.key === specKey) ||
     (specKey === "default"
       ? { key: "default", label: "預設", price: Number(p.price) || 0 }
