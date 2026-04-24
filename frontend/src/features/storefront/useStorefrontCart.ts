@@ -7,6 +7,10 @@ import {
   updateCartItemQty,
   updateCartItemQtyByKeys,
 } from "./storefrontCartStore.ts";
+import {
+  getShippingDisplayState,
+  toItemKey,
+} from "./storefrontCartSummary.ts";
 
 interface StorefrontCartItem {
   productId?: number | string;
@@ -20,12 +24,18 @@ interface StorefrontCartSummary {
   subtotal?: number;
   appliedPromos?: Array<{ name?: string; amount?: number; discount?: number }>;
   totalDiscount?: number;
-  discountedItemKeys?: string[] | Set<string>;
+  discountedItemKeys?: Set<string>;
   afterDiscount?: number;
   totalAfterDiscount?: number;
   shippingFee?: number;
   finalTotal?: number;
   quoteAvailable?: boolean;
+}
+
+interface StorefrontCartSummaryInput
+  extends Omit<StorefrontCartSummary, "discountedItemKeys">
+{
+  discountedItemKeys?: string[] | Set<string>;
 }
 
 interface StorefrontShippingConfig {
@@ -61,7 +71,7 @@ interface StorefrontCartUpdatedEvent {
     selectedDelivery?: string;
     deliveryName?: string;
     shippingConfig?: StorefrontShippingConfig | null;
-    summary?: StorefrontCartSummary;
+    summary?: StorefrontCartSummaryInput;
   };
 }
 
@@ -69,7 +79,7 @@ const defaultCartSummary: Required<StorefrontCartSummary> = {
   subtotal: 0,
   appliedPromos: [],
   totalDiscount: 0,
-  discountedItemKeys: [],
+  discountedItemKeys: new Set<string>(),
   afterDiscount: 0,
   totalAfterDiscount: 0,
   shippingFee: 0,
@@ -77,8 +87,17 @@ const defaultCartSummary: Required<StorefrontCartSummary> = {
   quoteAvailable: false,
 };
 
-function itemKey(productId: unknown, specKey: unknown = "") {
-  return `${Number(productId)}-${String(specKey || "")}`;
+function normalizeDiscountedItemKeys(
+  value: StorefrontCartSummaryInput["discountedItemKeys"],
+  fallback: Set<string>,
+) {
+  if (value instanceof Set) {
+    return new Set(value);
+  }
+  if (Array.isArray(value)) {
+    return new Set(value);
+  }
+  return new Set(fallback);
 }
 
 const defaultCartApi: StorefrontCartApi = {
@@ -113,9 +132,7 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   });
 
   const discountedItemKeySet = computed(() =>
-    new Set(Array.isArray(cartSummary.value.discountedItemKeys)
-      ? cartSummary.value.discountedItemKeys
-      : []),
+    new Set(cartSummary.value.discountedItemKeys),
   );
 
   const totalPriceText = computed(() =>
@@ -128,39 +145,28 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
     cartSummary.value.appliedPromos.length > 0,
   );
 
-  const hasShippingRule = computed(() => {
-    const fee = Number(shippingConfig.value?.fee || 0);
-    const threshold = Number(shippingConfig.value?.freeThreshold || 0);
-    const quoteFee = Number(cartSummary.value.shippingFee || 0);
-    return threshold > 0 || fee > 0 || quoteFee > 0;
-  });
+  const shippingState = computed(() =>
+    getShippingDisplayState(
+      cartSummary.value,
+      shippingConfig.value,
+      selectedDelivery.value,
+    ),
+  );
 
   const showShippingBadge = computed(() =>
-    !!(
-      selectedDelivery.value &&
-      cartSummary.value.quoteAvailable &&
-      hasShippingRule.value
-    ),
+    shippingState.value.showBadge,
   );
 
   const isFreeShipping = computed(() =>
-    !!(
-      showShippingBadge.value &&
-      Number(shippingConfig.value?.freeThreshold || 0) > 0 &&
-      Number(cartSummary.value.shippingFee || 0) === 0
-    ),
+    shippingState.value.isFreeShipping,
   );
 
   const showShippingNotice = computed(() =>
-    !!(
-      showShippingBadge.value &&
-      !isFreeShipping.value &&
-      Number(cartSummary.value.shippingFee || 0) > 0
-    ),
+    shippingState.value.showNotice,
   );
 
   const shippingNoticeTitle = computed(() =>
-    Number(shippingConfig.value?.freeThreshold || 0) > 0
+    shippingState.value.hasFreeThreshold
       ? `未達 ${deliveryName.value}免運門檻`
       : `${deliveryName.value}運費`,
   );
@@ -170,14 +176,14 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   );
 
   const shippingDiff = computed(() => {
-    const threshold = Number(shippingConfig.value?.freeThreshold || 0);
+    const threshold = shippingState.value.freeThreshold;
     if (!threshold) return 0;
     const diff = threshold - Number(cartSummary.value.totalAfterDiscount || 0);
     return diff > 0 ? diff : 0;
   });
 
   const freeShippingThresholdText = computed(() => {
-    const threshold = Number(shippingConfig.value?.freeThreshold || 0);
+    const threshold = shippingState.value.freeThreshold;
     return threshold > 0 ? ` (滿$${threshold})` : "";
   });
 
@@ -185,7 +191,7 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
     const map = new Map();
     cartItems.value.forEach((item) => {
       map.set(
-        itemKey(item.productId, item.specKey),
+        toItemKey(item.productId, String(item.specKey || "")),
         Math.max(1, Number(item.qty) || 1),
       );
     });
@@ -200,7 +206,7 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   );
 
   function getSpecQty(productId: unknown, specKey: unknown) {
-    return cartQtyMap.value.get(itemKey(productId, specKey)) || 0;
+    return cartQtyMap.value.get(toItemKey(productId, String(specKey || ""))) || 0;
   }
 
   function changeSpecQty(productId: unknown, specKey: unknown, delta: number) {
@@ -234,13 +240,18 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
 
   function handleCartUpdated(event?: StorefrontCartUpdatedEvent) {
     const detail = event?.detail || {};
+    const summary = detail.summary || {};
     cartItems.value = Array.isArray(detail.items) ? detail.items : [];
     selectedDelivery.value = String(detail.selectedDelivery || "");
     deliveryName.value = String(detail.deliveryName || "該配送方式");
     shippingConfig.value = detail.shippingConfig || null;
     cartSummary.value = {
       ...cartSummary.value,
-      ...(detail.summary || {}),
+      ...summary,
+      discountedItemKeys: normalizeDiscountedItemKeys(
+        summary.discountedItemKeys,
+        cartSummary.value.discountedItemKeys,
+      ),
     };
   }
 

@@ -4,6 +4,11 @@
 
 import { state } from "../../lib/appState.ts";
 import Swal from "../../lib/swal.ts";
+import {
+  calcCartSummaryFromState,
+  getDeliveryMeta as getStorefrontDeliveryMeta,
+  getShippingDisplayState as getStorefrontShippingDisplayState,
+} from "./storefrontCartSummary.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
@@ -30,55 +35,11 @@ function isVueManagedProducts() {
     "true";
 }
 
-function toSafeNumber(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function getShippingDisplayState(summary, shippingConfig) {
-  const configuredFee = Math.max(0, toSafeNumber(shippingConfig?.fee));
-  const freeThreshold = Math.max(0, toSafeNumber(shippingConfig?.freeThreshold));
-  const shippingFee = Math.max(0, toSafeNumber(summary?.shippingFee));
-  const hasFreeThreshold = freeThreshold > 0;
-  const hasShippingRule = hasFreeThreshold || configuredFee > 0 || shippingFee > 0;
-  const showBadge = !!(
-    state.selectedDelivery &&
-    summary?.quoteAvailable &&
-    hasShippingRule
-  );
-  const isFreeShipping = showBadge && hasFreeThreshold && shippingFee === 0;
-  const showNotice = showBadge && shippingFee > 0;
-
-  return {
-    configuredFee,
-    freeThreshold,
-    shippingFee,
-    hasFreeThreshold,
-    hasShippingRule,
-    showBadge,
-    isFreeShipping,
-    showNotice,
-  };
-}
-
 function getDeliveryMeta() {
-  const fallback = {
-    selectedDelivery: state.selectedDelivery || "",
-    deliveryName: "該配送方式",
-  };
-  const configStr = storefrontRuntime.appSettings?.delivery_options_config ||
-    "[]";
-  try {
-    const parsed = JSON.parse(configStr);
-    const selected = parsed.find((opt) => opt.id === state.selectedDelivery);
-    if (selected?.name) {
-      return {
-        selectedDelivery: state.selectedDelivery || "",
-        deliveryName: String(selected.name),
-      };
-    }
-  } catch {}
-  return fallback;
+  return getStorefrontDeliveryMeta(
+    state.selectedDelivery || "",
+    storefrontRuntime.appSettings?.delivery_options_config,
+  );
 }
 
 function emitCartUpdated(summary) {
@@ -516,7 +477,11 @@ export function updateCartUI() {
   // 計算總金額並套用方案 B 排版 (動態小標籤 + 大總額)
   const summary = calcCartSummary();
   const shippingConfig = getShippingConfig();
-  const shippingState = getShippingDisplayState(summary, shippingConfig);
+  const shippingState = getStorefrontShippingDisplayState(
+    summary,
+    shippingConfig,
+    state.selectedDelivery || "",
+  );
   if (!vueManagedCart) {
     const totalPriceEl = document.getElementById("total-price");
     const cartTotalEl = document.getElementById("cart-total");
@@ -603,88 +568,13 @@ export function getShippingConfig() {
   }
 }
 
-function toItemKey(productId, specKey = "") {
-  return `${Number(productId)}-${String(specKey || "")}`;
-}
-
-function toQtyMap(items) {
-  const map = new Map();
-  (items || []).forEach((item) => {
-    map.set(
-      toItemKey(item.productId, item.specKey),
-      Math.max(1, Number(item.qty) || 1),
-    );
-  });
-  return map;
-}
-
-function isQuoteAlignedWithCart(quote) {
-  if (!quote || !Array.isArray(quote.items)) return false;
-  if (
-    state.selectedDelivery && quote.deliveryMethod &&
-    quote.deliveryMethod !== state.selectedDelivery
-  ) {
-    return false;
-  }
-
-  const cartMap = toQtyMap(cart);
-  const quoteMap = toQtyMap(quote.items);
-  if (cartMap.size !== quoteMap.size) return false;
-
-  for (const [key, qty] of cartMap.entries()) {
-    if (quoteMap.get(key) !== qty) return false;
-  }
-  return true;
-}
-
 /** 計算購物車所有金額 */
 export function calcCartSummary() {
-  const subtotal = cart.reduce((s, c) => s + c.qty * c.unitPrice, 0);
-  const quote = state.orderQuote;
-
-  if (isQuoteAlignedWithCart(quote)) {
-    const totalDiscount = Math.max(0, Number(quote.totalDiscount) || 0);
-    const afterDiscount = Math.max(
-      0,
-      Number(quote.afterDiscount) || subtotal - totalDiscount,
-    );
-    const shippingFee = Math.max(0, Number(quote.shippingFee) || 0);
-    const finalTotal = Math.max(
-      0,
-      Number(quote.total) || afterDiscount + shippingFee,
-    );
-    const appliedPromos = Array.isArray(quote.appliedPromos)
-      ? quote.appliedPromos
-      : [];
-    const discountedItemKeys = new Set(
-      Array.isArray(quote.discountedItemKeys) ? quote.discountedItemKeys : [],
-    );
-
-    return {
-      subtotal: Math.max(0, Number(quote.subtotal) || subtotal),
-      appliedPromos,
-      totalDiscount,
-      discountedItemKeys,
-      afterDiscount,
-      totalAfterDiscount: afterDiscount,
-      shippingFee,
-      finalTotal,
-      quoteAvailable: true,
-    };
-  }
-
-  // 後端 quote 尚未回來時，先顯示基本小計，避免前端自行重算活動與運費造成漂移。
-  return {
-    subtotal,
-    appliedPromos: [],
-    totalDiscount: 0,
-    discountedItemKeys: new Set(),
-    afterDiscount: subtotal,
-    totalAfterDiscount: subtotal,
-    shippingFee: 0,
-    finalTotal: subtotal,
-    quoteAvailable: false,
-  };
+  return calcCartSummaryFromState(
+    cart,
+    state.orderQuote,
+    state.selectedDelivery || "",
+  );
 }
 
 /** 相容舊版 calcTotal */
