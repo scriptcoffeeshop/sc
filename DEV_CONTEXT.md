@@ -33,6 +33,7 @@
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會以 `workflow` 模式自動部署前端
+  - GitHub Pages deploy actions 使用 Node 24 compatible 版本：`actions/configure-pages@v6`、`actions/upload-pages-artifact@v5`、`actions/deploy-pages@v5`
   - `.github/workflows/ci.yml` 的 `workflow_dispatch` 預設 `deploy=true`，可在 `main/master` 手動補跑前端與 Supabase deploy jobs
   - Supabase `db push` / `coffee-api` deploy 需 repo secrets 已設好
   - 2026-04-23 已確認並修正 GitHub Pages source：從 `legacy / main / root` 切回 `workflow`，並重跑成功 workflow `24798560081` 讓正式站重新指向 build artifact
