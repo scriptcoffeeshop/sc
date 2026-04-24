@@ -8,6 +8,7 @@ test.describe("smoke / dashboard settings", () => {
   test("dashboard checkout settings keeps delivery routing rows visible", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
+    await page.setViewportSize({ width: 390, height: 844 });
 
     await page.addInitScript(() => {
       localStorage.setItem(
@@ -27,6 +28,15 @@ test.describe("smoke / dashboard settings", () => {
     const deliveryRows = page.locator("#delivery-routing-table .delivery-option-row");
     await expect(deliveryRows).toHaveCount(1);
     await expect(deliveryRows.first().locator(".do-name")).toHaveValue("配送到府");
+    await expect(deliveryRows.first().locator(".do-desc")).toHaveJSProperty(
+      "tagName",
+      "TEXTAREA",
+    );
+    await expect.poll(() =>
+      page.locator("#delivery-routing-table").evaluate((element) =>
+        element.scrollWidth <= element.clientWidth + 2
+      )
+    ).toBe(true);
     await expect(page.locator("#payment-options-table")).toContainText("linepay");
   });
 
@@ -153,6 +163,7 @@ test.describe("smoke / dashboard settings", () => {
     const firstDeliveryRow = page.locator("#delivery-routing-table .delivery-option-row")
       .first();
     await firstDeliveryRow.locator(".do-name").fill("新的取貨名稱");
+    await firstDeliveryRow.locator(".do-desc").fill("第一行說明\n第二行提醒");
     await page.locator("#po-linepay-name").fill("LINE Pay 快速付款");
     await page.locator("#s-linepay-sandbox").uncheck();
     await page.locator("#checkout-settings-section").getByRole("button", {
@@ -168,6 +179,7 @@ test.describe("smoke / dashboard settings", () => {
       updatePayload?.settings?.payment_options_config || "{}",
     );
     expect(deliveryConfig[0]?.name).toBe("新的取貨名稱");
+    expect(deliveryConfig[0]?.description).toBe("第一行說明\n第二行提醒");
     expect(paymentConfig.linepay?.name).toBe("LINE Pay 快速付款");
     expect(updatePayload?.settings?.linepay_sandbox).toBe("false");
   });

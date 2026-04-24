@@ -16,73 +16,31 @@
     <p class="text-sm ui-text-subtle mb-4">
       您可以自由拖曳排序、修改名稱與說明，並個別設定支援哪些付款方式。設定完成後請記得「儲存設定」。
     </p>
-    <div class="overflow-x-auto mb-4 border rounded settings-responsive-wrap">
-      <table class="w-full text-sm text-left whitespace-nowrap settings-routing-table">
-        <thead class="ui-bg-soft border-b">
-          <tr>
-            <th class="p-3 font-medium ui-text-strong w-10 text-center">
-              排序
-            </th>
-            <th class="p-3 font-medium ui-text-strong">
-              圖示與名稱 / 說明
-            </th>
-            <th class="p-3 font-medium ui-text-strong w-16 text-center border-l">
-              啟用
-            </th>
-            <th class="p-3 font-medium ui-text-strong w-20 text-center border-l">
-              運費
-            </th>
-            <th class="p-3 font-medium ui-text-strong w-24 text-center border-l">
-              免運門檻
-            </th>
-            <th
-              v-for="method in routingPaymentMethods"
-              :key="method.key"
-              class="p-3 font-medium ui-text-strong text-center border-l"
-            >
-              <span class="routing-payment-header">
-                <img
-                  :id="`dr-${method.key}-icon-preview`"
-                  :src="getPaymentPreviewUrl(method.key)"
-                  alt=""
-                  class="routing-payment-icon"
-                >
-                <span>{{ method.label }}</span>
-              </span>
-            </th>
-            <th class="p-3 font-medium ui-text-strong w-16 text-center border-l">
-              操作
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id="delivery-routing-table"
-          :ref="registerDeliveryRoutingTableElement"
-          class="sortable-tbody"
-        >
-          <tr
-            v-for="item in deliveryOptions"
-            :key="item.id"
-            class="border-b delivery-option-row group"
-            style="border-color:#E2DCC8"
-            :data-id="item.id"
-            :data-delivery-id="item.id"
-          >
-            <td
-              class="p-3 text-center cursor-move ui-text-muted hover:ui-text-strong transition"
-              data-label="排序"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="1em"
-                height="1em"
-                fill="currentColor"
-                viewBox="0 0 256 256"
-                class="drag-handle-icon"
-              ><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z" /></svg>
-            </td>
-            <td class="p-3" data-label="圖示與名稱 / 說明">
-              <div class="flex flex-col gap-2 min-w-[280px]">
+    <div
+      id="delivery-routing-table"
+      :ref="registerDeliveryRoutingTableElement"
+      class="space-y-3 mb-4 settings-routing-list"
+    >
+      <div
+        v-for="item in deliveryOptions"
+        :key="item.id"
+        class="delivery-option-row rounded-lg border bg-white p-4 shadow-sm"
+        style="border-color:#E2DCC8"
+        :data-id="item.id"
+        :data-delivery-id="item.id"
+      >
+        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.85fr)] gap-4">
+          <div class="min-w-0 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-start gap-3">
+              <button
+                type="button"
+                class="cursor-move ui-text-muted hover:ui-text-strong transition inline-flex h-9 w-9 items-center justify-center rounded border ui-border bg-white"
+                aria-label="拖曳排序"
+                title="拖曳排序"
+              >
+                <GripVertical class="h-5 w-5" aria-hidden="true" />
+              </button>
+              <div class="flex-1 min-w-0 space-y-2">
                 <div class="icon-upload-row">
                   <img
                     class="icon-upload-preview do-icon-preview"
@@ -108,93 +66,111 @@
                 <p class="text-[11px] ui-text-muted truncate do-icon-url-display">
                   {{ getDisplayUrl(item.icon_url) }}
                 </p>
-                <div class="flex items-center gap-2">
-                  <input
-                    v-model.trim="item.icon"
-                    type="text"
-                    class="border rounded p-1 icon-text-fallback text-sm do-icon"
-                    placeholder="備援字元"
-                  >
-                  <input
-                    v-model.trim="item.name"
-                    type="text"
-                    class="border rounded p-1 flex-1 min-w-[120px] do-name"
-                    placeholder="物流名稱"
-                  >
-                  <input :value="item.id" type="hidden" class="do-id">
-                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-[4.5rem_minmax(0,1fr)] gap-2">
+              <div>
+                <label class="block text-xs ui-text-subtle mb-1">備援字元</label>
                 <input
-                  v-model.trim="item.description"
+                  v-model.trim="item.icon"
                   type="text"
-                  class="border rounded p-1 w-full text-xs ui-text-strong do-desc"
-                  placeholder="簡短說明 (例如: 到店自取)"
+                  class="border rounded p-2 icon-text-fallback text-sm do-icon"
+                  placeholder="文字"
                 >
               </div>
-            </td>
-            <td
-              class="p-3 text-center border-l ui-bg-soft/50"
-              style="border-color:#E2DCC8"
-              data-label="啟用"
-            >
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input v-model="item.enabled" type="checkbox" class="sr-only peer do-enabled">
-                <div class="w-9 h-5 ui-bg-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+              <div>
+                <label class="block text-xs ui-text-subtle mb-1">取貨方式名稱</label>
+                <input
+                  v-model.trim="item.name"
+                  type="text"
+                  class="border rounded p-2 w-full min-w-0 do-name"
+                  placeholder="物流名稱"
+                >
+                <input :value="item.id" type="hidden" class="do-id">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs ui-text-subtle mb-1">說明</label>
+              <textarea
+                v-model.trim="item.description"
+                class="border rounded p-2 w-full min-h-[76px] text-sm leading-6 ui-text-strong do-desc"
+                placeholder="可分行輸入顧客會看到的取貨說明"
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="min-w-0 space-y-3 rounded-lg border ui-border bg-[#FFFDF7] p-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <label class="flex items-center justify-between gap-3 rounded border ui-border bg-white px-3 py-2 text-sm cursor-pointer">
+                <span class="font-medium ui-text-strong">啟用</span>
+                <span class="relative inline-flex items-center">
+                  <input v-model="item.enabled" type="checkbox" class="sr-only peer do-enabled">
+                  <span class="w-9 h-5 ui-bg-soft peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></span>
+                </span>
               </label>
-            </td>
-            <td
-              class="p-3 text-center border-l"
-              style="border-color:#E2DCC8"
-              data-label="運費"
-            >
-              <input
-                v-model.number="item.fee"
-                type="number"
-                class="border rounded p-1 w-16 text-center text-sm do-fee"
-                min="0"
-              >
-            </td>
-            <td
-              class="p-3 text-center border-l"
-              style="border-color:#E2DCC8"
-              data-label="免運門檻"
-            >
-              <input
-                v-model.number="item.free_threshold"
-                type="number"
-                class="border rounded p-1 w-20 text-center text-sm do-free-threshold"
-                min="0"
-              >
-            </td>
-            <td
-              v-for="method in routingPaymentMethods"
-              :key="`${item.id}-${method.key}`"
-              class="p-3 text-center border-l"
-              style="border-color:#E2DCC8"
-              :data-label="method.label"
-            >
-              <input
-                v-model="item.payment[method.key]"
-                type="checkbox"
-                :class="`w-4 h-4 do-${method.key}`"
-              >
-            </td>
-            <td
-              class="p-3 text-center border-l"
-              style="border-color:#E2DCC8"
-              data-label="操作"
-            >
+              <div>
+                <label class="block text-xs ui-text-subtle mb-1">運費</label>
+                <input
+                  v-model.number="item.fee"
+                  type="number"
+                  class="border rounded p-2 w-full text-center text-sm do-fee"
+                  min="0"
+                >
+              </div>
+              <div>
+                <label class="block text-xs ui-text-subtle mb-1">免運門檻</label>
+                <input
+                  v-model.number="item.free_threshold"
+                  type="number"
+                  class="border rounded p-2 w-full text-center text-sm do-free-threshold"
+                  min="0"
+                >
+              </div>
+            </div>
+
+            <div>
+              <div class="text-xs ui-text-subtle mb-2">支援付款方式</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label
+                  v-for="method in routingPaymentMethods"
+                  :key="`${item.id}-${method.key}`"
+                  class="flex items-center justify-between gap-3 rounded border ui-border bg-white px-3 py-2 text-sm cursor-pointer"
+                  :data-payment-method="method.key"
+                >
+                  <span class="routing-payment-header">
+                    <img
+                      :id="`dr-${method.key}-icon-preview`"
+                      :src="getPaymentPreviewUrl(method.key)"
+                      alt=""
+                      class="routing-payment-icon"
+                    >
+                    <span>{{ method.label }}</span>
+                  </span>
+                  <input
+                    v-model="item.payment[method.key]"
+                    type="checkbox"
+                    :class="`w-4 h-4 do-${method.key}`"
+                  >
+                </label>
+              </div>
+            </div>
+
+            <div class="flex justify-end">
               <button
                 type="button"
                 @click="handleRemoveDeliveryOption(item.id)"
-                class="ui-text-danger hover:text-red-700 p-1"
-                title="刪除此選項"
+                class="inline-flex items-center gap-1 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm ui-text-danger hover:bg-red-100 hover:text-red-700"
               >
+                <Trash2 class="h-4 w-4" aria-hidden="true" />
                 刪除
               </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="space-y-3 mt-4">
@@ -207,6 +183,10 @@
 </template>
 
 <script setup>
+import {
+  GripVertical,
+  Trash2,
+} from "lucide-vue-next";
 import {
   dashboardSettingsIconActions,
   useDashboardSettingsIcons,

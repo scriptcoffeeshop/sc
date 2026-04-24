@@ -666,34 +666,34 @@
     margin: 12px;
   }
 
-  /* 系統設定：將寬表格改為卡片式，避免整體需水平捲動 */
-  .dashboard-enterprise #settings-section .settings-responsive-wrap {
+  /* 設定頁：將寬表格改為卡片式，避免整體需水平捲動 */
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-responsive-wrap {
     overflow-x: visible;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table,
-  .dashboard-enterprise #settings-section .settings-routing-table thead,
-  .dashboard-enterprise #settings-section .settings-routing-table tbody,
-  .dashboard-enterprise #settings-section .settings-routing-table tr,
-  .dashboard-enterprise #settings-section .settings-routing-table th,
-  .dashboard-enterprise #settings-section .settings-routing-table td,
-  .dashboard-enterprise #settings-section .settings-payment-table,
-  .dashboard-enterprise #settings-section .settings-payment-table thead,
-  .dashboard-enterprise #settings-section .settings-payment-table tbody,
-  .dashboard-enterprise #settings-section .settings-payment-table tr,
-  .dashboard-enterprise #settings-section .settings-payment-table th,
-  .dashboard-enterprise #settings-section .settings-payment-table td {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table thead,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tbody,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tr,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table th,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table thead,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tbody,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tr,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table th,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td {
     display: block;
     width: 100%;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table thead,
-  .dashboard-enterprise #settings-section .settings-payment-table thead {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table thead,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table thead {
     display: none;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table tr,
-  .dashboard-enterprise #settings-section .settings-payment-table tr {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tr,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tr {
     border: 1px solid #E2DCC8;
     border-radius: 12px;
     background: #FFFDF7;
@@ -701,13 +701,13 @@
     margin-bottom: 12px;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table tr:last-child,
-  .dashboard-enterprise #settings-section .settings-payment-table tr:last-child {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table tr:last-child,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table tr:last-child {
     margin-bottom: 0;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table td,
-  .dashboard-enterprise #settings-section .settings-payment-table td {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td {
     border-left: none !important;
     border-bottom: 1px dashed #E2DCC8;
     text-align: left !important;
@@ -715,13 +715,13 @@
     padding: 10px 12px !important;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table td:last-child,
-  .dashboard-enterprise #settings-section .settings-payment-table td:last-child {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td:last-child,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td:last-child {
     border-bottom: none;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table td[data-label]::before,
-  .dashboard-enterprise #settings-section .settings-payment-table td[data-label]::before {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td[data-label]::before,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-payment-table td[data-label]::before {
     content: attr(data-label);
     display: block;
     margin-bottom: 6px;
@@ -731,12 +731,12 @@
     font-weight: 600;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table td:nth-child(2) > div,
-  .dashboard-enterprise #settings-section #payment-options-table td:nth-child(2) > div {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table td:nth-child(2) > div,
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) #payment-options-table td:nth-child(2) > div {
     min-width: 0 !important;
   }
 
-  .dashboard-enterprise #settings-section .settings-routing-table .routing-payment-header {
+  .dashboard-enterprise :is(#settings-section, #checkout-settings-section) .settings-routing-table .routing-payment-header {
     justify-content: flex-start;
   }
 }
