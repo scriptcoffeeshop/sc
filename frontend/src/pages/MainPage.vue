@@ -1,6 +1,7 @@
 <template>
   <StorefrontHeader
     :current-user="currentUser"
+    :branding="branding"
     :announcement-text="announcementText"
     :is-announcement-visible="isAnnouncementVisible"
     @close-announcement="handleCloseAnnouncement"
@@ -14,6 +15,7 @@
       <StorefrontProductGrid
         :categories="productsCategories"
         :spec-qty-map="cartQtyMap"
+        :section-title="branding.sections.products"
         @change-spec-qty="changeSpecQty"
       />
 
@@ -21,6 +23,7 @@
         :delivery-options="deliveryOptions"
         :selected-delivery="selectedDelivery"
         :selected-store="selectedStore"
+        :section-title="branding.sections.delivery"
         :selected-check-icon-url="selectedCheckIconUrl"
         :resolve-delivery-icon="resolveDeliveryIcon"
         @select-delivery="handleSelectDelivery"
@@ -129,13 +132,23 @@
       <!-- 備註 -->
       <div class="mb-6">
         <label
-          class="block font-medium mb-2"
-          style="color: var(--primary)"
           id="notes-section-title"
+          class="block mb-2"
+          :class="[branding.sections.notes.sizeClass, branding.sections.notes.weightClass]"
+          :style="{ color: branding.sections.notes.color }"
         >
           <span class="section-heading-inline">
-            <span class="ui-icon-title"><img id="notes-section-icon" src="../../../icons/notes-pencil.png" alt="備註區塊圖示" class="ui-icon-img"></span>
-            <span id="notes-section-title-text">訂單備註</span>
+            <span class="ui-icon-title">
+              <img
+                id="notes-section-icon"
+                :src="branding.sections.notes.iconUrl"
+                :alt="branding.sections.notes.iconAlt"
+                class="ui-icon-img"
+              >
+            </span>
+            <span id="notes-section-title-text">
+              {{ branding.sections.notes.title }}
+            </span>
           </span>
         </label>
         <UiTextarea
@@ -211,6 +224,7 @@ import { useStorefrontDelivery } from "../features/storefront/useStorefrontDeliv
 import { useStorefrontDynamicFields } from "../features/storefront/useStorefrontDynamicFields.ts";
 import { useStorefrontAuth } from "../features/storefront/useStorefrontAuth.ts";
 import { useStorefrontAnnouncement } from "../features/storefront/useStorefrontAnnouncement.ts";
+import { useStorefrontBranding } from "../features/storefront/useStorefrontBranding.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
@@ -340,6 +354,10 @@ const {
   refreshAnnouncementState,
 } = useStorefrontAnnouncement({ getStorefrontUiSnapshot });
 const {
+  branding,
+  refreshBrandingState,
+} = useStorefrontBranding({ getStorefrontUiSnapshot });
+const {
   currentUser: dynamicFieldsCurrentUser,
   selectedDelivery: dynamicFieldsSelectedDelivery,
   visibleFormFields,
@@ -365,6 +383,7 @@ const {
 function syncStorefrontUiState() {
   refreshAuthState();
   refreshAnnouncementState();
+  refreshBrandingState();
   refreshCartSubmitState();
   refreshProductsState();
   refreshDeliveryState();

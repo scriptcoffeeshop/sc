@@ -183,6 +183,7 @@
 - storefront 公告列已改由 Vue 管理：`useStorefrontAnnouncement.ts` 從 settings snapshot 推導公告文字/顯示狀態並記錄關閉狀態，`storefrontMainAppPayments.ts` / `useStorefrontShell.ts` 不再操作 `announcement-banner` / `announcement-text` DOM。
 - storefront 已選門市資訊已改由 Vue 管理：`storefrontSelectedStoreState.ts` 維護門市選擇 snapshot，`StorefrontDeliverySection.vue` 渲染門市卡與 hidden input value，`storefrontStoreSearch.ts` 不再寫入 `store-selected-info` / `selected-store-*` DOM。
 - storefront 初始化再收斂：`initMainApp()` 不再用 DOM 探針判斷 Vue 容器是否存在，`MainPage.vue` 也不再於 mounted 後手動補 `data-vue-managed`，由 Vue 元件模板自身宣告管理邊界。
+- storefront 品牌與區塊標題已改由 Vue 管理：`useStorefrontBranding.ts` 從 settings snapshot 建立品牌/商品/配送/備註標題 view model，Header、商品區、配送區與備註區直接吃 props；`storefrontFormRenderer.ts` 不再操作品牌或區塊標題 DOM。
 
 ### 2026-04-24
 

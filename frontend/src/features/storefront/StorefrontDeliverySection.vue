@@ -2,14 +2,20 @@
   <div class="mb-6">
     <h2
       id="delivery-section-title"
-      class="text-lg font-bold mb-4"
-      style="color: var(--primary)"
+      class="mb-4"
+      :class="[sectionTitle.sizeClass, sectionTitle.weightClass]"
+      :style="{ color: sectionTitle.color }"
     >
       <span class="section-heading-inline">
         <span class="ui-icon-title">
-          <img id="delivery-section-icon" src="../../../../icons/delivery-truck.png" alt="配送區塊圖示" class="ui-icon-img">
+          <img
+            id="delivery-section-icon"
+            :src="sectionTitle.iconUrl"
+            :alt="sectionTitle.iconAlt"
+            class="ui-icon-img"
+          >
         </span>
-        <span id="delivery-section-title-text">配送方式</span>
+        <span id="delivery-section-title-text">{{ sectionTitle.title }}</span>
       </span>
     </h2>
     <div
@@ -209,6 +215,8 @@ import { computed } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import type { StorefrontDeliveryOption } from "./useStorefrontDelivery";
 import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
+import type { StorefrontSectionTitleView } from "./useStorefrontBranding";
+import { normalizeStorefrontBranding } from "./useStorefrontBranding.ts";
 
 type DeliveryIconResolver = (
   option: StorefrontDeliveryOption,
@@ -225,6 +233,7 @@ const props = withDefaults(
     deliveryOptions?: StorefrontDeliveryOption[];
     selectedDelivery?: string;
     selectedStore?: StorefrontSelectedStore;
+    sectionTitle?: StorefrontSectionTitleView;
     selectedCheckIconUrl: string;
     resolveDeliveryIcon?: DeliveryIconResolver | null;
   }>(),
@@ -236,6 +245,7 @@ const props = withDefaults(
       storeName: "",
       storeAddress: "",
     }),
+    sectionTitle: () => normalizeStorefrontBranding({}).sections.delivery,
     resolveDeliveryIcon: null,
   },
 );

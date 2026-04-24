@@ -2,14 +2,20 @@
   <div class="mb-6">
     <h2
       id="products-section-title"
-      class="text-lg font-bold mb-4"
-      style="color: var(--primary)"
+      class="mb-4"
+      :class="[sectionTitle.sizeClass, sectionTitle.weightClass]"
+      :style="{ color: sectionTitle.color }"
     >
       <span class="section-heading-inline">
         <span class="ui-icon-title">
-          <img id="products-section-icon" src="../../../../icons/products-beans.png" alt="商品區塊圖示" class="ui-icon-img">
+          <img
+            id="products-section-icon"
+            :src="sectionTitle.iconUrl"
+            :alt="sectionTitle.iconAlt"
+            class="ui-icon-img"
+          >
         </span>
-        <span id="products-section-title-text">咖啡豆選購</span>
+        <span id="products-section-title-text">{{ sectionTitle.title }}</span>
       </span>
     </h2>
     <div id="products-container" data-vue-managed="true">
@@ -117,15 +123,19 @@
 
 <script setup lang="ts">
 import type { StorefrontProductCategoryView } from "./useStorefrontProducts";
+import type { StorefrontSectionTitleView } from "./useStorefrontBranding";
+import { normalizeStorefrontBranding } from "./useStorefrontBranding.ts";
 
 const props = withDefaults(
   defineProps<{
     categories?: StorefrontProductCategoryView[];
     specQtyMap?: Map<string, number>;
+    sectionTitle?: StorefrontSectionTitleView;
   }>(),
   {
     categories: () => [],
     specQtyMap: () => new Map<string, number>(),
+    sectionTitle: () => normalizeStorefrontBranding({}).sections.products,
   },
 );
 

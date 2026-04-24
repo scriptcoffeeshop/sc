@@ -20,7 +20,7 @@
   <div class="max-w-3xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
       <span id="site-icon">
-        <img src="../../../../icons/logo.png" alt="品牌圖示" class="ui-icon-img">
+        <img :src="branding.brandIconUrl" alt="品牌圖示" class="ui-icon-img">
       </span>
       <div>
         <h1
@@ -28,10 +28,10 @@
           class="text-2xl font-bold"
           style="color: var(--primary)"
         >
-          Script Coffee
+          {{ branding.siteTitle }}
         </h1>
         <p id="site-subtitle" class="text-sm text-gray-500">
-          咖啡豆 | 耳掛
+          {{ branding.siteSubtitle }}
         </p>
       </div>
     </div>
@@ -102,13 +102,17 @@ import {
   getStorefrontUserAvatarUrl,
   getStorefrontUserDisplayName,
 } from "./useStorefrontAuth.ts";
+import type { StorefrontBrandingView } from "./useStorefrontBranding";
+import { normalizeStorefrontBranding } from "./useStorefrontBranding.ts";
 
 const props = withDefaults(defineProps<{
   currentUser?: SessionUser | null;
+  branding?: StorefrontBrandingView;
   announcementText?: string;
   isAnnouncementVisible?: boolean;
 }>(), {
   currentUser: null,
+  branding: () => normalizeStorefrontBranding({}),
   announcementText: "",
   isAnnouncementVisible: false,
 });

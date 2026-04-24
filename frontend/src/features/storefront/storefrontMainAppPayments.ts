@@ -1,7 +1,6 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
 import { selectDelivery } from "./storefrontDeliveryActions.ts";
-import { applyBranding } from "./storefrontFormRenderer.ts";
 import {
   normalizeStorefrontDeliveryConfig,
   type StorefrontDeliveryOption,
@@ -47,7 +46,6 @@ export function createStorefrontMainAppPayments(
       state.bankAccounts = result.bankAccounts || [];
 
       applySettings(result.settings || {});
-      applyBranding(result.settings || {});
 
       if (state.currentUser) {
         deps.prefillUserFields();
