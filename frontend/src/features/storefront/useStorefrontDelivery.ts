@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import { districtData } from "../../lib/appConfig.ts";
+import { TAIWAN_CITY_DATA } from "../../lib/taiwanCityData.js";
 import {
   getDeliveryIconFallbackKey,
   getIconUrlFromConfig,
@@ -12,7 +13,10 @@ import type { DashboardSettingsRecord } from "../../types/settings";
 import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
 import {
   getStorefrontLocalDeliveryAddress,
+  getStorefrontHomeDeliveryAddress,
   setStorefrontLocalDeliveryAddress,
+  setStorefrontHomeDeliveryAddress,
+  type StorefrontHomeDeliveryAddress,
   type StorefrontLocalDeliveryAddress,
 } from "./storefrontDeliveryFormState.ts";
 
@@ -33,6 +37,11 @@ export interface StorefrontDeliveryOption {
   enabled?: boolean;
   payment?: StorefrontDeliveryPaymentConfig;
   [key: string]: unknown;
+}
+
+export interface StorefrontHomeDistrictOption {
+  name: string;
+  zipcode: string;
 }
 
 interface StorefrontDeliverySnapshot {
@@ -63,6 +72,11 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     getStorefrontLocalDeliveryAddress(),
   );
   const localDistrictOptions = ref<string[]>([]);
+  const homeDeliveryAddress = ref<StorefrontHomeDeliveryAddress>(
+    getStorefrontHomeDeliveryAddress(),
+  );
+  const homeCountyOptions = ref<string[]>([...TAIWAN_CITY_DATA.counties]);
+  const homeDistrictOptions = ref<StorefrontHomeDistrictOption[]>([]);
   const selectedStore = ref<StorefrontSelectedStore>({
     storeId: "",
     storeName: "",
@@ -83,6 +97,7 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
       storeAddress: "",
     };
     refreshLocalDistrictOptions();
+    refreshHomeDistrictOptions();
   }
 
   function refreshLocalDistrictOptions() {
@@ -117,6 +132,60 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     refreshLocalDistrictOptions();
   }
 
+  function getHomeDistrictOptions(city: string): StorefrontHomeDistrictOption[] {
+    const countyIndex = TAIWAN_CITY_DATA.counties.indexOf(city);
+    if (countyIndex < 0) return [];
+    const districtDataRow = TAIWAN_CITY_DATA.districts[countyIndex];
+    if (!districtDataRow) return [];
+    const [districts, zipcodes] = districtDataRow;
+    return districts.map((district, index) => ({
+      name: String(district || ""),
+      zipcode: String(zipcodes[index] || ""),
+    }));
+  }
+
+  function refreshHomeDistrictOptions() {
+    homeDistrictOptions.value = getHomeDistrictOptions(
+      homeDeliveryAddress.value.city,
+    );
+    if (
+      homeDeliveryAddress.value.district &&
+      !homeDistrictOptions.value.some((item) =>
+        item.name === homeDeliveryAddress.value.district
+      )
+    ) {
+      updateHomeDeliveryAddress("district", "");
+    }
+  }
+
+  function updateHomeDeliveryAddress(
+    field: keyof StorefrontHomeDeliveryAddress,
+    value: string,
+  ) {
+    const patch: Partial<StorefrontHomeDeliveryAddress> = {
+      [field]: String(value || ""),
+    };
+    if (field === "city") {
+      patch.district = "";
+      patch.zipcode = "";
+    }
+    if (field === "district") {
+      const district = homeDistrictOptions.value.find((item) =>
+        item.name === String(value || "")
+      );
+      patch.zipcode = district?.zipcode || "";
+    }
+    homeDeliveryAddress.value = setStorefrontHomeDeliveryAddress(patch);
+    refreshHomeDistrictOptions();
+  }
+
+  function handleHomeDeliveryAddressUpdated(event: Event) {
+    const detail = (event as CustomEvent<Partial<StorefrontHomeDeliveryAddress>>)
+      .detail || {};
+    homeDeliveryAddress.value = setStorefrontHomeDeliveryAddress(detail);
+    refreshHomeDistrictOptions();
+  }
+
   function handleSelectDelivery(method: string) {
     deps.selectDelivery?.(method);
     syncDeliveryState(deps.getStorefrontUiSnapshot?.() || {});
@@ -138,6 +207,9 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     deliveryOptions,
     localDeliveryAddress,
     localDistrictOptions,
+    homeDeliveryAddress,
+    homeCountyOptions,
+    homeDistrictOptions,
     selectedStore,
     resolveDeliveryIcon,
     syncDeliveryState,
@@ -147,5 +219,7 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     handleClearSelectedStore,
     updateLocalDeliveryAddress,
     handleLocalDeliveryAddressUpdated,
+    updateHomeDeliveryAddress,
+    handleHomeDeliveryAddressUpdated,
   };
 }

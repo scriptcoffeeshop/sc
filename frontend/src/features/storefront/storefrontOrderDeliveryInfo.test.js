@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { setStorefrontLocalDeliveryAddress } from "./storefrontDeliveryFormState.ts";
+import {
+  setStorefrontHomeDeliveryAddress,
+  setStorefrontLocalDeliveryAddress,
+} from "./storefrontDeliveryFormState.ts";
 import { collectSubmitDeliveryInfo } from "./storefrontOrderDeliveryInfo.ts";
 
 describe("collectSubmitDeliveryInfo", () => {
@@ -33,6 +36,24 @@ describe("collectSubmitDeliveryInfo", () => {
     expect(collectSubmitDeliveryInfo("delivery")).toEqual({
       deliveryInfo: null,
       error: "請選擇縣市",
+    });
+  });
+
+  it("collects home delivery address from Vue state", () => {
+    setStorefrontHomeDeliveryAddress({
+      city: "台北市",
+      district: "中正區",
+      zipcode: "100",
+      address: "忠孝西路 1 號",
+    });
+
+    expect(collectSubmitDeliveryInfo("home_delivery")).toEqual({
+      deliveryInfo: {
+        city: "台北市",
+        district: "100 中正區",
+        address: "忠孝西路 1 號",
+      },
+      error: "",
     });
   });
 });

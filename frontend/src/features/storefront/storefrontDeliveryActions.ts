@@ -6,16 +6,15 @@ import { API_URL, districtData } from "../../lib/appConfig.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
 import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
-import TwCitySelector from "../../lib/twCitySelector.js";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import {
   buildFormBody,
   parseDeliveryConfig,
   parseDeliveryPrefs,
-  setInputValue,
   type DeliveryPrefs,
 } from "./storefrontDeliveryDom.ts";
 import {
+  emitStorefrontHomeDeliveryAddressUpdated,
   emitStorefrontLocalDeliveryAddressUpdated,
   getStorefrontLocalDeliveryAddress,
   setStorefrontLocalDeliveryAddress,
@@ -33,26 +32,6 @@ export {
   openStoreSearchModal,
 } from "./storefrontStoreSearch.ts";
 
-let citySelectorInstance: unknown = null; // 用來儲存 tw-city-selector 實體
-
-function initCitySelector() {
-  if (TwCitySelector && !citySelectorInstance) {
-    citySelectorInstance = new TwCitySelector({
-      el: '[role="tw-city-selector"]',
-      elCounty: ".county",
-      elDistrict: ".district",
-      elZipcode: ".zipcode",
-    });
-  }
-}
-
-// 由於 ES module (type="module") 預設為 defer 執行，DOMContentLoaded 可能已經觸發
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initCitySelector);
-} else {
-  initCitySelector();
-}
-
 /** 選擇配送方式 */
 export function selectDelivery(
   method,
@@ -63,9 +42,7 @@ export function selectDelivery(
   state.orderQuote = null;
   state.quoteError = "";
 
-  if (method === "home_delivery") {
-    initCitySelector(); // 確保使用者點擊時，如果尚未初始化，則再初始化一次
-  } else if (method !== "delivery" && method !== "in_store") {
+  if (method !== "delivery" && method !== "home_delivery" && method !== "in_store") {
     resetStoreListCache();
     clearSelectedStore();
   }
@@ -311,27 +288,15 @@ export function loadDeliveryPrefs() {
         });
       } else if (method === "home_delivery") {
         // home_delivery 的 district 可能是 "300 東區"，回填時需拆出區域名稱
-        const countyEl = document.querySelector(".county");
-        const districtEl = document.querySelector(".district");
-        const zipEl = document.querySelector(".zipcode");
         const rawDistrict = String(prefs.district || "").trim();
         const districtText = rawDistrict.replace(/^\d{3}\s*/, "");
         const zipMatch = rawDistrict.match(/^(\d{3})/);
-
-        if (countyEl instanceof HTMLSelectElement && prefs.city) {
-          countyEl.value = String(prefs.city || "");
-          countyEl.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        if (districtEl instanceof HTMLSelectElement && districtText) {
-          districtEl.value = districtText;
-          districtEl.dispatchEvent(new Event("change", { bubbles: true }));
-        }
-        if (zipEl instanceof HTMLInputElement && zipMatch) {
-          zipEl.value = zipMatch[1];
-        }
-        if (prefs.address) {
-          setInputValue("home-delivery-detail", prefs.address);
-        }
+        emitStorefrontHomeDeliveryAddressUpdated({
+          city: String(prefs.city || ""),
+          district: districtText,
+          zipcode: zipMatch ? zipMatch[1] : "",
+          address: String(prefs.address || ""),
+        });
       } else if (method === "seven_eleven" || method === "family_mart") {
         if (prefs.storeId) {
           applyStoreSelection({

@@ -112,16 +112,41 @@
         <span class="tab-with-icon"><img src="../../../../icons/shipping-box.png" alt="" class="ui-icon-inline">全台宅配地址</span>
       </h3>
       <div
-        role="tw-city-selector"
         class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3"
       >
         <div>
           <label class="block text-sm text-gray-600 mb-1">縣市 <span class="text-red-500">*</span></label>
-          <select class="county input-field"></select>
+          <select
+            class="county input-field"
+            :value="homeDeliveryAddress.city"
+            @change="handleHomeAddressInput('city', $event)"
+          >
+            <option value="">選擇縣市</option>
+            <option
+              v-for="county in homeCountyOptions"
+              :key="county"
+              :value="county"
+            >
+              {{ county }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block text-sm text-gray-600 mb-1">區域 <span class="text-red-500">*</span></label>
-          <select class="district input-field"></select>
+          <select
+            class="district input-field"
+            :value="homeDeliveryAddress.district"
+            @change="handleHomeAddressInput('district', $event)"
+          >
+            <option value="">選擇區域</option>
+            <option
+              v-for="district in homeDistrictOptions"
+              :key="district.name"
+              :value="district.name"
+            >
+              {{ district.name }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block text-sm text-gray-600 mb-1">郵遞區號</label>
@@ -130,6 +155,7 @@
             type="text"
             readonly
             placeholder="自動帶入"
+            :value="homeDeliveryAddress.zipcode"
           >
         </div>
       </div>
@@ -140,6 +166,8 @@
           type="text"
           class="input-field"
           placeholder="路/街、巷、弄、號、樓"
+          :value="homeDeliveryAddress.address"
+          @input="handleHomeAddressInput('address', $event)"
         >
       </div>
     </div>
@@ -232,8 +260,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import UiButton from "../../components/ui/button/Button.vue";
-import type { StorefrontDeliveryOption } from "./useStorefrontDelivery";
-import type { StorefrontLocalDeliveryAddress } from "./storefrontDeliveryFormState";
+import type {
+  StorefrontDeliveryOption,
+  StorefrontHomeDistrictOption,
+} from "./useStorefrontDelivery";
+import type {
+  StorefrontHomeDeliveryAddress,
+  StorefrontLocalDeliveryAddress,
+} from "./storefrontDeliveryFormState";
 import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
 import type { StorefrontSectionTitleView } from "./useStorefrontBranding";
 import { normalizeStorefrontBranding } from "./useStorefrontBranding.ts";
@@ -249,6 +283,9 @@ const props = withDefaults(
     selectedStore?: StorefrontSelectedStore;
     localDeliveryAddress?: StorefrontLocalDeliveryAddress;
     localDistrictOptions?: string[];
+    homeDeliveryAddress?: StorefrontHomeDeliveryAddress;
+    homeCountyOptions?: string[];
+    homeDistrictOptions?: StorefrontHomeDistrictOption[];
     sectionTitle?: StorefrontSectionTitleView;
     selectedCheckIconUrl: string;
     resolveDeliveryIcon?: DeliveryIconResolver | null;
@@ -268,6 +305,14 @@ const props = withDefaults(
       companyOrBuilding: "",
     }),
     localDistrictOptions: () => [],
+    homeDeliveryAddress: () => ({
+      city: "",
+      district: "",
+      zipcode: "",
+      address: "",
+    }),
+    homeCountyOptions: () => [],
+    homeDistrictOptions: () => [],
     sectionTitle: () => normalizeStorefrontBranding({}).sections.delivery,
     resolveDeliveryIcon: null,
   },
@@ -279,6 +324,10 @@ const emit = defineEmits<{
   "clear-selected-store": [];
   "update-local-delivery-address": [
     field: keyof StorefrontLocalDeliveryAddress,
+    value: string,
+  ];
+  "update-home-delivery-address": [
+    field: keyof StorefrontHomeDeliveryAddress,
     value: string,
   ];
 }>();
@@ -296,6 +345,21 @@ function handleLocalAddressInput(
     return;
   }
   emit("update-local-delivery-address", field, target?.value || "");
+}
+
+function handleHomeAddressInput(
+  field: keyof StorefrontHomeDeliveryAddress,
+  event: Event,
+) {
+  const target = event.target;
+  if (
+    !(target instanceof HTMLInputElement) &&
+    !(target instanceof HTMLSelectElement)
+  ) {
+    emit("update-home-delivery-address", field, "");
+    return;
+  }
+  emit("update-home-delivery-address", field, target.value || "");
 }
 
 function getDeliveryIcon(option: StorefrontDeliveryOption) {

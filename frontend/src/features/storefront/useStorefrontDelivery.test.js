@@ -107,6 +107,26 @@ describe("useStorefrontDelivery", () => {
     });
   });
 
+  it("tracks home delivery address and zipcode with Vue state", () => {
+    const delivery = useStorefrontDelivery();
+
+    delivery.updateHomeDeliveryAddress("city", "台北市");
+    expect(delivery.homeDistrictOptions.value[0]).toEqual({
+      name: "中正區",
+      zipcode: "100",
+    });
+
+    delivery.updateHomeDeliveryAddress("district", "中正區");
+    delivery.updateHomeDeliveryAddress("address", "忠孝西路 1 號");
+
+    expect(delivery.homeDeliveryAddress.value).toMatchObject({
+      city: "台北市",
+      district: "中正區",
+      zipcode: "100",
+      address: "忠孝西路 1 號",
+    });
+  });
+
   it("resolves delivery icons through configured url or default icon", () => {
     const delivery = useStorefrontDelivery();
 

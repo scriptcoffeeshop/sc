@@ -1,6 +1,9 @@
 import type { DeliveryMethod, SubmitDeliveryInfo, SubmitDeliveryInfoResult } from "../../types";
 import { getFormControlValue } from "./storefrontDeliveryDom.ts";
-import { getStorefrontLocalDeliveryAddress } from "./storefrontDeliveryFormState.ts";
+import {
+  getStorefrontHomeDeliveryAddress,
+  getStorefrontLocalDeliveryAddress,
+} from "./storefrontDeliveryFormState.ts";
 
 export const SUBMIT_DELIVERY_METHOD_TEXT = {
   delivery: "配送到府(限新竹)",
@@ -36,13 +39,11 @@ export function collectSubmitDeliveryInfo(
   }
 
   if (deliveryMethod === "home_delivery") {
-    const cityObj = document.querySelector<HTMLInputElement>(".county");
-    const distObj = document.querySelector<HTMLInputElement>(".district");
-    const zipObj = document.querySelector<HTMLInputElement>(".zipcode");
-    const city = cityObj ? cityObj.value : "";
-    const district = distObj ? distObj.value : "";
-    const zip = zipObj ? zipObj.value : "";
-    const addr = getFormControlValue("home-delivery-detail").trim();
+    const homeAddress = getStorefrontHomeDeliveryAddress();
+    const city = homeAddress.city.trim();
+    const district = homeAddress.district.trim();
+    const zip = homeAddress.zipcode.trim();
+    const addr = homeAddress.address.trim();
     if (!city || !district) {
       return {
         deliveryInfo: null,
