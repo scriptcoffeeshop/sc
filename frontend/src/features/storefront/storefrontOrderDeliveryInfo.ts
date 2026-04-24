@@ -1,4 +1,5 @@
 import type { DeliveryMethod, SubmitDeliveryInfo, SubmitDeliveryInfoResult } from "../../types";
+import { getFormControlValue } from "./storefrontDeliveryDom.ts";
 
 export const SUBMIT_DELIVERY_METHOD_TEXT = {
   delivery: "配送到府(限新竹)",
@@ -7,10 +8,6 @@ export const SUBMIT_DELIVERY_METHOD_TEXT = {
   family_mart: "全家取件",
   in_store: "來店取貨",
 } satisfies Record<string, string>;
-
-function getInputValue(id: string): string {
-  return String((document.getElementById(id) as HTMLInputElement | null)?.value || "");
-}
 
 function composeDeliveryAddress(address: unknown, companyOrBuilding: unknown): string {
   const detailAddress = String(address || "").trim();
@@ -24,10 +21,10 @@ export function collectSubmitDeliveryInfo(
   deliveryMethod: DeliveryMethod | string,
 ): SubmitDeliveryInfoResult {
   if (deliveryMethod === "delivery") {
-    const city = getInputValue("delivery-city");
-    const district = getInputValue("delivery-district");
-    const addr = getInputValue("delivery-detail-address").trim();
-    const companyOrBuilding = getInputValue("delivery-company").trim();
+    const city = getFormControlValue("delivery-city");
+    const district = getFormControlValue("delivery-district");
+    const addr = getFormControlValue("delivery-detail-address").trim();
+    const companyOrBuilding = getFormControlValue("delivery-company").trim();
     if (!city) return { deliveryInfo: null, error: "請選擇縣市" };
     if (!addr) return { deliveryInfo: null, error: "請填寫詳細地址" };
     return {
@@ -43,7 +40,7 @@ export function collectSubmitDeliveryInfo(
     const city = cityObj ? cityObj.value : "";
     const district = distObj ? distObj.value : "";
     const zip = zipObj ? zipObj.value : "";
-    const addr = getInputValue("home-delivery-detail").trim();
+    const addr = getFormControlValue("home-delivery-detail").trim();
     if (!city || !district) {
       return {
         deliveryInfo: null,
@@ -73,8 +70,8 @@ export function collectSubmitDeliveryInfo(
     };
   }
 
-  const storeName = getInputValue("store-name-input").trim();
-  const storeAddress = getInputValue("store-address-input").trim();
+  const storeName = getFormControlValue("store-name-input").trim();
+  const storeAddress = getFormControlValue("store-address-input").trim();
   if (!storeName) {
     return { deliveryInfo: null, error: "請填寫取貨門市名稱" };
   }
@@ -82,7 +79,7 @@ export function collectSubmitDeliveryInfo(
     deliveryInfo: {
       storeName,
       storeAddress,
-      storeId: getInputValue("store-id-input"),
+      storeId: getFormControlValue("store-id-input"),
     },
     error: "",
   };

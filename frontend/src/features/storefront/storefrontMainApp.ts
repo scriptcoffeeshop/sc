@@ -9,6 +9,10 @@ import {
   updateDistricts,
 } from "./storefrontDeliveryActions.ts";
 import {
+  getFormControlValue,
+  getInputElement,
+} from "./storefrontDeliveryDom.ts";
+import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
 } from "./storefrontOrderActions.ts";
@@ -17,23 +21,6 @@ import { createStorefrontMainAppPayments } from "./storefrontMainAppPayments.ts"
 import { createStorefrontMainAppReturns } from "./storefrontMainAppReturns.ts";
 import { registerStorefrontRuntime } from "./storefrontRuntime.ts";
 import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
-
-function getInputElement(id: string): HTMLInputElement | null {
-  const element = document.getElementById(id);
-  return element instanceof HTMLInputElement ? element : null;
-}
-
-function getFormControlValue(id: string): string {
-  const element = document.getElementById(id);
-  if (
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLTextAreaElement ||
-    element instanceof HTMLSelectElement
-  ) {
-    return element.value.trim();
-  }
-  return "";
-}
 
 function getErrorMessage(error: unknown, fallback = "發生未知錯誤") {
   if (error instanceof Error) return error.message || fallback;
