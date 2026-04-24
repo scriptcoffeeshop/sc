@@ -1,3 +1,36 @@
+import type {
+  DashboardAuthFetch,
+  DashboardOrderRecord,
+  DashboardSwal,
+  DashboardToast,
+} from "./dashboardOrderTypes.ts";
+
+type OrderStatusControllerDeps = {
+  API_URL: string;
+  authFetch: DashboardAuthFetch;
+  getAuthUserId: () => string;
+  getOrders: () => DashboardOrderRecord[];
+  loadOrders: () => Promise<unknown> | unknown;
+  previewOrderStatusNotification?: (
+    order: DashboardOrderRecord,
+    status: string,
+  ) => Promise<unknown> | unknown;
+  Toast: DashboardToast;
+  Swal: DashboardSwal;
+  esc: (value: unknown) => string;
+  orderStatusLabel: Record<string, string>;
+};
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message || fallback : fallback;
+}
+
 function getFormControlValue(id: string): string {
   const element = document.getElementById(id);
   if (
@@ -10,21 +43,21 @@ function getFormControlValue(id: string): string {
   return "";
 }
 
-export function createOrderStatusController(deps) {
+export function createOrderStatusController(deps: OrderStatusControllerDeps) {
   function getOrders() {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
   }
 
-  async function changeOrderStatus(orderId, status) {
+  async function changeOrderStatus(orderId: string, status: string) {
     try {
       const targetOrder = getOrders().find((order) => order.orderId === orderId) ||
-        {};
+        ({ orderId, timestamp: "" } as DashboardOrderRecord);
       const currentStatus = targetOrder.status || "";
       const newStatusLabel = deps.orderStatusLabel[status] || status;
 
-      let trackingNumber;
-      let shippingProvider;
-      let trackingUrl;
+      let trackingNumber = "";
+      let shippingProvider = "";
+      let trackingUrl = "";
       let cancelReason = "";
       if (status === "shipped") {
         const { value: shippingInfo, isConfirmed } = await deps.Swal.fire({
@@ -62,7 +95,7 @@ export function createOrderStatusController(deps) {
               trackingUrlValue &&
               !/^https?:\/\//i.test(trackingUrlValue)
             ) {
-              deps.Swal.showValidationMessage(
+              deps.Swal.showValidationMessage?.(
                 "物流追蹤網址需以 http:// 或 https:// 開頭",
               );
               return false;
@@ -78,9 +111,10 @@ export function createOrderStatusController(deps) {
           deps.loadOrders();
           return;
         }
-        trackingNumber = shippingInfo?.trackingNumber || "";
-        shippingProvider = shippingInfo?.shippingProvider || "";
-        trackingUrl = shippingInfo?.trackingUrl || "";
+        const shippingInfoRecord = asRecord(shippingInfo);
+        trackingNumber = String(shippingInfoRecord.trackingNumber || "");
+        shippingProvider = String(shippingInfoRecord.shippingProvider || "");
+        trackingUrl = String(shippingInfoRecord.trackingUrl || "");
       } else if (status === "cancelled" || status === "failed") {
         const reasonLabel = status === "failed" ? "失敗原因" : "取消原因";
         const title = status === "failed" ? "設定失敗訂單" : "設定已取消";
@@ -112,7 +146,7 @@ export function createOrderStatusController(deps) {
           deps.loadOrders();
           return;
         }
-        cancelReason = String(cancelInfo?.cancelReason || "").trim();
+        cancelReason = String(asRecord(cancelInfo).cancelReason || "").trim();
       } else {
         const confirmation = await deps.Swal.fire({
           title: "確認變更訂單狀態",
@@ -156,12 +190,14 @@ export function createOrderStatusController(deps) {
         body: JSON.stringify(payload),
       });
       const result = await response.json();
-      if (!result.success) throw new Error(result.error);
+      if (!result.success) throw new Error(result.error || "更新訂單狀態失敗");
 
       deps.Toast.fire({ icon: "success", title: "狀態已更新" });
 
-      const flexOrder = {
+      const flexOrder: DashboardOrderRecord = {
         ...targetOrder,
+        orderId,
+        timestamp: targetOrder.timestamp || "",
         status,
       };
       if (status === "shipped") {
@@ -179,11 +215,11 @@ export function createOrderStatusController(deps) {
         await deps.previewOrderStatusNotification(flexOrder, status);
       }
     } catch (error) {
-      deps.Swal.fire("錯誤", error.message, "error");
+      deps.Swal.fire("錯誤", getErrorMessage(error, "更新訂單狀態失敗"), "error");
     }
   }
 
-  async function refundOnlinePayOrder(orderId, paymentMethod = "linepay") {
+  async function refundOnlinePayOrder(orderId: string, paymentMethod = "linepay") {
     const normalizedMethod = String(paymentMethod || "").trim().toLowerCase();
     const isJkoPay = normalizedMethod === "jkopay";
     const action = isJkoPay ? "jkoPayRefund" : "linePayRefund";
@@ -219,11 +255,11 @@ export function createOrderStatusController(deps) {
       deps.Toast.fire({ icon: "success", title: "退款成功" });
       await deps.loadOrders();
     } catch (error) {
-      deps.Swal.fire("錯誤", error.message, "error");
+      deps.Swal.fire("錯誤", getErrorMessage(error, "退款失敗"), "error");
     }
   }
 
-  async function confirmTransferPayment(orderId) {
+  async function confirmTransferPayment(orderId: string) {
     const confirmation = await deps.Swal.fire({
       title: "確認收款",
       text: `確認已收到訂單 #${orderId} 的匯款？`,
@@ -253,7 +289,7 @@ export function createOrderStatusController(deps) {
       deps.Toast.fire({ icon: "success", title: "已確認收款" });
       await deps.loadOrders();
     } catch (error) {
-      deps.Swal.fire("錯誤", error.message, "error");
+      deps.Swal.fire("錯誤", getErrorMessage(error, "確認收款失敗"), "error");
     }
   }
 
