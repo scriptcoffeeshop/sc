@@ -7,6 +7,8 @@ interface ReceiptInfo {
   needDateStamp: boolean;
 }
 
+type LineFlexContent = Record<string, unknown>;
+
 export interface OrderFlexPayload {
   orderId: string;
   siteTitle: string;
@@ -94,9 +96,55 @@ function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   return { buyer, taxId, address, needDateStamp };
 }
 
+interface FlexInfoRowOptions {
+  margin?: string;
+  valueWeight?: string;
+  valueColor?: string;
+  valueWrap?: boolean;
+}
+
+function buildFlexSeparator(margin = "md"): LineFlexContent {
+  return { type: "separator", margin };
+}
+
+function buildFlexInfoRow(
+  label: string,
+  text: string,
+  options: FlexInfoRowOptions = {},
+): LineFlexContent {
+  const valueText: LineFlexContent = {
+    type: "text",
+    text,
+    size: "sm",
+    flex: 5,
+  };
+  if (options.valueWeight) valueText.weight = options.valueWeight;
+  if (options.valueColor) valueText.color = options.valueColor;
+  if (typeof options.valueWrap === "boolean") {
+    valueText.wrap = options.valueWrap;
+  }
+
+  const row: LineFlexContent = {
+    type: "box",
+    layout: "horizontal",
+    contents: [
+      {
+        type: "text",
+        text: label,
+        size: "sm",
+        color: "#839496",
+        flex: 3,
+      },
+      valueText,
+    ],
+  };
+  if (options.margin) row.margin = options.margin;
+  return row;
+}
+
 export function buildOrderStatusLineFlexMessage(
   order: OrderFlexPayload,
-): Record<string, unknown> {
+): LineFlexContent {
   const nextStatus = String(order.status || "pending");
   const statusLabel = ORDER_STATUS_LABEL[nextStatus] || nextStatus;
   const statusColor = STATUS_COLOR_MAP[nextStatus] || "#586E75";
@@ -118,335 +166,112 @@ export function buildOrderStatusLineFlexMessage(
   const siteTitle = String(order.siteTitle || "Script Coffee").trim() ||
     "Script Coffee";
 
-  const bodyContents: Record<string, unknown>[] = [
-    {
-      type: "box",
-      layout: "horizontal",
-      contents: [
-        {
-          type: "text",
-          text: "訂單編號",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: `#${orderId}`,
-          size: "sm",
-          weight: "bold",
-          flex: 5,
-          wrap: true,
-        },
-      ],
-    },
-    { type: "separator", margin: "md" },
+  const bodyContents: LineFlexContent[] = [
+    buildFlexInfoRow("訂單編號", `#${orderId}`, {
+      valueWeight: "bold",
+      valueWrap: true,
+    }),
+    buildFlexSeparator(),
     ...(deliveryAddressText
-      ? [{
-        type: "box",
-        layout: "horizontal",
-        margin: "md",
-        contents: [
-          {
-            type: "text",
-            text: "配送地址",
-            size: "sm",
-            color: "#839496",
-            flex: 3,
-          },
-          {
-            type: "text",
-            text: deliveryAddressText,
-            size: "sm",
-            flex: 5,
-            wrap: true,
-          },
-        ],
-      }, { type: "separator", margin: "md" }]
+      ? [
+        buildFlexInfoRow("配送地址", deliveryAddressText, {
+          margin: "md",
+          valueWrap: true,
+        }),
+        buildFlexSeparator(),
+      ]
       : []),
-    {
-      type: "box",
-      layout: "horizontal",
+    buildFlexInfoRow("訂單狀態", statusLabel, {
       margin: "md",
-      contents: [
-        {
-          type: "text",
-          text: "訂單狀態",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: statusLabel,
-          size: "sm",
-          weight: "bold",
-          color: statusColor,
-          flex: 5,
-        },
-      ],
-    },
-    { type: "separator", margin: "md" },
-    {
-      type: "box",
-      layout: "horizontal",
+      valueWeight: "bold",
+      valueColor: statusColor,
+    }),
+    buildFlexSeparator(),
+    buildFlexInfoRow("配送方式", deliveryLabel, {
       margin: "md",
-      contents: [
-        {
-          type: "text",
-          text: "配送方式",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: deliveryLabel,
-          size: "sm",
-          flex: 5,
-          wrap: true,
-        },
-      ],
-    },
-    { type: "separator", margin: "md" },
-    {
-      type: "box",
-      layout: "horizontal",
+      valueWrap: true,
+    }),
+    buildFlexSeparator(),
+    buildFlexInfoRow("付款方式", `${paymentLabel}${paymentStatusStr}`, {
       margin: "md",
-      contents: [
-        {
-          type: "text",
-          text: "付款方式",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: `${paymentLabel}${paymentStatusStr}`,
-          size: "sm",
-          flex: 5,
-          wrap: true,
-        },
-      ],
-    },
-    { type: "separator", margin: "md" },
-    {
-      type: "box",
-      layout: "horizontal",
+      valueWrap: true,
+    }),
+    buildFlexSeparator(),
+    buildFlexInfoRow("訂單金額", `$${Number(order.total) || 0}`, {
       margin: "md",
-      contents: [
-        {
-          type: "text",
-          text: "訂單金額",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: `$${Number(order.total) || 0}`,
-          size: "sm",
-          weight: "bold",
-          color: "#DC322F",
-          flex: 5,
-        },
-      ],
-    },
+      valueWeight: "bold",
+      valueColor: "#DC322F",
+    }),
   ];
 
   if (orderNote) {
-    bodyContents.push({ type: "separator", margin: "md" });
-    bodyContents.push({
-      type: "box",
-      layout: "horizontal",
+    bodyContents.push(buildFlexSeparator());
+    bodyContents.push(buildFlexInfoRow("訂單備註", orderNote, {
       margin: "md",
-      contents: [
-        {
-          type: "text",
-          text: "訂單備註",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: orderNote,
-          size: "sm",
-          flex: 5,
-          wrap: true,
-        },
-      ],
-    });
+      valueWrap: true,
+    }));
   }
 
   if (receiptInfo) {
-    bodyContents.push({ type: "separator", margin: "md" });
-    bodyContents.push({
-      type: "box",
-      layout: "horizontal",
+    bodyContents.push(buildFlexSeparator());
+    bodyContents.push(buildFlexInfoRow("收據需求", "需要索取", {
       margin: "md",
-      contents: [
-        {
-          type: "text",
-          text: "收據需求",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: "需要索取",
-          size: "sm",
-          weight: "bold",
-          color: "#B58900",
-          flex: 5,
-        },
-      ],
-    });
-    bodyContents.push({
-      type: "box",
-      layout: "horizontal",
-      margin: "sm",
-      contents: [
-        {
-          type: "text",
-          text: "統一編號",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: receiptInfo.taxId || "未填寫",
-          size: "sm",
-          flex: 5,
-          wrap: true,
-        },
-      ],
-    });
-    bodyContents.push({
-      type: "box",
-      layout: "horizontal",
-      margin: "sm",
-      contents: [
-        {
-          type: "text",
-          text: "壓印日期",
-          size: "sm",
-          color: "#839496",
-          flex: 3,
-        },
-        {
-          type: "text",
-          text: receiptInfo.needDateStamp ? "需要" : "不需要",
-          size: "sm",
-          flex: 5,
-        },
-      ],
-    });
-    if (receiptInfo.buyer) {
-      bodyContents.push({
-        type: "box",
-        layout: "horizontal",
+      valueWeight: "bold",
+      valueColor: "#B58900",
+    }));
+    bodyContents.push(
+      buildFlexInfoRow("統一編號", receiptInfo.taxId || "未填寫", {
         margin: "sm",
-        contents: [
-          {
-            type: "text",
-            text: "買受人",
-            size: "sm",
-            color: "#839496",
-            flex: 3,
-          },
-          {
-            type: "text",
-            text: receiptInfo.buyer,
-            size: "sm",
-            flex: 5,
-            wrap: true,
-          },
-        ],
-      });
+        valueWrap: true,
+      }),
+    );
+    bodyContents.push(
+      buildFlexInfoRow(
+        "壓印日期",
+        receiptInfo.needDateStamp ? "需要" : "不需要",
+        {
+          margin: "sm",
+        },
+      ),
+    );
+    if (receiptInfo.buyer) {
+      bodyContents.push(buildFlexInfoRow("買受人", receiptInfo.buyer, {
+        margin: "sm",
+        valueWrap: true,
+      }));
     }
     if (receiptInfo.address) {
-      bodyContents.push({
-        type: "box",
-        layout: "horizontal",
+      bodyContents.push(buildFlexInfoRow("收據地址", receiptInfo.address, {
         margin: "sm",
-        contents: [
-          {
-            type: "text",
-            text: "收據地址",
-            size: "sm",
-            color: "#839496",
-            flex: 3,
-          },
-          {
-            type: "text",
-            text: receiptInfo.address,
-            size: "sm",
-            flex: 5,
-            wrap: true,
-          },
-        ],
-      });
+        valueWrap: true,
+      }));
     }
   }
 
   if (order.trackingNumber || order.shippingProvider) {
-    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push(buildFlexSeparator());
     if (order.shippingProvider) {
-      bodyContents.push({
-        type: "box",
-        layout: "horizontal",
-        margin: "md",
-        contents: [
-          {
-            type: "text",
-            text: "物流商",
-            size: "sm",
-            color: "#839496",
-            flex: 3,
-          },
-          {
-            type: "text",
-            text: String(order.shippingProvider || ""),
-            size: "sm",
-            flex: 5,
-            wrap: true,
-          },
-        ],
-      });
+      bodyContents.push(
+        buildFlexInfoRow("物流商", String(order.shippingProvider || ""), {
+          margin: "md",
+          valueWrap: true,
+        }),
+      );
     }
     if (order.trackingNumber) {
-      bodyContents.push({
-        type: "box",
-        layout: "horizontal",
-        margin: "sm",
-        contents: [
-          {
-            type: "text",
-            text: "物流單號",
-            size: "sm",
-            color: "#839496",
-            flex: 3,
-          },
-          {
-            type: "text",
-            text: String(order.trackingNumber || ""),
-            size: "sm",
-            weight: "bold",
-            color: "#268BD2",
-            flex: 5,
-            wrap: true,
-          },
-        ],
-      });
+      bodyContents.push(
+        buildFlexInfoRow("物流單號", String(order.trackingNumber || ""), {
+          margin: "sm",
+          valueWeight: "bold",
+          valueColor: "#268BD2",
+          valueWrap: true,
+        }),
+      );
     }
   }
 
   if (order.items) {
-    bodyContents.push({ type: "separator", margin: "md" });
+    bodyContents.push(buildFlexSeparator());
     bodyContents.push({
       type: "text",
       text: "📦 訂單明細",
@@ -465,7 +290,7 @@ export function buildOrderStatusLineFlexMessage(
     });
   }
 
-  const footerContents: Record<string, unknown>[] = [];
+  const footerContents: LineFlexContent[] = [];
   if (hasTrackingLinkCta) {
     footerContents.push({
       type: "button",
