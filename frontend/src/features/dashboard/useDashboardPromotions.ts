@@ -1,9 +1,89 @@
 import { computed, nextTick, reactive, ref } from "vue";
+import type {
+  DashboardAuthFetch,
+  DashboardSwal,
+  DashboardToast,
+} from "./dashboardOrderTypes.ts";
 
-const promotions = ref([]);
+type PromotionTargetItem = {
+  productId: number;
+  specKey: string;
+};
+
+type DashboardPromotionRecord = Record<string, unknown> & {
+  id?: number | string;
+  name?: string;
+  type?: string;
+  targetItems?: PromotionTargetItem[];
+  targetProductIds?: Array<number | string>;
+  minQuantity?: number | string;
+  discountType?: string;
+  discountValue?: number | string;
+  enabled?: boolean;
+  startTime?: string | null;
+  endTime?: string | null;
+};
+
+type DashboardProductRecord = Record<string, unknown> & {
+  id?: number | string;
+  category?: string;
+  name?: string;
+  price?: number | string;
+  specs?: string;
+};
+
+type DashboardProductSpec = {
+  key?: string;
+  label?: string;
+  price?: number | string;
+};
+
+type PromotionFormState = {
+  id: string;
+  name: string;
+  type: string;
+  minQuantity: number;
+  discountType: string;
+  discountValue: number;
+  enabled: boolean;
+  targetItems: PromotionTargetItem[];
+};
+
+type PromotionSortableEvent = {
+  oldIndex?: number;
+  newIndex?: number;
+};
+
+type PromotionSortableInstance = {
+  destroy: () => void;
+};
+
+type PromotionSortableService = {
+  create?: (
+    element: Element,
+    options: {
+      handle: string;
+      animation: number;
+      onEnd: (event: PromotionSortableEvent) => void | Promise<void>;
+    },
+  ) => PromotionSortableInstance;
+};
+
+type DashboardPromotionsServices = {
+  API_URL: string;
+  authFetch: DashboardAuthFetch;
+  getAuthUserId: () => string;
+  getProducts: () => DashboardProductRecord[];
+  ensureProductsLoaded?: () => Promise<unknown> | unknown;
+  Sortable?: PromotionSortableService | null;
+  Swal: DashboardSwal;
+  Toast: DashboardToast;
+};
+
+const promotions = ref<DashboardPromotionRecord[]>([]);
 const isPromotionModalOpen = ref(false);
 
-const promotionForm = reactive({
+const promotionForm = reactive<PromotionFormState>({
   id: "",
   name: "",
   type: "bundle",
@@ -14,26 +94,36 @@ const promotionForm = reactive({
   targetItems: [],
 });
 
-let promotionsMap = {};
-let services = null;
-let promotionsTableElement = null;
-let promotionSortable = null;
+let promotionsMap: Record<string, DashboardPromotionRecord> = {};
+let services: DashboardPromotionsServices | null = null;
+let promotionsTableElement: HTMLElement | null = null;
+let promotionSortable: PromotionSortableInstance | null = null;
 
-function getServices() {
+function getServices(): DashboardPromotionsServices {
   if (!services) {
     throw new Error("Dashboard promotions services 尚未初始化");
   }
   return services;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message || fallback : fallback;
+}
+
+function normalizePromotion(value: unknown): DashboardPromotionRecord {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as DashboardPromotionRecord
+    : {};
+}
+
 function syncPromotionsMap(nextPromotions = promotions.value) {
   promotionsMap = {};
   (Array.isArray(nextPromotions) ? nextPromotions : []).forEach((promotion) => {
-    promotionsMap[promotion.id] = promotion;
+    promotionsMap[String(promotion.id || "")] = promotion;
   });
 }
 
-function buildPromotionViewModel(promotion) {
+function buildPromotionViewModel(promotion: DashboardPromotionRecord) {
   const isPercent = promotion?.discountType === "percent";
   const enabled = Boolean(promotion?.enabled);
   return {
@@ -59,7 +149,7 @@ const promotionModalTitle = computed(() =>
   promotionForm.id ? "編輯活動" : "新增活動"
 );
 
-function normalizeTargetItems(sourcePromotion) {
+function normalizeTargetItems(sourcePromotion: DashboardPromotionRecord) {
   const targetItems = Array.isArray(sourcePromotion?.targetItems)
     ? sourcePromotion.targetItems
     : [];
@@ -94,18 +184,26 @@ function resetPromotionForm() {
   promotionForm.targetItems = [];
 }
 
-function updatePromotionField(field, value) {
-  promotionForm[field] = field === "enabled" ? Boolean(value) : value;
+function updatePromotionField(field: keyof PromotionFormState, value: unknown) {
+  if (field === "enabled") {
+    promotionForm.enabled = Boolean(value);
+    return;
+  }
+  (promotionForm as Record<string, unknown>)[field] = value;
 }
 
-function isPromotionTargetSelected(productId, specKey = "") {
+function isPromotionTargetSelected(productId: number | string, specKey = "") {
   return promotionForm.targetItems.some((item) =>
     Number(item.productId) === Number(productId) &&
     String(item.specKey || "") === String(specKey || "")
   );
 }
 
-function togglePromotionTarget(productId, specKey = "", checked = false) {
+function togglePromotionTarget(
+  productId: number | string,
+  specKey = "",
+  checked = false,
+) {
   const normalizedProductId = Number(productId) || 0;
   const normalizedSpecKey = String(specKey || "");
   if (!normalizedProductId) return;
@@ -127,9 +225,9 @@ function togglePromotionTarget(productId, specKey = "", checked = false) {
   promotionForm.targetItems = nextItems;
 }
 
-function parseProductSpecs(product) {
+function parseProductSpecs(product: DashboardProductRecord): DashboardProductSpec[] {
   try {
-    const parsed = product?.specs ? JSON.parse(product.specs) : [];
+    const parsed = product?.specs ? JSON.parse(String(product.specs)) : [];
     return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
@@ -198,7 +296,7 @@ async function syncPromotionSortable() {
       try {
         await updatePromotionOrders(ids);
       } catch (error) {
-        Swal.fire("錯誤", error?.message || "活動排序更新失敗", "error");
+        Swal.fire("錯誤", getErrorMessage(error, "活動排序更新失敗"), "error");
         await loadPromotions();
       }
     },
@@ -210,7 +308,7 @@ async function queuePromotionsSync() {
   await syncPromotionSortable();
 }
 
-function registerPromotionsTableElement(element) {
+function registerPromotionsTableElement(element: HTMLElement | null) {
   promotionsTableElement = element || null;
   if (promotionsTableElement) {
     queuePromotionsSync();
@@ -232,7 +330,9 @@ async function loadPromotions() {
     );
     const data = await response.json();
     if (!data.success) return;
-    promotions.value = Array.isArray(data.promotions) ? data.promotions : [];
+    promotions.value = Array.isArray(data.promotions)
+      ? data.promotions.map(normalizePromotion)
+      : [];
     syncPromotionsMap();
     await queuePromotionsSync();
   } catch (error) {
@@ -240,7 +340,7 @@ async function loadPromotions() {
   }
 }
 
-async function updatePromotionOrders(ids) {
+async function updatePromotionOrders(ids: number[]) {
   const { API_URL, authFetch, getAuthUserId } = getServices();
   const response = await authFetch(`${API_URL}?action=reorderPromotionsBulk`, {
     method: "POST",
@@ -260,10 +360,10 @@ async function showPromotionModal() {
   isPromotionModalOpen.value = true;
 }
 
-async function editPromotion(id) {
+async function editPromotion(id: number | string) {
   await ensureProductsReady();
   syncPromotionsMap();
-  const promotion = promotionsMap[id];
+  const promotion = promotionsMap[String(id)];
   if (!promotion) {
     getServices().Swal.fire("錯誤", "找不到活動", "error");
     return;
@@ -284,7 +384,7 @@ function closePromotionModal() {
   isPromotionModalOpen.value = false;
 }
 
-async function savePromotion(event) {
+async function savePromotion(event?: Event) {
   event?.preventDefault?.();
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
 
@@ -324,11 +424,11 @@ async function savePromotion(event) {
     closePromotionModal();
     await loadPromotions();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "活動儲存失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "活動儲存失敗"), "error");
   }
 }
 
-async function delPromotion(id) {
+async function delPromotion(id: number | string) {
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
   const confirmation = await Swal.fire({
     title: "刪除活動？",
@@ -351,14 +451,14 @@ async function delPromotion(id) {
     Toast.fire({ icon: "success", title: "已刪除" });
     await loadPromotions();
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "活動刪除失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "活動刪除失敗"), "error");
   }
 }
 
-async function togglePromotionEnabled(id, enabled) {
+async function togglePromotionEnabled(id: number | string, enabled: boolean) {
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
   syncPromotionsMap();
-  const promotion = promotionsMap[id];
+  const promotion = promotionsMap[String(id)];
   if (!promotion) {
     Swal.fire("錯誤", "找不到活動", "error");
     return;
@@ -399,11 +499,13 @@ async function togglePromotionEnabled(id, enabled) {
       title: enabled ? "活動已啟用" : "活動已停用",
     });
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "活動狀態更新失敗", "error");
+    Swal.fire("錯誤", getErrorMessage(error, "活動狀態更新失敗"), "error");
   }
 }
 
-export function configureDashboardPromotionsServices(nextServices) {
+export function configureDashboardPromotionsServices(
+  nextServices: DashboardPromotionsServices,
+) {
   services = {
     ...services,
     ...nextServices,
