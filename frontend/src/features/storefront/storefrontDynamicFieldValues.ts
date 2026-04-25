@@ -1,9 +1,10 @@
 import { parseJsonRecord } from "../../lib/jsonUtils.ts";
 import type { SessionUser } from "../../types/session";
+import type {
+  StorefrontDynamicField,
+  StorefrontDynamicFieldValues,
+} from "../../types/storefront";
 import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
-import type { StorefrontDynamicField } from "./useStorefrontDynamicFields";
-
-export type StorefrontDynamicFieldValues = Record<string, string>;
 
 const dynamicFieldValues: StorefrontDynamicFieldValues = {};
 

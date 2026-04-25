@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectDynamicFields } from "./storefrontFormRenderer.ts";
+import { collectDynamicFields } from "./storefrontDynamicFieldSubmission.ts";
 
 describe("collectDynamicFields", () => {
   it("collects dynamic fields from Vue state values", () => {

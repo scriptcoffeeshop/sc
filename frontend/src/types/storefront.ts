@@ -15,6 +15,21 @@ export interface SubmitDeliveryInfoResult {
   error: string;
 }
 
+export interface StorefrontDynamicField {
+  id?: number | string;
+  field_key?: string;
+  field_type?: string;
+  label?: string;
+  placeholder?: string;
+  options?: string;
+  required?: boolean;
+  enabled?: boolean;
+  delivery_visibility?: string | null;
+  [key: string]: unknown;
+}
+
+export type StorefrontDynamicFieldValues = Record<string, string>;
+
 export interface StorefrontOrderConfirmParams {
   deliveryMethod: DeliveryMethod | string;
   deliveryInfo: SubmitDeliveryInfo;

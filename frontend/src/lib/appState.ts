@@ -1,14 +1,9 @@
-import type { Product, ProductCategory, SessionUser } from "../types";
-
-export interface StorefrontFormField {
-  field_key?: string;
-  field_type?: string;
-  label?: string;
-  placeholder?: string;
-  required?: boolean;
-  enabled?: boolean;
-  [key: string]: unknown;
-}
+import type {
+  Product,
+  ProductCategory,
+  SessionUser,
+  StorefrontDynamicField,
+} from "../types";
 
 export interface StorefrontBankAccount {
   id: string | number;
@@ -30,7 +25,7 @@ export interface StorefrontOrderQuote {
 export interface StorefrontState {
   products: Product[];
   categories: ProductCategory[];
-  formFields: StorefrontFormField[];
+  formFields: StorefrontDynamicField[];
   currentUser: SessionUser | null;
   selectedDelivery: string;
   isStoreOpen: boolean;

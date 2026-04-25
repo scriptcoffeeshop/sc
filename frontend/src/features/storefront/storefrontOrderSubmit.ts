@@ -3,7 +3,7 @@ import { authFetch } from "../../lib/auth.ts";
 import { isValidEmail } from "../../lib/sharedUtils.ts";
 import { state } from "../../lib/appState.ts";
 import { cart, clearCart } from "./storefrontCartStore.ts";
-import { collectDynamicFields } from "./storefrontFormRenderer.ts";
+import { collectDynamicFields } from "./storefrontDynamicFieldSubmission.ts";
 import { getStorefrontDynamicFieldValues } from "./storefrontDynamicFieldValues.ts";
 import Swal from "../../lib/swal.ts";
 import {

@@ -210,14 +210,14 @@
 - storefront 公告列已改由 Vue 管理：`useStorefrontAnnouncement.ts` 從 settings snapshot 推導公告文字/顯示狀態並記錄關閉狀態，`storefrontMainAppPayments.ts` / `useStorefrontShell.ts` 不再操作 `announcement-banner` / `announcement-text` DOM。
 - storefront 已選門市資訊已改由 Vue 管理：`storefrontSelectedStoreState.ts` 維護門市選擇 snapshot，`StorefrontDeliverySection.vue` 渲染門市卡與 hidden input value，`storefrontStoreSearch.ts` 不再寫入 `store-selected-info` / `selected-store-*` DOM。
 - storefront 初始化再收斂：`initMainApp()` 不再用 DOM 探針判斷 Vue 容器是否存在，`MainPage.vue` 也不再於 mounted 後手動補 `data-vue-managed`，由 Vue 元件模板自身宣告管理邊界。
-- storefront 品牌與區塊標題已改由 Vue 管理：`useStorefrontBranding.ts` 從 settings snapshot 建立品牌/商品/配送/備註標題 view model，Header、商品區、配送區與備註區直接吃 props；`storefrontFormRenderer.ts` 不再操作品牌或區塊標題 DOM。
+- storefront 品牌與區塊標題已改由 Vue 管理：`useStorefrontBranding.ts` 從 settings snapshot 建立品牌/商品/配送/備註標題 view model，Header、商品區、配送區與備註區直接吃 props；舊 `storefrontFormRenderer.ts` 已移除。
 - dashboard 品牌副作用已集中到 `dashboardBrandingSideEffects.ts` 並補 jsdom 測試；`dashboardBranding.ts` 現在只負責把設定轉成後台品牌 view，不再散落 document/localStorage 操作。
 - storefront 政策同意提示已改由 Vue 管理：`useStorefrontPolicyAgreement.ts` 接收送單驗證事件並控制提示顯示，`storefrontOrderSubmit.ts` 不再直接切換 `policy-agree-hint` DOM class。
 - storefront 收據欄位展開/收合已改由 Vue 管理：`useStorefrontReceiptRequest.ts` 接收預設資料事件，`storefrontOrderReceiptPrefs.ts` 不再操作 `receipt-fields` class，也改用 runtime 付款可用性判斷預設付款方式。
 - storefront 初始化載入失敗畫面已改由 Vue 商品區塊顯示：`storefrontMainAppPayments.ts` 改發 `coffee:storefront-load-error-updated`，`StorefrontProductGrid.vue` 負責錯誤訊息與重試按鈕。
 - storefront 送單核心表單狀態已抽離：`storefrontOrderFormState.ts` 管理政策同意、訂單備註與匯款末五碼，`storefrontOrderSubmit.ts` 不再讀取 `policy-agree`、`order-note`、`transfer-last5` DOM。
 - storefront shell 關閉我的訂單已完全走 Vue 狀態：`useStorefrontShell.ts` 移除 `my-orders-modal` DOM fallback，固定委派 `closeOrderHistory`。
-- storefront 動態欄位值已改由 Vue 狀態收集：`StorefrontDynamicFields.vue` emit 欄位值、`storefrontDynamicFieldValues.ts` 保存可提交狀態，`storefrontFormRenderer.ts` 不再查詢 `field-*` DOM。
+- storefront 動態欄位值已改由 Vue 狀態收集：`StorefrontDynamicFields.vue` emit 欄位值、`storefrontDynamicFieldValues.ts` 保存可提交狀態，送單驗證集中到 `storefrontDynamicFieldSubmission.ts`。
 - storefront 新竹配送地址已改由 Vue 狀態管理：`storefrontDeliveryFormState.ts` 保存縣市/區域/詳細地址，`StorefrontDeliverySection.vue` 依狀態產生區域選項，送單不再讀取 `delivery-city`/`delivery-district` DOM。
 - storefront 全台宅配地址已改由 Vue 狀態管理：使用既有 `taiwanCityData` 產生縣市/區域/郵遞區號，移除前台 `tw-city-selector` 初始化與 `.county/.district/.zipcode` DOM 查詢。
 - storefront 收據表單值已改由 Vue 狀態管理：`storefrontReceiptFormState.ts` 保存索取狀態、統編、買受人、地址與壓印日期，`storefrontOrderReceiptPrefs.ts` 不再讀寫 `receipt-*` DOM。
@@ -297,7 +297,7 @@
 - 修正 LINE Pay / 街口支付付款彈窗重複提示問題，E2E 已保護付款彈窗中的「我的訂單」只出現一次，且「我的訂單」卡片不含多餘「若您稍後再付款」文案。
 - LINE Pay 待付款提示已和街口支付語氣對齊：`請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。`
 - storefront legacy 遷移續推：`useStorefrontProducts.ts` 已吸收商品分組 / spec normalize，`useStorefrontDelivery.ts` 已吸收 delivery config fallback/migration；`MainPage.vue` 現在透過 `storefrontUiSnapshot.ts` 同步 products/delivery/payment/dynamic fields state，不再依賴 `coffee:products-updated` 事件或 bridge 的 main-app snapshot export。
-- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值；legacy `renderDynamicFields()` no-op 已移除，保留 `collectDynamicFields()` 供現有送單流程收集欄位。
+- storefront 動態欄位已新增 Vue 元件：`StorefrontDynamicFields.vue` + `useStorefrontDynamicFields.ts` 會依配送方式過濾欄位並套用會員預設值；legacy `renderDynamicFields()` no-op 與舊 `storefrontFormRenderer.ts` 已移除，送單流程改用 `storefrontDynamicFieldSubmission.ts` 收集欄位。
 - storefront runtime bridge 已加上明確型別：`storefrontRuntime.ts` 只允許目前仍需要的 payment/cart/quote/dynamic-field callbacks，避免 legacy callback 名稱回流。
 - storefront legacy bridge 已移除：products/delivery/payment/dynamic fields 的快照 glue 走 `storefrontUiSnapshot.ts`；cart/delivery/form/order/main-app 實作搬進 storefront feature TS 檔，2026-04-25 已移除 legacy `js/` 相容 re-export。
 - dashboard 訂單 state/view/export/selection 已共用 `dashboardOrderTypes.ts`，`useDashboardOrders` 不再以 `ref<any[]>` 保存訂單，批次操作服務也改用明確介面。

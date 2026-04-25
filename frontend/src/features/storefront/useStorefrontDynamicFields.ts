@@ -1,6 +1,10 @@
 import { computed, ref } from "vue";
 import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import type { SessionUser } from "../../types/session";
+import type {
+  StorefrontDynamicField,
+  StorefrontDynamicFieldValues,
+} from "../../types/storefront";
 import type { StorefrontUiSnapshot } from "./storefrontUiSnapshot";
 import {
   buildInitialDynamicFieldValues,
@@ -8,21 +12,7 @@ import {
   getStorefrontDynamicFieldValues,
   replaceStorefrontDynamicFieldValues,
   setStorefrontDynamicFieldValue,
-  type StorefrontDynamicFieldValues,
 } from "./storefrontDynamicFieldValues.ts";
-
-export interface StorefrontDynamicField {
-  id?: number | string;
-  field_key?: string;
-  field_type?: string;
-  label?: string;
-  placeholder?: string;
-  options?: string;
-  required?: boolean;
-  enabled?: boolean;
-  delivery_visibility?: string | null;
-  [key: string]: unknown;
-}
 
 interface StorefrontDynamicFieldsDeps {
   getStorefrontUiSnapshot?: () => Partial<StorefrontUiSnapshot>;

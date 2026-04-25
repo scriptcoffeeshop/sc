@@ -86,11 +86,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { SessionUser } from "../../types/session";
+import type { StorefrontDynamicField } from "../../types/storefront";
 import {
   getInitialDynamicFieldValue,
   isDynamicFieldVisibleForDelivery,
   parseDynamicFieldOptions,
-  type StorefrontDynamicField,
 } from "./useStorefrontDynamicFields.ts";
 
 const props = withDefaults(

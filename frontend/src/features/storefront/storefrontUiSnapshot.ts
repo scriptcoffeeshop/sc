@@ -6,6 +6,7 @@ import {
 import type { SessionUser } from "../../types/session";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { Product } from "../../types/core";
+import type { StorefrontDynamicField } from "../../types/storefront";
 import {
   getStorefrontSelectedStore,
   type StorefrontSelectedStore,
@@ -13,19 +14,6 @@ import {
 
 interface StorefrontCategoryRecord {
   name?: string;
-  [key: string]: unknown;
-}
-
-interface StorefrontFormField {
-  id?: number | string;
-  field_key?: string;
-  field_type?: string;
-  label?: string;
-  placeholder?: string;
-  options?: string;
-  required?: boolean;
-  enabled?: boolean;
-  delivery_visibility?: string | null;
   [key: string]: unknown;
 }
 
@@ -42,7 +30,7 @@ interface StorefrontBankAccount {
 export interface StorefrontUiSnapshot {
   products: Product[];
   categories: StorefrontCategoryRecord[];
-  formFields: StorefrontFormField[];
+  formFields: StorefrontDynamicField[];
   currentUser: SessionUser | null;
   isStoreOpen: boolean;
   settings: DashboardSettingsRecord;
@@ -89,7 +77,7 @@ export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {
   return {
     products: cloneArrayItems<Product>(state.products),
     categories: cloneArrayItems<StorefrontCategoryRecord>(state.categories),
-    formFields: cloneArrayItems<StorefrontFormField>(state.formFields),
+    formFields: cloneArrayItems<StorefrontDynamicField>(state.formFields),
     currentUser: state.currentUser ? { ...state.currentUser } : null,
     isStoreOpen: state.isStoreOpen !== false,
     settings: getRuntimeSettings(),
