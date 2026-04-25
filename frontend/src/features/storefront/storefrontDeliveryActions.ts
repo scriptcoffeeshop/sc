@@ -105,15 +105,7 @@ export async function checkStoreToken(token) {
         "FAMI": "family_mart",
       };
       const method = typeMap[result.logisticsSubType] || "seven_eleven";
-      const btn = document.querySelector(
-        `.delivery-option[data-id="${method}"]`,
-      );
-      if (btn instanceof HTMLElement) btn.click();
-      else {
-        selectDelivery(method, {
-          currentTarget: { classList: { add: () => {} } },
-        });
-      }
+      selectDelivery(method);
 
       applyStoreSelection({
         storeId: result.storeId,
@@ -271,13 +263,7 @@ export function loadDeliveryPrefs() {
 
     if (prefs && prefs.method) {
       const method = String(prefs.method);
-      const btn = document.querySelector(
-        `.delivery-option[data-id="${method}"]`,
-      );
-
-      // 即使按鈕尚未渲染，也先套用 method，避免登入後偏好遺失
-      if (btn) selectDelivery(method, { currentTarget: btn });
-      else selectDelivery(method);
+      selectDelivery(method);
 
       if (method === "delivery") {
         emitStorefrontLocalDeliveryAddressUpdated({
