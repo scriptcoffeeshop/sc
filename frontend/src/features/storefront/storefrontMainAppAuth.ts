@@ -5,6 +5,7 @@ import { state } from "../../lib/appState.ts";
 import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
 import { isValidEmail, Toast } from "../../lib/sharedUtils.ts";
 import type { SessionUser } from "../../types/session";
+import type { StorefrontDynamicField } from "../../types/storefront";
 import {
   closeDialog,
   showDialog,
@@ -25,12 +26,13 @@ import StorefrontProfileForm, {
   type StorefrontProfileFormValues,
 } from "./StorefrontProfileForm.vue";
 
-type StringRecord = Record<string, unknown>;
+type StringMap = { [key: string]: unknown };
+type ProfileUpdatePayload = { [key: string]: string };
 type StorefrontProfileFormExpose = {
   getValues: () => StorefrontProfileFormValues;
 };
 
-function parseStringRecord(value: unknown): StringRecord {
+function parseStringRecord(value: unknown): StringMap {
   return parseJsonRecord(value);
 }
 
@@ -44,7 +46,7 @@ type StorefrontMainAppAuthDeps = {
 };
 
 export function buildProfileFormFields(
-  fields: Array<Record<string, unknown>>,
+  fields: StorefrontDynamicField[],
   user: SessionUser,
 ): {
   fields: StorefrontProfileFieldView[];
@@ -78,11 +80,11 @@ export function buildProfileFormFields(
 }
 
 export function buildProfileUpdatePayload(
-  fields: Array<Record<string, unknown>>,
+  fields: StorefrontDynamicField[],
   values: StorefrontProfileFormValues,
-): StringRecord {
-  const profileData: StringRecord = {};
-  const customFieldsData: StringRecord = {};
+): ProfileUpdatePayload {
+  const profileData: ProfileUpdatePayload = {};
+  const customFieldsData: ProfileUpdatePayload = {};
 
   for (const field of fields) {
     const key = String(field["field_key"] || "");

@@ -6,6 +6,7 @@ import type {
   StorefrontPaymentAvailability,
   StorefrontPaymentMethod,
 } from "./storefrontRuntime";
+import type { PaymentOption } from "../../types/settings";
 
 export type { StorefrontPaymentAvailability };
 
@@ -45,6 +46,10 @@ interface StorefrontPaymentDeps {
   };
   setTimeout?: (callback: () => void, delay: number) => unknown;
 }
+
+type StorefrontPaymentOptionConfig = {
+  [method in StorefrontPaymentMethod]?: PaymentOption;
+};
 
 export interface StorefrontPaymentOptionView {
   method: StorefrontPaymentMethod;
@@ -109,7 +114,7 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
     jkopay: false,
     transfer: false,
   });
-  const paymentOptionConfig = ref<Record<string, Record<string, unknown>>>({});
+  const paymentOptionConfig = ref<StorefrontPaymentOptionConfig>({});
 
   const paymentOptions = computed<StorefrontPaymentOptionView[]>(() =>
     PAYMENT_METHODS.map((method) => {
@@ -143,7 +148,7 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
     );
     paymentOptionConfig.value = parseJsonRecord(
       snapshot.settings?.payment_options_config,
-    ) as Record<string, Record<string, unknown>>;
+    ) as StorefrontPaymentOptionConfig;
   }
 
   function handleSelectPayment(method: string) {
