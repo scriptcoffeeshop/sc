@@ -25,6 +25,7 @@ import { sendEmail } from "../utils/email.ts";
 import { buildOrderConfirmationHtml } from "../utils/email-templates.ts";
 import { requestJkoPayEntry } from "../utils/jkopay.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import { asJsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 import { registerOrUpdateUser } from "../utils/users.ts";
 
@@ -403,7 +404,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
       const resultObject = entryRes.result_object &&
           typeof entryRes.result_object === "object" &&
           !Array.isArray(entryRes.result_object)
-        ? entryRes.result_object as Record<string, unknown>
+        ? asJsonRecord(entryRes.result_object)
         : {};
       const paymentUrl = String(resultObject.payment_url || "").trim();
       const paymentExpiresAt = resolveJkoPaymentExpiresAtIso(

@@ -20,6 +20,7 @@ import {
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
+import { asJsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 function resolveOrderEmailMode(
@@ -293,7 +294,7 @@ export async function batchUpdateOrderStatus(
 
   for (const orderId of orderIds) {
     const result = await updateOrderStatus({ ...payload, orderId }, req);
-    if (!(result as Record<string, unknown>)?.success) {
+    if (!asJsonRecord(result).success) {
       failedOrderIds.push(orderId);
     }
   }

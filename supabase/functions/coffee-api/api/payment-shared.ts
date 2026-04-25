@@ -3,7 +3,7 @@ import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notif
 import { resolveEmailLogoUrl } from "../utils/email-assets.ts";
 import { sendEmail } from "../utils/email.ts";
 import { sanitize } from "../utils/html.ts";
-import { tryParseJsonRecord } from "../utils/json.ts";
+import { asJsonRecord, tryParseJsonRecord } from "../utils/json.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
@@ -69,7 +69,7 @@ export function getJkoCallbackTransaction(
     transaction && typeof transaction === "object" &&
     !Array.isArray(transaction)
   ) {
-    return transaction as Record<string, unknown>;
+    return asJsonRecord(transaction);
   }
   return data;
 }
@@ -243,7 +243,7 @@ export function parseReceiptInfo(
     return tryParseJsonRecord(value);
   }
   if (typeof raw === "object" && !Array.isArray(raw)) {
-    return raw as Record<string, unknown>;
+    return asJsonRecord(raw);
   }
   return null;
 }
@@ -272,7 +272,7 @@ export async function notifyLinePayPaymentStatusChanged(
 
     const { siteTitle, siteLogoUrl } = await getEmailBranding();
     const deliveryText = getDeliveryAddressText(
-      order as Record<string, unknown>,
+      asJsonRecord(order),
     );
     const lineName = String(order.line_name || "").trim() || "顧客";
 

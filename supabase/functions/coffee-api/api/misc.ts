@@ -5,6 +5,7 @@ import {
 import { requireAdmin } from "../utils/auth.ts";
 import { sendEmail } from "../utils/email.ts";
 import { SMTP_USER } from "../utils/config.ts";
+import { asJsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 
@@ -69,7 +70,7 @@ export async function sendLineFlexMessage(
 
   const sendResult = await pushLineFlexMessage(
     to,
-    rawFlex as Record<string, unknown>,
+    asJsonRecord(rawFlex),
   );
   if (!sendResult.success) return sendResult;
 

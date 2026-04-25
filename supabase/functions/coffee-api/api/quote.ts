@@ -4,6 +4,7 @@ import {
   isPromotionActive,
 } from "../utils/promotion.ts";
 import {
+  asJsonRecord,
   parseJsonArray,
   tryParseJsonArray,
   tryParseJsonRecord,
@@ -152,7 +153,7 @@ function getPaymentRoutingForMethod(
     typeof configured === "object" &&
     !Array.isArray(configured)
   ) {
-    return configured as Record<string, unknown>;
+    return asJsonRecord(configured);
   }
   return { ...COD_ONLY_PAYMENT };
 }
@@ -226,7 +227,7 @@ function parseRequestItems(data: Record<string, unknown>): QuoteRequestItem[] {
   if (!Array.isArray(data.items)) return [];
 
   return data.items.map((raw) => {
-    const item = (raw || {}) as Record<string, unknown>;
+    const item = asJsonRecord(raw);
     return {
       productId: Number(item.productId),
       specKey: item.specKey ? String(item.specKey) : "",
@@ -390,7 +391,7 @@ export function computeOrderQuote(
   }
 
   const availablePaymentMethods = toPaymentAvailability(
-    (selectedDeliveryOpt.payment as Record<string, unknown>) || {},
+    asJsonRecord(selectedDeliveryOpt.payment),
   );
   if (
     requestedPaymentMethod &&

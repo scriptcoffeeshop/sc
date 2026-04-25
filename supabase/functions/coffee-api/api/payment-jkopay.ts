@@ -14,6 +14,7 @@ import {
   requestJkoPayInquiry,
   requestJkoPayRefund,
 } from "../utils/jkopay.ts";
+import { asJsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 function normalizePaymentRedirectUrl(value: unknown): string {
@@ -176,10 +177,10 @@ export async function jkoPayInquiry(
     const resultObject = inquiryResponse.result_object &&
         typeof inquiryResponse.result_object === "object" &&
         !Array.isArray(inquiryResponse.result_object)
-      ? inquiryResponse.result_object as Record<string, unknown>
+      ? asJsonRecord(inquiryResponse.result_object)
       : {};
     const transactions = Array.isArray(resultObject.transactions)
-      ? resultObject.transactions as Record<string, unknown>[]
+      ? resultObject.transactions.map((item) => asJsonRecord(item))
       : [];
     const transaction = transactions.find((item) =>
       String(item?.platform_order_id || "").trim() === orderId
@@ -352,7 +353,7 @@ export async function jkoPayRefund(
     const resultObject = refundResponse.result_object &&
         typeof refundResponse.result_object === "object" &&
         !Array.isArray(refundResponse.result_object)
-      ? refundResponse.result_object as Record<string, unknown>
+      ? asJsonRecord(refundResponse.result_object)
       : {};
     return {
       success: true,
