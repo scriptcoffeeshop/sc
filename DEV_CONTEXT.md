@@ -198,6 +198,7 @@
 - storefront 付款方式顯示已改由 Vue 管理：`StorefrontPaymentSection.vue` 依 runtime snapshot 控制付款卡片可見性、active 狀態、圖示/名稱/說明與轉帳資訊開合，`storefrontMainAppPayments.ts` 不再手動切換 `.payment-option` / `transfer-info-section` DOM class。
 - storefront 付款可用性判斷已抽成 `resolveStorefrontPaymentAvailability()` / `selectFirstAvailablePayment()`，配送設定與 quote 結果的優先順序有 unit test 保護，`storefrontMainAppPayments.ts` 不再內嵌付款矩陣 fallback 分支。
 - storefront「我的訂單」付款顯示已直接共用 `storefrontPaymentDisplay.ts` 的 `getCustomerPaymentDisplay()` / `getPaymentToneClasses()` / `formatDateTimeText()`；`useStorefrontOrderHistory.ts` 不再維護一份影子付款顯示 fallback。
+- storefront 付款顯示文案與狀態 guide 已抽到 `storefrontPaymentDisplayConfig.ts`；`storefrontPaymentDisplay.ts` 保留格式化、付款顯示計算與 SweetAlert Vue 掛載，不再塞整包文案矩陣。
 - storefront Header 登入狀態已改由 Vue 管理：`StorefrontHeader.vue` 依 `useStorefrontAuth.ts` 的 current user snapshot 顯示登入提示或會員資訊，`storefrontMainAppAuth.ts` 不再手動切換 `login-prompt` / `user-info` 或寫入頭像與名稱 DOM。
 - storefront 購物車抽屜開關已改由 Vue 管理：`useStorefrontCart.ts` 持有 `isCartDrawerOpen`，`StorefrontCartDrawer.vue` 綁定 overlay/drawer class，`storefrontCartStore.ts` 不再操作 `cart-drawer` / `cart-overlay` DOM class。
 - storefront 購物車送出按鈕與休息中底部提示已改由 Vue 管理：`useStorefrontCart.ts` 從 snapshot 推導登入/店休/空購物車狀態，`storefrontMainAppPayments.ts` 的 `updateFormState()` 不再寫入 `submit-btn` / `cart-submit-btn` DOM。
