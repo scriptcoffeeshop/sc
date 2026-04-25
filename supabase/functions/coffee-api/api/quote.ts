@@ -9,6 +9,7 @@ import {
   tryParseJsonArray,
   tryParseJsonRecord,
 } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export type QuoteRequestItem = {
   productId: number;
@@ -49,9 +50,9 @@ export type QuotePayload = {
 export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
 
 type PaymentAvailability = Record<PaymentMethod, boolean>;
-type QuoteProductRow = Record<string, unknown>;
-type QuoteProductSpec = Record<string, unknown>;
-type DeliveryConfigRow = Record<string, unknown>;
+type QuoteProductRow = JsonRecord;
+type QuoteProductSpec = JsonRecord;
+type DeliveryConfigRow = JsonRecord;
 
 export type QuoteResult =
   | { success: true; quote: QuotePayload }
@@ -98,7 +99,7 @@ function isPaymentMethod(value: string): value is PaymentMethod {
 }
 
 function toPaymentAvailability(
-  payment: Record<string, unknown> | undefined,
+  payment: JsonRecord | undefined,
 ): PaymentAvailability {
   const source = payment || {};
   const linepayEnabled = source.linepay === true || source.linepay === "true";
@@ -123,7 +124,7 @@ function parseMaybeJsonArray<T = unknown>(value: unknown): T[] {
 function buildDefaultPaymentRouting(
   linePayEnabled: boolean,
   transferEnabled: boolean,
-): Record<string, PaymentAvailability> {
+): { [method: string]: PaymentAvailability } {
   return Object.fromEntries(
     STANDARD_DELIVERY_METHODS.map((method) => {
       if (!DEFAULT_STORE_PAYMENT_METHODS.has(method)) {
@@ -140,13 +141,13 @@ function buildDefaultPaymentRouting(
         },
       ];
     }),
-  ) as Record<string, PaymentAvailability>;
+  ) as { [method: string]: PaymentAvailability };
 }
 
 function getPaymentRoutingForMethod(
-  paymentRouting: Record<string, unknown>,
+  paymentRouting: JsonRecord,
   method: string,
-): Record<string, unknown> {
+): JsonRecord {
   const configured = paymentRouting[method];
   if (
     configured &&
@@ -160,7 +161,7 @@ function getPaymentRoutingForMethod(
 
 export function resolveDeliveryConfigFromSettings(options: {
   deliveryConfig: DeliveryConfigRow[];
-  paymentRoutingConfig: Record<string, unknown> | null;
+  paymentRoutingConfig: JsonRecord | null;
   linePayEnabled: boolean;
   transferEnabled: boolean;
 }): DeliveryConfigRow[] {
@@ -190,13 +191,13 @@ async function loadDeliveryConfig() {
     ]);
 
   let deliveryConfig: DeliveryConfigRow[] = [];
-  let routingConfig: Record<string, unknown> | null = null;
+  let routingConfig: JsonRecord | null = null;
   let linePayEnabled = false;
   let transferEnabled = false;
 
-  settingsData?.forEach((r: Record<string, unknown>) => {
+  settingsData?.forEach((r: JsonRecord) => {
     if (r.key === "delivery_options_config") {
-      deliveryConfig = parseJsonArray<Record<string, unknown>>(r.value);
+      deliveryConfig = parseJsonArray<DeliveryConfigRow>(r.value);
       return;
     }
 
@@ -223,7 +224,7 @@ async function loadDeliveryConfig() {
   });
 }
 
-function parseRequestItems(data: Record<string, unknown>): QuoteRequestItem[] {
+function parseRequestItems(data: JsonRecord): QuoteRequestItem[] {
   if (!Array.isArray(data.items)) return [];
 
   return data.items.map((raw) => {
@@ -312,7 +313,7 @@ export type ComputeOrderQuoteParams = {
   requestedPaymentMethod: PaymentMethod | "";
   products: QuoteProductRow[];
   deliveryConfig: DeliveryConfigRow[];
-  activePromos: Record<string, unknown>[];
+  activePromos: JsonRecord[];
   promoNow?: Date;
 };
 
@@ -403,9 +404,7 @@ export function computeOrderQuote(
     };
   }
 
-  const activePromosFiltered = activePromos.filter((
-    prm: Record<string, unknown>,
-  ) =>
+  const activePromosFiltered = activePromos.filter((prm: JsonRecord) =>
     isPromotionActive(
       String(prm.start_time || ""),
       String(prm.end_time || ""),
@@ -421,7 +420,7 @@ export function computeOrderQuote(
     if (prm.type !== "bundle") continue;
 
     const targetIds = parseMaybeJsonArray<number>(prm.target_product_ids);
-    const targetItems = parseMaybeJsonArray<Record<string, unknown>>(
+    const targetItems = parseMaybeJsonArray<JsonRecord>(
       prm.target_items,
     );
 
@@ -431,7 +430,7 @@ export function computeOrderQuote(
 
     for (const item of quoteItems) {
       const matchInItems = Array.isArray(targetItems) &&
-        targetItems.some((t: Record<string, unknown>) => {
+        targetItems.some((t: JsonRecord) => {
           if (Number(t.productId) !== item.productId) return false;
           const targetSpec = String(t.specKey || "");
           return !targetSpec || targetSpec === item.specKey;
@@ -512,7 +511,7 @@ export function computeOrderQuote(
 }
 
 export async function buildOrderQuote(
-  data: Record<string, unknown>,
+  data: JsonRecord,
 ): Promise<QuoteResult> {
   const cartItems = parseRequestItems(data);
   if (cartItems.length === 0) return { success: false, error: "購物車是空的" };
@@ -553,6 +552,6 @@ export async function buildOrderQuote(
   });
 }
 
-export async function quoteOrder(data: Record<string, unknown>) {
+export async function quoteOrder(data: JsonRecord) {
   return await buildOrderQuote(data);
 }
