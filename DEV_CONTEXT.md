@@ -149,7 +149,7 @@
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
 - `frontend/tsconfig.json` 已啟用完整 `strict: true`，並額外啟用 `exactOptionalPropertyTypes`、`noFallthroughCasesInSwitch`、`noPropertyAccessFromIndexSignature`、`noUncheckedIndexedAccess` 與 `noUnusedLocals`；前端新增參數、測試 fixture、動態 import 模組、全域 bridge、服務注入 callback、nullable / optional 資料邊界、索引讀取、index-signature 存取與暫存宣告都要補明確型別或清除。frontend runtime 已清除 `Record<string, unknown>` 型別邊界，後續需用命名介面、共享 `JsonRecord` 或具體 payload 型別。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`、`@ts-expect-error`、`eslint-disable` 與 `as any`，避免型別/品質錯誤被靜音。
-- `repo_hygiene_check.py` 已禁止 frontend runtime 新增 `Record<string, unknown>`，避免已收斂的資料邊界回退成匿名泛型 payload。
+- `repo_hygiene_check.py` 已禁止 frontend runtime 與 backend production 新增 `Record<string, unknown>`，並阻擋 production `catch (...) { /* ignore */ }` 類型的吞錯寫法，避免已收斂的資料邊界與可觀測性回退。
 - `repo_hygiene_check.py` 已禁止 tracked `.js` 回流；前端/測試需用 TypeScript 或 Vue，工具設定需用 `.cjs` / `.mjs`。目前 `frontend/src/` 已無 JS allowlist，entry、Swal wrapper、UI helper 與資料邊界皆已轉 TypeScript。
 - `repo_hygiene_check.py` 已禁止 production runtime 直接新增 `JSON.parse` 與匿名 `catch {}`；JSON 解析需集中在 frontend/backend json helper，catch 需具名以便後續補觀測。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。

@@ -158,7 +158,9 @@ async function createStoreSelectionSession(
 
   try {
     await cleanupOldStoreSelections();
-  } catch (_e) { /* ignore */ }
+  } catch (error) {
+    console.warn("[stores] failed to cleanup old store selections", error);
+  }
 
   const { error } = await supabase.from("coffee_store_selections").upsert({
     token,

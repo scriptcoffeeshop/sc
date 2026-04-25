@@ -67,6 +67,14 @@ FRONTEND_OVERBROAD_TYPE_PATTERNS = (
     ("Record<string, unknown>", "Record<string, unknown>"),
 )
 
+BACKEND_OVERBROAD_TYPE_PATTERNS = (
+    ("Record<string, unknown>", "Record<string, unknown>"),
+)
+
+IGNORED_CATCH_PATTERN = re.compile(
+    r"catch\s*(?:\([^)]*\))?\s*\{\s*/\*\s*ignore\s*\*/"
+)
+
 
 def git_ls_files() -> list[str]:
     result = subprocess.run(
@@ -153,6 +161,27 @@ def find_frontend_overbroad_type_violations(path: str) -> list[str]:
     return violations
 
 
+def find_backend_overbroad_type_violations(path: str) -> list[str]:
+    if not path.startswith("supabase/functions/coffee-api/"):
+        return []
+    if not is_runtime_source_file(path):
+        return []
+
+    lines, error = read_source_lines(path)
+    if error:
+        return [error]
+
+    violations: list[str] = []
+    for line_no, line in enumerate(lines, start=1):
+        for token, label in BACKEND_OVERBROAD_TYPE_PATTERNS:
+            if token in line:
+                violations.append(
+                    "禁止在 backend production 使用過寬型別 "
+                    f"{label}，請改用 JsonRecord 或具體 payload 型別：{path}:{line_no}"
+                )
+    return violations
+
+
 def find_runtime_parse_violations(path: str) -> list[str]:
     if not is_runtime_source_file(path):
         return []
@@ -182,7 +211,7 @@ def find_anonymous_catch_violations(path: str) -> list[str]:
     return [
         f"禁止在 production runtime 使用匿名 catch {{}}：{path}:{line_no}"
         for line_no, line in enumerate(lines, start=1)
-        if "catch {" in line
+        if "catch {" in line or IGNORED_CATCH_PATTERN.search(line)
     ]
 
 
@@ -254,6 +283,7 @@ def main() -> int:
         violations.extend(find_tracked_js_violations(path))
         violations.extend(find_type_escape_violations(path))
         violations.extend(find_frontend_overbroad_type_violations(path))
+        violations.extend(find_backend_overbroad_type_violations(path))
         violations.extend(find_frontend_js_violations(path))
         violations.extend(find_runtime_parse_violations(path))
         violations.extend(find_anonymous_catch_violations(path))
