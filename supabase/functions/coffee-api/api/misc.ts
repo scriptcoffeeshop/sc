@@ -6,10 +6,11 @@ import { requireAdmin } from "../utils/auth.ts";
 import { sendEmail } from "../utils/email.ts";
 import { SMTP_USER } from "../utils/config.ts";
 import { asJsonRecord } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 
-export async function testEmail(data: Record<string, unknown>, req: Request) {
+export async function testEmail(data: JsonRecord, req: Request) {
   await requireAdmin(req);
   const to = String(data.to || SMTP_USER);
   if (!to || to === "undefined") {
@@ -27,7 +28,7 @@ export async function testEmail(data: Record<string, unknown>, req: Request) {
 }
 
 export async function sendLineFlexMessage(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

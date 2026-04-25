@@ -7,7 +7,11 @@ import {
 } from "../utils/config.ts";
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
 import { sanitize } from "../utils/html.ts";
-import { asJsonRecord, tryParseJsonRecord } from "../utils/json.ts";
+import {
+  asJsonRecord,
+  type JsonRecord,
+  tryParseJsonRecord,
+} from "../utils/json.ts";
 import {
   normalizeReceiptInfo,
   parseReceiptInfo,
@@ -225,7 +229,7 @@ export function trimLineNotifyError(raw: unknown): string {
 
 async function buildOrderCreatedFlexMessage(
   params: OrderCreatedLineNotifyParams,
-): Promise<Record<string, unknown>> {
+): Promise<JsonRecord> {
   const { siteTitle } = await getEmailBranding();
   return buildOrderStatusLineFlexMessage({
     orderId: params.orderId,

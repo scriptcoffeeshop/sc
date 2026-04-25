@@ -26,6 +26,7 @@ import { buildOrderConfirmationHtml } from "../utils/email-templates.ts";
 import { requestJkoPayEntry } from "../utils/jkopay.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
 import { asJsonRecord } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 import { registerOrUpdateUser } from "../utils/users.ts";
 
@@ -58,7 +59,7 @@ function resolveStoreType(deliveryMethod: string): string {
 
 async function markPaymentRequestFailed(
   orderId: string,
-  fields: Record<string, unknown> = {},
+  fields: JsonRecord = {},
 ) {
   await supabase.from("coffee_orders").update({
     payment_status: "failed",
@@ -67,7 +68,7 @@ async function markPaymentRequestFailed(
   }).eq("id", orderId);
 }
 
-export async function submitOrder(data: Record<string, unknown>, req: Request) {
+export async function submitOrder(data: JsonRecord, req: Request) {
   const auth = await requireAuth(req);
   const lineUserId = auth.userId;
 
@@ -125,7 +126,7 @@ export async function submitOrder(data: Record<string, unknown>, req: Request) {
   const idempotencyKey = String(data.idempotencyKey || "").trim();
   const orderId = createOrderId(now);
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: JsonRecord = {
     id: orderId,
     created_at: now.toISOString(),
     line_user_id: lineUserId,

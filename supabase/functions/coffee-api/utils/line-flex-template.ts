@@ -7,8 +7,9 @@ import {
 } from "./order-labels.ts";
 import { normalizeReceiptInfo } from "./receipt-info.ts";
 import { normalizeTrackingUrl } from "./tracking.ts";
+import type { JsonRecord } from "./json.ts";
 
-type LineFlexContent = Record<string, unknown>;
+type LineFlexContent = JsonRecord;
 
 export interface OrderFlexPayload {
   orderId: string;

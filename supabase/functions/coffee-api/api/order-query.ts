@@ -1,6 +1,7 @@
 import { parseReceiptInfo, stripLegacyReceiptBlock } from "./order-shared.ts";
 import { expireOnlinePaymentOrdersIfNeeded } from "./payment-shared.ts";
 import { requireAdmin, requireAuth } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 export async function getOrders(req: Request) {
@@ -29,7 +30,7 @@ export async function getOrders(req: Request) {
   if (error) return { success: false, error: error.message };
 
   const normalizedRows = await expireOnlinePaymentOrdersIfNeeded(data || []);
-  const orders = normalizedRows.map((r: Record<string, unknown>) => {
+  const orders = normalizedRows.map((r: JsonRecord) => {
     const receiptInfo = parseReceiptInfo(r.receipt_info);
     return {
       orderId: r.id,
@@ -98,7 +99,7 @@ export async function getMyOrders(req: Request) {
   if (error) return { success: false, error: error.message };
 
   const normalizedRows = await expireOnlinePaymentOrdersIfNeeded(data || []);
-  const orders = normalizedRows.map((r: Record<string, unknown>) => {
+  const orders = normalizedRows.map((r: JsonRecord) => {
     const receiptInfo = parseReceiptInfo(r.receipt_info);
     return {
       orderId: r.id,

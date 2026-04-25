@@ -3,6 +3,7 @@ import {
   LINE_MESSAGING_CHANNEL_ACCESS_TOKEN,
 } from "./config.ts";
 import { asJsonRecord, tryParseJsonRecord } from "./json.ts";
+import type { JsonRecord } from "./json.ts";
 
 type PushMessageResult =
   | { success: true }
@@ -36,7 +37,7 @@ function buildLineApiError(status: number, responseText: string): string {
 
 export async function pushLineFlexMessage(
   to: string,
-  flexMessage: Record<string, unknown>,
+  flexMessage: JsonRecord,
   accessTokenOverride?: string,
 ): Promise<PushMessageResult> {
   const token = String(
