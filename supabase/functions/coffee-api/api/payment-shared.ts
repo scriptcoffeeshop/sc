@@ -4,6 +4,7 @@ import { resolveEmailLogoUrl } from "../utils/email-assets.ts";
 import { sendEmail } from "../utils/email.ts";
 import { sanitize } from "../utils/html.ts";
 import { asJsonRecord } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { parseReceiptInfoRecord } from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
@@ -45,7 +46,7 @@ export function timingSafeEqual(a: string, b: string): boolean {
 
 export async function hasValidLinePayCallbackSignature(
   orderId: string,
-  data: Record<string, unknown>,
+  data: JsonRecord,
 ): Promise<boolean> {
   const signature = String(data.sig || data.signature || "").trim();
   if (!orderId || !signature) return false;
@@ -55,7 +56,7 @@ export async function hasValidLinePayCallbackSignature(
 
 export async function hasValidJkoPayCallbackSignature(
   orderId: string,
-  data: Record<string, unknown>,
+  data: JsonRecord,
 ): Promise<boolean> {
   const signature = String(data.sig || data.signature || "").trim();
   if (!orderId || !signature) return false;
@@ -64,8 +65,8 @@ export async function hasValidJkoPayCallbackSignature(
 }
 
 export function getJkoCallbackTransaction(
-  data: Record<string, unknown>,
-): Record<string, unknown> {
+  data: JsonRecord,
+): JsonRecord {
   const transaction = data.transaction;
   if (
     transaction && typeof transaction === "object" &&
@@ -77,8 +78,8 @@ export function getJkoCallbackTransaction(
 }
 
 export function getJkoOrderIdFromPayload(
-  data: Record<string, unknown>,
-  transaction: Record<string, unknown>,
+  data: JsonRecord,
+  transaction: JsonRecord,
 ): string {
   return String(
     transaction.platform_order_id || data.platform_order_id || data.orderId ||
@@ -88,8 +89,8 @@ export function getJkoOrderIdFromPayload(
 }
 
 export function getJkoTradeNoFromPayload(
-  data: Record<string, unknown>,
-  transaction: Record<string, unknown>,
+  data: JsonRecord,
+  transaction: JsonRecord,
 ): string {
   return String(
     transaction.tradeNo || transaction.trade_no || data.tradeNo ||
@@ -99,8 +100,8 @@ export function getJkoTradeNoFromPayload(
 }
 
 export function getJkoStatusCodeFromPayload(
-  data: Record<string, unknown>,
-  transaction: Record<string, unknown>,
+  data: JsonRecord,
+  transaction: JsonRecord,
 ): number | null {
   return parseJkoStatusCode(transaction.status ?? data.status);
 }
@@ -112,7 +113,7 @@ function parseJkoStatusCode(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getDeliveryAddressText(order: Record<string, unknown>): string {
+function getDeliveryAddressText(order: JsonRecord): string {
   const deliveryMethod = String(order.delivery_method || "");
   if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
     return `${String(order.city || "")}${String(order.district || "")} ${
@@ -132,7 +133,7 @@ function getLinePayStatusLabel(status: LinePayStatus): string {
 
 async function updateJkoLineNotifyState(
   orderId: string,
-  payload: Record<string, unknown>,
+  payload: JsonRecord,
   failureContext: string,
 ) {
   const { error } = await supabase.from("coffee_orders").update(payload).eq(

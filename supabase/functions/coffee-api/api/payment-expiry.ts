@@ -1,4 +1,5 @@
 import { supabase } from "../utils/supabase.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export const EXPIRED_PAYMENT_FAILURE_REASON = "付款期限已過，自動設為失敗訂單";
 
@@ -29,7 +30,7 @@ export function isPaymentExpired(
   return deadline.getTime() <= now.getTime();
 }
 
-function resolveOrderPaymentExpiresAt(order: Record<string, unknown>): string {
+function resolveOrderPaymentExpiresAt(order: JsonRecord): string {
   const explicit = String(order.payment_expires_at || "").trim();
   if (explicit) return explicit;
 
@@ -44,10 +45,10 @@ function resolveOrderPaymentExpiresAt(order: Record<string, unknown>): string {
 }
 
 export function buildExpiredOnlinePaymentUpdates(
-  order: Record<string, unknown> | null | undefined,
+  order: JsonRecord | null | undefined,
   now: Date = new Date(),
   options: { force?: boolean } = {},
-): Record<string, unknown> | null {
+): JsonRecord | null {
   if (!order) return null;
   const paymentMethod = String(order.payment_method || "").trim();
   if (!["linepay", "jkopay"].includes(paymentMethod)) return null;
@@ -56,7 +57,7 @@ export function buildExpiredOnlinePaymentUpdates(
   const orderStatus = String(order.status || "pending").trim() || "pending";
   const statusReason = String(order.cancel_reason || "").trim();
   if (paymentStatus === "expired") {
-    const updates: Record<string, unknown> = {};
+    const updates: JsonRecord = {};
     if (
       orderStatus === "cancelled" &&
       statusReason === EXPIRED_PAYMENT_FAILURE_REASON
@@ -81,7 +82,7 @@ export function buildExpiredOnlinePaymentUpdates(
     return null;
   }
 
-  const updates: Record<string, unknown> = {
+  const updates: JsonRecord = {
     payment_status: "expired",
     payment_last_checked_at: now.toISOString(),
   };
@@ -100,10 +101,10 @@ export function buildExpiredOnlinePaymentUpdates(
 }
 
 export async function expireOnlinePaymentOrderIfNeeded(
-  order: Record<string, unknown> | null | undefined,
+  order: JsonRecord | null | undefined,
   now: Date = new Date(),
   options: { force?: boolean } = {},
-): Promise<{ changed: boolean; order: Record<string, unknown> | null }> {
+): Promise<{ changed: boolean; order: JsonRecord | null }> {
   if (!order) return { changed: false, order: null };
   const updates = buildExpiredOnlinePaymentUpdates(order, now, options);
   if (!updates) {
@@ -133,11 +134,11 @@ export async function expireOnlinePaymentOrderIfNeeded(
 }
 
 export async function expireOnlinePaymentOrdersIfNeeded(
-  orders: Record<string, unknown>[],
+  orders: JsonRecord[],
   now: Date = new Date(),
-): Promise<Record<string, unknown>[]> {
+): Promise<JsonRecord[]> {
   const rows = Array.isArray(orders) ? orders : [];
-  const normalizedRows: Record<string, unknown>[] = [];
+  const normalizedRows: JsonRecord[] = [];
   for (const order of rows) {
     const result = await expireOnlinePaymentOrderIfNeeded(order, now);
     normalizedRows.push(result.order || { ...order });
