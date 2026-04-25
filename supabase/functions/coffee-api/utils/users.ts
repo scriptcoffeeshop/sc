@@ -1,8 +1,9 @@
 import { supabase } from "./supabase.ts";
 import { asJsonRecord } from "./json.ts";
+import type { JsonRecord } from "./json.ts";
 import { stringifyReceiptInfo } from "./receipt-info.ts";
 
-function hasKey(data: Record<string, unknown>, key: string): boolean {
+function hasKey(data: JsonRecord, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(data, key);
 }
 
@@ -20,7 +21,7 @@ function normalizeCustomFieldsText(value: unknown): string {
   return "";
 }
 
-function mapToCamel(u: Record<string, unknown>) {
+function mapToCamel(u: JsonRecord) {
   return {
     userId: u.line_user_id,
     displayName: u.display_name,
@@ -50,7 +51,7 @@ async function fetchUserById(lineUserId: string) {
   return mapToCamel(asJsonRecord(data));
 }
 
-export async function registerOrUpdateUser(data: Record<string, unknown>) {
+export async function registerOrUpdateUser(data: JsonRecord) {
   const { data: existing } = await supabase
     .from("coffee_users")
     .select("*")
@@ -77,7 +78,7 @@ export async function registerOrUpdateUser(data: Record<string, unknown>) {
   const defaultReceiptInfo = stringifyReceiptInfo(data.receiptInfo);
 
   if (existing) {
-    const updates: Record<string, unknown> = {
+    const updates: JsonRecord = {
       display_name: displayName,
       last_login: new Date().toISOString(),
     };

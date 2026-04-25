@@ -1,6 +1,7 @@
 import { supabase } from "./supabase.ts";
 import { JWT_SECRET, LINE_ADMIN_USER_ID } from "./config.ts";
 import { tryParseJsonRecord } from "./json.ts";
+import type { JsonRecord } from "./json.ts";
 
 function base64UrlEncode(data: Uint8Array): string {
   return btoa(String.fromCharCode(...data)).replace(/\+/g, "-").replace(
@@ -35,7 +36,7 @@ export async function hmacSign(data: string): Promise<string> {
 }
 
 export async function signJwt(
-  payload: Record<string, unknown>,
+  payload: JsonRecord,
 ): Promise<string> {
   const header = base64UrlEncode(
     new TextEncoder().encode(JSON.stringify({ alg: "HS256", typ: "JWT" })),
@@ -55,7 +56,7 @@ export async function signJwt(
 
 export async function verifyJwt(
   token: string,
-): Promise<Record<string, unknown> | null> {
+): Promise<JsonRecord | null> {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;

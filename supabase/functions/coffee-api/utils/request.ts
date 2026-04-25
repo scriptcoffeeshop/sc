@@ -1,10 +1,11 @@
 import { tryParseJsonRecord } from "./json.ts";
+import type { JsonRecord } from "./json.ts";
 
 export async function parseRequestData(
   req: Request,
   url: URL,
-): Promise<Record<string, unknown>> {
-  const data: Record<string, unknown> = {};
+): Promise<JsonRecord> {
+  const data: JsonRecord = {};
   url.searchParams.forEach((v, k) => {
     data[k] = v;
   });
