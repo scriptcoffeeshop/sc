@@ -7,6 +7,7 @@ import type { SessionUser } from "../../types/session";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { Product } from "../../types/core";
 import type { StorefrontDynamicField } from "../../types/storefront";
+import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 import {
   getStorefrontSelectedStore,
   type StorefrontSelectedStore,
@@ -14,11 +15,6 @@ import {
 
 interface StorefrontCategoryRecord {
   name?: string;
-  [key: string]: unknown;
-}
-
-interface StorefrontDeliveryOption {
-  id?: string;
   [key: string]: unknown;
 }
 

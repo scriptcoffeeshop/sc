@@ -8,6 +8,7 @@ import {
 import {
   normalizeStorefrontDeliveryConfig,
   normalizeStorefrontDeliveryOption,
+  type StorefrontDeliveryOption,
 } from "./storefrontModels.ts";
 import type { DashboardSettingsRecord } from "../../types/settings";
 import type { StorefrontSelectedStore } from "./storefrontSelectedStoreState";
@@ -19,25 +20,6 @@ import {
   type StorefrontHomeDeliveryAddress,
   type StorefrontLocalDeliveryAddress,
 } from "./storefrontDeliveryFormState.ts";
-
-interface StorefrontDeliveryPaymentConfig {
-  cod?: boolean;
-  linepay?: boolean;
-  jkopay?: boolean;
-  transfer?: boolean;
-}
-
-export interface StorefrontDeliveryOption {
-  id?: string;
-  icon_url?: string;
-  iconUrl?: string;
-  label?: string;
-  name?: string;
-  description?: string;
-  enabled?: boolean;
-  payment?: StorefrontDeliveryPaymentConfig;
-  [key: string]: unknown;
-}
 
 export interface StorefrontHomeDistrictOption {
   name: string;
@@ -57,7 +39,7 @@ interface StorefrontDeliveryDeps {
   clearSelectedStore?: () => unknown;
 }
 
-function resolveDeliveryIcon(option: StorefrontDeliveryOption = {}) {
+function resolveDeliveryIcon(option: Partial<StorefrontDeliveryOption> = {}) {
   const fallbackKey = getDeliveryIconFallbackKey(option?.id);
   return {
     url: getIconUrlFromConfig(option, fallbackKey),
@@ -65,6 +47,7 @@ function resolveDeliveryIcon(option: StorefrontDeliveryOption = {}) {
 }
 
 export { normalizeStorefrontDeliveryConfig };
+export type { StorefrontDeliveryOption };
 
 export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
   const deliveryOptions = ref<StorefrontDeliveryOption[]>([]);
