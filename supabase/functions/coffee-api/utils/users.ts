@@ -1,5 +1,5 @@
 import { supabase } from "./supabase.ts";
-import { tryParseJsonRecord } from "./json.ts";
+import { asJsonRecord, tryParseJsonRecord } from "./json.ts";
 
 function hasKey(data: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(data, key);
@@ -21,7 +21,7 @@ function normalizeReceiptInfoText(value: unknown): string {
   }
 
   if (typeof value !== "object" || Array.isArray(value)) return "";
-  const row = value as Record<string, unknown>;
+  const row = asJsonRecord(value);
   const taxId = toTrimmedString(row.taxId);
   if (taxId && !/^\d{8}$/.test(taxId)) return "";
 
@@ -69,7 +69,7 @@ async function fetchUserById(lineUserId: string) {
     lineUserId,
   ).maybeSingle();
   if (!data) return null;
-  return mapToCamel(data as Record<string, unknown>);
+  return mapToCamel(asJsonRecord(data));
 }
 
 export async function registerOrUpdateUser(data: Record<string, unknown>) {

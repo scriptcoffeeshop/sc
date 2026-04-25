@@ -7,7 +7,7 @@ import {
 } from "../utils/config.ts";
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
 import { sanitize } from "../utils/html.ts";
-import { tryParseJsonRecord } from "../utils/json.ts";
+import { asJsonRecord, tryParseJsonRecord } from "../utils/json.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
@@ -52,7 +52,7 @@ export interface LineNotificationSendResult {
 
 export function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const data = raw as Record<string, unknown>;
+  const data = asJsonRecord(raw);
   const buyer = String(data.buyer || "").trim();
   const taxId = String(data.taxId || "").trim();
   const address = String(data.address || "").trim();

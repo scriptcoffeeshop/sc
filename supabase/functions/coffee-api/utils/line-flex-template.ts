@@ -1,4 +1,5 @@
 import { buildOrderDeliveryText } from "./order-delivery-display.ts";
+import { asJsonRecord } from "./json.ts";
 import {
   getFlexDeliveryMethodLabel,
   getFlexPaymentMethodLabel,
@@ -48,7 +49,7 @@ const STATUS_COLOR_MAP: Record<string, string> = {
 
 function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const row = raw as Record<string, unknown>;
+  const row = asJsonRecord(raw);
   const buyer = String(row.buyer || "").trim();
   const taxId = String(row.taxId || "").trim();
   const address = String(row.address || "").trim();
