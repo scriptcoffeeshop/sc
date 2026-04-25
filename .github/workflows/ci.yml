@@ -169,7 +169,7 @@ jobs:
 
       - name: Setup Supabase CLI
         if: steps.deploy_secrets.outputs.ready == 'true'
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: latest
 
