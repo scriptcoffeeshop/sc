@@ -1,5 +1,8 @@
 import { assertEquals } from "@std/assert";
-import { computeOrderQuote } from "../api/quote.ts";
+import {
+  computeOrderQuote,
+  resolveDeliveryConfigFromSettings,
+} from "../api/quote.ts";
 
 const MOCK_DELIVERY_CONFIG = [
   {
@@ -147,7 +150,7 @@ Deno.test("Quote Engine - JKO Pay Availability", () => {
   }
 });
 
-Deno.test("Quote Engine - Legacy Routing Fallback For JKO Pay", () => {
+Deno.test("Quote Engine - Payment Routing Without JKO Pay Mirrors LINE Pay", () => {
   const legacyDeliveryConfig = [
     {
       id: "delivery",
@@ -172,6 +175,55 @@ Deno.test("Quote Engine - Legacy Routing Fallback For JKO Pay", () => {
   if (result.success) {
     assertEquals(result.quote.availablePaymentMethods.jkopay, true);
   }
+});
+
+Deno.test("Quote Engine - Delivery Settings Resolver Builds Standard Config", () => {
+  const result = resolveDeliveryConfigFromSettings({
+    deliveryConfig: [],
+    paymentRoutingConfig: null,
+    linePayEnabled: true,
+    transferEnabled: true,
+  });
+
+  assertEquals(result.map((option) => option.id), [
+    "in_store",
+    "delivery",
+    "home_delivery",
+    "seven_eleven",
+    "family_mart",
+  ]);
+  assertEquals(result[1].payment, {
+    cod: true,
+    linepay: true,
+    jkopay: true,
+    transfer: true,
+  });
+  assertEquals(result[3].payment, {
+    cod: true,
+    linepay: false,
+    jkopay: false,
+    transfer: false,
+  });
+});
+
+Deno.test("Quote Engine - Delivery Settings Resolver Keeps Explicit Config", () => {
+  const deliveryConfig = [
+    {
+      id: "custom_delivery",
+      enabled: true,
+      payment: { cod: false, linepay: true, jkopay: true, transfer: false },
+    },
+  ];
+
+  assertEquals(
+    resolveDeliveryConfigFromSettings({
+      deliveryConfig,
+      paymentRoutingConfig: null,
+      linePayEnabled: false,
+      transferEnabled: false,
+    }),
+    deliveryConfig,
+  );
 });
 
 Deno.test("Quote Engine - Missing or Invalid Specs", () => {

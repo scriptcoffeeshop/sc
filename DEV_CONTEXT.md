@@ -119,6 +119,7 @@
 - Supabase Edge Function production code 的直接 JSON 解析已集中到 `utils/json.ts`；settings/quote/order/payment/request/JWT/LINE/JKO/user profile 路徑共用 record/array/text helper。
 - 後端 Email template 與 LINE Flex 的配送文字判斷已集中到共用 helper；訂單成立、出貨通知、處理中通知與 LINE 訂單狀態通知不再各自拼接宅配/超商地址文案，LINE Flex 欄位 row 也已改走 helper 組裝。
 - 後端報價引擎已把商品規格解析、規格啟用判斷與單價決定從主計價迴圈抽成 `resolveQuoteProductPrice()` helper，既有 quote tests 保護規格、無效付款與折扣計算。
+- 後端報價引擎的配送設定相容轉換已抽成 `resolveDeliveryConfigFromSettings()`；DB 設定讀取與標準配送/付款矩陣組裝分離，quote tests 覆蓋全域金流開關與顯式 delivery config。
 - 後端 `routing/action-map.ts` 已把 POST + schema 驗證的重複樣板收斂為 typed helper，新增/調整 action 時比較不容易漏掉方法限制或驗證。
 - 後端 `submitOrder` 已把付款建單失敗時的訂單狀態更新收成 `markPaymentRequestFailed()`，LINE Pay / 街口支付分支不再各自手寫相同 update payload。
 - 後端超商地圖 callback 已把 PCSC 與綠界共用的 clientUrl 驗證與成功頁組裝集中，保留各自欄位 mapping，但降低 POST/GET callback 相容流程漂移。

@@ -50,6 +50,7 @@ export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
 type PaymentAvailability = Record<PaymentMethod, boolean>;
 type QuoteProductRow = Record<string, unknown>;
 type QuoteProductSpec = Record<string, unknown>;
+type DeliveryConfigRow = Record<string, unknown>;
 
 export type QuoteResult =
   | { success: true; quote: QuotePayload }
@@ -69,6 +70,27 @@ const VALID_PAYMENT_METHODS: PaymentMethod[] = [
   "jkopay",
   "transfer",
 ];
+
+const STANDARD_DELIVERY_METHODS = [
+  "in_store",
+  "delivery",
+  "home_delivery",
+  "seven_eleven",
+  "family_mart",
+];
+
+const COD_ONLY_PAYMENT: PaymentAvailability = {
+  cod: true,
+  linepay: false,
+  jkopay: false,
+  transfer: false,
+};
+
+const DEFAULT_STORE_PAYMENT_METHODS = new Set([
+  "in_store",
+  "delivery",
+  "home_delivery",
+]);
 
 function isPaymentMethod(value: string): value is PaymentMethod {
   return VALID_PAYMENT_METHODS.includes(value as PaymentMethod);
@@ -97,6 +119,65 @@ function parseMaybeJsonArray<T = unknown>(value: unknown): T[] {
   return parseJsonArray<T>(value);
 }
 
+function buildDefaultPaymentRouting(
+  linePayEnabled: boolean,
+  transferEnabled: boolean,
+): Record<string, PaymentAvailability> {
+  return Object.fromEntries(
+    STANDARD_DELIVERY_METHODS.map((method) => {
+      if (!DEFAULT_STORE_PAYMENT_METHODS.has(method)) {
+        return [method, { ...COD_ONLY_PAYMENT }];
+      }
+
+      return [
+        method,
+        {
+          cod: true,
+          linepay: linePayEnabled,
+          jkopay: linePayEnabled,
+          transfer: transferEnabled,
+        },
+      ];
+    }),
+  ) as Record<string, PaymentAvailability>;
+}
+
+function getPaymentRoutingForMethod(
+  paymentRouting: Record<string, unknown>,
+  method: string,
+): Record<string, unknown> {
+  const configured = paymentRouting[method];
+  if (
+    configured &&
+    typeof configured === "object" &&
+    !Array.isArray(configured)
+  ) {
+    return configured as Record<string, unknown>;
+  }
+  return { ...COD_ONLY_PAYMENT };
+}
+
+export function resolveDeliveryConfigFromSettings(options: {
+  deliveryConfig: DeliveryConfigRow[];
+  paymentRoutingConfig: Record<string, unknown> | null;
+  linePayEnabled: boolean;
+  transferEnabled: boolean;
+}): DeliveryConfigRow[] {
+  if (options.deliveryConfig.length > 0) return options.deliveryConfig;
+
+  const paymentRouting = options.paymentRoutingConfig ||
+    buildDefaultPaymentRouting(
+      options.linePayEnabled,
+      options.transferEnabled,
+    );
+
+  return STANDARD_DELIVERY_METHODS.map((method) => ({
+    id: method,
+    enabled: true,
+    payment: getPaymentRoutingForMethod(paymentRouting, method),
+  }));
+}
+
 async function loadDeliveryConfig() {
   const { data: settingsData } = await supabase.from("coffee_settings")
     .select("key, value")
@@ -107,7 +188,7 @@ async function loadDeliveryConfig() {
       "transfer_enabled",
     ]);
 
-  let deliveryConfig: Record<string, unknown>[] = [];
+  let deliveryConfig: DeliveryConfigRow[] = [];
   let routingConfig: Record<string, unknown> | null = null;
   let linePayEnabled = false;
   let transferEnabled = false;
@@ -133,63 +214,12 @@ async function loadDeliveryConfig() {
     }
   });
 
-  if (deliveryConfig.length > 0) return deliveryConfig;
-
-  const legacyRouting = routingConfig || {
-    in_store: {
-      cod: true,
-      linepay: linePayEnabled,
-      jkopay: linePayEnabled,
-      transfer: transferEnabled,
-    },
-    delivery: {
-      cod: true,
-      linepay: linePayEnabled,
-      jkopay: linePayEnabled,
-      transfer: transferEnabled,
-    },
-    home_delivery: {
-      cod: true,
-      linepay: linePayEnabled,
-      jkopay: linePayEnabled,
-      transfer: transferEnabled,
-    },
-    seven_eleven: { cod: true, linepay: false, jkopay: false, transfer: false },
-    family_mart: { cod: true, linepay: false, jkopay: false, transfer: false },
-  };
-
-  return [
-    {
-      id: "in_store",
-      enabled: true,
-      payment: legacyRouting.in_store ||
-        { cod: true, linepay: false, jkopay: false, transfer: false },
-    },
-    {
-      id: "delivery",
-      enabled: true,
-      payment: legacyRouting.delivery ||
-        { cod: true, linepay: false, jkopay: false, transfer: false },
-    },
-    {
-      id: "home_delivery",
-      enabled: true,
-      payment: legacyRouting.home_delivery ||
-        { cod: true, linepay: false, jkopay: false, transfer: false },
-    },
-    {
-      id: "seven_eleven",
-      enabled: true,
-      payment: legacyRouting.seven_eleven ||
-        { cod: true, linepay: false, jkopay: false, transfer: false },
-    },
-    {
-      id: "family_mart",
-      enabled: true,
-      payment: legacyRouting.family_mart ||
-        { cod: true, linepay: false, jkopay: false, transfer: false },
-    },
-  ];
+  return resolveDeliveryConfigFromSettings({
+    deliveryConfig,
+    paymentRoutingConfig: routingConfig,
+    linePayEnabled,
+    transferEnabled,
+  });
 }
 
 function parseRequestItems(data: Record<string, unknown>): QuoteRequestItem[] {
@@ -280,7 +310,7 @@ export type ComputeOrderQuoteParams = {
   requestedDeliveryMethod: string;
   requestedPaymentMethod: PaymentMethod | "";
   products: QuoteProductRow[];
-  deliveryConfig: Record<string, unknown>[];
+  deliveryConfig: DeliveryConfigRow[];
   activePromos: Record<string, unknown>[];
   promoNow?: Date;
 };
