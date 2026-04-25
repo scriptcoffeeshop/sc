@@ -79,6 +79,7 @@
 - `storefrontLegacyBridge.js` 已移除；MainPage 只在頁面邊界注入仍需 DOM/付款副作用的 action。前台 `cart/delivery/form-renderer/orders/main-app` 實作已搬到 `frontend/src/features/storefront/storefront*.ts`，legacy `js/*.js` 相容 re-export 已移除。
 - storefront 的配送選項列表與轉帳帳號列表已改由 `MainPage.vue` 直接渲染；配送操作不再掛到 `window`，轉帳帳號選取只保留 state helper，DOM fallback renderer 已移除。
 - storefront「我的訂單」列表已由 Vue `StorefrontOrderHistoryCard.vue` 安全渲染；legacy fallback 後續已移除，不再以 `innerHTML` 或手寫 DOM builder 拼接後端訂單資料。
+- frontend 物流追蹤 URL 正規化與各配送方式預設追蹤頁已集中到 `frontend/src/lib/trackingUrls.ts`；後台訂單列表與前台「我的訂單」共用 URL 規則，保留各自顯示 label 與宅配出貨後才顯示的業務邏輯。
 - storefront legacy `js/*.js` 前台相容殼已移除；實作側的 `innerHTML` renderer 已清到 0，商品列表、購物車、動態表單欄位、配送選項與運費/折扣區塊都改成 Vue / DOM API / `replaceChildren()`。
 - storefront 高流量 JSON fallback 已集中到 `frontend/src/lib/jsonUtils.ts`；cart/model/dynamic-fields/delivery/auth 路徑不再各自散落 `JSON.parse + catch {}`。
 - frontend production code 已移除匿名 `catch {}`；目前 fallback 行為維持不變，錯誤變數統一命名為 `_error`，方便後續集中補觀測與解析 helper。

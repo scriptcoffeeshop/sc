@@ -11,6 +11,10 @@ import {
   getCustomerPaymentDisplay,
   getPaymentToneClasses,
 } from "./storefrontPaymentDisplay.ts";
+import {
+  getDefaultTrackingUrl,
+  normalizeTrackingUrl,
+} from "../../lib/trackingUrls.ts";
 
 export interface OrderHistoryItem {
   orderId: string;
@@ -90,31 +94,6 @@ const DELIVERY_METHOD_TEXT: Record<string, string> = {
   family_mart: "全家取件",
   in_store: "來店取貨",
 };
-
-function normalizeTrackingUrl(url: unknown) {
-  const raw = String(url || "").trim();
-  if (!raw || !/^https?:\/\//i.test(raw)) return "";
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
-    return parsed.toString();
-  } catch (_error) {
-    return "";
-  }
-}
-
-function getDefaultTrackingUrl(deliveryMethod: unknown) {
-  if (deliveryMethod === "seven_eleven") {
-    return "https://eservice.7-11.com.tw/e-tracking/search.aspx";
-  }
-  if (deliveryMethod === "family_mart") {
-    return "https://fmec.famiport.com.tw/FP_Entrance/QueryBox";
-  }
-  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
-    return "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
-  }
-  return "";
-}
 
 function canShowTrackingUrl(order: Pick<Order, "deliveryMethod" | "status">) {
   const deliveryMethod = String(order.deliveryMethod || "").trim();

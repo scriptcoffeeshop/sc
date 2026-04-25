@@ -1,4 +1,5 @@
 import type { ReceiptInfo } from "../../types";
+export { normalizeTrackingUrl } from "../../lib/trackingUrls.ts";
 
 export const orderStatusLabel: Record<string, string> = {
   pending: "待處理",
@@ -60,16 +61,4 @@ export function formatOrderDateTimeText(value: unknown): string {
   const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) return "";
   return parsed.toLocaleString("zh-TW");
-}
-
-export function normalizeTrackingUrl(url: unknown): string {
-  const raw = String(url || "").trim();
-  if (!raw || !/^https?:\/\//i.test(raw)) return "";
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
-    return parsed.toString();
-  } catch (_error) {
-    return "";
-  }
 }

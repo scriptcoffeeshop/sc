@@ -7,10 +7,18 @@ import {
   orderPayStatusLabel,
   orderStatusLabel,
 } from "./orderShared.ts";
+import { getDefaultTrackingUrl } from "../../lib/trackingUrls.ts";
 import type {
   DashboardOrderFilters,
   DashboardOrderRecord,
 } from "./dashboardOrderTypes.ts";
+
+const TRACKING_LINK_LABEL: Record<string, string> = {
+  seven_eleven: "7-11貨態查詢",
+  family_mart: "全家貨態查詢",
+  delivery: "中華郵政查詢",
+  home_delivery: "中華郵政查詢",
+};
 
 function parseDateBound(dateStr: string, isEnd = false) {
   if (!dateStr) return null;
@@ -31,25 +39,12 @@ function getTrackingLinkInfo(order: DashboardOrderRecord) {
     };
   }
   if (!order.trackingNumber) return null;
-  if (order.deliveryMethod === "seven_eleven") {
+  const defaultTrackingUrl = getDefaultTrackingUrl(order.deliveryMethod);
+  if (defaultTrackingUrl) {
+    const deliveryMethod = String(order.deliveryMethod || "");
     return {
-      url: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
-      label: "7-11貨態查詢",
-    };
-  }
-  if (order.deliveryMethod === "family_mart") {
-    return {
-      url: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
-      label: "全家貨態查詢",
-    };
-  }
-  if (
-    order.deliveryMethod === "delivery" ||
-      order.deliveryMethod === "home_delivery"
-  ) {
-    return {
-      url: "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100",
-      label: "中華郵政查詢",
+      url: defaultTrackingUrl,
+      label: TRACKING_LINK_LABEL[deliveryMethod] || "物流追蹤頁面",
     };
   }
   return null;
