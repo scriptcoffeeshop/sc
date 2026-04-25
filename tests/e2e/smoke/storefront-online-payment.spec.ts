@@ -7,7 +7,10 @@ import {
 } from "../support/smoke-fixtures";
 import {
   expectCartHasItems,
+  getStorefrontSwalCall,
   gotoStorefrontReady,
+  hasStorefrontSwalCall,
+  installStorefrontSwalRecorder,
   installStorefrontUser,
 } from "../support/storefront-smoke";
 
@@ -35,42 +38,7 @@ test.describe("smoke / storefront online payments", () => {
       });
     });
 
-    await page.addInitScript(() => {
-      const swalCalls: Array<Record<string, unknown>> = [];
-      const persistSwalCalls = () => {
-        localStorage.setItem(
-          "__storefrontSwalCalls",
-          JSON.stringify(swalCalls),
-        );
-      };
-      const serializeSwalPayload = (input: any) => {
-        const payload = typeof input === "string"
-          ? { title: input }
-          : input || {};
-        let html = "";
-        if (payload.html instanceof HTMLElement) {
-          const popup = document.createElement("div");
-          document.body.appendChild(popup);
-          payload.didOpen?.(popup);
-          html = payload.html.textContent || payload.html.innerHTML || "";
-          payload.willClose?.();
-          popup.remove();
-        } else {
-          html = String(payload.html || "");
-        }
-        return {
-          title: String(payload.title || ""),
-          html,
-          text: String(payload.text || ""),
-        };
-      };
-      (window as any).__storefrontSwalCalls = swalCalls;
-      (window as any).Swal.fire = async (input: any) => {
-        swalCalls.push(serializeSwalPayload(input));
-        persistSwalCalls();
-        return { isConfirmed: true };
-      };
-    });
+    await installStorefrontSwalRecorder(page);
     await installStorefrontUser(page);
     await gotoStorefrontReady(page);
 
@@ -92,25 +60,14 @@ test.describe("smoke / storefront online payments", () => {
     expect(submitBody?.paymentMethod).toBe("linepay");
     await expect(page).toHaveURL(/linepay_redirect=1/);
 
-    const promptSummary = await page.evaluate(() => {
-      const calls = JSON.parse(
-        localStorage.getItem("__storefrontSwalCalls") || "[]",
-      );
-      const match = calls.find((item: any) =>
-        String(item?.title || "").includes("LINE Pay")
-      ) || {};
-      return {
-        title: String(match.title || ""),
-        html: String(match.html || ""),
-      };
-    });
+    const promptSummary = await getStorefrontSwalCall(page, "LINE Pay");
 
-    expect(promptSummary.title).toContain("LINE Pay");
-    expect(promptSummary.html).toContain(
+    expect(promptSummary?.title).toContain("LINE Pay");
+    expect(promptSummary?.html).toContain(
       "請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。",
     );
-    expect(promptSummary.html).not.toContain("若您稍後再付款");
-    expect(promptSummary.html.match(/我的訂單/g)?.length ?? 0).toBe(1);
+    expect(promptSummary?.html).not.toContain("若您稍後再付款");
+    expect(promptSummary?.html.match(/我的訂單/g)?.length ?? 0).toBe(1);
   });
 
   test("storefront submit order jkopay prompt shows deadline and next steps", async ({ page }) => {
@@ -131,36 +88,8 @@ test.describe("smoke / storefront online payments", () => {
       });
     });
 
-    await page.addInitScript(() => {
-      const swalCalls: Array<Record<string, unknown>> = [];
-      const serializeSwalPayload = (input: any) => {
-        const payload = typeof input === "string" ? { title: input } : input || {};
-        let html = "";
-        if (payload.html instanceof HTMLElement) {
-          const popup = document.createElement("div");
-          document.body.appendChild(popup);
-          payload.didOpen?.(popup);
-          html = payload.html.textContent || payload.html.innerHTML || "";
-          payload.willClose?.();
-          popup.remove();
-        } else {
-          html = String(payload.html || "");
-        }
-        return {
-          title: String(payload.title || ""),
-          html,
-          text: String(payload.text || ""),
-        };
-      };
-      (window as any).__storefrontSwalCalls = swalCalls;
-      (window as any).Swal.fire = async (input: any) => {
-        const payload = serializeSwalPayload(input);
-        swalCalls.push(payload);
-        if (String(payload.title || "").includes("確認訂單")) {
-          return { isConfirmed: true };
-        }
-        return { isConfirmed: false };
-      };
+    await installStorefrontSwalRecorder(page, {
+      confirmTitleIncludes: ["確認訂單"],
     });
     await installStorefrontUser(page);
     await gotoStorefrontReady(page);
@@ -177,36 +106,20 @@ test.describe("smoke / storefront online payments", () => {
 
     await expect.poll(() => submitOrderCalls).toBe(1);
 
-    await expect.poll(async () => {
-      return await page.evaluate(() => {
-        const calls = (window as any).__storefrontSwalCalls || [];
-        return Boolean(calls.find((item: any) =>
-          String(item?.title || "").includes("街口支付")
-        ));
-      });
-    }).toBe(true);
+    await expect.poll(() => hasStorefrontSwalCall(page, "街口支付"))
+      .toBe(true);
 
-    const promptSummary = await page.evaluate(() => {
-      const calls = (window as any).__storefrontSwalCalls || [];
-      const match = calls.find((item: any) =>
-        String(item?.title || "").includes("街口支付")
-      ) || {};
-      return {
-        title: String(match.title || ""),
-        html: String(match.html || ""),
-        text: String(match.text || ""),
-      };
-    });
+    const promptSummary = await getStorefrontSwalCall(page, "街口支付");
 
-    expect(promptSummary.title).toContain("街口支付");
-    expect(promptSummary.html).toContain("付款期限");
-    expect(promptSummary.html).toContain("待付款");
-    expect(promptSummary.html).toContain(
+    expect(promptSummary?.title).toContain("街口支付");
+    expect(promptSummary?.html).toContain("付款期限");
+    expect(promptSummary?.html).toContain("待付款");
+    expect(promptSummary?.html).toContain(
       "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
     );
-    expect(promptSummary.html).not.toContain("若您稍後再付款");
-    expect(promptSummary.html.match(/我的訂單/g)?.length ?? 0).toBe(1);
-    expect(promptSummary.html).toContain("SO-JKOPAY-1");
+    expect(promptSummary?.html).not.toContain("若您稍後再付款");
+    expect(promptSummary?.html.match(/我的訂單/g)?.length ?? 0).toBe(1);
+    expect(promptSummary?.html).toContain("SO-JKOPAY-1");
     await expect(page).not.toHaveURL(/jkopay_redirect=1/);
   });
 
