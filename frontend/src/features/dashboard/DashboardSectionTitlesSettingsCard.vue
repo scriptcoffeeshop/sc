@@ -135,7 +135,13 @@ import {
   useDashboardSettings,
 } from "./useDashboardSettings.ts";
 
-const sectionRows = [
+type SectionTitleKey = "products" | "delivery" | "notes";
+
+const sectionRows: Array<{
+  key: SectionTitleKey;
+  label: string;
+  placeholder: string;
+}> = [
   { key: "products", label: "商品區塊", placeholder: "咖啡豆選購" },
   { key: "delivery", label: "配送區塊", placeholder: "配送方式" },
   { key: "notes", label: "備註區塊", placeholder: "訂單備註" },
@@ -146,11 +152,14 @@ const { getDisplayUrl, getSectionIconPreviewUrl } = useDashboardSettingsIcons();
 const sectionIconInputs = new Map<string, HTMLInputElement>();
 type TemplateRefElement = Element | ComponentPublicInstance | null;
 
-function handleResetSectionTitle(section: string) {
+function handleResetSectionTitle(section: SectionTitleKey) {
   dashboardSettingsActions.resetSectionTitle(section);
 }
 
-function registerSectionIconInput(section: string, element: TemplateRefElement) {
+function registerSectionIconInput(
+  section: SectionTitleKey,
+  element: TemplateRefElement,
+) {
   const key = String(section || "").trim();
   if (!key) return;
   if (element instanceof HTMLInputElement) {
@@ -160,7 +169,7 @@ function registerSectionIconInput(section: string, element: TemplateRefElement) 
   sectionIconInputs.delete(key);
 }
 
-function handleSectionIconPreview(section: string, event: Event) {
+function handleSectionIconPreview(section: SectionTitleKey, event: Event) {
   const input = event.target instanceof HTMLInputElement
     ? event.target
     : null;
@@ -170,7 +179,7 @@ function handleSectionIconPreview(section: string, event: Event) {
   );
 }
 
-async function handleSectionIconUpload(section: string) {
+async function handleSectionIconUpload(section: SectionTitleKey) {
   const input = sectionIconInputs.get(String(section || "").trim());
   await dashboardSettingsIconActions.uploadSectionIconFile(
     section,

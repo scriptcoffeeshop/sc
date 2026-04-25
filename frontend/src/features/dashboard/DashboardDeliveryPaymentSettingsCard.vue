@@ -188,7 +188,12 @@ import {
   useDashboardSettings,
 } from "./useDashboardSettings.ts";
 
-const routingPaymentMethods = [
+type RoutingPaymentMethodKey = "cod" | "linepay" | "jkopay" | "transfer";
+
+const routingPaymentMethods: Array<{
+  key: RoutingPaymentMethodKey;
+  label: string;
+}> = [
   { key: "cod", label: "貨到/取貨付款" },
   { key: "linepay", label: "LINE Pay" },
   { key: "jkopay", label: "街口支付" },

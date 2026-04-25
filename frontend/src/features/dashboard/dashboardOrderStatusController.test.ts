@@ -2,12 +2,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createOrderStatusController } from "./dashboardOrderStatusController.ts";
+import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
-function jsonResponse(payload) {
+function jsonResponse(payload: DashboardApiJson) {
   return { json: async () => payload };
 }
 
-function createDeps(overrides = {}) {
+function createDeps(overrides: Record<string, unknown> = {}) {
   return {
     API_URL: "https://api.example",
     authFetch: vi.fn(async () => jsonResponse({ success: true })),
@@ -23,7 +24,7 @@ function createDeps(overrides = {}) {
     previewOrderStatusNotification: vi.fn(async () => undefined),
     Toast: { fire: vi.fn() },
     Swal: { fire: vi.fn(async () => ({ isConfirmed: true })) },
-    esc: (value) => String(value || ""),
+    esc: (value: unknown) => String(value || ""),
     orderStatusLabel: {
       pending: "待處理",
       processing: "處理中",

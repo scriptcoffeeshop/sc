@@ -2,6 +2,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+interface SwalVueOptions {
+  html?: unknown;
+  title?: string;
+  didOpen?: (popup: HTMLElement) => void;
+  willClose?: () => void;
+  preConfirm?: () => unknown;
+}
+
 function jsonResponse(payload: unknown) {
   return new Response(JSON.stringify(payload), {
     headers: { "content-type": "application/json" },
@@ -21,7 +29,7 @@ function fillInput(id: string, value: string) {
   textInput.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
-function mountSwalVueContent(options) {
+function mountSwalVueContent(options: SwalVueOptions) {
   expect(options.html).toBeInstanceOf(HTMLElement);
   const popup = document.createElement("div");
   document.body.appendChild(popup);
@@ -37,7 +45,7 @@ describe("useDashboardBankAccounts", () => {
 
   it("loads bank accounts and adds a new transfer account from the modal", async () => {
     const module = await loadBankAccountsModule();
-    const requestBodies = [];
+    const requestBodies: Array<Record<string, unknown>> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getBankAccounts")) {
         return jsonResponse({
@@ -112,7 +120,10 @@ describe("useDashboardBankAccounts", () => {
 
   it("updates and deletes bank accounts through the corresponding dashboard actions", async () => {
     const module = await loadBankAccountsModule();
-    const requestBodies = [];
+    const requestBodies: Array<{
+      url: string;
+      body: Record<string, unknown>;
+    }> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getBankAccounts")) {
         return jsonResponse({

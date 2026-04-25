@@ -2,12 +2,13 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createOrderEmailController } from "./dashboardOrderEmailController.ts";
+import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
-function jsonResponse(payload) {
+function jsonResponse(payload: DashboardApiJson) {
   return { json: async () => payload };
 }
 
-function createDeps(overrides = {}) {
+function createDeps(overrides: Record<string, unknown> = {}) {
   return {
     API_URL: "https://api.example",
     authFetch: vi.fn(async () => jsonResponse({ success: true, message: "已發送" })),
@@ -22,13 +23,13 @@ function createDeps(overrides = {}) {
     ],
     Toast: { fire: vi.fn() },
     Swal: { fire: vi.fn(async () => ({ isConfirmed: true })) },
-    esc: (value) => String(value || ""),
+    esc: (value: unknown) => String(value || ""),
     orderStatusLabel: { processing: "處理中" },
     orderMethodLabel: {},
     orderPayMethodLabel: {},
     orderPayStatusLabel: {},
-    normalizeReceiptInfo: () => null,
-    normalizeTrackingUrl: (value) => String(value || ""),
+    normalizeReceiptInfo: (): null => null,
+    normalizeTrackingUrl: (value: unknown) => String(value || ""),
     ...overrides,
   };
 }

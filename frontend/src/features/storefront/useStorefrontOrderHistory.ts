@@ -78,6 +78,10 @@ interface OrderHistoryState {
   copyTrackingNumber: (trackingNumber: string) => Promise<void>;
 }
 
+type StorefrontOrderHistoryGlobal = typeof globalThis & {
+  Swal?: OrderHistorySwal;
+};
+
 const ORDER_STATUS_TEXT: Record<string, string> = {
   pending: "待處理",
   processing: "處理中",
@@ -180,12 +184,14 @@ export function useStorefrontOrderHistory(
   deps: OrderHistoryDeps = {},
 ): OrderHistoryState {
   const authFetchFn = deps.authFetch || globalThis.fetch?.bind(globalThis);
-  const swal = deps.Swal || globalThis.Swal || { fire: async () => undefined };
+  const swal = deps.Swal || (globalThis as StorefrontOrderHistoryGlobal).Swal ||
+    { fire: async (): Promise<undefined> => undefined };
   const toast = deps.Toast || { fire: () => undefined };
   const apiUrl = deps.apiUrl || "";
   const getCurrentUser = deps.getCurrentUser || (() => null);
-  const writeClipboard = deps.writeClipboard || ((text: string) =>
-    globalThis.navigator?.clipboard?.writeText?.(text));
+  const writeClipboard = deps.writeClipboard ||
+    ((text: string): Promise<unknown> | undefined =>
+      globalThis.navigator?.clipboard?.writeText?.(text));
   const resolvePaymentDisplay = deps.getCustomerPaymentDisplay ||
     getCustomerPaymentDisplay;
   const resolveDateTimeText = deps.formatDateTimeText || formatDateTimeText;

@@ -53,7 +53,7 @@ function syncUserProfileInBackground(payload: Record<string, unknown>) {
     void authFetch(`${API_URL}?action=updateUserProfile`, {
       method: "POST",
       body: JSON.stringify(payload),
-    }).catch(() => undefined);
+    }).catch((): undefined => undefined);
   } catch (_error) {
     return false;
   }

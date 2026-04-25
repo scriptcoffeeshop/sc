@@ -6,6 +6,11 @@ import {
 } from "./storefrontRuntime.ts";
 import { getStorefrontUiSnapshot } from "./storefrontUiSnapshot.ts";
 
+type StorefrontUiSnapshotGlobal = typeof globalThis & {
+  appSettings?: unknown;
+  currentDeliveryConfig?: unknown;
+};
+
 describe("getStorefrontUiSnapshot", () => {
   beforeEach(() => {
     state.products = [];
@@ -21,8 +26,8 @@ describe("getStorefrontUiSnapshot", () => {
   });
 
   afterEach(() => {
-    delete globalThis.appSettings;
-    delete globalThis.currentDeliveryConfig;
+    delete (globalThis as StorefrontUiSnapshotGlobal).appSettings;
+    delete (globalThis as StorefrontUiSnapshotGlobal).currentDeliveryConfig;
   });
 
   it("reads delivery labels from storefront runtime settings/config", () => {
@@ -63,8 +68,12 @@ describe("getStorefrontUiSnapshot", () => {
   });
 
   it("ignores legacy global settings and reads only runtime state", () => {
-    globalThis.appSettings = { site_title: "legacy title" };
-    globalThis.currentDeliveryConfig = [{ id: "legacy_delivery" }];
+    (globalThis as StorefrontUiSnapshotGlobal).appSettings = {
+      site_title: "legacy title",
+    };
+    (globalThis as StorefrontUiSnapshotGlobal).currentDeliveryConfig = [{
+      id: "legacy_delivery",
+    }];
 
     const snapshot = getStorefrontUiSnapshot();
 

@@ -1,7 +1,18 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import type {
+  CustomerPaymentDisplay,
+  Order,
+} from "../../types";
 
-let buildOrderHistoryItem;
-let useStorefrontOrderHistory;
+type StorefrontOrderHistoryModule = typeof import("./useStorefrontOrderHistory.ts");
+type StorefrontOrderHistoryDeps = Parameters<
+  StorefrontOrderHistoryModule["useStorefrontOrderHistory"]
+>[0];
+
+let buildOrderHistoryItem: StorefrontOrderHistoryModule["buildOrderHistoryItem"];
+let useStorefrontOrderHistory: StorefrontOrderHistoryModule[
+  "useStorefrontOrderHistory"
+];
 
 beforeAll(async () => {
   vi.stubGlobal("Swal", {
@@ -23,13 +34,13 @@ beforeAll(async () => {
   ));
 });
 
-function createSuccessResponse(payload) {
+function createSuccessResponse(payload: unknown) {
   return {
     json: vi.fn(async () => payload),
   };
 }
 
-function createPaymentDisplay(order) {
+function createPaymentDisplay(order: Order): CustomerPaymentDisplay {
   const paymentMethod = String(order?.paymentMethod || "cod");
   const paymentStatus = String(order?.paymentStatus || "");
   const resumePaymentLabel = paymentMethod === "jkopay"
@@ -70,14 +81,16 @@ function createPaymentDisplay(order) {
   };
 }
 
-function createOrderHistoryDeps(overrides = {}) {
+function createOrderHistoryDeps(
+  overrides: Partial<StorefrontOrderHistoryDeps> = {},
+): StorefrontOrderHistoryDeps {
   return {
     Swal: { fire: vi.fn(async () => ({ isConfirmed: false })) },
     Toast: { fire: vi.fn() },
     getCurrentUser: () => ({ userId: "user-1" }),
     writeClipboard: vi.fn(async () => undefined),
     getCustomerPaymentDisplay: vi.fn(createPaymentDisplay),
-    formatDateTimeText: vi.fn((value) => String(value || "")),
+    formatDateTimeText: vi.fn((value: unknown) => String(value || "")),
     ...overrides,
   };
 }

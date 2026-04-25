@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
-function jsonResponse(payload) {
+function jsonResponse(payload: DashboardApiJson) {
   return { json: async () => payload };
 }
 

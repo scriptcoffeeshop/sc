@@ -35,8 +35,8 @@ export {
 
 /** 選擇配送方式 */
 export function selectDelivery(
-  method,
-  _event = null,
+  method: string,
+  _event: Event | null = null,
   options: { skipQuote?: boolean } = {},
 ) {
   state.selectedDelivery = method;
@@ -84,7 +84,7 @@ export function updateDistricts() {
 /** 舊別名保留，供歷史流程呼叫 */
 export const populateDistricts = updateDistricts;
 
-export async function checkStoreToken(token) {
+export async function checkStoreToken(token: string) {
   Swal.fire({
     title: "載入門市資訊...",
     allowOutsideClick: false,
@@ -99,13 +99,14 @@ export async function checkStoreToken(token) {
     const result = await res.json();
     if (result.success && result.found) {
       Swal.close();
-      const typeMap = {
+      const typeMap: Record<string, string> = {
         "UNIMARTC2C": "seven_eleven",
         "FAMIC2C": "family_mart",
         "UNIMART": "seven_eleven",
         "FAMI": "family_mart",
       };
-      const method = typeMap[result.logisticsSubType] || "seven_eleven";
+      const method = typeMap[String(result.logisticsSubType || "")] ||
+        "seven_eleven";
       selectDelivery(method);
 
       applyStoreSelection({
@@ -118,7 +119,7 @@ export async function checkStoreToken(token) {
     } else {
       Swal.fire("提示", "門市資訊已過期或不存在，請重新選擇", "warning");
     }
-  } catch (e) {
+  } catch (_error) {
     Swal.fire("錯誤", "門市資訊載入失敗", "error");
   }
 }
@@ -163,11 +164,12 @@ export async function openStoreMap() {
           servicetype: "1",
         },
       });
-    } catch (e) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       const choice = await Swal.fire({
         icon: "error",
         title: "無法開啟 7-11 門市地圖",
-        text: e.message || String(e),
+        text: message,
         showCancelButton: true,
         confirmButtonText: "改用門市搜尋",
         cancelButtonText: "關閉",
@@ -200,11 +202,12 @@ export async function openStoreMap() {
       action: result.mapUrl,
       fields: result.params || {},
     });
-  } catch (e) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     const choice = await Swal.fire({
       icon: "error",
       title: "無法開啟綠界地圖",
-      text: e.message || String(e),
+      text: message,
       showCancelButton: true,
       confirmButtonText: "改用門市搜尋",
       cancelButtonText: "關閉",

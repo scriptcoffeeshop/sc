@@ -15,7 +15,7 @@ function mountCartShell() {
 }
 
 function installLocalStorageStub() {
-  const store = new Map();
+  const store = new Map<string, string>();
   vi.stubGlobal("localStorage", {
     getItem: vi.fn((key) => store.get(String(key)) ?? null),
     setItem: vi.fn((key, value) => {
@@ -58,7 +58,14 @@ describe("storefrontCartStore", () => {
 
     cartStore.loadCart();
     expect(cartStore.getCartSnapshot()).toEqual([
-      { productId: 1, specKey: "half", qty: 2 },
+      {
+        productId: 1,
+        productName: "",
+        specKey: "half",
+        specLabel: "",
+        qty: 2,
+        unitPrice: 0,
+      },
     ]);
 
     localStorage.setItem("coffee_cart", JSON.stringify({ productId: 1 }));

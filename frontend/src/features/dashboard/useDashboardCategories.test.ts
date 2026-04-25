@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
-function jsonResponse(payload) {
+function jsonResponse(payload: DashboardApiJson) {
   return { json: async () => payload };
 }
 
@@ -16,7 +17,7 @@ describe("useDashboardCategories", () => {
 
   it("loads categories, keeps input state, and adds a new category", async () => {
     const module = await loadCategoriesModule();
-    const payloads = [];
+    const payloads: Array<Record<string, unknown>> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getCategories")) {
         return jsonResponse({
@@ -71,7 +72,10 @@ describe("useDashboardCategories", () => {
 
   it("updates and deletes categories while reloading products", async () => {
     const module = await loadCategoriesModule();
-    const payloads = [];
+    const payloads: Array<{
+      url: string;
+      body: Record<string, unknown>;
+    }> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getCategories")) {
         return jsonResponse({

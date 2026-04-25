@@ -2,6 +2,20 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+interface SwalVueOptions {
+  html?: unknown;
+  title?: string;
+  didOpen?: (popup: HTMLElement) => void;
+  willClose?: () => void;
+  preConfirm?: () => unknown;
+}
+
+interface SortableTestOptions {
+  handle: string;
+  animation: number;
+  onEnd: () => Promise<void> | void;
+}
+
 function jsonResponse(payload: unknown) {
   return new Response(JSON.stringify(payload), {
     headers: { "content-type": "application/json" },
@@ -13,7 +27,7 @@ async function loadFormFieldsModule() {
   return await import("./useDashboardFormFields.ts");
 }
 
-function mountSwalVueContent(options) {
+function mountSwalVueContent(options: SwalVueOptions) {
   expect(options.html).toBeInstanceOf(HTMLElement);
   const popup = document.createElement("div");
   document.body.appendChild(popup);
@@ -125,7 +139,7 @@ describe("useDashboardFormFields", () => {
 
   it("edits fields and toggles enabled state through update endpoints", async () => {
     const module = await loadFormFieldsModule();
-    const updatePayloads = [];
+    const updatePayloads: Array<Record<string, unknown>> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getFormFieldsAdmin")) {
         return jsonResponse({
@@ -163,7 +177,7 @@ describe("useDashboardFormFields", () => {
           setControlValue("swal-fo", "二聯式,三聯式");
           setCheckboxChecked("#swal-fr", true);
           setCheckboxChecked('[data-delivery-id="delivery"]', false);
-          const value = options.preConfirm();
+          const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
           return { value };
@@ -218,7 +232,7 @@ describe("useDashboardFormFields", () => {
 
   it("normalizes all-visible delivery visibility when adding new fields", async () => {
     const module = await loadFormFieldsModule();
-    let addPayload = null;
+    let addPayload: Record<string, unknown> | null = null;
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getFormFieldsAdmin")) {
         return jsonResponse({ success: true, fields: [] });
@@ -239,7 +253,7 @@ describe("useDashboardFormFields", () => {
           setControlValue("swal-fp", "請輸入收據抬頭");
           setControlValue("swal-fo", "");
           setCheckboxChecked("#swal-fr", true);
-          const value = options.preConfirm();
+          const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
           return { value };
@@ -285,8 +299,8 @@ describe("useDashboardFormFields", () => {
 
   it("persists sortable field order from the rendered DOM", async () => {
     const module = await loadFormFieldsModule();
-    let sortableOptions = null;
-    let reorderPayload = null;
+    let sortableOptions: SortableTestOptions | null = null;
+    let reorderPayload: Record<string, unknown> | null = null;
     const sortableInstance = { destroy: vi.fn() };
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getFormFieldsAdmin")) {
@@ -322,7 +336,7 @@ describe("useDashboardFormFields", () => {
     });
     const Toast = { fire: vi.fn() };
     class SortableMock {
-      static create = vi.fn((element, options) => {
+      static create = vi.fn((_element: Element, options: SortableTestOptions) => {
         sortableOptions = options;
         return sortableInstance;
       });
@@ -350,6 +364,9 @@ describe("useDashboardFormFields", () => {
     module.dashboardFormFieldsActions.registerFormFieldsListElement(listElement);
     await Promise.resolve();
     await Promise.resolve();
+    if (!sortableOptions) {
+      throw new Error("sortable options were not registered");
+    }
     await sortableOptions.onEnd();
 
     expect(SortableMock.create).toHaveBeenCalledWith(

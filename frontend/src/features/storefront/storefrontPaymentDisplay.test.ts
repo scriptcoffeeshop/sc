@@ -8,7 +8,7 @@ import {
   getCustomerPaymentDisplay,
 } from "./storefrontPaymentDisplay.ts";
 
-function mountDialog(dialog) {
+function mountDialog(dialog: { didOpen?: (popup: HTMLElement) => void }) {
   const popup = document.createElement("div");
   document.body.appendChild(popup);
   dialog.didOpen?.(popup);

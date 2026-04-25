@@ -8,19 +8,50 @@ import Swal from "../../lib/swal.ts";
 import {
   calcCartSummaryFromState,
   getDeliveryMeta as getStorefrontDeliveryMeta,
+  type StorefrontCartSummary,
 } from "./storefrontCartSummary.ts";
 import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
-/** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
-export let cart = [];
-
-function parseStoredCart(rawCart) {
-  return parseJsonArray(rawCart);
+export interface StorefrontCartItem {
+  productId: number | string;
+  productName: string;
+  specKey: string;
+  specLabel: string;
+  qty: number;
+  unitPrice: number;
 }
 
-function parseProductSpecs(specsValue) {
-  return parseJsonArray(specsValue).map(asJsonRecord);
+interface StorefrontProductSpec {
+  key: string;
+  label: string;
+  price: number;
+}
+
+/** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
+export let cart: StorefrontCartItem[] = [];
+
+function parseStoredCart(rawCart: string | null): StorefrontCartItem[] {
+  return parseJsonArray(rawCart)
+    .map(asJsonRecord)
+    .map((item) => ({
+      productId: Number.isFinite(Number(item.productId))
+        ? Number(item.productId)
+        : String(item.productId || ""),
+      productName: String(item.productName || ""),
+      specKey: String(item.specKey || ""),
+      specLabel: String(item.specLabel || ""),
+      qty: Math.max(1, Number(item.qty) || 1),
+      unitPrice: Number(item.unitPrice) || 0,
+    }));
+}
+
+function parseProductSpecs(specsValue: unknown): StorefrontProductSpec[] {
+  return parseJsonArray(specsValue).map(asJsonRecord).map((spec) => ({
+    key: String(spec.key || ""),
+    label: String(spec.label || ""),
+    price: Number(spec.price) || 0,
+  }));
 }
 
 function triggerQuoteRefresh() {
@@ -42,7 +73,7 @@ function getDeliveryMeta() {
   );
 }
 
-function emitCartUpdated(summary) {
+function emitCartUpdated(summary: StorefrontCartSummary) {
   const detail = {
     items: cart.map((item) => ({ ...item })),
     summary: {
@@ -76,7 +107,7 @@ export function loadCart() {
 }
 
 /** 加入購物車 */
-export function addToCart(productId, specKey) {
+export function addToCart(productId: number | string, specKey: string) {
   const p = state.products.find((x) => x.id === productId);
   if (!p) return;
   const specs = parseProductSpecs(p.specs);
@@ -114,7 +145,7 @@ export function addToCart(productId, specKey) {
 }
 
 /** 更新購物車品項數量 (by Array Index) */
-export function updateCartItemQty(idx, delta) {
+export function updateCartItemQty(idx: number, delta: number) {
   if (!cart[idx]) return;
   cart[idx].qty += delta;
   if (cart[idx].qty <= 0) cart.splice(idx, 1);
@@ -124,7 +155,11 @@ export function updateCartItemQty(idx, delta) {
 }
 
 /** 依據商品ID與規格Key更新數量 (給 In-line Stepper 使用) */
-export function updateCartItemQtyByKeys(productId, specKey, delta) {
+export function updateCartItemQtyByKeys(
+  productId: number | string,
+  specKey: string,
+  delta: number,
+) {
   const idx = cart.findIndex((c) =>
     c.productId === productId && c.specKey === specKey
   );
@@ -136,7 +171,7 @@ export function updateCartItemQtyByKeys(productId, specKey, delta) {
 }
 
 /** 移除購物車品項 */
-export function removeCartItem(idx) {
+export function removeCartItem(idx: number) {
   cart.splice(idx, 1);
   saveCart();
   updateCartUI();

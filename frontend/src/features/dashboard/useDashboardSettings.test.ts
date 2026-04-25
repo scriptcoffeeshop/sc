@@ -4,26 +4,30 @@ import type {
   DashboardPaymentOption,
 } from "./dashboardSettingsShared.ts";
 
+interface SettingsServiceOverrides {
+  [key: string]: unknown;
+}
+
 function jsonResponse(payload: unknown) {
   return new Response(JSON.stringify(payload), {
     headers: { "content-type": "application/json" },
   });
 }
 
-function createLocalStorageMock(initialEntries = {}) {
+function createLocalStorageMock(initialEntries: Record<string, string> = {}) {
   const storage = new Map(Object.entries(initialEntries));
   return {
-    getItem: vi.fn((key) => storage.has(key) ? storage.get(key) : null),
-    setItem: vi.fn((key, value) => {
+    getItem: vi.fn((key: string) => storage.has(key) ? storage.get(key) : null),
+    setItem: vi.fn((key: string, value: string) => {
       storage.set(key, String(value));
     }),
-    removeItem: vi.fn((key) => {
+    removeItem: vi.fn((key: string) => {
       storage.delete(key);
     }),
   };
 }
 
-function createSettingsServices(overrides = {}) {
+function createSettingsServices(overrides: SettingsServiceOverrides = {}) {
   const defaultDeliveryOptions: Record<string, DashboardDeliveryOption> = {
     delivery: {
       id: "delivery",
@@ -75,7 +79,7 @@ function createSettingsServices(overrides = {}) {
     getAuthUserId: () => "admin-user",
     applyDashboardBranding: vi.fn(),
     loadBankAccounts: vi.fn(),
-    Sortable: null,
+    Sortable: null as null,
     Toast: { fire: vi.fn() },
     Swal: { fire: vi.fn() },
     defaultDeliveryOptions,
@@ -87,8 +91,8 @@ function createSettingsServices(overrides = {}) {
       name: String(option?.name || method),
       description: String(option?.description || ""),
     }),
-    getDefaultIconUrl: (key) => `icons/${key}.png`,
-    sectionIconSettingKey: (section) => `${section}_section_icon_url`,
+    getDefaultIconUrl: (key: string) => `icons/${key}.png`,
+    sectionIconSettingKey: (section: string) => `${section}_section_icon_url`,
     normalizeIconPath,
     normalizeDeliveryOption: (option: Partial<DashboardDeliveryOption> = {}) => ({
       id: String(option.id || ""),
@@ -106,7 +110,7 @@ function createSettingsServices(overrides = {}) {
         transfer: Boolean(option.payment?.transfer),
       },
     }),
-    parseBooleanSetting: (value, fallback = false) => {
+    parseBooleanSetting: (value: unknown, fallback = false) => {
       if (value === undefined || value === null || value === "") return fallback;
       return String(value) === "true";
     },
@@ -221,7 +225,7 @@ describe("useDashboardSettings", () => {
     const localStorage = createLocalStorageMock();
     vi.stubGlobal("localStorage", localStorage);
 
-    let updatePayload = null;
+    let updatePayload: Record<string, unknown> | null = null;
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getSettings")) {
         return jsonResponse({

@@ -2,6 +2,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+interface SwalVueOptions {
+  html?: unknown;
+  title?: string;
+  didOpen?: (popup: HTMLElement) => void;
+  willClose?: () => void;
+  preConfirm?: () => unknown;
+}
+
 function jsonResponse(payload: unknown) {
   return new Response(JSON.stringify(payload), {
     headers: { "content-type": "application/json" },
@@ -13,7 +21,7 @@ async function loadOrdersModule() {
   return await import("./useDashboardOrders.ts");
 }
 
-function mountSwalVueContent(options) {
+function mountSwalVueContent(options: SwalVueOptions) {
   expect(options.html).toBeInstanceOf(HTMLElement);
   const popup = document.createElement("div");
   document.body.appendChild(popup);
@@ -190,7 +198,7 @@ describe("useDashboardOrders", () => {
 
   it("sends selected order ids and payment status during batch updates", async () => {
     const module = await loadOrdersModule();
-    let batchPayload = null;
+    let batchPayload: Record<string, unknown> | null = null;
     const orders = [
       {
         orderId: "O-2001",
@@ -272,7 +280,7 @@ describe("useDashboardOrders", () => {
           setControlValue("swal-batch-tracking-number", "JP-123");
           setControlValue("swal-batch-shipping-provider", "黑貓宅急便");
           setControlValue("swal-batch-tracking-url", "ftp://invalid.example");
-          const value = options.preConfirm();
+          const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
           return value === false ? { isConfirmed: false } : { isConfirmed: true, value };
@@ -305,7 +313,7 @@ describe("useDashboardOrders", () => {
 
   it("includes shared shipping metadata when batch shipping orders", async () => {
     const module = await loadOrdersModule();
-    let batchPayload = null;
+    let batchPayload: Record<string, unknown> | null = null;
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("batchUpdateOrderStatus")) {
         batchPayload = JSON.parse(String(options.body || "{}"));
@@ -336,7 +344,7 @@ describe("useDashboardOrders", () => {
             "swal-batch-tracking-url",
             "https://tracking.example/JP-5001",
           );
-          const value = options.preConfirm();
+          const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
           return { isConfirmed: true, value };

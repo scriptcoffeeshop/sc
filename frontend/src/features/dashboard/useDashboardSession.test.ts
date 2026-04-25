@@ -1,25 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-function jsonResponse(payload) {
+function jsonResponse(payload: unknown) {
   return { json: async () => payload };
 }
 
-function createLocalStorageMock(initialEntries = {}) {
+function createLocalStorageMock(initialEntries: Record<string, string> = {}) {
   const storage = new Map(Object.entries(initialEntries));
   return {
-    getItem: vi.fn((key) => storage.has(key) ? storage.get(key) : null),
-    setItem: vi.fn((key, value) => {
+    getItem: vi.fn((key: string) => storage.has(key) ? storage.get(key) : null),
+    setItem: vi.fn((key: string, value: string) => {
       storage.set(key, String(value));
     }),
-    removeItem: vi.fn((key) => {
+    removeItem: vi.fn((key: string) => {
       storage.delete(key);
     }),
   };
 }
 
-function createDeferred() {
-  let resolve;
-  const promise = new Promise((promiseResolve) => {
+function createDeferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve: () => void = () => undefined;
+  const promise = new Promise<void>((promiseResolve) => {
     resolve = promiseResolve;
   });
   return { promise, resolve };

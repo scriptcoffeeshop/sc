@@ -118,11 +118,11 @@ async function syncBankAccountsSortable() {
   destroyBankAccountsSortable();
   if (!bankAccountsListElement?.querySelector?.("[data-bank-account-row]")) return;
 
-  const createOptions = {
+  const createOptions: BankAccountsSortableOptions = {
     handle: ".drag-handle-bank",
     animation: 150,
     ghostClass: "ui-bg-soft",
-    onEnd: async (event) => {
+    onEnd: async (event: BankAccountsSortableEvent) => {
       if (event.oldIndex === event.newIndex) return;
       const ids = Array.from(
         bankAccountsListElement.querySelectorAll("[data-bank-account-row]"),

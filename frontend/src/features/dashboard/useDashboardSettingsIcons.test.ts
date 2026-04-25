@@ -49,9 +49,10 @@ async function loadSettingsIconsModule() {
     useDashboardSettings: () => dashboardSettingsState,
   }));
   vi.doMock("../../lib/icons.ts", () => ({
-    getDefaultIconUrl: (key) => `icons/${key}.png`,
-    getDeliveryIconFallbackKey: (deliveryId) => deliveryId || "delivery",
-    getPaymentIconFallbackKey: (method) => method || "payment",
+    getDefaultIconUrl: (key: string) => `icons/${key}.png`,
+    getDeliveryIconFallbackKey: (deliveryId: string) =>
+      deliveryId || "delivery",
+    getPaymentIconFallbackKey: (method: string) => method || "payment",
     normalizeIconPath: (url = "") => String(url || "")
       .replace("https://cdn.example/", "")
       .replace(/^\/+/, ""),
@@ -59,7 +60,7 @@ async function loadSettingsIconsModule() {
       url ? `/assets/${String(url).replace(/^\/+/, "")}` : "",
   }));
   vi.doMock("./dashboardSettingsShared.ts", () => ({
-    sectionIconSettingKey: (section) => `${section}_section_icon_url`,
+    sectionIconSettingKey: (section: string) => `${section}_section_icon_url`,
   }));
 
   const module = await import("./useDashboardSettingsIcons.ts");

@@ -54,12 +54,12 @@ describe("useStorefrontPayment", () => {
   });
 
   it("copies transfer account numbers and resets copied state", async () => {
-    const scheduledCallbacks = [];
+    const scheduledCallbacks: Array<() => void> = [];
     const deps = {
       clipboard: { writeText: vi.fn(() => Promise.resolve()) },
       Toast: { fire: vi.fn() },
       Swal: { fire: vi.fn() },
-      setTimeout: vi.fn((callback) => {
+      setTimeout: vi.fn((callback: () => void) => {
         scheduledCallbacks.push(callback);
       }),
     };

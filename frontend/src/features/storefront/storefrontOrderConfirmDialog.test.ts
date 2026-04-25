@@ -6,6 +6,7 @@ import {
   buildOrderConfirmSummaryView,
   confirmOrderSubmission,
 } from "./storefrontOrderConfirmDialog.ts";
+import type { StorefrontOrderConfirmParams } from "../../types/storefront";
 
 vi.mock("../../lib/swal.ts", () => ({
   default: {
@@ -21,7 +22,7 @@ vi.mock("../../lib/swal.ts", () => ({
   },
 }));
 
-const baseParams = {
+const baseParams: StorefrontOrderConfirmParams = {
   deliveryMethod: "delivery",
   deliveryInfo: {
     companyOrBuilding: "A 棟",

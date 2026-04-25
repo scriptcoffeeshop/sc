@@ -60,6 +60,7 @@
   - dashboard 訂單通知 controller 已補上 Email/Flex/notification deps 共用型別，Flex 歷史紀錄也改為 typed parse/write，不再吞掉 localStorage/clipboard 錯誤。
   - `frontend/src/**/*.vue` 已全面轉為 `<script setup lang="ts">`；共用 UI primitive、dashboard sections/settings/order/modals、storefront 顯示元件與 pages 都納入 Vue typecheck。
   - `frontend/src/**/*.test.ts` 已納入 `frontend/tsconfig.json`；前端 unit test fixture 也必須通過 `vue-tsc`，不再用 tsconfig exclude 避開型別檢查。
+  - `frontend/tsconfig.json` 已啟用 `noImplicitAny`；production 與 unit test helper 都不得再靠隱性 any 通過型別檢查。完整 strict 仍採漸進式推進。
 - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model 與資料正規化已拆到 `dashboardFormFieldsShared.ts`。
 - dashboard formfields 新增/編輯彈窗已改由 Vue `DashboardFormFieldDialogForm.vue` 掛載到 SweetAlert；原 `dashboardFormFieldsDialog.ts` HTML/DOM helper 已移除。
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
@@ -145,6 +146,7 @@
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
+- `frontend/tsconfig.json` 已啟用 `noImplicitAny`，前端新增參數、測試 fixture、動態 import 模組與全域 bridge 都要補明確型別；下一個可收斂方向是分階段打開 `strictNullChecks`。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`，避免型別錯誤被靜音。
 - `repo_hygiene_check.py` 已禁止 tracked `.js` 回流；前端/測試需用 TypeScript 或 Vue，工具設定需用 `.cjs` / `.mjs`。目前 `frontend/src/` 已無 JS allowlist，entry、Swal wrapper、UI helper 與資料邊界皆已轉 TypeScript。
 - `repo_hygiene_check.py` 已禁止 production runtime 直接新增 `JSON.parse` 與匿名 `catch {}`；JSON 解析需集中在 frontend/backend json helper，catch 需具名以便後續補觀測。

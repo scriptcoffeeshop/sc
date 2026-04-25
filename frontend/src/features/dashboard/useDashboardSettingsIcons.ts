@@ -24,7 +24,7 @@ interface DashboardSettingsIconServices {
     close?: () => void;
   };
   Toast: {
-    fire: (options: { icon: string; title: string }) => unknown;
+    fire: (...args: unknown[]) => unknown;
   };
 }
 
@@ -103,7 +103,10 @@ function replacePaymentPreviewOverride(method: string, nextUrl = "") {
   };
 }
 
-function replaceDeliveryPreviewOverride(deliveryId, nextUrl = "") {
+function replaceDeliveryPreviewOverride(
+  deliveryId: number | string,
+  nextUrl = "",
+) {
   const key = String(deliveryId || "").trim();
   if (!key) return;
   revokeObjectUrl(deliveryIconPreviewOverrides.value[key]);
@@ -235,7 +238,7 @@ function setPaymentIconUrl(method: string, url = "") {
   };
 }
 
-function setDeliveryIconUrl(deliveryId, url = "") {
+function setDeliveryIconUrl(deliveryId: number | string, url = "") {
   const key = String(deliveryId || "").trim();
   const option = deliveryOptions.value.find((item) => String(item.id || "") === key);
   if (!option) return;
@@ -408,7 +411,9 @@ function applyIconFromLibrary(targetKey: string, iconKey: string, rawUrl = "") {
   return true;
 }
 
-export function configureDashboardSettingsIconServices(nextServices) {
+export function configureDashboardSettingsIconServices(
+  nextServices: Partial<DashboardSettingsIconServices>,
+) {
   services = {
     ...(services || {}),
     ...nextServices,

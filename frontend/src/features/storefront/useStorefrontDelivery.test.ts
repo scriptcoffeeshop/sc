@@ -1,7 +1,12 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 
-let normalizeStorefrontDeliveryConfig;
-let useStorefrontDelivery;
+type StorefrontDeliveryModule = typeof import("./useStorefrontDelivery.ts");
+
+let normalizeStorefrontDeliveryConfig: StorefrontDeliveryModule[
+  "normalizeStorefrontDeliveryConfig"
+];
+let useStorefrontDelivery: StorefrontDeliveryModule["useStorefrontDelivery"];
 
 beforeAll(async () => {
   vi.stubGlobal("Swal", {
@@ -19,7 +24,7 @@ describe("useStorefrontDelivery", () => {
     expect(normalizeStorefrontDeliveryConfig({
       linepay_enabled: "true",
       transfer_enabled: "false",
-    }).map((option) => ({
+    }).map((option: StorefrontDeliveryOption) => ({
       id: option.id,
       enabled: option.enabled,
       payment: option.payment,
@@ -56,8 +61,34 @@ describe("useStorefrontDelivery", () => {
     const deps = {
       getStorefrontUiSnapshot: vi.fn(() => ({
         deliveryConfig: [
-          { id: "delivery", name: "宅配", enabled: true },
-          { id: "family_mart", name: "全家", enabled: false },
+          {
+            id: "delivery",
+            icon_url: "",
+            label: "宅配",
+            name: "宅配",
+            description: "",
+            enabled: true,
+            payment: {
+              cod: false,
+              linepay: false,
+              jkopay: false,
+              transfer: false,
+            },
+          },
+          {
+            id: "family_mart",
+            icon_url: "",
+            label: "全家",
+            name: "全家",
+            description: "",
+            enabled: false,
+            payment: {
+              cod: false,
+              linepay: false,
+              jkopay: false,
+              transfer: false,
+            },
+          },
         ],
       })),
       selectDelivery: vi.fn(),

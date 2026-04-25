@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { useStorefrontCart } from "./useStorefrontCart.ts";
+import {
+  useStorefrontCart,
+  type StorefrontCartItem,
+} from "./useStorefrontCart.ts";
+import type { StorefrontUiSnapshot } from "./storefrontUiSnapshot.ts";
 
-function createCartApi(snapshot = []) {
+function createCartApi(snapshot: StorefrontCartItem[] = []) {
   return {
     addToCart: vi.fn(),
     getCartSnapshot: vi.fn(() => snapshot),
@@ -99,7 +103,7 @@ describe("useStorefrontCart", () => {
   });
 
   it("derives cart submit state from login, store status, and item count", () => {
-    let snapshot = {
+    let snapshot: Partial<StorefrontUiSnapshot> = {
       currentUser: null,
       isStoreOpen: true,
     };
