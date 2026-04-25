@@ -236,6 +236,45 @@ Deno.test("Email Templates - Processing Notification", () => {
   );
 });
 
+Deno.test("Email Templates - Escape Dynamic Summary Fields", () => {
+  const html = buildProcessingNotificationHtml({
+    orderId: '<img src=x onerror="alert(1)">',
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-processing.png",
+    lineName: "User",
+    deliveryMethod: "<script>alert(1)</script>",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路3號",
+    storeName: "",
+    storeAddress: "",
+    paymentMethod: "<script>alert(2)</script>",
+    paymentStatus: "pending",
+    note: "<b>請中午前送達</b>",
+  });
+
+  assertEquals(
+    html.includes("<img src=x"),
+    false,
+    "Order id must not be injected as raw HTML",
+  );
+  assertEquals(
+    html.includes("<script>alert(2)</script>"),
+    false,
+    "Payment method must not be injected as raw HTML",
+  );
+  assertEquals(
+    html.includes("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;"),
+    true,
+    "Escaped order id should remain visible as text",
+  );
+  assertEquals(
+    html.includes("&lt;script&gt;alert(2)&lt;/script&gt;"),
+    true,
+    "Escaped payment method should remain visible as text",
+  );
+});
+
 Deno.test("Email Templates - Cancelled Notification", () => {
   const html = buildCancelledNotificationHtml({
     orderId: "C20261231-AABBCCDD",

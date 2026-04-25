@@ -135,13 +135,19 @@ function buildOrderStatusSummaryHtml(
   params: OrderStatusSummaryHtmlParams,
 ): string {
   return `<div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
+      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
     METHOD_MAP[params.deliveryMethod] || "一般配送"
   }<br><span style="color: #666; font-size: 14px;">${
     sanitize(params.deliveryText)
   }</span></p>
-      <p style="margin: 0;"><strong>付款方式：</strong> ${params.paymentText} <span style="font-size: 13px; color: ${params.paymentStatus.color}; font-weight: bold;">(${params.paymentStatus.text})</span></p>
+      <p style="margin: 0;"><strong>付款方式：</strong> ${
+    sanitize(params.paymentText)
+  } <span style="font-size: 13px; color: ${
+    sanitize(params.paymentStatus.color)
+  }; font-weight: bold;">(${sanitize(params.paymentStatus.text)})</span></p>
       ${buildOrderNoteHtml(String(params.note || ""), "10px 0 0 0")}
       ${params.extraHtml || ""}
     </div>`;
@@ -185,16 +191,20 @@ export function buildOrderConfirmationHtml(
   }，您的訂單已成立！</h2>
     <p>感謝您的訂購，我們已收到您的訂單資訊，將盡速為您安排出貨。</p>
     <div style="background-color: #f9f6f0; border-left: 4px solid #6F4E37; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${params.orderId}</p>
+      <p style="margin: 0 0 10px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
       ${params.customFieldsHtml}
       ${params.receiptHtml || ""}
       ${phoneHtml}
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-    METHOD_MAP[params.deliveryMethod] || params.deliveryMethod
+    sanitize(METHOD_MAP[params.deliveryMethod] || params.deliveryMethod)
   }<br><span style="color: #666; font-size: 14px;">${
     sanitize(deliveryText)
   }</span></p>
-      <p style="margin: 0 0 10px 0;"><strong>付款方式：</strong> ${paymentText}${transferHtml}</p>
+      <p style="margin: 0 0 10px 0;"><strong>付款方式：</strong> ${
+    sanitize(paymentText)
+  }${transferHtml}</p>
       <p style="margin: 0;"><strong>訂單備註：</strong> ${
     sanitize(params.note) || "無"
   }</p>
@@ -467,7 +477,9 @@ export function buildCompletedNotificationHtml(
     <h2 style="font-size: 18px; color: #2E7D32; margin-top: 0;">親愛的 ${
     sanitize(params.lineName)
   }，您的訂單已順利完成！</h2>
-    <p>這封信是要通知您，您的訂單 <strong>${params.orderId}</strong> 已經順利完成。</p>
+    <p>這封信是要通知您，您的訂單 <strong>${
+    sanitize(params.orderId)
+  }</strong> 已經順利完成。</p>
     <div style="background-color: #f9f6f0; border-left: 4px solid #2E7D32; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
       <p style="margin: 0 0 8px 0;"><strong>訂單編號：</strong> ${
     sanitize(params.orderId)
