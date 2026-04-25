@@ -7,6 +7,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "strict": true,
     "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
     "noEmit": true,
     "isolatedModules": true,
     "esModuleInterop": true,
