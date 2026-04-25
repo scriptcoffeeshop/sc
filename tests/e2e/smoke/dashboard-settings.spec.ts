@@ -232,7 +232,6 @@ test.describe("smoke / dashboard settings", () => {
     await firstDeliveryRow.locator(".do-desc").fill("第一行說明\n第二行提醒");
     await expect(firstDeliveryRow.locator(".do-name")).toHaveValue("新的取貨名稱");
     await page.locator("#po-linepay-name").fill("LINE Pay 快速付款");
-    await page.locator("#s-linepay-sandbox").uncheck();
     await page.locator("#checkout-settings-section").getByRole("button", {
       name: "儲存設定",
     }).click();
@@ -250,7 +249,7 @@ test.describe("smoke / dashboard settings", () => {
     expect(deliveryConfig[0]).not.toHaveProperty("icon");
     expect(paymentConfig.linepay?.name).toBe("LINE Pay 快速付款");
     expect(paymentConfig.linepay).not.toHaveProperty("icon");
-    expect(updatePayload?.settings?.linepay_sandbox).toBe("false");
+    expect(updatePayload?.settings).not.toHaveProperty("linepay_sandbox");
   });
 
   test("dashboard settings bank accounts work without imperative innerHTML renderer", async ({ page }) => {

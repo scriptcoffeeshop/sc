@@ -49,7 +49,6 @@ export interface StorefrontSettings {
 export interface DashboardSettingsRecord {
   delivery_options_config?: string;
   payment_options_config?: string;
-  linepay_sandbox?: boolean | string | number;
   [key: string]: unknown;
 }
 

@@ -2,7 +2,7 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。
 
-最後更新：2026-04-25
+最後更新：2026-04-26
 
 ---
 
@@ -168,7 +168,7 @@
 - storefront「我的訂單」不得將 API 回傳內容當 HTML 插入 DOM，惡意 `<script>` / `<img onerror>` payload 只能以文字顯示
 - storefront checkout smoke 已覆蓋 LINE Pay / 街口支付付款彈窗不得重複「稍後付款可到我的訂單」文案，以及「我的訂單」內待付款提示不得再出現「可到我的訂單」。
 - `tests/e2e/smoke/storefront-checkout.spec.ts` 使用 `gotoMain()` 以 `domcontentloaded` + 產品容器可見作為導頁完成條件，避免 CI 偶發卡在 `page.goto("/main.html")` 等待完整 `load` 事件。
-- 2026-04-22 另補深度 unit test：`useDashboardOrders` 現在覆蓋篩選組合、批次勾選邊界與 shipped tracking URL 驗證；`useDashboardFormFields` 補了 delivery visibility normalize 與 Sortable reorder；`useDashboardSettings` 補 cached `linepay_sandbox` 與自訂配送方式狀態；`useStorefrontCart` 補零數量邊界、固定運費與多促銷疊加。
+- 2026-04-22 另補深度 unit test：`useDashboardOrders` 現在覆蓋篩選組合、批次勾選邊界與 shipped tracking URL 驗證；`useDashboardFormFields` 補了 delivery visibility normalize 與 Sortable reorder；`useDashboardSettings` 補自訂配送方式狀態；`useStorefrontCart` 補零數量邊界、固定運費與多促銷疊加。
 
 ---
 
@@ -195,6 +195,12 @@
 ---
 
 ## 5) 最近有效變更
+
+### 2026-04-26
+
+- 付款與取貨設定重新收斂為較簡潔的卡片式管理：取貨方式卡片只保留排序、圖示、名稱、啟用狀態、說明、運費/免運與付款勾選；金流選項卡片只保留前台顯示名稱、圖示與說明，避免兩個區塊重複表達付款規則。
+- LINE Pay Sandbox 模式已移除：前端不再顯示或儲存 sandbox toggle，後端 LINE Pay request 固定使用正式 API base URL，`updateSettings/getSettings` 會忽略並隱藏棄用的 `linepay_sandbox` key。
+- 新增 migration 刪除既有 `linepay_sandbox` 設定列並重建公開設定 RLS 白名單；`schema_full.sql` 也已移除該預設值與公開白名單項目。
 
 ### 2026-04-25
 
@@ -319,7 +325,7 @@
 - dashboard bank accounts composable 已補上 account/service/sortable 型別與 API normalize，匯款帳號排序與 CRUD 不再依賴隱式 services/null 型別。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
 - dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；目前 repo hygiene 已統一阻擋 tracked `.js` 回流。
-- backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
+- backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config` 與相關 icon path 正規化；`linepay_sandbox` 已改為棄用 key，送入後需被忽略且不公開回傳。
 - backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
 - frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useDashboardOrders`、`useDashboardFormFields`、`useDashboardSettings`、`useStorefrontOrderHistory` 轉為 `.ts`。
 - `scripts/check_new_composables_ts.py` 已移除；它原本只擋 `frontend/src/features/**/use*.js`，現在由 `repo_hygiene_check.py` 的 tracked `.js` 守門涵蓋，避免重疊規則漂移。

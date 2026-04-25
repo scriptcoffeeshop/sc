@@ -605,7 +605,6 @@ Deno.test({
           headers: { authorization: `Bearer ${token}` },
           body: {
             settings: {
-              linepay_sandbox: false,
               delivery_options_config: deliveryOptions,
               payment_options_config: paymentOptions,
             },
@@ -626,7 +625,7 @@ Deno.test({
 
       assertEquals(getResponse.status, 200);
       assertEquals(getPayload.success, true);
-      assertEquals(getPayload.settings.linepay_sandbox, "false");
+      assertEquals("linepay_sandbox" in getPayload.settings, false);
       assertEquals(
         JSON.parse(getPayload.settings.delivery_options_config),
         [{

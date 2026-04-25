@@ -34,7 +34,6 @@ const PUBLIC_SETTINGS_KEYS = [
   "notes_section_icon_url",
   "payment_enabled",
   "linepay_enabled",
-  "linepay_sandbox",
   "transfer_enabled",
   "delivery_options_config",
   "payment_options_config",
@@ -49,11 +48,12 @@ const RELATIVE_ICON_HOSTS = new Set([
 const CHECKOUT_SETTING_KEYS = new Set([
   "payment_enabled",
   "linepay_enabled",
-  "linepay_sandbox",
   "transfer_enabled",
   "delivery_options_config",
   "payment_options_config",
 ]);
+
+const REMOVED_SETTING_KEYS = new Set(["linepay_sandbox"]);
 
 function normalizeIconPath(rawValue: unknown): string {
   const value = String(rawValue ?? "").trim();
@@ -172,6 +172,7 @@ export async function getSettings(isAdmin = false) {
   if (error) return { success: false, error: error.message };
   const settings: Record<string, string> = {};
   for (const row of (data || [])) {
+    if (REMOVED_SETTING_KEYS.has(row.key)) continue;
     if (isAdmin || PUBLIC_SETTINGS_KEYS.includes(row.key)) {
       settings[row.key] = normalizeSettingValue(row.key, row.value);
     }
@@ -185,7 +186,10 @@ export async function updateSettingsAction(
 ) {
   const auth = await requireAdmin(req);
   const settings = data.settings as Record<string, string>;
-  const deniedKey = Object.keys(settings).find((key) =>
+  const activeSettingEntries = Object.entries(settings).filter(([key]) =>
+    !REMOVED_SETTING_KEYS.has(key)
+  );
+  const deniedKey = activeSettingEntries.map(([key]) => key).find((key) =>
     !canUpdateSettingKey(auth, key)
   );
   if (deniedKey) {
@@ -194,10 +198,12 @@ export async function updateSettingsAction(
       error: `此管理員沒有修改 ${deniedKey} 的權限`,
     };
   }
-  const itemsToUpsert = Object.entries(settings).map(([key, value]) => ({
+  const itemsToUpsert = activeSettingEntries.map(([key, value]) => ({
     key,
     value: normalizeSettingValue(key, value),
   }));
+
+  if (!itemsToUpsert.length) return { success: true, message: "設定已更新" };
 
   const { error } = await supabase.from("coffee_settings").upsert(
     itemsToUpsert,

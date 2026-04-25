@@ -94,7 +94,6 @@ INSERT INTO coffee_settings (key, value) VALUES
   ('payment_hash_key', ''),
   ('payment_hash_iv', ''),
   ('linepay_enabled', 'false'),
-  ('linepay_sandbox', 'true'),
   ('transfer_enabled', 'false'),
   ('delivery_options_config', '[]'),
   ('payment_options_config', '{}')
@@ -235,7 +234,7 @@ CREATE POLICY "Allow anon read coffee_settings" ON coffee_settings FOR SELECT US
     'products_section_title', 'products_section_icon_url',
     'delivery_section_title', 'delivery_section_icon_url',
     'notes_section_title', 'notes_section_icon_url',
-    'payment_enabled', 'linepay_enabled', 'linepay_sandbox', 'transfer_enabled',
+    'payment_enabled', 'linepay_enabled', 'transfer_enabled',
     'delivery_options_config', 'payment_options_config'
   )
 );

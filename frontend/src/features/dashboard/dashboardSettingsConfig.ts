@@ -64,7 +64,6 @@ export interface DashboardSettingsConfigDeps {
 
 export interface DashboardSettingsPersistedConfig {
   settings: { [key: string]: string };
-  linePaySandboxChecked: boolean;
 }
 
 interface DashboardSettingsStateSnapshot {
@@ -73,7 +72,6 @@ interface DashboardSettingsStateSnapshot {
   sectionTitleSettings: DashboardSectionTitleSettingsMap;
   deliveryOptions: DashboardDeliveryOption[];
   paymentOptions: DashboardPaymentOptionsMap;
-  linePaySandbox: boolean;
 }
 
 function parseSettingsRecord(value: unknown): DashboardSettingsRecord {
@@ -314,11 +312,9 @@ export function buildSettingsPersistedConfig(
       notes_section_icon_url: deps.normalizeIconPath(
         state.sectionTitleSettings.notes.iconUrl,
       ),
-      linepay_sandbox: String(state.linePaySandbox),
       delivery_options_config: JSON.stringify(normalizedDeliveryOptions),
       payment_options_config: JSON.stringify(normalizedPaymentOptions),
     },
-    linePaySandboxChecked: state.linePaySandbox,
   };
 }
 

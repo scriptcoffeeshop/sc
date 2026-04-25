@@ -7,7 +7,7 @@
 
 ## Phase 1（1-2 週）穩定性與防回歸
 1. 設定系統防回歸
-- 為 `updateSettings/getSettings` 增加整合測試（特別是 `linepay_sandbox`、`delivery_options_config`）。
+  - 為 `updateSettings/getSettings` 增加整合測試（特別是棄用設定鍵會被忽略、`delivery_options_config` 可正常 round-trip）。
 - 建立設定鍵白名單文件，避免前後端鍵名漂移。
 - 驗收：設定欄位可 round-trip（儲存後重新讀取一致）。
 

@@ -115,7 +115,6 @@ function createSettingsServices(overrides: SettingsServiceOverrides = {}) {
       if (value === undefined || value === null || value === "") return fallback;
       return String(value) === "true";
     },
-    linePaySandboxCacheKey: "coffee_linepay_sandbox",
     ...overrides,
   };
 }
@@ -158,7 +157,6 @@ describe("useDashboardSettings", () => {
           description: "快速付款",
         },
       }),
-      linepay_sandbox: "false",
       site_title: "Script Coffee",
       site_icon_url: "/icons/logo.png",
       announcement_enabled: "true",
@@ -167,11 +165,6 @@ describe("useDashboardSettings", () => {
     });
 
     const dashboard = module.useDashboardSettings();
-    expect(dashboard.linePaySandbox.value).toBe(false);
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "coffee_linepay_sandbox",
-      "false",
-    );
 
     expect(dashboard.deliveryOptions.value.find((item) => item.id === "delivery"))
       .toMatchObject({
@@ -198,15 +191,14 @@ describe("useDashboardSettings", () => {
 
     const settingsConfig = module.dashboardSettingsActions.buildSettingsConfig();
     expect(settingsConfig).toMatchObject({
-      linePaySandboxChecked: false,
       settings: {
-        linepay_sandbox: "false",
         site_title: "Script Coffee",
         products_section_title: "咖啡豆",
         site_icon_url: "icons/logo.png",
       },
     });
     expect(settingsConfig.settings).not.toHaveProperty("site_icon_emoji");
+    expect(settingsConfig.settings).not.toHaveProperty("linepay_sandbox");
 
     const paymentConfig = JSON.parse(
       String(settingsConfig.settings["payment_options_config"]),
@@ -243,7 +235,6 @@ describe("useDashboardSettings", () => {
             announcement: "原始公告",
             order_confirmation_auto_email_enabled: "true",
             is_open: "true",
-            linepay_sandbox: "true",
             delivery_options_config: JSON.stringify([{
               id: "delivery",
               label: "宅配",
@@ -290,7 +281,6 @@ describe("useDashboardSettings", () => {
     const dashboard = module.useDashboardSettings();
     dashboard.storefrontSettings.value.announcement = " 更新後公告 ";
     dashboard.brandingSettings.value.siteTitle = " Script Coffee ";
-    dashboard.linePaySandbox.value = false;
 
     await module.dashboardSettingsActions.saveSettings();
 
@@ -299,26 +289,20 @@ describe("useDashboardSettings", () => {
       settings: {
         site_title: "Script Coffee",
         announcement: " 更新後公告 ",
-        linepay_sandbox: "false",
       },
     });
+    expect(updatePayload?.["settings"]).not.toHaveProperty("linepay_sandbox");
     expect(Toast.fire).toHaveBeenCalledWith({
       icon: "success",
       title: "設定已儲存",
     });
     expect(applyDashboardBranding).toHaveBeenCalledTimes(2);
     expect(loadBankAccounts).toHaveBeenCalledTimes(2);
-    expect(localStorage.setItem).toHaveBeenCalledWith(
-      "coffee_linepay_sandbox",
-      "false",
-    );
   });
 
-  it("falls back to cached sandbox state and manages custom delivery options", async () => {
+  it("manages custom delivery options", async () => {
     const module = await loadSettingsModule();
-    const localStorage = createLocalStorageMock({
-      coffee_linepay_sandbox: "false",
-    });
+    const localStorage = createLocalStorageMock();
     vi.stubGlobal("localStorage", localStorage);
     vi.spyOn(Date, "now").mockReturnValue(1_762_000_000_000);
 
@@ -345,7 +329,6 @@ describe("useDashboardSettings", () => {
     });
 
     const dashboard = module.useDashboardSettings();
-    expect(dashboard.linePaySandbox.value).toBe(false);
 
     module.dashboardSettingsActions.addDeliveryOption();
     expect(

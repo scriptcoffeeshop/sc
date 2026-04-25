@@ -2,6 +2,10 @@ export type LogLevel = "info" | "warn" | "error";
 
 type LogDetails = unknown;
 
+interface LogDetailsObject {
+  [key: string]: unknown;
+}
+
 export interface AppLogger {
   info: (message: string, details?: LogDetails) => void;
   warn: (message: string, details?: LogDetails) => void;
@@ -26,7 +30,7 @@ function normalizeDetails(
     return details.map((item) => normalizeDetails(item, seen));
   }
   return Object.fromEntries(
-    Object.entries(details as Record<string, unknown>).map(([key, value]) => [
+    Object.entries(details as LogDetailsObject).map(([key, value]) => [
       key,
       normalizeDetails(value, seen),
     ]),

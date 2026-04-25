@@ -55,14 +55,12 @@ interface DashboardSettingsServices extends DashboardSettingsConfigDeps {
   Swal: DashboardSwal;
   applyDashboardBranding?: (settings: DashboardSettingsRecord) => void;
   loadBankAccounts?: () => Promise<unknown> | unknown;
-  linePaySandboxCacheKey: string;
   Sortable?: DashboardSortableConstructor | null;
 }
 
 const rawSettings = ref<DashboardSettingsRecord>({});
 const deliveryOptions = ref<DashboardDeliveryOption[]>([]);
 const paymentOptions = ref<DashboardPaymentOptionsMap>(createEmptyPaymentOptions());
-const linePaySandbox = ref(true);
 const brandingSettings = ref<DashboardBrandingSettings>(
   createDefaultBrandingSettings(),
 );
@@ -178,24 +176,6 @@ function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
   paymentOptions.value = nextState.paymentOptions;
   deliveryOptions.value = nextState.deliveryOptions;
 
-  const { parseBooleanSetting, linePaySandboxCacheKey } = getServices();
-  const hasServerValue = Object.prototype.hasOwnProperty.call(
-    settings,
-    "linepay_sandbox",
-  );
-  if (hasServerValue) {
-    linePaySandbox.value = parseBooleanSetting(settings["linepay_sandbox"], true);
-    globalThis.localStorage?.setItem(
-      linePaySandboxCacheKey,
-      String(linePaySandbox.value),
-    );
-  } else {
-    const cachedSandbox = globalThis.localStorage?.getItem(linePaySandboxCacheKey);
-    linePaySandbox.value = cachedSandbox === null
-      ? true
-      : parseBooleanSetting(cachedSandbox, true);
-  }
-
   queueDeliverySortableSync();
 }
 
@@ -232,7 +212,6 @@ function buildSettingsConfig(): DashboardSettingsPersistedConfig {
       sectionTitleSettings: sectionTitleSettings.value,
       deliveryOptions: deliveryOptions.value,
       paymentOptions: paymentOptions.value,
-      linePaySandbox: linePaySandbox.value,
     },
     getServices(),
   );
@@ -271,7 +250,6 @@ async function saveSettings() {
     getAuthUserId,
     Toast,
     Swal,
-    linePaySandboxCacheKey,
   } = getServices();
   try {
     const settingsConfig = buildSettingsConfig();
@@ -288,10 +266,6 @@ async function saveSettings() {
       throw new Error(data.error || "設定儲存失敗");
     }
 
-    globalThis.localStorage?.setItem(
-      linePaySandboxCacheKey,
-      String(settingsConfig.linePaySandboxChecked),
-    );
     Toast.fire({ icon: "success", title: "設定已儲存" });
     await loadSettings();
   } catch (error) {
@@ -315,7 +289,6 @@ export function useDashboardSettings() {
     sectionTitleSettings,
     deliveryOptions,
     paymentOptions,
-    linePaySandbox,
     paymentMethodOrder: [...PAYMENT_METHOD_ORDER],
   };
 }

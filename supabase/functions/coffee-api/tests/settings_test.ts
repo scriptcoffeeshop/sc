@@ -116,9 +116,6 @@ Deno.test({
       assertEquals(updateResponse.status, 200);
       assertEquals(updatePayload.success, true);
 
-      const linePaySandboxRow = tables.coffee_settings.find((row) =>
-        row.key === "linepay_sandbox"
-      );
       const deliveryOptionsRow = tables.coffee_settings.find((row) =>
         row.key === "delivery_options_config"
       );
@@ -129,12 +126,14 @@ Deno.test({
         row.key === "site_icon_url"
       );
 
-      assertExists(linePaySandboxRow);
       assertExists(deliveryOptionsRow);
       assertExists(paymentOptionsRow);
       assertExists(siteIconRow);
 
-      assertEquals(linePaySandboxRow.value, "false");
+      assertEquals(
+        tables.coffee_settings.some((row) => row.key === "linepay_sandbox"),
+        false,
+      );
       assertEquals(siteIconRow.value, "icons/logo.png");
       assertEquals(JSON.parse(String(deliveryOptionsRow.value)), [
         {
@@ -190,7 +189,7 @@ Deno.test({
 
       assertEquals(getResponse.status, 200);
       assertEquals(getPayload.success, true);
-      assertEquals(getPayload.settings.linepay_sandbox, "false");
+      assertEquals("linepay_sandbox" in getPayload.settings, false);
       assertEquals(getPayload.settings.site_icon_url, "icons/logo.png");
       assertEquals(
         JSON.parse(getPayload.settings.delivery_options_config),
@@ -243,7 +242,6 @@ Deno.test({
           headers: { authorization: `Bearer ${token}` },
           body: {
             settings: {
-              linepay_sandbox: true,
               delivery_options_config: JSON.stringify([{
                 id: "delivery",
                 label: "新宅配",
@@ -291,7 +289,7 @@ Deno.test({
 
       assertEquals(publicGetResponse.status, 200);
       assertEquals(publicGetPayload.success, true);
-      assertEquals(publicGetPayload.settings.linepay_sandbox, "true");
+      assertEquals("linepay_sandbox" in publicGetPayload.settings, false);
       assertEquals(
         JSON.parse(publicGetPayload.settings.delivery_options_config),
         [{

@@ -1,6 +1,7 @@
-import { supabase } from "./supabase.ts";
 import { LINEPAY_CHANNEL_ID, LINEPAY_CHANNEL_SECRET } from "./config.ts";
 import { parseJsonText } from "./json.ts";
+
+const LINEPAY_BASE_URL = "https://api-pay.line.me";
 
 export async function linePaySign(
   channelSecret: string,
@@ -39,13 +40,6 @@ export async function requestLinePayAPI<T = unknown>(
   apiPath: string,
   data: unknown = null,
 ): Promise<T> {
-  const { data: sandboxSetting } = await supabase.from("coffee_settings")
-    .select("value").eq("key", "linepay_sandbox").maybeSingle();
-  const isSandbox = !sandboxSetting || String(sandboxSetting.value) !== "false";
-  const baseUrl = isSandbox
-    ? "https://sandbox-api-pay.line.me"
-    : "https://api-pay.line.me";
-
   const nonce = crypto.randomUUID();
   const bodyStr = data ? JSON.stringify(data) : "";
   const signature = await linePaySign(
@@ -62,7 +56,7 @@ export async function requestLinePayAPI<T = unknown>(
     "X-LINE-Authorization": signature,
   };
 
-  const url = `${baseUrl}${apiPath}`;
+  const url = `${LINEPAY_BASE_URL}${apiPath}`;
   const maxRetries = 2;
   const timeoutMs = 8000;
   let attempt = 0;

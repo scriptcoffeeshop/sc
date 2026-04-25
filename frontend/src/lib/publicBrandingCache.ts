@@ -1,3 +1,5 @@
+import { parseJsonRecord } from "./jsonUtils.ts";
+
 export interface PublicBrandingCacheSnapshot {
   siteTitle: string;
   siteSubtitle: string;
@@ -32,16 +34,7 @@ export function readPublicBrandingCache(
   try {
     const rawValue = storage.getItem(cacheKey);
     if (!rawValue) return emptySnapshot;
-    const parsedValue: unknown = JSON.parse(rawValue);
-    if (
-      !parsedValue ||
-      typeof parsedValue !== "object" ||
-      Array.isArray(parsedValue)
-    ) {
-      return emptySnapshot;
-    }
-
-    const record = parsedValue as Record<string, unknown>;
+    const record = parseJsonRecord(rawValue);
     return {
       siteTitle: normalizeCachedString(record["site_title"]),
       siteSubtitle: normalizeCachedString(record["site_subtitle"]),

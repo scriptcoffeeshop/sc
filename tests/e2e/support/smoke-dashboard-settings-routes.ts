@@ -27,7 +27,6 @@ function buildDashboardSettingsPayload() {
     notes_section_color: "#268BD2",
     notes_section_size: "text-base",
     notes_section_bold: "true",
-    linepay_sandbox: "true",
     delivery_options_config: JSON.stringify([
       {
         id: "delivery",

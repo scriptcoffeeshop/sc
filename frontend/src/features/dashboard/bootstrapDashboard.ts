@@ -98,7 +98,6 @@ interface UsersTabLoadersDeps {
 let dashboardTabLoaders: DashboardTabLoaderMap = {};
 let loadInitialDashboardData: () => Promise<void> = async () => {};
 
-const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
 export const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
 const dashboardTabs = [
   "orders",
@@ -181,7 +180,6 @@ configureDashboardSettingsServices({
   sectionIconSettingKey,
   defaultDeliveryOptions: DEFAULT_DELIVERY_OPTIONS,
   parseBooleanSetting,
-  linePaySandboxCacheKey: LINEPAY_SANDBOX_CACHE_KEY,
   Sortable,
 });
 

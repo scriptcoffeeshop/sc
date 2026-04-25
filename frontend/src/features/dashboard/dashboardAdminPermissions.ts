@@ -20,6 +20,10 @@ export type DashboardAdminPermissionMap = Partial<
   Record<DashboardAdminPermissionKey, boolean>
 >;
 
+interface PermissionSource {
+  [key: string]: unknown;
+}
+
 const PERMISSION_BY_TAB = new Map<string, DashboardAdminPermissionKey>(
   DASHBOARD_ADMIN_PERMISSIONS.map((permission) => [
     permission.tab,
@@ -37,7 +41,7 @@ export function normalizeDashboardAdminPermissions(
   value: unknown,
 ): DashboardAdminPermissionMap {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  const record = value as Record<string, unknown>;
+  const record = value as PermissionSource;
   const normalized: DashboardAdminPermissionMap = {};
   for (const [key, enabled] of Object.entries(record)) {
     if (isPermissionKey(key) && enabled === true) normalized[key] = true;
