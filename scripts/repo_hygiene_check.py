@@ -56,6 +56,13 @@ DANGEROUS_GIT_ADD_DOT_PATTERN = re.compile(
     r"(?:\bgit\s+add\s+\.|[\"']git[\"']\s*,\s*[\"']add[\"']\s*,\s*[\"']\.[\"'])"
 )
 
+TYPE_ESCAPE_PATTERNS = (
+    ("@ts-ignore", "@ts-ignore"),
+    ("@ts-expect-error", "@ts-expect-error"),
+    ("eslint-disable", "eslint-disable"),
+    ("as any", "as any"),
+)
+
 
 def git_ls_files() -> list[str]:
     result = subprocess.run(
@@ -105,7 +112,7 @@ def read_source_lines(path: str) -> tuple[list[str], str | None]:
         return [], f"無法以 UTF-8 讀取 production source：{path}"
 
 
-def find_ts_ignore_violations(path: str) -> list[str]:
+def find_type_escape_violations(path: str) -> list[str]:
     if not is_production_source_file(path):
         return []
 
@@ -113,11 +120,14 @@ def find_ts_ignore_violations(path: str) -> list[str]:
     if error:
         return [error]
 
-    return [
-        f"禁止在 production source 使用 @ts-ignore：{path}:{line_no}"
-        for line_no, line in enumerate(lines, start=1)
-        if "@ts-ignore" in line
-    ]
+    violations: list[str] = []
+    for line_no, line in enumerate(lines, start=1):
+        for token, label in TYPE_ESCAPE_PATTERNS:
+            if token in line:
+                violations.append(
+                    f"禁止在 production source 使用 {label}：{path}:{line_no}"
+                )
+    return violations
 
 
 def find_runtime_parse_violations(path: str) -> list[str]:
@@ -219,7 +229,7 @@ def main() -> int:
             violations.append(f"禁止追蹤敏感 env 檔案：{path}")
 
         violations.extend(find_tracked_js_violations(path))
-        violations.extend(find_ts_ignore_violations(path))
+        violations.extend(find_type_escape_violations(path))
         violations.extend(find_frontend_js_violations(path))
         violations.extend(find_runtime_parse_violations(path))
         violations.extend(find_anonymous_catch_violations(path))
