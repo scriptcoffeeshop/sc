@@ -30,6 +30,8 @@ PRODUCTION_TS_IGNORE_PREFIXES = (
 
 ALLOWED_FRONTEND_SOURCE_JS: set[str] = set()
 
+ALLOWED_TRACKED_JS: set[str] = set()
+
 SOURCE_SUFFIXES = (
     ".js",
     ".jsx",
@@ -168,6 +170,17 @@ def find_frontend_js_violations(path: str) -> list[str]:
     ]
 
 
+def find_tracked_js_violations(path: str) -> list[str]:
+    if not path.endswith(".js"):
+        return []
+    if path in ALLOWED_TRACKED_JS:
+        return []
+    return [
+        "禁止追蹤 .js 檔；前端/測試請用 .ts 或 .vue，"
+        f"工具設定請用 .cjs 或 .mjs：{path}"
+    ]
+
+
 def find_script_git_add_dot_violations(path: str) -> list[str]:
     if not path.startswith("scripts/") or not path.endswith((".py", ".sh")):
         return []
@@ -205,6 +218,7 @@ def main() -> int:
         if is_disallowed_env_file(path):
             violations.append(f"禁止追蹤敏感 env 檔案：{path}")
 
+        violations.extend(find_tracked_js_violations(path))
         violations.extend(find_ts_ignore_violations(path))
         violations.extend(find_frontend_js_violations(path))
         violations.extend(find_runtime_parse_violations(path))

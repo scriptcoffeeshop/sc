@@ -145,7 +145,7 @@
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`，避免型別錯誤被靜音。
-- `repo_hygiene_check.py` 已禁止新增 frontend production JS；目前 `frontend/src/` 已無 production JS allowlist，entry、Swal wrapper、UI helper 與資料邊界皆已轉 TypeScript。
+- `repo_hygiene_check.py` 已禁止 tracked `.js` 回流；前端/測試需用 TypeScript 或 Vue，工具設定需用 `.cjs` / `.mjs`。目前 `frontend/src/` 已無 JS allowlist，entry、Swal wrapper、UI helper 與資料邊界皆已轉 TypeScript。
 - `repo_hygiene_check.py` 已禁止 production runtime 直接新增 `JSON.parse` 與匿名 `catch {}`；JSON 解析需集中在 frontend/backend json helper，catch 需具名以便後續補觀測。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
 - 2026-04-22 補的 `useDashboardOrders.test.ts`、`useDashboardFormFields.test.ts` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
