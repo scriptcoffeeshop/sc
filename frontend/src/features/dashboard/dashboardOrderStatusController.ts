@@ -1,6 +1,5 @@
-import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
+import { openDashboardOrderReasonDialog } from "./dashboardOrderReasonDialog.ts";
 import { openDashboardShippingInfoDialog } from "./dashboardShippingInfoDialog.ts";
 import type {
   DashboardAuthFetch,
@@ -69,33 +68,19 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
         const placeholder = status === "failed"
           ? "請輸入失敗原因，例如：付款逾時未完成"
           : "請輸入取消原因，例如：付款逾時未完成";
-        const { value: cancelInfo, isConfirmed } = await deps.Swal.fire({
+        const { value: cancelInfo, isConfirmed } = await openDashboardOrderReasonDialog({
+          Swal: deps.Swal,
           title,
-          html: `
-          <div class="text-left space-y-2">
-            <label class="text-sm ui-text-strong block">${reasonLabel}（選填）</label>
-            <textarea id="swal-cancel-reason" class="swal2-textarea" placeholder="${placeholder}">${
-            deps.esc(String(targetOrder.cancelReason || "").trim())
-          }</textarea>
-          </div>
-        `,
-          showCancelButton: true,
+          label: reasonLabel,
+          placeholder,
           confirmButtonText,
-          cancelButtonText: "取消",
-          confirmButtonColor: "#DC322F",
-          focusConfirm: false,
-          preConfirm: () => {
-            const reasonValue = getDashboardFormControlValue(
-              "swal-cancel-reason",
-            );
-            return { cancelReason: reasonValue };
-          },
+          initialReason: String(targetOrder.cancelReason || "").trim(),
         });
         if (!isConfirmed) {
           deps.loadOrders();
           return;
         }
-        cancelReason = String(asJsonRecord(cancelInfo).cancelReason || "").trim();
+        cancelReason = String(cancelInfo?.cancelReason || "").trim();
       } else {
         const confirmation = await deps.Swal.fire({
           title: "確認變更訂單狀態",
