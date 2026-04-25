@@ -3,6 +3,7 @@ import {
   API_URL,
   blockStorefrontBodyClickDelegation,
   fulfillJson,
+  getBlockedStorefrontBodyClickDelegationCount,
   installGlobalStubs,
   installMainRoutes,
 } from "../support/smoke-fixtures";
@@ -39,10 +40,16 @@ test.describe("smoke / storefront delivery and payment", () => {
     await gotoStorefront(page);
 
     await expect.poll(() =>
-      page.evaluate(() => ({
-        renderDeliveryOptions: typeof (window as any).renderDeliveryOptions,
-        selectDelivery: typeof (window as any).selectDelivery,
-      }))
+      page.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & {
+          renderDeliveryOptions?: unknown;
+          selectDelivery?: unknown;
+        };
+        return {
+          renderDeliveryOptions: typeof testWindow.renderDeliveryOptions,
+          selectDelivery: typeof testWindow.selectDelivery,
+        };
+      })
     ).toEqual({
       renderDeliveryOptions: "undefined",
       selectDelivery: "undefined",
@@ -126,9 +133,8 @@ test.describe("smoke / storefront delivery and payment", () => {
 
     await gotoStorefront(page);
 
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
-    ).toBe(0);
+    await expect.poll(() => getBlockedStorefrontBodyClickDelegationCount(page))
+      .toBe(0);
 
     await expect(page.locator("#products-container")).toContainText("測試豆");
     await page.locator('.delivery-option[data-id="seven_eleven"]').click();
@@ -291,10 +297,25 @@ test.describe("smoke / storefront delivery and payment", () => {
     });
 
     await page.addInitScript(() => {
-      (window as any).Swal.close = () => {
+      type StoreSearchSwalOptions = {
+        didOpen?: (popup?: HTMLElement) => void;
+        html?: unknown;
+        title?: string;
+      };
+      type StoreSearchSwalWindow = Window & typeof globalThis & {
+        Swal: {
+          close: () => void;
+          fire: (
+            options?: StoreSearchSwalOptions,
+          ) => Promise<{ isConfirmed: boolean }>;
+        };
+      };
+
+      const testWindow = window as StoreSearchSwalWindow;
+      testWindow.Swal.close = () => {
         document.querySelector(".swal2-popup")?.remove();
       };
-      (window as any).Swal.fire = async (options: any = {}) => {
+      testWindow.Swal.fire = async (options: StoreSearchSwalOptions = {}) => {
         if (options?.title === "無法開啟 7-11 門市地圖") {
           return { isConfirmed: true };
         }
@@ -314,9 +335,8 @@ test.describe("smoke / storefront delivery and payment", () => {
 
     await gotoStorefront(page);
 
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
-    ).toBe(0);
+    await expect.poll(() => getBlockedStorefrontBodyClickDelegationCount(page))
+      .toBe(0);
 
     await page.locator('.delivery-option[data-id="seven_eleven"]').click();
     await expect(page.locator("#store-pickup-section")).toBeVisible();

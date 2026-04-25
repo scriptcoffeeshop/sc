@@ -3,10 +3,17 @@ import {
   API_URL,
   blockStorefrontBodyClickDelegation,
   fulfillJson,
+  getBlockedStorefrontBodyClickDelegationCount,
+  getClipboardWrites,
   installGlobalStubs,
   installMainRoutes,
 } from "../support/smoke-fixtures";
-import { gotoStorefront, installStorefrontUser } from "../support/storefront-smoke";
+import {
+  gotoStorefront,
+  hasStorefrontSwalCall,
+  installStorefrontSwalRecorder,
+  installStorefrontUser,
+} from "../support/storefront-smoke";
 
 test.describe("smoke / storefront orders and user controls", () => {
   test("storefront my orders can copy tracking number", async ({ page }) => {
@@ -40,9 +47,8 @@ test.describe("smoke / storefront orders and user controls", () => {
 
     await gotoStorefront(page);
 
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
-    ).toBe(0);
+    await expect.poll(() => getBlockedStorefrontBodyClickDelegationCount(page))
+      .toBe(0);
     await page.getByRole("button", { name: "我的訂單" }).click();
     await expect(page.locator("#my-orders-modal")).toBeVisible();
 
@@ -52,12 +58,7 @@ test.describe("smoke / storefront orders and user controls", () => {
     await expect(copyButton).toBeVisible();
     await copyButton.click();
 
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__clipboardWrites.length)
-    ).toBe(1);
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__clipboardWrites[0])
-    ).toBe("AB123456789");
+    await expect.poll(() => getClipboardWrites(page)).toEqual(["AB123456789"]);
   });
 
   test("storefront my orders hides宅配 tracking link before shipment", async ({ page }) => {
@@ -130,7 +131,10 @@ test.describe("smoke / storefront orders and user controls", () => {
     });
 
     await page.addInitScript(() => {
-      (window as any).__ordersXss = false;
+      const testWindow = window as Window & typeof globalThis & {
+        __ordersXss: boolean;
+      };
+      testWindow.__ordersXss = false;
     });
     await installStorefrontUser(page);
 
@@ -142,7 +146,12 @@ test.describe("smoke / storefront orders and user controls", () => {
     await expect(page.locator("#my-orders-list img")).toHaveCount(0);
     await expect(page.locator("#my-orders-list script")).toHaveCount(0);
     await expect.poll(() =>
-      page.evaluate(() => (window as any).__ordersXss)
+      page.evaluate(() => {
+        const testWindow = window as Window & typeof globalThis & {
+          __ordersXss?: boolean;
+        };
+        return testWindow.__ordersXss ?? false;
+      })
     ).toBe(false);
   });
 
@@ -154,7 +163,20 @@ test.describe("smoke / storefront orders and user controls", () => {
     await gotoStorefront(page);
 
     await page.evaluate(() => {
-      (window as any).Swal.fire = async (options: any) => {
+      type ProfileSwalOptions = {
+        customClass?: { popup?: string };
+        title?: unknown;
+      };
+      type ProfileSwalWindow = Window & typeof globalThis & {
+        Swal: {
+          fire: (
+            options?: ProfileSwalOptions,
+          ) => Promise<{ isConfirmed: boolean }>;
+        };
+      };
+
+      const testWindow = window as ProfileSwalWindow;
+      testWindow.Swal.fire = async (options: ProfileSwalOptions = {}) => {
         const existing = document.querySelector(".swal2-popup");
         existing?.remove();
 
@@ -206,26 +228,19 @@ test.describe("smoke / storefront orders and user controls", () => {
       });
     });
 
-    await page.addInitScript(() => {
-      const swalCalls: string[] = [];
-      (window as any).__storefrontSwalCalls = swalCalls;
-      (window as any).Swal.fire = async (options: any) => {
-        swalCalls.push(String(options?.title || options || ""));
-        return { isConfirmed: false, value: null };
-      };
+    await installStorefrontSwalRecorder(page, {
+      confirmTitleIncludes: ["__never_confirm__"],
     });
     await installStorefrontUser(page);
 
     await gotoStorefront(page);
 
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__blockedStorefrontBodyClickDelegation)
-    ).toBe(0);
+    await expect.poll(() => getBlockedStorefrontBodyClickDelegationCount(page))
+      .toBe(0);
 
     await page.getByRole("button", { name: "會員資料" }).click();
-    await expect.poll(() =>
-      page.evaluate(() => (window as any).__storefrontSwalCalls || [])
-    ).toContain("會員資料");
+    await expect.poll(() => hasStorefrontSwalCall(page, "會員資料"))
+      .toBe(true);
 
     await page.getByRole("button", { name: "我的訂單" }).click();
     await expect(page.locator("#my-orders-modal")).toBeVisible();
