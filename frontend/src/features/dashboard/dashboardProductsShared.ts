@@ -145,7 +145,7 @@ export function buildGroupedProductsView(
 
   return sortedCategories.map((category) => ({
     category,
-    items: grouped[category],
+    items: grouped[category] || [],
   }));
 }
 

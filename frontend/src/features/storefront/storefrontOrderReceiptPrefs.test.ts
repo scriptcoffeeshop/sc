@@ -63,7 +63,7 @@ describe("storefrontOrderReceiptPrefs", () => {
     });
     expect(getStorefrontOrderFormState().transferAccountLast5).toBe("12345");
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toMatchObject({
+    expect(listener.mock.calls[0]![0].detail).toMatchObject({
       requested: true,
       taxId: "12345678",
     });
@@ -82,7 +82,7 @@ describe("storefrontOrderReceiptPrefs", () => {
     initReceiptRequestUi();
 
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toMatchObject({
+    expect(listener.mock.calls[0]![0].detail).toMatchObject({
       requested: true,
     });
 

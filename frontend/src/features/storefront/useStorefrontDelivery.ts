@@ -120,7 +120,8 @@ export function useStorefrontDelivery(deps: StorefrontDeliveryDeps = {}) {
     if (countyIndex < 0) return [];
     const districtDataRow = TAIWAN_CITY_DATA.districts[countyIndex];
     if (!districtDataRow) return [];
-    const [districts, zipcodes] = districtDataRow;
+    const districts = districtDataRow[0] || [];
+    const zipcodes = districtDataRow[1] || [];
     return districts.map((district, index) => ({
       name: String(district || ""),
       zipcode: String(zipcodes[index] || ""),

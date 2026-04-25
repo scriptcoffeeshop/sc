@@ -29,7 +29,7 @@ describe("createStorefrontMainAppPayments", () => {
     await payments.loadInitData();
 
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toEqual({
+    expect(listener.mock.calls[0]![0].detail).toEqual({
       errorText: "載入資料失敗: API boom",
     });
 

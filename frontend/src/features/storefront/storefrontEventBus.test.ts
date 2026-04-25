@@ -20,6 +20,6 @@ describe("storefrontEventBus", () => {
     emitStorefrontEvent(STOREFRONT_EVENTS.cartUpdated, { items: ["ignored"] });
 
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toEqual({ items: [] });
+    expect(listener.mock.calls[0]![0].detail).toEqual({ items: [] });
   });
 });

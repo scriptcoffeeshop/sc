@@ -64,7 +64,7 @@ describe("useDashboardProducts", () => {
 
     expect(dashboard.productsGroupsView.value.map((group) => group.category))
       .toEqual(["咖啡豆", "耳掛"]);
-    expect(dashboard.productsGroupsView.value[0].items[0]).toMatchObject({
+    expect(dashboard.productsGroupsView.value[0]!.items[0]!).toMatchObject({
       id: 10,
       name: "測試豆",
       statusLabel: "啟用",

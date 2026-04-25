@@ -65,8 +65,8 @@ export function filterDashboardOrders(
   orderList: DashboardOrderRecord[],
   filters: DashboardOrderFilters,
 ) {
-  const dateFrom = parseDateBound(filters.dateFrom);
-  const dateTo = parseDateBound(filters.dateTo, true);
+  const dateFrom = parseDateBound(filters.dateFrom || "");
+  const dateTo = parseDateBound(filters.dateTo || "", true);
   const minAmount = filters.minAmount === "" ? null : Number(filters.minAmount);
   const maxAmount = filters.maxAmount === "" ? null : Number(filters.maxAmount);
 

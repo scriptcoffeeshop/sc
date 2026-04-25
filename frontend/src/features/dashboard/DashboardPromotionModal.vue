@@ -62,15 +62,19 @@
                   class="mb-2 border-b pb-1 last:border-0"
                   style="border-color:#E2DCC8"
                 >
-                  <template v-if="group.options.length === 1 && group.options[0].specKey === ''">
-                    <label class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded">
+                  <template v-if="isSingleDefaultPromotionGroup(group)">
+                    <label
+                      v-for="option in group.options"
+                      :key="`promotion-product-${group.productId}-${option.specKey || 'default'}`"
+                      class="flex items-center gap-2 cursor-pointer p-1 hover:ui-bg-soft rounded"
+                    >
                       <input
                         type="checkbox"
                         class="promo-product-cb"
-                        :data-pid="group.options[0].productId"
-                        :data-skey="group.options[0].specKey"
-                        :checked="isPromotionTargetSelected(group.options[0].productId, group.options[0].specKey)"
-                        @change="handlePromotionTargetChange(group.options[0].productId, group.options[0].specKey, $event)"
+                        :data-pid="option.productId"
+                        :data-skey="option.specKey"
+                        :checked="isPromotionTargetSelected(option.productId, option.specKey)"
+                        @change="handlePromotionTargetChange(option.productId, option.specKey, $event)"
                       >
                       <span class="ui-text-strong font-medium">[{{ group.category }}] {{ group.name }}</span>
                     </label>
@@ -231,6 +235,12 @@ function handlePromotionTargetChange(
   event: Event,
 ) {
   togglePromotionTarget(productId, specKey, getCheckedValue(event));
+}
+
+function isSingleDefaultPromotionGroup(
+  group: typeof promotionProductGroups.value[number],
+) {
+  return group.options.length === 1 && group.options[0]?.specKey === "";
 }
 
 function handleClosePromotionModal() {

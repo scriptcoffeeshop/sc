@@ -43,7 +43,7 @@ describe("storefrontDynamicFieldValues", () => {
 
     emitStorefrontDynamicFieldValuesUpdated({ phone: "0988000000" });
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toEqual({
+    expect(listener.mock.calls[0]![0].detail).toEqual({
       phone: "0988000000",
     });
 

@@ -80,7 +80,7 @@ describe("useDashboardUsers", () => {
     await module.dashboardUsersActions.loadUsers();
     await module.dashboardUsersActions.loadBlacklist();
 
-    expect(authFetch.mock.calls[0][0]).toContain("search=Script%20Coffee");
+    expect(authFetch.mock.calls[0]![0]).toContain("search=Script%20Coffee");
     expect(dashboard.usersView.value[0]).toMatchObject({
       userId: "user-1",
       roleBadgeText: "管理員",

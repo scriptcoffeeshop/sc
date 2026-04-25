@@ -35,7 +35,7 @@ describe("storefrontReceiptFormState", () => {
       needDateStamp: true,
     });
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toMatchObject({
+    expect(listener.mock.calls[0]![0].detail).toMatchObject({
       requested: true,
       taxId: "12345678",
     });

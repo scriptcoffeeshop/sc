@@ -76,7 +76,7 @@ describe("storefrontOrderConfirmDialog", () => {
       note: "<b>不要執行</b>",
     });
 
-    const options = vi.mocked(Swal.fire).mock.calls[0][0] as {
+    const options = vi.mocked(Swal.fire).mock.calls[0]![0] as {
       html?: unknown;
     };
 

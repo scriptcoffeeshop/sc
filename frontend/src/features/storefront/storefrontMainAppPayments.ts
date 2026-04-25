@@ -137,12 +137,14 @@ export function createStorefrontMainAppPayments(
       option && option.enabled !== false
     );
     if (!activeDeliveryOptions.length) return;
+    const firstDeliveryOption = activeDeliveryOptions[0];
+    if (!firstDeliveryOption) return;
 
     if (
       !state.selectedDelivery ||
       !activeDeliveryOptions.find((option) => option.id === state.selectedDelivery)
     ) {
-      state.selectedDelivery = activeDeliveryOptions[0].id;
+      state.selectedDelivery = firstDeliveryOption.id;
       selectDelivery(state.selectedDelivery, null, { skipQuote: true });
     }
 
@@ -188,8 +190,9 @@ export function createStorefrontMainAppPayments(
   function selectPayment(method: string, options: { skipQuote?: boolean } = {}) {
     state.selectedPayment = method;
     if (method === "transfer") {
-      if (state.bankAccounts.length > 0 && !state.selectedBankAccountId) {
-        selectStorefrontBankAccount(state.bankAccounts[0].id);
+      const firstBankAccount = state.bankAccounts[0];
+      if (firstBankAccount && !state.selectedBankAccountId) {
+        selectStorefrontBankAccount(firstBankAccount.id);
       }
     }
 

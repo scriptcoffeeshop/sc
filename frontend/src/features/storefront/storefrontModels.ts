@@ -114,7 +114,7 @@ export function buildStorefrontProductsViewModel(
     return leftIndex - rightIndex;
   }).map((name) => ({
     name,
-    products: grouped[name],
+    products: grouped[name] || [],
   }));
 }
 

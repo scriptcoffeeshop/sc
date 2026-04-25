@@ -73,8 +73,9 @@ export function selectDelivery(
 /** 更新地區下拉 (限新竹使用) */
 export function updateDistricts() {
   const current = getStorefrontLocalDeliveryAddress();
-  const options = Array.isArray(districtData[current.city])
-    ? districtData[current.city]
+  const cityDistricts = districtData[current.city];
+  const options = Array.isArray(cityDistricts)
+    ? cityDistricts
     : [];
   if (current.district && !options.includes(current.district)) {
     setStorefrontLocalDeliveryAddress({ district: "" });
@@ -265,7 +266,7 @@ export function loadDeliveryPrefs() {
         emitStorefrontHomeDeliveryAddressUpdated({
           city: String(prefs.city || ""),
           district: districtText,
-          zipcode: zipMatch ? zipMatch[1] : "",
+          zipcode: zipMatch?.[1] || "",
           address: String(prefs.address || ""),
         });
       } else if (method === "seven_eleven" || method === "family_mart") {

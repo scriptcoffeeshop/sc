@@ -34,7 +34,7 @@ describe("storefrontDeliveryFormState", () => {
       companyOrBuilding: "",
     });
     expect(listener).toHaveBeenCalledTimes(1);
-    expect(listener.mock.calls[0][0].detail).toMatchObject({
+    expect(listener.mock.calls[0]![0].detail).toMatchObject({
       city: "新竹市",
       district: "東區",
       address: "測試路 1 號",

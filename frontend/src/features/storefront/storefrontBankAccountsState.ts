@@ -8,5 +8,6 @@ export function selectStorefrontBankAccount(id: string | number) {
   }
 
   const selected = accounts.find((account) => String(account.id) === String(id));
-  state.selectedBankAccountId = selected ? selected.id : accounts[0].id;
+  const fallbackAccount = accounts[0];
+  state.selectedBankAccountId = selected?.id ?? fallbackAccount?.id ?? "";
 }

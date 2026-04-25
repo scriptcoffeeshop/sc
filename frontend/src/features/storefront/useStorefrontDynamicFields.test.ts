@@ -51,7 +51,7 @@ describe("useStorefrontDynamicFields", () => {
       phone: "0912345678",
     });
     expect(getInitialDynamicFieldValue(
-      dynamicFields.formFields.value[0],
+      dynamicFields.formFields.value[0]!,
       dynamicFields.currentUser.value,
     )).toBe("0912345678");
     expect(getInitialDynamicFieldValue(

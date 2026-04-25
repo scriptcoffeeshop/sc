@@ -144,7 +144,12 @@ export function normalizePaymentOption(
   method: string,
   option: SettingsRecord = {},
 ): DashboardPaymentOption {
-  const defaults = DEFAULT_PAYMENT_OPTIONS[method] || DEFAULT_PAYMENT_OPTIONS.cod;
+  const fallbackPaymentOption = DEFAULT_PAYMENT_OPTIONS.cod || {
+    icon_url: getDefaultIconUrl("cod"),
+    name: "取件 / 到付",
+    description: "取貨時付現或宅配到付",
+  };
+  const defaults = DEFAULT_PAYMENT_OPTIONS[method] || fallbackPaymentOption;
   return {
     ...defaults,
     ...omitLegacyIconFields(option),
