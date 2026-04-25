@@ -55,6 +55,15 @@ function setCheckboxChecked(selector: string, checked: boolean) {
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+function getSortableOptions(
+  options: SortableTestOptions | null,
+): SortableTestOptions {
+  if (!options) {
+    throw new Error("sortable options were not registered");
+  }
+  return options;
+}
+
 describe("useDashboardFormFields", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -364,10 +373,7 @@ describe("useDashboardFormFields", () => {
     module.dashboardFormFieldsActions.registerFormFieldsListElement(listElement);
     await Promise.resolve();
     await Promise.resolve();
-    if (!sortableOptions) {
-      throw new Error("sortable options were not registered");
-    }
-    await sortableOptions.onEnd();
+    await getSortableOptions(sortableOptions).onEnd();
 
     expect(SortableMock.create).toHaveBeenCalledWith(
       listElement,

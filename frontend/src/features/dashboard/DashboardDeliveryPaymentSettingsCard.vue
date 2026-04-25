@@ -22,7 +22,7 @@
       class="space-y-3 mb-4 settings-routing-list"
     >
       <div
-        v-for="item in deliveryOptions"
+        v-for="item in normalizedDeliveryOptions"
         :key="item.id"
         class="delivery-option-row rounded-lg border bg-white p-4 shadow-sm"
         style="border-color:#E2DCC8"
@@ -174,7 +174,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ComponentPublicInstance } from "vue";
+import { computed, type ComponentPublicInstance } from "vue";
 import {
   GripVertical,
   Trash2,
@@ -187,6 +187,10 @@ import {
   dashboardSettingsActions,
   useDashboardSettings,
 } from "./useDashboardSettings.ts";
+import type {
+  DashboardDeliveryOption,
+  DashboardPaymentRouting,
+} from "./dashboardSettingsShared.ts";
 
 type RoutingPaymentMethodKey = "cod" | "linepay" | "jkopay" | "transfer";
 
@@ -208,6 +212,27 @@ const {
 } = useDashboardSettingsIcons();
 const deliveryIconInputs = new Map<string, HTMLInputElement>();
 type TemplateRefElement = Element | ComponentPublicInstance | null;
+type DeliveryOptionWithPayment = DashboardDeliveryOption & {
+  payment: DashboardPaymentRouting;
+};
+
+function ensureDeliveryPayment(
+  item: DashboardDeliveryOption,
+): DeliveryOptionWithPayment {
+  if (!item.payment) {
+    item.payment = {
+      cod: false,
+      linepay: false,
+      jkopay: false,
+      transfer: false,
+    };
+  }
+  return item as DeliveryOptionWithPayment;
+}
+
+const normalizedDeliveryOptions = computed(() =>
+  deliveryOptions.value.map(ensureDeliveryPayment),
+);
 
 function registerDeliveryRoutingTableElement(element: TemplateRefElement) {
   dashboardSettingsActions.registerDeliveryRoutingTableElement(

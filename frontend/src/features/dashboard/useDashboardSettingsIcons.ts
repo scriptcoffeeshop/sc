@@ -7,6 +7,7 @@ import {
   resolveAssetUrl,
 } from "../../lib/icons.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+import type { DashboardSwal, DashboardToast } from "./dashboardOrderTypes.ts";
 import { sectionIconSettingKey } from "./dashboardSettingsShared.ts";
 import { useDashboardSettings } from "./useDashboardSettings.ts";
 
@@ -18,14 +19,8 @@ interface DashboardSettingsIconServices {
   API_URL?: string;
   authFetch?: (input: string, init?: RequestInit) => Promise<Response>;
   getAuthUserId?: () => string;
-  Swal: {
-    fire: (...args: unknown[]) => unknown;
-    showLoading?: () => void;
-    close?: () => void;
-  };
-  Toast: {
-    fire: (...args: unknown[]) => unknown;
-  };
+  Swal: DashboardSwal;
+  Toast: DashboardToast;
 }
 
 interface DashboardUploadAssetResponse {
@@ -206,7 +201,7 @@ function openLoadingModal() {
   Swal.fire({
     title: "上傳中...",
     allowOutsideClick: false,
-    didOpen: () => Swal.showLoading(),
+    didOpen: () => Swal.showLoading?.(),
   });
 }
 

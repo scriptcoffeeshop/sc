@@ -169,14 +169,15 @@ async function syncPromotionSortable() {
   const { Sortable, Swal } = getServices();
   destroyPromotionSortable();
   if (!Sortable?.create) return;
-  if (!promotionsTableElement?.querySelector?.("tr[data-id]")) return;
+  const tableElement = promotionsTableElement;
+  if (!tableElement?.querySelector?.("tr[data-id]")) return;
 
-  promotionSortable = Sortable.create(promotionsTableElement, {
+  promotionSortable = Sortable.create(tableElement, {
     handle: ".drag-handle-promo",
     animation: 150,
     onEnd: async (event) => {
       if (event.oldIndex === event.newIndex) return;
-      const ids = Array.from(promotionsTableElement.querySelectorAll("tr[data-id]"))
+      const ids = Array.from(tableElement.querySelectorAll("tr[data-id]"))
         .map((row) =>
           row instanceof HTMLElement
             ? Number.parseInt(row.dataset.id || "", 10)

@@ -1,3 +1,5 @@
+import type { SweetAlertIcon, SweetAlertOptions } from "sweetalert2";
+
 export interface SessionUser {
   userId: string;
   displayName?: string;
@@ -16,7 +18,14 @@ export type DashboardTabLoaderMap = Record<
 >;
 
 export interface DashboardSwalLike {
-  fire: (...args: unknown[]) => Promise<unknown> | unknown;
+  fire: {
+    (options: SweetAlertOptions): Promise<unknown> | unknown;
+    (
+      title?: string,
+      html?: string,
+      icon?: SweetAlertIcon,
+    ): Promise<unknown> | unknown;
+  };
   showLoading?: () => void;
   close?: () => void;
 }

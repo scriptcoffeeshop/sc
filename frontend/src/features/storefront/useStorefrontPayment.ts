@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import type { SweetAlertIcon, SweetAlertOptions } from "sweetalert2";
 import { getIconUrlFromConfig } from "../../lib/icons.ts";
 import { parseJsonRecord } from "../../lib/jsonUtils.ts";
 import type {
@@ -34,10 +35,13 @@ interface StorefrontPaymentDeps {
     writeText?: (text: string) => Promise<unknown>;
   };
   Toast?: {
-    fire?: (payload: { icon?: string; title?: string }) => unknown;
+    fire?: (payload: SweetAlertOptions) => unknown;
   };
   Swal?: {
-    fire?: (...args: unknown[]) => unknown;
+    fire?: {
+      (options: SweetAlertOptions): unknown;
+      (title?: string, html?: string, icon?: SweetAlertIcon): unknown;
+    };
   };
   setTimeout?: (callback: () => void, delay: number) => unknown;
 }
@@ -147,15 +151,17 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
     syncPaymentState();
   }
 
-  function handleSelectBankAccount(bankId: string | number) {
+  function handleSelectBankAccount(bankId: string | number | undefined) {
+    if (bankId === undefined) return;
     deps.selectBankAccount?.(bankId);
     syncPaymentState();
   }
 
   function handleCopyTransferAccount(
-    bankId: string | number,
-    accountNumber: string,
+    bankId: string | number | undefined,
+    accountNumber: string | undefined,
   ) {
+    if (bankId === undefined) return;
     const account = String(accountNumber || "").trim();
     if (!account) return;
 

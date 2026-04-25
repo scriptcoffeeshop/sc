@@ -41,6 +41,13 @@ type BankAccountsSortableFactory = {
   ) => BankAccountsSortableInstance;
 };
 
+type BankAccountsSortableFactoryWithCreate = BankAccountsSortableFactory & {
+  create: (
+    element: HTMLElement,
+    options: BankAccountsSortableOptions,
+  ) => BankAccountsSortableInstance;
+};
+
 type BankAccountsSortableConstructor = new (
   element: HTMLElement,
   options: BankAccountsSortableOptions,
@@ -82,7 +89,7 @@ function normalizeBankAccount(value: unknown): BankAccountRecord {
 
 function hasSortableCreate(
   sortable: DashboardBankAccountsServices["Sortable"],
-): sortable is BankAccountsSortableFactory {
+): sortable is BankAccountsSortableFactoryWithCreate {
   return Boolean(sortable && typeof sortable === "object" && sortable.create);
 }
 
@@ -116,7 +123,8 @@ async function reorderBankAccounts(ids: number[]) {
 async function syncBankAccountsSortable() {
   const { Sortable, Swal } = getServices();
   destroyBankAccountsSortable();
-  if (!bankAccountsListElement?.querySelector?.("[data-bank-account-row]")) return;
+  const listElement = bankAccountsListElement;
+  if (!listElement?.querySelector?.("[data-bank-account-row]")) return;
 
   const createOptions: BankAccountsSortableOptions = {
     handle: ".drag-handle-bank",
@@ -125,7 +133,7 @@ async function syncBankAccountsSortable() {
     onEnd: async (event: BankAccountsSortableEvent) => {
       if (event.oldIndex === event.newIndex) return;
       const ids = Array.from(
-        bankAccountsListElement.querySelectorAll("[data-bank-account-row]"),
+        listElement.querySelectorAll("[data-bank-account-row]"),
       )
         .map((element) =>
           element instanceof HTMLElement
@@ -144,12 +152,12 @@ async function syncBankAccountsSortable() {
   };
 
   if (hasSortableCreate(Sortable)) {
-    bankAccountsSortable = Sortable.create(bankAccountsListElement, createOptions);
+    bankAccountsSortable = Sortable.create(listElement, createOptions);
     return;
   }
 
   if (isSortableConstructor(Sortable)) {
-    bankAccountsSortable = new Sortable(bankAccountsListElement, createOptions);
+    bankAccountsSortable = new Sortable(listElement, createOptions);
   }
 }
 

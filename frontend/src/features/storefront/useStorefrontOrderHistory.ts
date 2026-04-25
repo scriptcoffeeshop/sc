@@ -1,4 +1,5 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
+import type { SweetAlertIcon, SweetAlertOptions } from "sweetalert2";
 import type {
   CustomerPaymentDisplay,
   Order,
@@ -42,11 +43,18 @@ interface OrderHistoryResponse {
 }
 
 interface OrderHistoryToast {
-  fire: (...args: unknown[]) => unknown;
+  fire: (options: SweetAlertOptions) => unknown;
 }
 
 interface OrderHistorySwal {
-  fire: (...args: unknown[]) => Promise<unknown> | unknown;
+  fire: {
+    (options: SweetAlertOptions): Promise<unknown> | unknown;
+    (
+      title?: string,
+      html?: string,
+      icon?: SweetAlertIcon,
+    ): Promise<unknown> | unknown;
+  };
 }
 
 interface OrderHistoryDeps {

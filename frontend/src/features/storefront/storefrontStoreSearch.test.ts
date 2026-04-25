@@ -62,8 +62,12 @@ describe("openStoreSearchModal", () => {
         )
       );
 
-    expect(modalOptions?.html).toBeInstanceOf(HTMLElement);
-    expect(modalOptions?.html.id).toBe("");
+    const modalHtml = modalOptions?.html;
+    expect(modalHtml).toBeInstanceOf(HTMLElement);
+    if (!(modalHtml instanceof HTMLElement)) {
+      throw new Error("store search modal html was not mounted");
+    }
+    expect(modalHtml.id).toBe("");
     expect(document.querySelector("#store-search-input")).toBeTruthy();
   });
 });

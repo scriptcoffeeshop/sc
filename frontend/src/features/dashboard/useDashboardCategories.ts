@@ -103,14 +103,15 @@ async function syncCategorySortable() {
   const { Sortable, Swal } = getServices();
   destroyCategorySortable();
   if (!Sortable?.create) return;
-  if (!categoriesListElement?.querySelector?.("[data-id]")) return;
+  const listElement = categoriesListElement;
+  if (!listElement?.querySelector?.("[data-id]")) return;
 
-  categorySortable = Sortable.create(categoriesListElement, {
+  categorySortable = Sortable.create(listElement, {
     handle: ".drag-handle-cat",
     animation: 150,
     onEnd: async (event) => {
       if (event.oldIndex === event.newIndex) return;
-      const ids = Array.from(categoriesListElement.querySelectorAll("[data-id]"))
+      const ids = Array.from(listElement.querySelectorAll("[data-id]"))
         .map((element) =>
           element instanceof HTMLElement
             ? Number.parseInt(element.dataset.id || "", 10)

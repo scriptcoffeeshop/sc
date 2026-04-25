@@ -1,4 +1,4 @@
-import type { SweetAlertOptions } from "sweetalert2";
+import type { SweetAlertIcon, SweetAlertOptions } from "sweetalert2";
 
 export interface DashboardOrderRecord extends Record<string, unknown> {
   orderId: string;
@@ -57,7 +57,14 @@ export type DashboardSwalResult = {
 };
 
 export type DashboardSwal = {
-  fire: (...args: unknown[]) => Promise<DashboardSwalResult> | DashboardSwalResult;
+  fire: {
+    (options: SweetAlertOptions): Promise<DashboardSwalResult> | DashboardSwalResult;
+    (
+      title?: string,
+      html?: string,
+      icon?: SweetAlertIcon,
+    ): Promise<DashboardSwalResult> | DashboardSwalResult;
+  };
   showValidationMessage?: (message: string) => void;
   showLoading?: () => void;
   close?: () => void;

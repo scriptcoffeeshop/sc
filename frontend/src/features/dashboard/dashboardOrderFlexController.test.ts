@@ -112,7 +112,8 @@ describe("dashboardOrderFlexController", () => {
       icon: "success",
       title: "Flex Message 已複製",
     });
-    expect(JSON.parse(localStorage.getItem("coffee_flex_message_history"))[0])
+    const history = localStorage.getItem("coffee_flex_message_history");
+    expect(JSON.parse(history || "[]")[0])
       .toMatchObject({
         orderId: "O-1001",
         statusLabel: "已出貨",

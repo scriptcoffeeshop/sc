@@ -10,6 +10,7 @@
     "noImplicitThis": true,
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
+    "strictNullChecks": true,
     "alwaysStrict": true,
     "useUnknownInCatchVariables": true,
     "noFallthroughCasesInSwitch": true,

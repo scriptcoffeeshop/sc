@@ -187,7 +187,7 @@ async function loadUsers() {
     Swal.fire({
       title: "載入中...",
       allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => Swal.showLoading?.(),
     });
     const response = await authFetch(
       `${API_URL}?action=getUsers&userId=${getAuthUserId()}&search=${
@@ -202,7 +202,7 @@ async function loadUsers() {
     users.value = Array.isArray(data.users)
       ? data.users.map(normalizeUser).filter((user) => user !== null)
       : [];
-    Swal.close();
+    Swal.close?.();
   } catch (error) {
     Swal.fire("錯誤", getDashboardErrorMessage(error, "載入用戶失敗"), "error");
   }
@@ -240,7 +240,7 @@ async function toggleUserRole(targetUserId: string, newRole: "ADMIN" | "USER") {
     Swal.fire({
       title: "處理中...",
       allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => Swal.showLoading?.(),
     });
     const response = await authFetch(`${API_URL}?action=updateUserRole`, {
       method: "POST",
@@ -274,7 +274,7 @@ async function toggleUserBlacklist(targetUserId: string, isBlocked: boolean) {
       Swal.fire({
         title: "處理中...",
         allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
+        didOpen: () => Swal.showLoading?.(),
       });
       const response = await authFetch(`${API_URL}?action=addToBlacklist`, {
         method: "POST",
@@ -305,7 +305,7 @@ async function toggleUserBlacklist(targetUserId: string, isBlocked: boolean) {
     Swal.fire({
       title: "處理中...",
       allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
+      didOpen: () => Swal.showLoading?.(),
     });
     const response = await authFetch(`${API_URL}?action=removeFromBlacklist`, {
       method: "POST",

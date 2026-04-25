@@ -165,7 +165,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
     deps.Swal.fire({
       title: `${isJkoPay ? "街口" : "LINE Pay"} 退款處理中...`,
       allowOutsideClick: false,
-      didOpen: () => deps.Swal.showLoading(),
+      didOpen: () => deps.Swal.showLoading?.(),
     });
     try {
       const response = await deps.authFetch(`${deps.API_URL}?action=${action}`, {

@@ -53,12 +53,14 @@ export function buildOrdersCsv(orderList: DashboardOrderRecord[]) {
       order.lineName || "",
       order.phone || "",
       order.email || "",
-      orderMethodLabel[order.deliveryMethod] || order.deliveryMethod || "",
-      orderStatusLabel[order.status] || order.status || "",
-      orderPayMethodLabel[order.paymentMethod || "cod"] ||
+      orderMethodLabel[String(order.deliveryMethod || "")] ||
+      order.deliveryMethod ||
+      "",
+      orderStatusLabel[String(order.status || "")] || order.status || "",
+      orderPayMethodLabel[String(order.paymentMethod || "cod")] ||
       order.paymentMethod ||
       "",
-      orderPayStatusLabel[order.paymentStatus || ""] ||
+      orderPayStatusLabel[String(order.paymentStatus || "")] ||
       order.paymentStatus ||
       "",
       order.paymentExpiresAt || "",

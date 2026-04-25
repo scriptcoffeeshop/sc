@@ -11,16 +11,7 @@ import {
   normalizeDeliveryVisibilityValue,
   type DashboardFormField,
 } from "./dashboardFormFieldsShared.ts";
-
-interface DashboardToastLike {
-  fire: (...args: unknown[]) => unknown;
-}
-
-interface DashboardSwalLike {
-  fire: (...args: unknown[]) => Promise<unknown>;
-  showLoading?: () => void;
-  showValidationMessage?: (message: string) => void;
-}
+import type { DashboardSwal, DashboardToast } from "./dashboardOrderTypes.ts";
 
 interface DashboardSettingsRecord {
   delivery_options_config?: string;
@@ -65,8 +56,8 @@ interface DashboardFormFieldsServices {
   getAuthUserId: () => string;
   getDashboardSettings?: () => DashboardSettingsRecord | null | undefined;
   Sortable?: DashboardSortableConstructor | null;
-  Swal: DashboardSwalLike;
-  Toast: DashboardToastLike;
+  Swal: DashboardSwal;
+  Toast: DashboardToast;
   esc?: (value: string) => string;
   requestAnimationFrame?: (callback: FrameRequestCallback) => number;
 }

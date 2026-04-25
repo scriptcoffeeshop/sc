@@ -1,5 +1,6 @@
 import { nextTick, ref } from "vue";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+import type { DashboardSwal, DashboardToast } from "./dashboardOrderTypes.ts";
 import type {
   DashboardDeliveryOption,
 } from "./dashboardSettingsShared.ts";
@@ -20,14 +21,6 @@ import {
   type DashboardStorefrontSettings,
   type DashboardPaymentOptionsMap,
 } from "./dashboardSettingsConfig.ts";
-
-interface DashboardToastLike {
-  fire: (...args: unknown[]) => unknown;
-}
-
-interface DashboardSwalLike {
-  fire: (...args: unknown[]) => unknown;
-}
 
 interface DashboardSortableInstance {
   destroy: () => void;
@@ -55,8 +48,8 @@ interface DashboardSettingsServices extends DashboardSettingsConfigDeps {
   API_URL: string;
   authFetch: (input: string, init?: RequestInit) => Promise<Response>;
   getAuthUserId: () => string;
-  Toast: DashboardToastLike;
-  Swal: DashboardSwalLike;
+  Toast: DashboardToast;
+  Swal: DashboardSwal;
   applyDashboardBranding?: (settings: DashboardSettingsRecord) => void;
   loadBankAccounts?: () => Promise<unknown> | unknown;
   linePaySandboxCacheKey: string;

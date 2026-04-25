@@ -11,18 +11,11 @@ import {
   type DashboardProductSpec,
 } from "./dashboardProductsShared.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-
-interface DashboardToastLike {
-  fire: (...args: unknown[]) => unknown;
-}
-
-interface DashboardSwalResult {
-  isConfirmed?: boolean;
-}
-
-interface DashboardSwalLike {
-  fire: (...args: unknown[]) => Promise<DashboardSwalResult> | unknown;
-}
+import type {
+  DashboardSwal,
+  DashboardSwalResult,
+  DashboardToast,
+} from "./dashboardOrderTypes.ts";
 
 interface DashboardSortableInstance {
   destroy?: () => void;
@@ -47,8 +40,8 @@ interface DashboardProductsServices {
   getCategories?: () => DashboardCategoryRecord[];
   ensureCategoriesLoaded?: () => Promise<unknown> | unknown;
   Sortable?: DashboardSortableConstructor | null;
-  Swal: DashboardSwalLike;
-  Toast: DashboardToastLike;
+  Swal: DashboardSwal;
+  Toast: DashboardToast;
 }
 
 interface DashboardProductsResponse {
@@ -169,7 +162,8 @@ async function syncProductSortables() {
   if (Array.isArray(productsWindow.productSortables)) {
     productsWindow.productSortables.forEach((sortable) => sortable?.destroy?.());
   }
-  productsWindow.productSortables = [];
+  const productSortables: DashboardSortableInstance[] = [];
+  productsWindow.productSortables = productSortables;
   if (!productsTableElement) return;
 
   const sortables = productsTableElement.querySelectorAll("tbody.sortable-tbody");
@@ -196,7 +190,7 @@ async function syncProductSortables() {
         }
       },
     });
-    if (sortable) productsWindow.productSortables.push(sortable);
+    if (sortable) productSortables.push(sortable);
   });
 }
 
