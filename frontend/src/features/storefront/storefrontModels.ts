@@ -122,15 +122,16 @@ export function buildStorefrontProductsViewModel(
   }));
 }
 
-function normalizeDeliveryPaymentConfig(
-  payment: JsonRecord = {},
+export function normalizeDeliveryPaymentConfig(
+  payment: unknown = {},
 ): StorefrontPaymentConfig {
-  const hasJkoPay = Object.prototype.hasOwnProperty.call(payment, "jkopay");
+  const source = asRecord(payment);
+  const hasJkoPay = Object.prototype.hasOwnProperty.call(source, "jkopay");
   return {
-    cod: Boolean(payment.cod),
-    linepay: Boolean(payment.linepay),
-    jkopay: hasJkoPay ? Boolean(payment.jkopay) : Boolean(payment.linepay),
-    transfer: Boolean(payment.transfer),
+    cod: Boolean(source.cod),
+    linepay: Boolean(source.linepay),
+    jkopay: hasJkoPay ? Boolean(source.jkopay) : Boolean(source.linepay),
+    transfer: Boolean(source.transfer),
   };
 }
 

@@ -2,6 +2,7 @@ import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
 import { selectDelivery } from "./storefrontDeliveryActions.ts";
 import {
+  normalizeDeliveryPaymentConfig,
   normalizeStorefrontDeliveryConfig,
   type StorefrontDeliveryOption,
 } from "./storefrontModels.ts";
@@ -12,6 +13,8 @@ import {
   setStorefrontAvailablePaymentMethods,
   setStorefrontAppSettings,
   setStorefrontDeliveryConfig,
+  type StorefrontPaymentAvailability,
+  type StorefrontPaymentMethod,
 } from "./storefrontRuntime.ts";
 
 type StorefrontMainAppPaymentsDeps = {
@@ -22,6 +25,57 @@ type StorefrontMainAppPaymentsDeps = {
 
 function dispatchStorefrontLoadError(errorText: string) {
   emitStorefrontEvent(STOREFRONT_EVENTS.loadErrorUpdated, { errorText });
+}
+
+const DEFAULT_PAYMENT_AVAILABILITY: StorefrontPaymentAvailability = {
+  cod: true,
+  linepay: false,
+  jkopay: false,
+  transfer: false,
+};
+
+function normalizeQuotePaymentAvailability(
+  payment: Record<string, unknown> | null | undefined,
+): StorefrontPaymentAvailability {
+  return {
+    cod: Boolean(payment?.cod),
+    linepay: Boolean(payment?.linepay),
+    jkopay: Boolean(payment?.jkopay),
+    transfer: Boolean(payment?.transfer),
+  };
+}
+
+export function resolveStorefrontPaymentAvailability(options: {
+  selectedDelivery: string;
+  selectedDeliveryOption?: StorefrontDeliveryOption;
+  quote?: {
+    deliveryMethod?: unknown;
+    availablePaymentMethods?: Record<string, unknown>;
+  } | null;
+}): StorefrontPaymentAvailability {
+  const quote = options.quote;
+  const canUseQuote = quote &&
+    quote.availablePaymentMethods &&
+    (!options.selectedDelivery ||
+      quote.deliveryMethod === options.selectedDelivery);
+
+  if (canUseQuote) {
+    return normalizeQuotePaymentAvailability(quote.availablePaymentMethods);
+  }
+
+  return normalizeDeliveryPaymentConfig(
+    options.selectedDeliveryOption?.payment || DEFAULT_PAYMENT_AVAILABILITY,
+  );
+}
+
+export function selectFirstAvailablePayment(
+  availability: StorefrontPaymentAvailability,
+): StorefrontPaymentMethod | "" {
+  if (availability.cod) return "cod";
+  if (availability.linepay) return "linepay";
+  if (availability.jkopay) return "jkopay";
+  if (availability.transfer) return "transfer";
+  return "";
 }
 
 export function createStorefrontMainAppPayments(
@@ -92,40 +146,14 @@ export function createStorefrontMainAppPayments(
       selectDelivery(state.selectedDelivery, null, { skipQuote: true });
     }
 
-    const fallbackConfigOpt = activeDeliveryOptions.find((option) =>
+    const selectedDeliveryOption = activeDeliveryOptions.find((option) =>
       option.id === state.selectedDelivery
     );
-    const fallbackConfig = fallbackConfigOpt?.payment || {
-      cod: true,
-      linepay: false,
-      jkopay: false,
-      transfer: false,
-    };
-    const hasJkoPayInFallback = Object.prototype.hasOwnProperty.call(
-      fallbackConfig,
-      "jkopay",
-    );
-    const inferredFallbackJkoPay = hasJkoPayInFallback
-      ? !!fallbackConfig.jkopay
-      : !!fallbackConfig.linepay;
-    const quote = state.orderQuote;
-    const canUseQuote = quote &&
-      quote.availablePaymentMethods &&
-      (!state.selectedDelivery || quote.deliveryMethod === state.selectedDelivery);
-
-    const currentConfig = canUseQuote
-      ? {
-        cod: !!quote.availablePaymentMethods?.cod,
-        linepay: !!quote.availablePaymentMethods?.linepay,
-        jkopay: !!quote.availablePaymentMethods?.jkopay,
-        transfer: !!quote.availablePaymentMethods?.transfer,
-      }
-      : {
-        cod: !!fallbackConfig.cod,
-        linepay: !!fallbackConfig.linepay,
-        jkopay: inferredFallbackJkoPay,
-        transfer: !!fallbackConfig.transfer,
-      };
+    const currentConfig = resolveStorefrontPaymentAvailability({
+      selectedDelivery: state.selectedDelivery,
+      selectedDeliveryOption,
+      quote: state.orderQuote,
+    });
 
     setStorefrontAvailablePaymentMethods(currentConfig);
 
@@ -133,13 +161,9 @@ export function createStorefrontMainAppPayments(
       state.selectedPayment &&
       !currentConfig[state.selectedPayment as keyof typeof currentConfig]
     ) {
-      if (currentConfig.cod) selectPayment("cod", { skipQuote: true });
-      else if (currentConfig.linepay) {
-        selectPayment("linepay", { skipQuote: true });
-      } else if (currentConfig.jkopay) {
-        selectPayment("jkopay", { skipQuote: true });
-      } else if (currentConfig.transfer) {
-        selectPayment("transfer", { skipQuote: true });
+      const nextPayment = selectFirstAvailablePayment(currentConfig);
+      if (nextPayment) {
+        selectPayment(nextPayment, { skipQuote: true });
       } else {
         state.selectedPayment = "";
       }
@@ -147,14 +171,8 @@ export function createStorefrontMainAppPayments(
     }
 
     if (!state.selectedPayment) {
-      if (currentConfig.cod) selectPayment("cod", { skipQuote: true });
-      else if (currentConfig.linepay) {
-        selectPayment("linepay", { skipQuote: true });
-      } else if (currentConfig.jkopay) {
-        selectPayment("jkopay", { skipQuote: true });
-      } else if (currentConfig.transfer) {
-        selectPayment("transfer", { skipQuote: true });
-      }
+      const nextPayment = selectFirstAvailablePayment(currentConfig);
+      if (nextPayment) selectPayment(nextPayment, { skipQuote: true });
     }
   }
 

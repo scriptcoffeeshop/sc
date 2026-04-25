@@ -1,7 +1,11 @@
 /** @vitest-environment jsdom */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createStorefrontMainAppPayments } from "./storefrontMainAppPayments.ts";
+import {
+  createStorefrontMainAppPayments,
+  resolveStorefrontPaymentAvailability,
+  selectFirstAvailablePayment,
+} from "./storefrontMainAppPayments.ts";
 
 describe("createStorefrontMainAppPayments", () => {
   afterEach(() => {
@@ -30,5 +34,70 @@ describe("createStorefrontMainAppPayments", () => {
     });
 
     window.removeEventListener("coffee:storefront-load-error-updated", listener);
+  });
+
+  it("infers storefront payment availability from delivery config when quote is stale", () => {
+    expect(resolveStorefrontPaymentAvailability({
+      selectedDelivery: "delivery",
+      selectedDeliveryOption: {
+        id: "delivery",
+        enabled: true,
+        payment: { cod: false, linepay: true, transfer: true },
+      },
+      quote: {
+        deliveryMethod: "seven_eleven",
+        availablePaymentMethods: {
+          cod: true,
+          linepay: false,
+          jkopay: false,
+          transfer: false,
+        },
+      },
+    })).toEqual({
+      cod: false,
+      linepay: true,
+      jkopay: true,
+      transfer: true,
+    });
+  });
+
+  it("uses matching quote availability before delivery config", () => {
+    expect(resolveStorefrontPaymentAvailability({
+      selectedDelivery: "delivery",
+      selectedDeliveryOption: {
+        id: "delivery",
+        enabled: true,
+        payment: { cod: true, linepay: true, jkopay: true, transfer: true },
+      },
+      quote: {
+        deliveryMethod: "delivery",
+        availablePaymentMethods: {
+          cod: false,
+          linepay: false,
+          jkopay: true,
+          transfer: false,
+        },
+      },
+    })).toEqual({
+      cod: false,
+      linepay: false,
+      jkopay: true,
+      transfer: false,
+    });
+  });
+
+  it("selects the first available payment in storefront priority order", () => {
+    expect(selectFirstAvailablePayment({
+      cod: false,
+      linepay: false,
+      jkopay: true,
+      transfer: true,
+    })).toBe("jkopay");
+    expect(selectFirstAvailablePayment({
+      cod: false,
+      linepay: false,
+      jkopay: false,
+      transfer: false,
+    })).toBe("");
   });
 });
