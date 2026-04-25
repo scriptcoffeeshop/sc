@@ -1,5 +1,6 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 import { selectDelivery } from "./storefrontDeliveryActions.ts";
 import {
   normalizeDeliveryPaymentConfig,
@@ -35,7 +36,7 @@ const DEFAULT_PAYMENT_AVAILABILITY: StorefrontPaymentAvailability = {
 };
 
 function normalizeQuotePaymentAvailability(
-  payment: Record<string, unknown> | null | undefined,
+  payment: Partial<StorefrontPaymentAvailability> | null | undefined,
 ): StorefrontPaymentAvailability {
   return {
     cod: Boolean(payment?.["cod"]),
@@ -50,7 +51,7 @@ export function resolveStorefrontPaymentAvailability(options: {
   selectedDeliveryOption?: StorefrontDeliveryOption;
   quote?: {
     deliveryMethod?: unknown;
-    availablePaymentMethods?: Record<string, unknown>;
+    availablePaymentMethods?: Partial<StorefrontPaymentAvailability>;
   } | null;
 }): StorefrontPaymentAvailability {
   const quote = options.quote;
@@ -118,7 +119,7 @@ export function createStorefrontMainAppPayments(
     }
   }
 
-  function applySettings(settings: Record<string, unknown>) {
+  function applySettings(settings: JsonRecord) {
     state.isStoreOpen = String(settings["is_open"]) !== "false";
     updateFormState();
 
