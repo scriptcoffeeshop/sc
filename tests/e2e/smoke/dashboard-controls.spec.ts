@@ -3,40 +3,21 @@ import {
   installDashboardRoutes,
   installGlobalStubs,
 } from "../support/smoke-fixtures";
+import {
+  gotoDashboard,
+  installDashboardControlsHarness,
+} from "../support/dashboard-smoke";
 
 test.describe("smoke / dashboard controls", () => {
   test("dashboard form fields controls work without document event delegation", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
-
-      const originalAddEventListener = Document.prototype.addEventListener;
-      Document.prototype.addEventListener = function patchedAddEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (this === document && (type === "click" || type === "change")) {
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "新增欄位") {
-          return {
+    await installDashboardControlsHarness(page, {
+      swalResponses: [
+        {
+          title: "新增欄位",
+          response: {
             value: {
               fieldKey: "tax_id",
               label: "統一編號",
@@ -46,16 +27,13 @@ test.describe("smoke / dashboard controls", () => {
               required: false,
               deliveryVisibility: null,
             },
-          };
-        }
-        if (title === "確認刪除") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
+          },
+        },
+        { title: "確認刪除", response: { isConfirmed: true } },
+      ],
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
     await page.locator("#tab-formfields").click();
 
     const rows = page.locator("#formfields-sortable > div");
@@ -133,49 +111,16 @@ test.describe("smoke / dashboard controls", () => {
       ],
     });
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
-
-      const originalAddEventListener = Document.prototype.addEventListener;
-      Document.prototype.addEventListener = function patchedAddEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (this === document && (type === "click" || type === "change")) {
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "確認變更訂單狀態") {
-          return { isConfirmed: true };
-        }
-        if (title === "確認收款") {
-          return { isConfirmed: true };
-        }
-        if (title === "LINE Pay 退款") {
-          return { isConfirmed: true };
-        }
-        if (title === "刪除訂單？") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
+    await installDashboardControlsHarness(page, {
+      swalResponses: [
+        { title: "確認變更訂單狀態", response: { isConfirmed: true } },
+        { title: "確認收款", response: { isConfirmed: true } },
+        { title: "LINE Pay 退款", response: { isConfirmed: true } },
+        { title: "刪除訂單？", response: { isConfirmed: true } },
+      ],
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
 
     const selectedCount = page.locator("#orders-selected-count");
     const selectAllCheckbox = page.locator("#orders-select-all");
@@ -214,40 +159,13 @@ test.describe("smoke / dashboard controls", () => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
-
-      const originalAddEventListener = Document.prototype.addEventListener;
-      Document.prototype.addEventListener = function patchedAddEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (this === document && (type === "click" || type === "change")) {
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "刪除商品？") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
+    await installDashboardControlsHarness(page, {
+      swalResponses: [
+        { title: "刪除商品？", response: { isConfirmed: true } },
+      ],
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
     await page.locator("#tab-products").click();
 
     const rows = page.locator("#products-main-table tbody.sortable-tbody tr[data-id]");
@@ -286,43 +204,14 @@ test.describe("smoke / dashboard controls", () => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
-
-      const originalAddEventListener = Document.prototype.addEventListener;
-      Document.prototype.addEventListener = function patchedAddEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (this === document && (type === "click" || type === "change")) {
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "修改分類") {
-          return { value: "精品分類" };
-        }
-        if (title === "刪除分類？") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
+    await installDashboardControlsHarness(page, {
+      swalResponses: [
+        { title: "修改分類", response: { value: "精品分類" } },
+        { title: "刪除分類？", response: { isConfirmed: true } },
+      ],
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
     await page.locator("#tab-categories").click();
 
     const rows = page.locator("#categories-list > div[data-id]");
@@ -346,49 +235,16 @@ test.describe("smoke / dashboard controls", () => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
-
-      const originalAddEventListener = Document.prototype.addEventListener;
-      Document.prototype.addEventListener = function patchedAddEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (
-          this === document &&
-          (type === "click" || type === "change" || type === "keyup")
-        ) {
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "設為 管理員？") {
-          return { isConfirmed: true };
-        }
-        if (title === "封鎖用戶") {
-          return { value: "惡意棄單" };
-        }
-        if (title === "解除封鎖？") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
+    await installDashboardControlsHarness(page, {
+      blockedEvents: ["click", "change", "keyup"],
+      swalResponses: [
+        { title: "設為 管理員？", response: { isConfirmed: true } },
+        { title: "封鎖用戶", response: { value: "惡意棄單" } },
+        { title: "解除封鎖？", response: { isConfirmed: true } },
+      ],
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
     await page.locator("#tab-users").click();
 
     const usersTable = page.locator("#users-table");
@@ -426,40 +282,13 @@ test.describe("smoke / dashboard controls", () => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
-
-      const originalAddEventListener = Document.prototype.addEventListener;
-      Document.prototype.addEventListener = function patchedAddEventListener(
-        type: string,
-        listener: EventListenerOrEventListenerObject,
-        options?: boolean | AddEventListenerOptions,
-      ) {
-        if (this === document && (type === "click" || type === "change")) {
-          return;
-        }
-        return originalAddEventListener.call(this, type, listener, options);
-      };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "刪除活動？") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
+    await installDashboardControlsHarness(page, {
+      swalResponses: [
+        { title: "刪除活動？", response: { isConfirmed: true } },
+      ],
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
     await page.locator("#tab-promotions").click();
 
     const rows = page.locator("#promotions-table tr[data-id]");

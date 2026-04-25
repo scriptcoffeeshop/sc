@@ -234,6 +234,7 @@
 - storefront 送單成功後的會員預設值與配送草稿同步已集中到 `persistSubmittedOrderPreferences()`，localStorage 與背景 profile sync 共用同一個 payload builder，避免預設配送/付款欄位雙寫漂移。
 - `tests/e2e/support/smoke-fixtures.ts` 已改成相容 barrel export，實際實作拆到 `smoke-shared.ts`、`smoke-color.ts`、`smoke-global-stubs.ts`、`smoke-main-routes.ts`、`smoke-dashboard-routes.ts`，降低單檔回歸風險。
 - dashboard smoke route support 已再拆分：`smoke-dashboard-routes.ts` 現在只保留 dispatcher，實際 state/defaults 與 access/catalog/orders/members/settings handlers 分散到 `smoke-dashboard-state.ts`、`smoke-dashboard-access-routes.ts`、`smoke-dashboard-catalog-routes.ts`、`smoke-dashboard-orders-routes.ts`、`smoke-dashboard-members-routes.ts`、`smoke-dashboard-settings-routes.ts`。
+- dashboard controls smoke 的 admin login、document event delegation block 與 Swal stub setup 已集中到 `tests/e2e/support/dashboard-smoke.ts`，`dashboard-controls.spec.ts` 不再在每個案例重複手寫同一段瀏覽器 init script。
 - storefront smoke route support 也已跟上：`smoke-main-routes.ts` 改成 dispatcher，default state/init payload/quote payload 抽到 `smoke-main-state.ts`，前後台 smoke support 結構已趨於一致。
 - storefront smoke spec 已拆分：基礎 layout/icon 保留在 `storefront.spec.ts`，配送/付款/門市搜尋移到 `storefront-delivery.spec.ts`，我的訂單與會員控制移到 `storefront-orders.spec.ts`，共用 `gotoStorefront()` / 登入 localStorage setup 則集中在 `tests/e2e/support/storefront-smoke.ts`。
 - storefront checkout smoke 也已拆分：一般送單與轉帳保留在 `storefront-checkout.spec.ts`，LINE Pay / 街口支付 / 我的訂單付款續接移到 `storefront-online-payment.spec.ts`；購物車品項等待與前台 ready 導頁 helper 也集中到 `storefront-smoke.ts`。
