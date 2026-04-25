@@ -282,6 +282,13 @@ async function handleDeliveryIconUpload(deliveryId: string) {
   line-height: 1.55;
 }
 
+.checkout-routing-card__header .btn-primary {
+  min-height: 2.75rem;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  box-shadow: 0 2px 8px -3px rgba(38, 139, 210, 0.5);
+}
+
 .delivery-routing-list {
   display: grid;
   gap: 0.85rem;
@@ -293,9 +300,9 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 
 .delivery-routing-card {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.75rem;
   min-width: 0;
-  border-left: 4px solid #268BD2;
+  border-left: 3px solid #268BD2;
 }
 
 .delivery-routing-card.is-disabled {
@@ -340,7 +347,9 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 }
 
 .delivery-routing-card__name-field input {
-  min-height: 2.65rem;
+  min-height: 2.45rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
   font-weight: 900;
 }
 
@@ -364,8 +373,8 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 
 .delivery-routing-card__body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.95fr);
-  gap: 0.85rem;
+  grid-template-columns: minmax(18rem, 0.95fr) minmax(21rem, 1.05fr);
+  gap: 1.05rem;
   min-width: 0;
 }
 
@@ -391,7 +400,7 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 }
 
 .delivery-field textarea {
-  min-height: 5.75rem;
+  min-height: 4.75rem;
   line-height: 1.55;
   white-space: pre-wrap;
 }
@@ -404,7 +413,12 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 
 .delivery-payment-list {
   display: grid;
-  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.delivery-payment-list__title {
+  grid-column: 1 / -1;
 }
 
 .delivery-payment-row {
@@ -412,11 +426,11 @@ async function handleDeliveryIconUpload(deliveryId: string) {
   grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
   gap: 0.55rem;
-  min-height: 2.6rem;
+  min-height: 2.45rem;
   border: 1px solid #E2DCC8;
   border-radius: 8px;
   background: #FDF6E3;
-  padding: 0.48rem 0.6rem;
+  padding: 0.45rem 0.55rem;
   color: #073642;
   cursor: pointer;
 }
@@ -445,7 +459,7 @@ async function handleDeliveryIconUpload(deliveryId: string) {
   display: flex;
   justify-content: flex-end;
   border-top: 1px solid #EEE8D5;
-  padding-top: 0.75rem;
+  padding-top: 0.65rem;
 }
 
 @media (max-width: 900px) {
@@ -490,6 +504,10 @@ async function handleDeliveryIconUpload(deliveryId: string) {
   }
 
   .delivery-money-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .delivery-payment-list {
     grid-template-columns: 1fr;
   }
 }

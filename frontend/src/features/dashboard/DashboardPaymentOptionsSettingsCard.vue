@@ -18,13 +18,17 @@
         :key="method"
         class="payment-option-card settings-config-card payment-display-card-item"
       >
-        <header class="payment-display-card-item__header">
+        <div class="payment-display-card-item__icon-panel">
           <img
+            :id="`po-${method}-icon-preview`"
             :src="getPaymentPreviewUrl(method)"
             alt=""
             class="payment-display-card-item__icon"
           >
-          <div class="payment-display-card-item__name-field">
+        </div>
+
+        <div class="payment-display-card-item__main">
+          <header class="payment-display-card-item__header">
             <span class="payment-display-card-item__code">{{ method }}</span>
             <input
               v-model.trim="paymentOptions[method].name"
@@ -33,56 +37,50 @@
               class="input-field"
               placeholder="顯示名稱"
             >
-          </div>
-        </header>
+          </header>
 
-        <div class="payment-display-card-item__body">
-          <div class="payment-icon-editor icon-upload-row">
-            <img
-              :id="`po-${method}-icon-preview`"
-              :src="getPaymentPreviewUrl(method)"
-              alt=""
-              class="icon-upload-preview payment-option-icon-preview settings-large-icon-preview"
-            >
-            <div class="icon-upload-controls">
-              <input
-                v-model="paymentOptions[method].icon_url"
-                type="hidden"
-                :id="`po-${method}-icon-url`"
-              >
-              <input
-                type="file"
-                :id="`po-${method}-icon-file`"
-                accept="image/*"
-                :ref="(element) => registerPaymentIconInput(method, element)"
-                class="text-sm icon-upload-file"
-                @change="handlePaymentIconPreview(method, $event)"
-              >
-              <button
-                type="button"
-                @click="handlePaymentIconUpload(method)"
-                class="dashboard-action dashboard-action--primary icon-upload-action"
-              >
-                <UploadCloud class="h-4 w-4" aria-hidden="true" />
-                上傳付款圖示
-              </button>
-              <span
-                :id="`po-${method}-icon-url-display`"
-                class="payment-icon-path"
-              >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
+          <div class="payment-display-card-item__body">
+            <div class="payment-icon-editor icon-upload-row">
+              <div class="icon-upload-controls">
+                <input
+                  v-model="paymentOptions[method].icon_url"
+                  type="hidden"
+                  :id="`po-${method}-icon-url`"
+                >
+                <input
+                  type="file"
+                  :id="`po-${method}-icon-file`"
+                  accept="image/*"
+                  :ref="(element) => registerPaymentIconInput(method, element)"
+                  class="text-sm icon-upload-file"
+                  @change="handlePaymentIconPreview(method, $event)"
+                >
+                <button
+                  type="button"
+                  @click="handlePaymentIconUpload(method)"
+                  class="dashboard-action dashboard-action--primary icon-upload-action"
+                >
+                  <UploadCloud class="h-4 w-4" aria-hidden="true" />
+                  上傳付款圖示
+                </button>
+                <span
+                  :id="`po-${method}-icon-url-display`"
+                  class="payment-icon-path"
+                >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
+              </div>
             </div>
-          </div>
 
-          <label class="payment-display-field">
-            <span>付款說明</span>
-            <textarea
-              v-model.trim="paymentOptions[method].description"
-              :id="`po-${method}-desc`"
-              class="input-field text-sm ui-text-strong"
-              placeholder="顧客會看到的付款說明"
-              rows="3"
-            ></textarea>
-          </label>
+            <label class="payment-display-field">
+              <span>付款說明</span>
+              <textarea
+                v-model.trim="paymentOptions[method].description"
+                :id="`po-${method}-desc`"
+                class="input-field text-sm ui-text-strong"
+                placeholder="顧客會看到的付款說明"
+                rows="3"
+              ></textarea>
+            </label>
+          </div>
         </div>
       </article>
     </div>
@@ -151,8 +149,32 @@ async function handlePaymentIconUpload(method: string) {
 
 .payment-display-card-item {
   display: grid;
-  gap: 0.85rem;
+  grid-template-columns: 4.75rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
   min-width: 0;
+}
+
+.payment-display-card-item__icon-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 4.75rem;
+  border: 1px solid #E2DCC8;
+  border-radius: 8px;
+  background: #FFFFFF;
+}
+
+.payment-display-card-item__icon {
+  width: 3.8rem;
+  height: 3.8rem;
+  object-fit: contain;
+}
+
+.payment-display-card-item__main {
+  display: grid;
+  min-width: 0;
+  gap: 0.75rem;
 }
 
 .payment-display-card-item__header {
@@ -160,18 +182,13 @@ async function handlePaymentIconUpload(method: string) {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.75rem;
-}
-
-.payment-display-card-item__icon {
-  width: 3.1rem;
-  height: 3.1rem;
-  object-fit: contain;
-}
-
-.payment-display-card-item__name-field {
-  display: grid;
   min-width: 0;
-  gap: 0.35rem;
+}
+
+.payment-display-card-item__header .input-field {
+  min-height: 2.45rem;
+  font-size: 0.95rem;
+  font-weight: 800;
 }
 
 .payment-display-card-item__code {
@@ -191,14 +208,14 @@ async function handlePaymentIconUpload(method: string) {
 
 .payment-display-card-item__body {
   display: grid;
-  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  grid-template-columns: minmax(13rem, 0.72fr) minmax(17rem, 1.28fr);
   gap: 0.85rem;
   align-items: start;
   min-width: 0;
 }
 
 .payment-icon-editor {
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .payment-icon-path {
@@ -230,6 +247,12 @@ async function handlePaymentIconUpload(method: string) {
   white-space: pre-wrap;
 }
 
+@media (max-width: 1180px) {
+  .payment-display-card-item__body {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 900px) {
   .payment-display-list {
     grid-template-columns: 1fr;
@@ -237,8 +260,18 @@ async function handlePaymentIconUpload(method: string) {
 }
 
 @media (max-width: 639px) {
-  .payment-display-card-item__body,
-  .payment-icon-editor {
+  .payment-display-card-item {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-display-card-item__icon-panel {
+    justify-content: flex-start;
+    min-height: auto;
+    border: 0;
+    background: transparent;
+  }
+
+  .payment-display-card-item__header {
     grid-template-columns: 1fr;
   }
 }
