@@ -75,16 +75,12 @@ interface DashboardSettingsStateSnapshot {
   linePaySandbox: boolean;
 }
 
-function asRecord(value: unknown): DashboardSettingsRecord {
-  return asJsonRecord(value);
-}
-
 function parseSettingsRecord(value: unknown): DashboardSettingsRecord {
   return parseLooseJsonRecord(value);
 }
 
 function parseSettingsRecordArray(value: unknown): DashboardSettingsRecord[] {
-  return parseLooseJsonArray(value).map(asRecord);
+  return parseLooseJsonArray(value).map(asJsonRecord);
 }
 
 function buildLegacyRoutingConfig(
@@ -194,7 +190,7 @@ export function buildPaymentOptionsView(
     (result, method) => {
       result[method] = deps.normalizePaymentOption(
         method,
-        asRecord(rawPaymentOptions[method]),
+        asJsonRecord(rawPaymentOptions[method]),
       );
       return result;
     },

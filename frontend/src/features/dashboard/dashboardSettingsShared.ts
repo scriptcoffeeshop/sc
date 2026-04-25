@@ -1,3 +1,4 @@
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDefaultIconUrl, normalizeIconPath } from "../../lib/icons.ts";
 
 type SettingsRecord = Record<string, unknown>;
@@ -25,12 +26,6 @@ export interface DashboardPaymentOption extends SettingsRecord {
   icon_url: string;
   name: string;
   description: string;
-}
-
-function asRecord(value: unknown): SettingsRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as SettingsRecord
-    : {};
 }
 
 function omitLegacyIconFields(value: SettingsRecord): SettingsRecord {
@@ -112,7 +107,7 @@ export function normalizeDeliveryOption(
     description: "設定敘述",
     enabled: true,
   };
-  const payment = asRecord(item.payment);
+  const payment = asJsonRecord(item.payment);
 
   const hasJkoPayInConfig = Object.prototype.hasOwnProperty.call(
     payment,

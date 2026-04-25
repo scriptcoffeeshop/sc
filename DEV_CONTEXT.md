@@ -113,7 +113,7 @@
 - frontend error message 正規化核心已集中到 `frontend/src/lib/errorMessage.ts`；dashboard/storefront 保留各自 wrapper，但不再複製 `Error` / fallback 判斷。
 - frontend 日期時間顯示核心已集中到 `frontend/src/lib/dateTime.ts`；dashboard 訂單與 storefront 付款顯示保留原出口名稱但共用同一份 invalid/blank fallback。
 - 原則：新功能以 Vue-first 為主；剩餘相容層只接受 hotfix、部署修正或移除型重構。
-- 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
+- 2026-04-23 補上 `frontend/src/lib/swal.ts`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
 - `tw-city-selector` 已不再進入 storefront runtime；全台宅配縣市/區域改由 Vue 狀態與 `frontend/src/lib/taiwanCityData.ts` 直接提供，`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
 
 ### 後端演進
