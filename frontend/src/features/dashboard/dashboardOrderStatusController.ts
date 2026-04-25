@@ -1,4 +1,5 @@
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+import { openDashboardOrderStatusChangeConfirmDialog } from "./dashboardOrderConfirmDialogs.ts";
 import { openDashboardOrderReasonDialog } from "./dashboardOrderReasonDialog.ts";
 import { openDashboardShippingInfoDialog } from "./dashboardShippingInfoDialog.ts";
 import type {
@@ -82,20 +83,11 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
         }
         cancelReason = String(cancelInfo?.cancelReason || "").trim();
       } else {
-        const confirmation = await deps.Swal.fire({
-          title: "確認變更訂單狀態",
-          html: `訂單 <b>#${deps.esc(orderId)}</b><br>
-          <span class="ui-text-muted">${
-            deps.esc(deps.orderStatusLabel[currentStatus] || currentStatus)
-          }</span>
-          → <span class="ui-text-warning font-bold">${
-            deps.esc(newStatusLabel)
-          }</span>`,
-          icon: "question",
-          showCancelButton: true,
-          confirmButtonText: "確認變更",
-          cancelButtonText: "取消",
-          confirmButtonColor: "#268BD2",
+        const confirmation = await openDashboardOrderStatusChangeConfirmDialog({
+          Swal: deps.Swal,
+          orderId,
+          currentStatusLabel: deps.orderStatusLabel[currentStatus] || currentStatus,
+          newStatusLabel,
         });
         if (!confirmation.isConfirmed) {
           deps.loadOrders();

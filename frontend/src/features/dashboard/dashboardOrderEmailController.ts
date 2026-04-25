@@ -1,5 +1,6 @@
 import type { DashboardOrderNotificationDeps } from "./dashboardOrderNotificationTypes";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+import { openDashboardOrderEmailConfirmDialog } from "./dashboardOrderConfirmDialogs.ts";
 
 export function createOrderEmailController(
   deps: DashboardOrderNotificationDeps,
@@ -34,17 +35,12 @@ export function createOrderEmailController(
       ? "取消通知"
       : "成立確認信";
 
-    const confirm = await deps.Swal.fire({
-      title: "確認發送信件",
-      html: `訂單 <b>#${deps.esc(orderId)}</b><br>
-      將寄送「<b>${deps.esc(emailTypeLabel)}</b>」到<br>
-      <span class="ui-text-highlight">${deps.esc(targetEmail)}</span><br>
-      <span class="text-xs ui-text-subtle">（目前狀態：${deps.esc(statusLabel)}）</span>`,
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "發送信件",
-      cancelButtonText: "取消",
-      confirmButtonColor: "#268BD2",
+    const confirm = await openDashboardOrderEmailConfirmDialog({
+      Swal: deps.Swal,
+      orderId,
+      emailTypeLabel,
+      targetEmail,
+      statusLabel,
     });
     if (!confirm.isConfirmed) return;
 
