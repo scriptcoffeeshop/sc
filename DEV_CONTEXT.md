@@ -85,6 +85,7 @@
 - 後端門市地圖 `api/stores.ts` 已共用門市 session 建立、clientUrl allowlist 驗證、callback 欄位取值與成功頁 HTML；綠界/PCSC callback 不再各自複製導回頁。
 - 後端門市地圖 callback 再收斂：綠界與 PCSC 共用門市選擇 DB update helper 與錯誤頁 HTML builder，只保留各自 token / 欄位 mapping。
 - storefront 超商地圖外部 POST form 已集中到 `storefrontExternalPostForm.ts`；7-11 / 全家仍維持 POST 表單開圖，但 `storefrontDeliveryActions.ts` 不再手寫 DOM 建表單。
+- storefront runtime snapshot 已停止讀取舊版 `window.appSettings/currentDeliveryConfig` fallback；前台 UI 狀態只從 runtime setters 與 Vue-owned state 取得。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 送單配送資訊已改讀 Vue 狀態（新竹配送、全台宅配、已選超商門市）；不再透過隱藏 input 讀配送資料。原 `storefrontDeliveryDom.ts` 已拆成純資料 helper `storefrontDeliveryData.ts` 與 SweetAlert 會員資料彈窗邊界 `storefrontModalFormControls.ts`。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。

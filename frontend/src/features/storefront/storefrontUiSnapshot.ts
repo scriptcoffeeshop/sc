@@ -62,14 +62,6 @@ function cloneArrayItems<T extends Record<string, unknown>>(items: unknown): T[]
   );
 }
 
-function readWindowValue<T>(key: string, fallback: T): T {
-  const runtimeWindow = globalThis.window as unknown as
-    | (Window & Record<string, unknown>)
-    | undefined;
-  const value = runtimeWindow?.[key] ?? (globalThis as Record<string, unknown>)[key];
-  return (value ?? fallback) as T;
-}
-
 function getRuntimeSettings(): DashboardSettingsRecord {
   const runtimeSettings = storefrontRuntime.appSettings;
   if (
@@ -78,9 +70,7 @@ function getRuntimeSettings(): DashboardSettingsRecord {
   ) {
     return { ...(runtimeSettings as DashboardSettingsRecord) };
   }
-  return {
-    ...readWindowValue<DashboardSettingsRecord>("appSettings", {}),
-  };
+  return {};
 }
 
 function getRuntimeDeliveryConfig(): StorefrontDeliveryOption[] {
@@ -92,9 +82,7 @@ function getRuntimeDeliveryConfig(): StorefrontDeliveryOption[] {
       storefrontRuntime.currentDeliveryConfig,
     );
   }
-  return cloneArrayItems<StorefrontDeliveryOption>(
-    readWindowValue("currentDeliveryConfig", []),
-  );
+  return [];
 }
 
 export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {

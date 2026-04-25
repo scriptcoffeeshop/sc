@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { state } from "../../lib/appState.ts";
 import {
   setStorefrontAppSettings,
@@ -18,6 +18,11 @@ describe("getStorefrontUiSnapshot", () => {
     state.selectedBankAccountId = "";
     setStorefrontAppSettings(null);
     setStorefrontDeliveryConfig([]);
+  });
+
+  afterEach(() => {
+    delete globalThis.appSettings;
+    delete globalThis.currentDeliveryConfig;
   });
 
   it("reads delivery labels from storefront runtime settings/config", () => {
@@ -40,5 +45,15 @@ describe("getStorefrontUiSnapshot", () => {
       JSON.stringify(deliveryOptions),
     );
     expect(snapshot.deliveryConfig).toEqual(deliveryOptions);
+  });
+
+  it("ignores legacy global settings and reads only runtime state", () => {
+    globalThis.appSettings = { site_title: "legacy title" };
+    globalThis.currentDeliveryConfig = [{ id: "legacy_delivery" }];
+
+    const snapshot = getStorefrontUiSnapshot();
+
+    expect(snapshot.settings).toEqual({});
+    expect(snapshot.deliveryConfig).toEqual([]);
   });
 });

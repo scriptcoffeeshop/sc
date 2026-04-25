@@ -199,8 +199,3 @@ export function calcCartSummary() {
     state.selectedDelivery || "",
   );
 }
-
-/** 相容舊版 calcTotal */
-export function calcTotal() {
-  return calcCartSummary().finalTotal;
-}
