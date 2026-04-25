@@ -560,13 +560,25 @@
 .dashboard-enterprise #dashboard-login-logo {
   width: 56px;
   height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  display: block;
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
   object-fit: contain;
+  contain: layout paint;
 }
 
 .dashboard-enterprise #dashboard-header-logo {
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  display: block;
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
   object-fit: contain;
+  contain: layout paint;
 }
 
 .dashboard-enterprise #login-page h1 {

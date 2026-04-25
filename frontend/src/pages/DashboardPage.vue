@@ -9,6 +9,10 @@
       :src="brandIconUrl"
       alt="品牌圖示"
       class="w-14 h-14 mx-auto mb-4"
+      width="56"
+      height="56"
+      decoding="async"
+      fetchpriority="high"
     >
     <h1 class="text-2xl font-bold mb-2 text-slate-800">
       後台登入
@@ -32,7 +36,16 @@
   <div id="admin-page" v-show="isAuthenticated" class="max-w-6xl mx-auto">
     <div class="flex justify-between items-center mb-6">
       <div class="flex items-center gap-3">
-        <img id="dashboard-header-logo" :src="brandIconUrl" alt="品牌圖示" class="w-9 h-9">
+        <img
+          id="dashboard-header-logo"
+          :src="brandIconUrl"
+          alt="品牌圖示"
+          class="w-9 h-9"
+          width="36"
+          height="36"
+          decoding="async"
+          fetchpriority="high"
+        >
         <div>
           <h1 class="text-xl font-bold ui-text-highlight">
             咖啡訂購後台
@@ -94,14 +107,21 @@ import DashboardPromotionsSection from "../features/dashboard/DashboardPromotion
 import DashboardSettingsSection from "../features/dashboard/DashboardSettingsSection.vue";
 import DashboardTabs from "../features/dashboard/DashboardTabs.vue";
 import DashboardUsersSection from "../features/dashboard/DashboardUsersSection.vue";
-import { dashboardShellActions } from "../features/dashboard/bootstrapDashboard.ts";
+import {
+  DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
+  dashboardShellActions,
+} from "../features/dashboard/bootstrapDashboard.ts";
+import { readDashboardPublicBrandingCache } from "../features/dashboard/dashboardBranding.ts";
 import { ICON_CATALOG, getDefaultIconUrl } from "../lib/icons.ts";
 import {
   dashboardSessionActions,
   useDashboardSession,
 } from "../features/dashboard/useDashboardSession.ts";
 
-const brandIconUrl = getDefaultIconUrl("brand");
+const cachedDashboardBranding = readDashboardPublicBrandingCache(
+  DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
+);
+const brandIconUrl = cachedDashboardBranding.logoUrl || getDefaultIconUrl("brand");
 const originalBodyClass = document.body.className;
 const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
 const { isAuthenticated, adminDisplayName } = useDashboardSession();
@@ -157,6 +177,7 @@ function buildDashboardBodyClass() {
 
 onMounted(async () => {
   document.body.className = buildDashboardBodyClass();
+  dashboardShellActions.applyCachedPublicBranding();
   await Promise.all([
     dashboardShellActions.loadPublicBranding(),
     dashboardSessionActions.bootstrapFromWindow(),

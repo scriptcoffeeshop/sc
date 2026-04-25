@@ -28,6 +28,7 @@ describe("applyStorefrontBrandingSideEffects", () => {
   it("updates document title, favicon, and public branding cache", () => {
     const branding = normalizeStorefrontBranding({
       site_title: "新的品牌名稱",
+      site_subtitle: "咖啡豆 | 耳掛",
       site_icon_url: "/icons/custom-brand.png",
     });
 
@@ -43,6 +44,7 @@ describe("applyStorefrontBrandingSideEffects", () => {
       localStorage.getItem(STOREFRONT_PUBLIC_BRANDING_CACHE_KEY) || "{}",
     )).toEqual({
       site_title: "新的品牌名稱",
+      site_subtitle: "咖啡豆｜耳掛",
       resolved_logo_url: "/icons/custom-brand.png",
     });
   });

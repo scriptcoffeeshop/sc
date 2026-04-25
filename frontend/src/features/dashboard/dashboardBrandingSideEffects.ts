@@ -20,6 +20,30 @@ function cacheDashboardPublicBranding(view: DashboardBrandingSideEffectView): vo
   }
 }
 
+function resolveImageHref(url: string): string {
+  if (typeof document === "undefined") return url;
+  try {
+    return new URL(url, document.baseURI).href;
+  } catch (_error) {
+    return url;
+  }
+}
+
+function setImageSourceIfChanged(
+  logoEl: HTMLImageElement,
+  logoUrl: string,
+): void {
+  const nextHref = resolveImageHref(logoUrl);
+  if (
+    logoEl.getAttribute("src") === logoUrl ||
+    logoEl.src === nextHref ||
+    logoEl.currentSrc === nextHref
+  ) {
+    return;
+  }
+  logoEl.src = logoUrl;
+}
+
 export function applyDashboardBrandingSideEffects(
   view: DashboardBrandingSideEffectView,
 ): void {
@@ -32,7 +56,7 @@ export function applyDashboardBrandingSideEffects(
     logoIds.forEach((id) => {
       const logoEl = document.getElementById(id);
       if (!(logoEl instanceof HTMLImageElement) || !view.logoUrl) return;
-      logoEl.src = view.logoUrl;
+      setImageSourceIfChanged(logoEl, view.logoUrl);
     });
 
     const faviconEl = document.getElementById("dynamic-favicon");

@@ -1,7 +1,11 @@
 import { ref } from "vue";
 import { getIconUrlFromConfig } from "../../lib/icons.ts";
+import { readPublicBrandingCache } from "../../lib/publicBrandingCache.ts";
 import type { DashboardSettingsRecord } from "../../types/settings";
-import { applyStorefrontBrandingSideEffects } from "./storefrontBrandingSideEffects.ts";
+import {
+  applyStorefrontBrandingSideEffects,
+  STOREFRONT_PUBLIC_BRANDING_CACHE_KEY,
+} from "./storefrontBrandingSideEffects.ts";
 import type { StorefrontUiSnapshot } from "./storefrontUiSnapshot";
 
 interface StorefrontBrandingDeps {
@@ -99,9 +103,20 @@ export function normalizeStorefrontBranding(
   };
 }
 
+function getCachedStorefrontBrandingSettings(): DashboardSettingsRecord {
+  const cachedBranding = readPublicBrandingCache(
+    STOREFRONT_PUBLIC_BRANDING_CACHE_KEY,
+  );
+  return {
+    site_title: cachedBranding.siteTitle,
+    site_subtitle: cachedBranding.siteSubtitle,
+    site_icon_url: cachedBranding.resolvedLogoUrl,
+  };
+}
+
 export function useStorefrontBranding(deps: StorefrontBrandingDeps = {}) {
   const branding = ref<StorefrontBrandingView>(
-    normalizeStorefrontBranding({}),
+    normalizeStorefrontBranding(getCachedStorefrontBrandingSettings()),
   );
 
   function syncBrandingState(snapshot: Partial<StorefrontUiSnapshot> = {}) {

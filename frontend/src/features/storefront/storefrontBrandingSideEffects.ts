@@ -27,6 +27,7 @@ export function applyStorefrontBrandingSideEffects(
       STOREFRONT_PUBLIC_BRANDING_CACHE_KEY,
       JSON.stringify({
         site_title: view.siteTitle,
+        site_subtitle: view.siteSubtitle,
         resolved_logo_url: view.brandIconUrl,
       }),
     );

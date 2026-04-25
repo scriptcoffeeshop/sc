@@ -1,4 +1,5 @@
 import { applyDashboardBrandingSideEffects } from "./dashboardBrandingSideEffects.ts";
+import { readPublicBrandingCache } from "../../lib/publicBrandingCache.ts";
 
 export function parseBooleanSetting(
   value: unknown,
@@ -23,6 +24,14 @@ interface DashboardSettings {
   [key: string]: unknown;
 }
 
+export function readDashboardPublicBrandingCache(cacheKey: string) {
+  const cachedBranding = readPublicBrandingCache(cacheKey);
+  return {
+    siteTitle: cachedBranding.siteTitle,
+    logoUrl: cachedBranding.resolvedLogoUrl,
+  };
+}
+
 export function createDashboardBrandingController(
   deps: DashboardBrandingDeps,
 ) {
@@ -38,6 +47,20 @@ export function createDashboardBrandingController(
         ? `管理後台 | ${siteTitle}`
         : "管理後台 | Script Coffee",
       logoUrl: resolvedLogoUrl,
+      siteTitle,
+    });
+  }
+
+  function applyCachedDashboardBranding(): void {
+    const cachedBranding = readDashboardPublicBrandingCache(deps.cacheKey);
+    if (!cachedBranding.siteTitle && !cachedBranding.logoUrl) return;
+    const siteTitle = cachedBranding.siteTitle.trim();
+    applyDashboardBrandingSideEffects({
+      cacheKey: deps.cacheKey,
+      documentTitle: siteTitle
+        ? `管理後台 | ${siteTitle}`
+        : "管理後台 | Script Coffee",
+      logoUrl: cachedBranding.logoUrl || deps.getDefaultIconUrl("brand"),
       siteTitle,
     });
   }
@@ -59,6 +82,7 @@ export function createDashboardBrandingController(
 
   return {
     applyDashboardBranding,
+    applyCachedDashboardBranding,
     loadPublicDashboardBranding,
   };
 }

@@ -20,7 +20,15 @@
   <div class="max-w-3xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
       <span id="site-icon">
-        <img :src="branding.brandIconUrl" alt="品牌圖示" class="ui-icon-img">
+        <img
+          :src="branding.brandIconUrl"
+          alt="品牌圖示"
+          class="ui-icon-img"
+          width="48"
+          height="48"
+          decoding="async"
+          fetchpriority="high"
+        >
       </span>
       <div>
         <h1

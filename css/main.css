@@ -18,6 +18,9 @@
 #site-icon {
   width: 2.95rem;
   height: 2.95rem;
+  min-width: 2.95rem;
+  flex: 0 0 2.95rem;
+  aspect-ratio: 1 / 1;
   padding: 0;
   border-radius: 0;
   border: 0;
@@ -25,6 +28,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  contain: layout paint;
+}
+
+#site-icon .ui-icon-img {
+  aspect-ratio: 1 / 1;
+  flex: 0 0 auto;
 }
 
 #announcement-text {

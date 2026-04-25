@@ -99,7 +99,7 @@ let dashboardTabLoaders: DashboardTabLoaderMap = {};
 let loadInitialDashboardData: () => Promise<void> = async () => {};
 
 const LINEPAY_SANDBOX_CACHE_KEY = "coffee_linepay_sandbox";
-const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
+export const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
 const dashboardTabs = [
   "orders",
   "products",
@@ -345,5 +345,6 @@ loadInitialDashboardData = async () => {
 };
 
 export const dashboardShellActions = {
+  applyCachedPublicBranding: () => brandingController.applyCachedDashboardBranding(),
   loadPublicBranding: () => brandingController.loadPublicDashboardBranding(),
 };
