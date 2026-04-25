@@ -8,10 +8,10 @@ import type {
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
-type DashboardCategoryRecord = Record<string, unknown> & {
+interface DashboardCategoryRecord extends Record<string, unknown> {
   id: number | string;
   name: string;
-};
+}
 
 type CategorySortableEvent = {
   oldIndex?: number;

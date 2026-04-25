@@ -5,7 +5,7 @@ export type PromotionTargetItem = {
   specKey: string;
 };
 
-export type DashboardPromotionRecord = Record<string, unknown> & {
+export interface DashboardPromotionRecord extends Record<string, unknown> {
   id?: number | string;
   name?: string;
   type?: string;
@@ -17,15 +17,15 @@ export type DashboardPromotionRecord = Record<string, unknown> & {
   enabled?: boolean;
   startTime?: string | null;
   endTime?: string | null;
-};
+}
 
-export type DashboardProductRecord = Record<string, unknown> & {
+export interface DashboardProductRecord extends Record<string, unknown> {
   id?: number | string;
   category?: string;
   name?: string;
   price?: number | string;
   specs?: string;
-};
+}
 
 export type DashboardProductSpec = {
   key?: string;

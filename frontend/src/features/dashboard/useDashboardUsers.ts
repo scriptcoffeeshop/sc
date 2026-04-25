@@ -15,7 +15,7 @@ type DashboardCurrentUser = {
   role?: DashboardUserRole;
 };
 
-type DashboardUserRecord = Record<string, unknown> & {
+interface DashboardUserRecord extends Record<string, unknown> {
   userId: string;
   displayName: string;
   role?: DashboardUserRole;
@@ -30,14 +30,14 @@ type DashboardUserRecord = Record<string, unknown> & {
   defaultStoreName?: string;
   defaultStoreId?: string;
   lastLogin?: string;
-};
+}
 
-type DashboardBlacklistRecord = Record<string, unknown> & {
+interface DashboardBlacklistRecord extends Record<string, unknown> {
   displayName: string;
   lineUserId: string;
   blockedAt?: string;
   reason?: string;
-};
+}
 
 type DashboardUsersServices = {
   API_URL: string;
