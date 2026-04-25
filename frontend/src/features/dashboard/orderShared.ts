@@ -1,4 +1,5 @@
 import type { ReceiptInfo } from "../../types";
+import { formatDateTimeText } from "../../lib/dateTime.ts";
 export { normalizeTrackingUrl } from "../../lib/trackingUrls.ts";
 
 export const orderStatusLabel: Record<string, string> = {
@@ -56,9 +57,5 @@ export function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
 }
 
 export function formatOrderDateTimeText(value: unknown): string {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleString("zh-TW");
+  return formatDateTimeText(value);
 }

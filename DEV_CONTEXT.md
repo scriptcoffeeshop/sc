@@ -111,6 +111,7 @@
 - storefront 送單配送資訊已改讀 Vue 狀態（新竹配送、全台宅配、已選超商門市）；不再透過隱藏 input 讀配送資料。原 `storefrontDeliveryDom.ts` 已拆成純資料 helper `storefrontDeliveryData.ts` 與 SweetAlert 會員資料彈窗邊界 `storefrontModalFormControls.ts`。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。
 - frontend error message 正規化核心已集中到 `frontend/src/lib/errorMessage.ts`；dashboard/storefront 保留各自 wrapper，但不再複製 `Error` / fallback 判斷。
+- frontend 日期時間顯示核心已集中到 `frontend/src/lib/dateTime.ts`；dashboard 訂單與 storefront 付款顯示保留原出口名稱但共用同一份 invalid/blank fallback。
 - 原則：新功能以 Vue-first 為主；剩餘相容層只接受 hotfix、部署修正或移除型重構。
 - 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
 - `tw-city-selector` 已由 CDN 改為 npm bundle（`frontend/src/lib/twCitySelector.js` + `frontend/src/features/storefront/storefrontDeliveryActions.ts`），`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。

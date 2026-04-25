@@ -1,4 +1,5 @@
 import { createApp, type App } from "vue";
+import { formatDateTimeText } from "../../lib/dateTime.ts";
 import type {
   CustomerPaymentDisplay,
   PaymentActionGuide,
@@ -19,6 +20,7 @@ import StorefrontPaymentDialogSummary, {
 } from "./StorefrontPaymentDialogSummary.vue";
 
 export { PAYMENT_METHOD_TEXT, PAYMENT_STATUS_TEXT };
+export { formatDateTimeText };
 
 export interface PaymentDialogOptions extends Record<string, unknown> {
   icon: "success" | "error" | "warning" | "info";
@@ -43,14 +45,6 @@ interface PaymentDialogShellOptions {
   cancelButtonText?: string;
   cancelButtonColor?: string;
   paymentLaunchUrl?: string;
-}
-
-export function formatDateTimeText(value: unknown): string {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleString("zh-TW");
 }
 
 function normalizePaymentLaunchUrl(url: unknown): string {
