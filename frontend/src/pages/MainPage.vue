@@ -466,7 +466,7 @@ const {
   startMainLogin,
   logoutCurrentUser,
   showProfileModal,
-  showMyOrders: openOrderHistory,
+  openOrderHistory,
   closeOrderHistory,
 });
 

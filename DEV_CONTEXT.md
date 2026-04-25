@@ -182,10 +182,10 @@
 - 若 GitHub repo 尚未設定 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD`，Supabase deploy job 會跳過 setup / db push / function deploy，並在 Actions summary 寫出「Supabase deployment skipped」；後端 function 變更仍需確認 deploy step 真的有跑，或用本機已登入的 Supabase CLI 手動 `rtk npm run supabase:deploy`。
 - 街口正式環境要求的來源 IP 白名單不在 repo 內管理；若使用 Cloudflare、主機防火牆或其他 WAF，需在外部平台另行設定。
 
-### 遷移未完成區
+### 遷移觀察區
 
-- 專案仍處於 Vue-first 收斂期；根目錄 HTML 是本機 compat redirect，部分 storefront DOM fallback helper 尚待逐步移除。
-- 若修改前後台互動，先確認是否碰到 `data-vue-managed` 容器或 remaining DOM fallback helper，避免雙寫回潮。
+- 專案已進入 Vue-first 維護期；根目錄 HTML 是本機 compat redirect，正式互動應維持在 Vue 元件事件、composable state 與明確副作用邊界。
+- 若修改前後台互動，優先確認 guardrails 與 smoke tests 是否仍阻擋 `innerHTML` renderer、`data-action` 事件代理、document-level delegation 與舊全域 API 回潮。
 
 ---
 
@@ -218,7 +218,7 @@
 - storefront 收據欄位展開/收合已改由 Vue 管理：`useStorefrontReceiptRequest.ts` 接收預設資料事件，`storefrontOrderReceiptPrefs.ts` 不再操作 `receipt-fields` class，也改用 runtime 付款可用性判斷預設付款方式。
 - storefront 初始化載入失敗畫面已改由 Vue 商品區塊顯示：`storefrontMainAppPayments.ts` 改發 `coffee:storefront-load-error-updated`，`StorefrontProductGrid.vue` 負責錯誤訊息與重試按鈕。
 - storefront 送單核心表單狀態已抽離：`storefrontOrderFormState.ts` 管理政策同意、訂單備註與匯款末五碼，`storefrontOrderSubmit.ts` 不再讀取 `policy-agree`、`order-note`、`transfer-last5` DOM。
-- storefront shell 關閉我的訂單已完全走 Vue 狀態：`useStorefrontShell.ts` 移除 `my-orders-modal` DOM fallback，固定委派 `closeOrderHistory`。
+- storefront shell 我的訂單已完全走 Vue 狀態：`useStorefrontShell.ts` 使用 `openOrderHistory` / `closeOrderHistory` 明確委派，不再保留 `showMyOrders` 舊命名或 modal DOM fallback。
 - storefront 動態欄位值已改由 Vue 狀態收集：`StorefrontDynamicFields.vue` emit 欄位值、`storefrontDynamicFieldValues.ts` 保存可提交狀態，送單驗證集中到 `storefrontDynamicFieldSubmission.ts`。
 - storefront 新竹配送地址已改由 Vue 狀態管理：`storefrontDeliveryFormState.ts` 保存縣市/區域/詳細地址，`StorefrontDeliverySection.vue` 依狀態產生區域選項，送單不再讀取 `delivery-city`/`delivery-district` DOM。
 - storefront 全台宅配地址已改由 Vue 狀態管理：使用既有 `taiwanCityData` 產生縣市/區域/郵遞區號，移除前台 `tw-city-selector` 初始化與 `.county/.district/.zipcode` DOM 查詢。

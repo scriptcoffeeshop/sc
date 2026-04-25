@@ -10,7 +10,7 @@ describe("useStorefrontShell", () => {
       startMainLogin: vi.fn(),
       logoutCurrentUser: vi.fn(),
       showProfileModal: vi.fn(() => profilePromise),
-      showMyOrders: vi.fn(),
+      openOrderHistory: vi.fn(),
       closeOrderHistory,
     };
 
@@ -28,6 +28,6 @@ describe("useStorefrontShell", () => {
     expect(deps.logoutCurrentUser).toHaveBeenCalledTimes(1);
     expect(deps.showProfileModal).toHaveBeenCalledTimes(1);
     expect(showProfileResult).toBe(profilePromise);
-    expect(deps.showMyOrders).toHaveBeenCalledTimes(1);
+    expect(deps.openOrderHistory).toHaveBeenCalledTimes(1);
   });
 });

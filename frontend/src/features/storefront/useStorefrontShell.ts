@@ -3,7 +3,7 @@ interface StorefrontShellDeps {
   startMainLogin?: () => Promise<unknown> | unknown;
   logoutCurrentUser?: () => void;
   showProfileModal?: () => Promise<unknown> | unknown;
-  showMyOrders?: () => Promise<unknown> | unknown;
+  openOrderHistory?: () => Promise<unknown> | unknown;
   closeOrderHistory?: () => void;
 }
 
@@ -25,7 +25,7 @@ export function useStorefrontShell(deps: StorefrontShellDeps = {}) {
   }
 
   function handleShowMyOrders() {
-    return deps.showMyOrders?.();
+    return deps.openOrderHistory?.();
   }
 
   function handleCloseOrdersModal() {
