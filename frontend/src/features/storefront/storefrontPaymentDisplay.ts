@@ -1,4 +1,4 @@
-import { escapeHtml } from "../../lib/sharedUtils.ts";
+import { createApp, type App } from "vue";
 import type {
   CustomerPaymentDisplay,
   PaymentActionGuide,
@@ -6,6 +6,11 @@ import type {
   PaymentDisplayOptions,
   PaymentMethod,
 } from "../../types";
+import StorefrontPaymentDialogSummary, {
+  type StorefrontPaymentDialogBankAccount,
+  type StorefrontPaymentDialogRow,
+  type StorefrontPaymentDialogSummaryView,
+} from "./StorefrontPaymentDialogSummary.vue";
 
 export const PAYMENT_METHOD_TEXT: Record<string, string> = {
   cod: "貨到付款",
@@ -131,7 +136,20 @@ const PAYMENT_ACTION_GUIDES: Record<string, PaymentGuideByStatus> = {
 export interface PaymentDialogOptions extends Record<string, unknown> {
   icon: "success" | "error" | "warning" | "info";
   title: string;
-  html: string;
+  html: HTMLElement;
+  confirmButtonColor: string;
+  confirmButtonText: string;
+  showCancelButton?: boolean;
+  cancelButtonText?: string;
+  cancelButtonColor?: string;
+  paymentLaunchUrl?: string;
+  didOpen?: (popup: unknown) => void;
+  willClose?: () => void;
+}
+
+interface PaymentDialogShellOptions {
+  icon: PaymentDialogOptions["icon"];
+  title: string;
   confirmButtonColor: string;
   confirmButtonText: string;
   showCancelButton?: boolean;
@@ -303,38 +321,69 @@ export function getCustomerPaymentDisplay(
   };
 }
 
+function createPaymentDialogOptions(
+  options: PaymentDialogShellOptions,
+  summary: StorefrontPaymentDialogSummaryView,
+): PaymentDialogOptions {
+  const root = document.createElement("div");
+  let paymentDialogApp: App<Element> | null = null;
+
+  const dialogOptions: PaymentDialogOptions = {
+    ...options,
+    html: root,
+    didOpen: (popup: unknown) => {
+      if (
+        !root.isConnected &&
+        popup &&
+        typeof (popup as { appendChild?: unknown }).appendChild === "function"
+      ) {
+        (popup as { appendChild: (node: Node) => void }).appendChild(root);
+      }
+      paymentDialogApp = createApp(StorefrontPaymentDialogSummary, {
+        summary,
+      });
+      paymentDialogApp.mount(root);
+    },
+    willClose: () => {
+      paymentDialogApp?.unmount();
+      paymentDialogApp = null;
+    },
+  };
+  return dialogOptions;
+}
+
+function createPaymentRow(
+  label: string,
+  value: unknown,
+  options: { strong?: boolean; tone?: StorefrontPaymentDialogRow["tone"] } = {},
+): StorefrontPaymentDialogRow {
+  return {
+    label,
+    value: String(value || ""),
+    ...options,
+  };
+}
+
 export function buildPaymentStatusDialogOptions(
   params: PaymentDisplayInput = {},
 ): PaymentDialogOptions {
   const display = getCustomerPaymentDisplay(params);
-  const orderId = escapeHtml(String(params?.orderId || ""));
-  const detailLines = [
-    `<p style="margin:0 0 8px 0;"><strong>訂單編號：</strong>${orderId || "未提供"}</p>`,
-    `<p style="margin:0 0 8px 0;"><strong>付款方式：</strong>${escapeHtml(display.methodLabel)}</p>`,
+  const rows = [
+    createPaymentRow("訂單編號", String(params?.orderId || "") || "未提供"),
+    createPaymentRow("付款方式", display.methodLabel),
   ];
   if (display.statusLabel) {
-    detailLines.push(
-      `<p style="margin:0 0 8px 0;"><strong>付款狀態：</strong>${escapeHtml(display.statusLabel)}</p>`,
-    );
+    rows.push(createPaymentRow("付款狀態", display.statusLabel));
   }
   if (display.showPaymentDeadline) {
-    detailLines.push(
-      `<p style="margin:0 0 8px 0;"><strong>付款期限：</strong>${escapeHtml(display.paymentExpiresAtText)}</p>`,
-    );
+    rows.push(createPaymentRow("付款期限", display.paymentExpiresAtText));
   }
   if (display.paymentConfirmedAtText) {
-    detailLines.push(
-      `<p style="margin:0 0 8px 0;"><strong>付款完成：</strong>${escapeHtml(display.paymentConfirmedAtText)}</p>`,
-    );
+    rows.push(createPaymentRow("付款完成", display.paymentConfirmedAtText));
   }
   if (display.paymentLastCheckedAtText) {
-    detailLines.push(
-      `<p style="margin:0 0 8px 0;"><strong>最近同步：</strong>${escapeHtml(display.paymentLastCheckedAtText)}</p>`,
-    );
+    rows.push(createPaymentRow("最近同步", display.paymentLastCheckedAtText));
   }
-  detailLines.push(
-    `<p style="margin:12px 0 0 0; color:#475569;">${escapeHtml(display.guideDescription)}</p>`,
-  );
 
   const icon = display.paymentStatus === "paid" || display.paymentStatus === "refunded"
     ? "success"
@@ -344,15 +393,24 @@ export function buildPaymentStatusDialogOptions(
     ? "warning"
     : "info";
 
-  const dialogOptions: PaymentDialogOptions = {
-    icon,
-    title: display.guideTitle,
-    html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
-    confirmButtonColor: "#3C2415",
-    confirmButtonText: display.canResumePayment
-      ? display.resumePaymentLabel
-      : "我知道了",
+  const summary: StorefrontPaymentDialogSummaryView = {
+    rows,
+    guideDescription: display.guideDescription,
+    bankAccount: null,
+    footerText: "",
   };
+
+  const dialogOptions = createPaymentDialogOptions(
+    {
+      icon,
+      title: display.guideTitle,
+      confirmButtonColor: "#3C2415",
+      confirmButtonText: display.canResumePayment
+        ? display.resumePaymentLabel
+        : "我知道了",
+    },
+    summary,
+  );
 
   if (display.canResumePayment) {
     dialogOptions.showCancelButton = true;
@@ -372,33 +430,34 @@ export function buildPaymentLaunchDialogOptions(
     paymentStatus: "pending",
     paymentExpiresAt: params?.paymentExpiresAt,
   });
-  const orderId = escapeHtml(String(params?.orderId || ""));
   const total = Number(params?.total || 0);
-  const detailLines = [
-    `<p style="margin:0 0 8px 0;"><strong>訂單編號：</strong>${orderId || "未提供"}</p>`,
-    `<p style="margin:0 0 8px 0;"><strong>付款方式：</strong>${escapeHtml(display.methodLabel)}</p>`,
-    `<p style="margin:0 0 8px 0;"><strong>付款狀態：</strong>${escapeHtml(display.statusLabel || "待付款")}</p>`,
-    `<p style="margin:0 0 8px 0;"><strong>訂單金額：</strong>$${total}</p>`,
+  const rows = [
+    createPaymentRow("訂單編號", String(params?.orderId || "") || "未提供"),
+    createPaymentRow("付款方式", display.methodLabel),
+    createPaymentRow("付款狀態", display.statusLabel || "待付款"),
+    createPaymentRow("訂單金額", `$${total}`, { strong: true }),
   ];
   if (display.showPaymentDeadline) {
-    detailLines.push(
-      `<p style="margin:0 0 8px 0;"><strong>付款期限：</strong>${escapeHtml(display.paymentExpiresAtText)}</p>`,
-    );
+    rows.push(createPaymentRow("付款期限", display.paymentExpiresAtText));
   }
-  detailLines.push(
-    `<p style="margin:12px 0 0 0; color:#475569;">${escapeHtml(display.guideDescription)}</p>`,
-  );
 
-  return {
-    icon: "info",
-    title: `前往${display.methodLabel}`,
-    html: `<div style="text-align:left; font-size:0.95rem; line-height:1.65;">${detailLines.join("")}</div>`,
-    confirmButtonText: `前往${display.methodLabel}`,
-    cancelButtonText: "稍後付款",
-    showCancelButton: true,
-    confirmButtonColor: "#3C2415",
-    cancelButtonColor: "#94a3b8",
-  };
+  return createPaymentDialogOptions(
+    {
+      icon: "info",
+      title: `前往${display.methodLabel}`,
+      confirmButtonText: `前往${display.methodLabel}`,
+      cancelButtonText: "稍後付款",
+      showCancelButton: true,
+      confirmButtonColor: "#3C2415",
+      cancelButtonColor: "#94a3b8",
+    },
+    {
+      rows,
+      guideDescription: display.guideDescription,
+      bankAccount: null,
+      footerText: "",
+    },
+  );
 }
 
 export function buildTransferOrderSuccessDialogOptions(params: {
@@ -412,33 +471,35 @@ export function buildTransferOrderSuccessDialogOptions(params: {
   } | null;
 }): PaymentDialogOptions {
   const bankAccount = params.bankAccount;
-  const bankHtml = bankAccount
-    ? `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
-          <b>${escapeHtml(String(bankAccount.bankName || ""))} (${
-      escapeHtml(String(bankAccount.bankCode || ""))
-    })</b><br>
-          <span style="font-size:1.1em;font-family:monospace;">${
-      escapeHtml(String(bankAccount.accountNumber || ""))
-    }</span>
-          ${
-      bankAccount.accountName
-        ? '<br><span style="color:#666">戶名: ' +
-          escapeHtml(String(bankAccount.accountName || "")) + "</span>"
-        : ""
+  const bankAccountView: StorefrontPaymentDialogBankAccount | null = bankAccount
+    ? {
+      bankName: String(bankAccount.bankName || ""),
+      bankCode: String(bankAccount.bankCode || ""),
+      accountNumber: String(bankAccount.accountNumber || ""),
+      accountName: String(bankAccount.accountName || ""),
     }
-        </div>`
-    : "";
+    : null;
 
-  return {
-    icon: "success",
-    title: "訂單已成立",
-    html: `<p>訂單編號：<b>${escapeHtml(String(params.orderId || ""))}</b></p>
-           <p>請匯款 <b style="color:#e63946">$${
-      Number(params.total || 0)
-    }</b> 至以下帳號：</p>
-           ${bankHtml}
-           <p style="color:#666;font-size:0.9em;">(您的匯款末5碼已記錄，將用於對帳)</p>`,
-    confirmButtonColor: "#3C2415",
-    confirmButtonText: "我知道了",
-  };
+  return createPaymentDialogOptions(
+    {
+      icon: "success",
+      title: "訂單已成立",
+      confirmButtonColor: "#3C2415",
+      confirmButtonText: "我知道了",
+    },
+    {
+      rows: [
+        createPaymentRow("訂單編號", String(params.orderId || ""), {
+          strong: true,
+        }),
+        createPaymentRow("匯款金額", `$${Number(params.total || 0)}`, {
+          strong: true,
+          tone: "danger",
+        }),
+      ],
+      guideDescription: "請匯款至以下帳號：",
+      bankAccount: bankAccountView,
+      footerText: "(您的匯款末5碼已記錄，將用於對帳)",
+    },
+  );
 }

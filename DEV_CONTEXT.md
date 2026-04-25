@@ -93,6 +93,7 @@
 - storefront 頁面 body class 與購物車抽屜 scroll lock 已集中到 `storefrontBodySideEffects.ts`，`MainPage.vue` 不再直接讀寫 `document.body`。
 - storefront 轉帳下單成功 SweetAlert HTML 已抽到 `buildTransferOrderSuccessDialogOptions()`，送單主流程不再拼接匯款帳號 HTML，並補上轉義測試。
 - storefront 確認訂單 SweetAlert 已改掛載 Vue `StorefrontOrderConfirmSummary.vue`，不再用字串模板拼訂單摘要 HTML。
+- storefront 付款狀態 / 付款跳轉 / 轉帳成立提示已改共用 Vue `StorefrontPaymentDialogSummary.vue` 掛載，付款彈窗不再拼接 HTML 字串。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 送單配送資訊已改讀 Vue 狀態（新竹配送、全台宅配、已選超商門市）；不再透過隱藏 input 讀配送資料。原 `storefrontDeliveryDom.ts` 已拆成純資料 helper `storefrontDeliveryData.ts` 與 SweetAlert 會員資料彈窗邊界 `storefrontModalFormControls.ts`。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。

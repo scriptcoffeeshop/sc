@@ -192,12 +192,30 @@ test.describe("smoke / storefront checkout", () => {
           JSON.stringify(swalCalls),
         );
       };
-      (window as any).__storefrontSwalCalls = swalCalls;
-      (window as any).Swal.fire = async (input: any) => {
+      const serializeSwalPayload = (input: any) => {
         const payload = typeof input === "string"
           ? { title: input }
           : input || {};
-        swalCalls.push(payload);
+        let html = "";
+        if (payload.html instanceof HTMLElement) {
+          const popup = document.createElement("div");
+          document.body.appendChild(popup);
+          payload.didOpen?.(popup);
+          html = payload.html.textContent || payload.html.innerHTML || "";
+          payload.willClose?.();
+          popup.remove();
+        } else {
+          html = String(payload.html || "");
+        }
+        return {
+          title: String(payload.title || ""),
+          html,
+          text: String(payload.text || ""),
+        };
+      };
+      (window as any).__storefrontSwalCalls = swalCalls;
+      (window as any).Swal.fire = async (input: any) => {
+        swalCalls.push(serializeSwalPayload(input));
         persistSwalCalls();
         return { isConfirmed: true };
       };
@@ -283,9 +301,28 @@ test.describe("smoke / storefront checkout", () => {
 
     await page.addInitScript(() => {
       const swalCalls: Array<Record<string, unknown>> = [];
+      const serializeSwalPayload = (input: any) => {
+        const payload = typeof input === "string" ? { title: input } : input || {};
+        let html = "";
+        if (payload.html instanceof HTMLElement) {
+          const popup = document.createElement("div");
+          document.body.appendChild(popup);
+          payload.didOpen?.(popup);
+          html = payload.html.textContent || payload.html.innerHTML || "";
+          payload.willClose?.();
+          popup.remove();
+        } else {
+          html = String(payload.html || "");
+        }
+        return {
+          title: String(payload.title || ""),
+          html,
+          text: String(payload.text || ""),
+        };
+      };
       (window as any).__storefrontSwalCalls = swalCalls;
       (window as any).Swal.fire = async (input: any) => {
-        const payload = typeof input === "string" ? { title: input } : input || {};
+        const payload = serializeSwalPayload(input);
         swalCalls.push(payload);
         if (String(payload.title || "").includes("確認訂單")) {
           return { isConfirmed: true };
