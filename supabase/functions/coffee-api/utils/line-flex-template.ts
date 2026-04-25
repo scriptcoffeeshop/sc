@@ -1,19 +1,12 @@
 import { buildOrderDeliveryText } from "./order-delivery-display.ts";
-import { asJsonRecord } from "./json.ts";
 import {
   getFlexDeliveryMethodLabel,
   getFlexPaymentMethodLabel,
   getOrderPaymentStatusLabel,
   ORDER_STATUS_LABEL,
 } from "./order-labels.ts";
+import { normalizeReceiptInfo } from "./receipt-info.ts";
 import { normalizeTrackingUrl } from "./tracking.ts";
-
-interface ReceiptInfo {
-  buyer: string;
-  taxId: string;
-  address: string;
-  needDateStamp: boolean;
-}
 
 type LineFlexContent = Record<string, unknown>;
 
@@ -46,17 +39,6 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   failed: "#DC322F",
   cancelled: "#DC322F",
 };
-
-function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const row = asJsonRecord(raw);
-  const buyer = String(row.buyer || "").trim();
-  const taxId = String(row.taxId || "").trim();
-  const address = String(row.address || "").trim();
-  const needDateStamp = Boolean(row.needDateStamp);
-  if (taxId && !/^\d{8}$/.test(taxId)) return null;
-  return { buyer, taxId, address, needDateStamp };
-}
 
 interface FlexInfoRowOptions {
   margin?: string;

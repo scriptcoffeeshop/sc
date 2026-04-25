@@ -3,13 +3,15 @@ import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notif
 import { resolveEmailLogoUrl } from "../utils/email-assets.ts";
 import { sendEmail } from "../utils/email.ts";
 import { sanitize } from "../utils/html.ts";
-import { asJsonRecord, tryParseJsonRecord } from "../utils/json.ts";
+import { asJsonRecord } from "../utils/json.ts";
+import { parseReceiptInfoRecord } from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
 import { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
 
 export { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
+export { parseReceiptInfoRecord as parseReceiptInfo } from "../utils/receipt-info.ts";
 export {
   buildExpiredOnlinePaymentUpdates,
   EXPIRED_PAYMENT_FAILURE_REASON,
@@ -233,21 +235,6 @@ function buildLinePayStatusEmailHtml(params: {
 </div>`;
 }
 
-export function parseReceiptInfo(
-  raw: unknown,
-): Record<string, unknown> | null {
-  if (!raw) return null;
-  if (typeof raw === "string") {
-    const value = raw.trim();
-    if (!value) return null;
-    return tryParseJsonRecord(value);
-  }
-  if (typeof raw === "object" && !Array.isArray(raw)) {
-    return asJsonRecord(raw);
-  }
-  return null;
-}
-
 export async function notifyLinePayPaymentStatusChanged(
   orderId: string,
   paymentStatus: LinePayStatus,
@@ -293,7 +280,7 @@ export async function notifyLinePayPaymentStatusChanged(
         total: Number(order.total) || 0,
         items: String(order.items || ""),
         note: String(order.note || ""),
-        receiptInfo: parseReceiptInfo(order.receipt_info),
+        receiptInfo: parseReceiptInfoRecord(order.receipt_info),
       });
       const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
       if (!flexResult.success) {
@@ -395,7 +382,7 @@ export async function notifyJkoPayPaymentStatusChanged(
       total: Number(order.total) || 0,
       items: String(order.items || ""),
       note: String(order.note || ""),
-      receiptInfo: parseReceiptInfo(order.receipt_info),
+      receiptInfo: parseReceiptInfoRecord(order.receipt_info),
     });
     const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
     if (!flexResult.success) {

@@ -8,16 +8,17 @@ import {
 import { normalizeEmailSiteTitle } from "../utils/email-templates.ts";
 import { sanitize } from "../utils/html.ts";
 import { asJsonRecord, tryParseJsonRecord } from "../utils/json.ts";
+import {
+  normalizeReceiptInfo,
+  parseReceiptInfo,
+  type ReceiptInfo,
+} from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
 
-export interface ReceiptInfo {
-  buyer: string;
-  taxId: string;
-  address: string;
-  needDateStamp: boolean;
-}
+export { normalizeReceiptInfo, parseReceiptInfo };
+export type { ReceiptInfo };
 
 export type CustomFields = Record<string, string>;
 
@@ -48,29 +49,6 @@ export interface LineNotificationSendResult {
   success: boolean;
   target: string;
   error: string;
-}
-
-export function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const data = asJsonRecord(raw);
-  const buyer = String(data.buyer || "").trim();
-  const taxId = String(data.taxId || "").trim();
-  const address = String(data.address || "").trim();
-  const needDateStamp = Boolean(data.needDateStamp);
-
-  if (taxId && !/^\d{8}$/.test(taxId)) return null;
-
-  return { buyer, taxId, address, needDateStamp };
-}
-
-export function parseReceiptInfo(raw: unknown): ReceiptInfo | null {
-  if (raw === null || raw === undefined) return null;
-  if (typeof raw === "string") {
-    const str = raw.trim();
-    if (!str) return null;
-    return normalizeReceiptInfo(tryParseJsonRecord(str));
-  }
-  return normalizeReceiptInfo(raw);
 }
 
 function normalizeCustomFieldValue(value: unknown): string {

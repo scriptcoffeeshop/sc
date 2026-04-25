@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.ts";
-import { asJsonRecord, tryParseJsonRecord } from "./json.ts";
+import { asJsonRecord } from "./json.ts";
+import { stringifyReceiptInfo } from "./receipt-info.ts";
 
 function hasKey(data: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(data, key);
@@ -8,29 +9,6 @@ function hasKey(data: Record<string, unknown>, key: string): boolean {
 function toTrimmedString(value: unknown): string {
   if (value === undefined || value === null) return "";
   return String(value).trim();
-}
-
-function normalizeReceiptInfoText(value: unknown): string {
-  if (value === undefined || value === null) return "";
-
-  if (typeof value === "string") {
-    const raw = value.trim();
-    if (!raw) return "";
-    const parsed = tryParseJsonRecord(raw);
-    return parsed ? JSON.stringify(parsed) : "";
-  }
-
-  if (typeof value !== "object" || Array.isArray(value)) return "";
-  const row = asJsonRecord(value);
-  const taxId = toTrimmedString(row.taxId);
-  if (taxId && !/^\d{8}$/.test(taxId)) return "";
-
-  return JSON.stringify({
-    buyer: toTrimmedString(row.buyer),
-    taxId,
-    address: toTrimmedString(row.address),
-    needDateStamp: Boolean(row.needDateStamp),
-  });
 }
 
 function normalizeCustomFieldsText(value: unknown): string {
@@ -96,7 +74,7 @@ export async function registerOrUpdateUser(data: Record<string, unknown>) {
   );
   const paymentMethod = toTrimmedString(data.paymentMethod);
   const transferAccountLast5 = toTrimmedString(data.transferAccountLast5);
-  const defaultReceiptInfo = normalizeReceiptInfoText(data.receiptInfo);
+  const defaultReceiptInfo = stringifyReceiptInfo(data.receiptInfo);
 
   if (existing) {
     const updates: Record<string, unknown> = {
