@@ -15,6 +15,7 @@ import {
   requestJkoPayRefund,
 } from "../utils/jkopay.ts";
 import { asJsonRecord } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 function normalizePaymentRedirectUrl(value: unknown): string {
@@ -30,7 +31,7 @@ function normalizePaymentRedirectUrl(value: unknown): string {
 }
 
 function resolveJkoPaymentRedirectUrl(
-  transaction: Record<string, unknown> | undefined,
+  transaction: JsonRecord | undefined,
   storedValue: unknown,
 ): string {
   const candidates = [
@@ -56,7 +57,7 @@ function generateRefundOrderId(orderId: string): string {
 }
 
 export async function jkoPayResult(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   const transaction = getJkoCallbackTransaction(data);
@@ -140,7 +141,7 @@ export async function jkoPayResult(
 }
 
 export async function jkoPayInquiry(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   const auth = await requireAuth(req);
@@ -285,7 +286,7 @@ export async function jkoPayInquiry(
 }
 
 export async function jkoPayRefund(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

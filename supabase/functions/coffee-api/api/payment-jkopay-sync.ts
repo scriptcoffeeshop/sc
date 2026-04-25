@@ -4,6 +4,7 @@ import {
   normalizePaymentStatus,
 } from "./payment-expiry.ts";
 import { mapJkoStatusCodeToPaymentStatus } from "../utils/jkopay.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 export interface JkoPayOrderSyncParams {
@@ -31,7 +32,7 @@ export interface JkoPayOrderSyncResult {
 function buildJkoSyncFailure(
   params: JkoPayOrderSyncParams,
   error: string,
-  order: Record<string, unknown> | null = null,
+  order: JsonRecord | null = null,
 ): JkoPayOrderSyncResult {
   return {
     success: false,
@@ -115,7 +116,7 @@ export async function syncJkoPayOrderStatus(
   const statusChanged = nextPaymentStatus !==
     String(order.payment_status || "");
 
-  const updates: Record<string, unknown> = {};
+  const updates: JsonRecord = {};
   if (statusChanged) updates.payment_status = nextPaymentStatus;
   if (tradeNo && tradeNo !== String(order.payment_id || "")) {
     updates.payment_id = tradeNo;

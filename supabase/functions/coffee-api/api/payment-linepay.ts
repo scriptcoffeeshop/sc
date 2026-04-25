@@ -6,12 +6,13 @@ import {
 } from "./payment-shared.ts";
 import { extractAuth, requireAdmin } from "../utils/auth.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 interface LinePayApiResponse {
   returnCode?: string;
   returnMessage?: string;
-  info?: Record<string, unknown>;
+  info?: JsonRecord;
 }
 
 interface LinePayRefundResponse extends LinePayApiResponse {
@@ -20,7 +21,7 @@ interface LinePayRefundResponse extends LinePayApiResponse {
   };
 }
 
-export async function linePayConfirm(data: Record<string, unknown>) {
+export async function linePayConfirm(data: JsonRecord) {
   const transactionId = String(data.transactionId || "");
   const orderId = String(data.orderId || "");
 
@@ -120,7 +121,7 @@ export async function linePayConfirm(data: Record<string, unknown>) {
 }
 
 export async function linePayCancel(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   const orderId = String(data.orderId || "");
@@ -184,7 +185,7 @@ export async function linePayCancel(
 }
 
 export async function linePayRefund(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

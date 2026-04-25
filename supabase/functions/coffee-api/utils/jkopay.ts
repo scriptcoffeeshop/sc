@@ -7,6 +7,7 @@ import {
   JKOPAY_STORE_ID,
 } from "./config.ts";
 import { tryParseJsonRecord } from "./json.ts";
+import type { JsonRecord } from "./json.ts";
 
 const DEFAULT_JKOPAY_UAT_BASE_URL = "https://uat-onlinepay.jkopay.app";
 const DEFAULT_JKOPAY_PROD_BASE_URL = "https://onlinepay.jkopay.com";
@@ -141,7 +142,7 @@ function buildAbsoluteUrl(baseUrl: string, path: string): string {
   }${normalizedPath}`;
 }
 
-function tryParseJsonObject(text: string): Record<string, unknown> | null {
+function tryParseJsonObject(text: string): JsonRecord | null {
   return tryParseJsonRecord(text);
 }
 
@@ -164,7 +165,7 @@ async function callJkoPayApi(params: {
   path: string;
   payloadString: string;
   bodyString?: string;
-}): Promise<Record<string, unknown>> {
+}): Promise<JsonRecord> {
   const config = await resolveJkoPayRuntimeConfig();
   const url = buildAbsoluteUrl(config.baseUrl, params.path);
   const digest = await hmacSha256Hex(params.payloadString, config.secretKey);
@@ -234,7 +235,7 @@ async function callJkoPayApi(params: {
 
 export async function requestJkoPayEntry(
   request: JkoPayEntryRequest,
-): Promise<Record<string, unknown>> {
+): Promise<JsonRecord> {
   const config = await resolveJkoPayRuntimeConfig();
   const body = {
     platform_order_id: String(request.platformOrderId || "").trim(),
@@ -272,7 +273,7 @@ export async function requestJkoPayEntry(
 
 export async function requestJkoPayInquiry(
   platformOrderIds: string[],
-): Promise<Record<string, unknown>> {
+): Promise<JsonRecord> {
   const ids = platformOrderIds.map((id) => String(id || "").trim()).filter(
     Boolean,
   );
@@ -287,7 +288,7 @@ export async function requestJkoPayInquiry(
 
 export async function requestJkoPayRefund(
   request: JkoPayRefundRequest,
-): Promise<Record<string, unknown>> {
+): Promise<JsonRecord> {
   const body = {
     platform_order_id: String(request.platformOrderId || "").trim(),
     refund_order_id: String(request.refundOrderId || "").trim(),
