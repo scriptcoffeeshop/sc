@@ -61,7 +61,7 @@ test.describe("smoke / dashboard bridge removal", () => {
       "後台測試商品",
     );
     await page
-      .locator("#products-main-table tbody.sortable-tbody tr")
+      .locator("#products-main-table .product-card")
       .filter({ hasText: "後台測試商品" })
       .getByRole("button", { name: "編輯" })
       .click();
@@ -98,7 +98,7 @@ test.describe("smoke / dashboard bridge removal", () => {
 
     await expect(page.locator("#promotions-table")).toContainText("任選 2 件 9 折");
     await page
-      .locator("#promotions-table tr")
+      .locator("#promotions-table .promotion-card")
       .filter({ hasText: "任選 2 件 9 折" })
       .getByRole("button", { name: "編輯" })
       .click();

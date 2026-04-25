@@ -52,7 +52,7 @@ test.describe("smoke / dashboard core", () => {
     await expect(page.locator("#admin-page")).toBeVisible();
     await expect(page.locator("#orders-list")).toContainText("#ORD001");
 
-    const orderRow = page.locator("#orders-list > div").filter({ hasText: "#ORD001" });
+    const orderRow = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD001" });
     const statusSelect = orderRow.locator("select");
     await statusSelect.click();
     await page.waitForTimeout(250);
@@ -70,7 +70,7 @@ test.describe("smoke / dashboard core", () => {
 
     await page.locator("#tab-products").click();
     await page
-      .locator("#products-main-table tbody.sortable-tbody tr")
+      .locator("#products-main-table .product-card")
       .filter({ hasText: "後台測試商品" })
       .getByRole("button", { name: "編輯" })
       .click();
@@ -111,7 +111,7 @@ test.describe("smoke / dashboard core", () => {
 
     await page.goto("/dashboard.html");
 
-    const orderRow = page.locator("#orders-list > div").filter({ hasText: "#ORD001" });
+    const orderRow = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD001" });
     await orderRow.getByRole("button", { name: "LINE通知" }).click();
     await expect.poll(() => lineFlexCalls).toBe(1);
     expect(lineFlexPayload?.orderId).toBe("ORD001");

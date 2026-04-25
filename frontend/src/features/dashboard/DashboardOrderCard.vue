@@ -1,5 +1,5 @@
 <template>
-  <article class="dashboard-item-card order-card">
+  <div class="dashboard-item-card order-card">
     <div class="order-card__header">
       <div class="flex items-center gap-2 flex-wrap">
         <label class="inline-flex items-center cursor-pointer">
@@ -192,7 +192,7 @@
         </button>
       </div>
     </div>
-  </article>
+  </div>
 </template>
 
 <script setup lang="ts">

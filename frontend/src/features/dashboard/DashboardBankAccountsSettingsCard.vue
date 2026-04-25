@@ -10,7 +10,7 @@
         @click="handleShowAddBankAccountModal"
         class="dashboard-action dashboard-action--primary"
       >
-        新增匯款帳號
+        + 新增匯款帳號
       </button>
     </div>
     <div class="mb-3">

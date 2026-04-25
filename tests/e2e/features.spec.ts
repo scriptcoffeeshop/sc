@@ -372,7 +372,7 @@ test.describe("Features E2E", () => {
     await page.goto("/dashboard.html");
     await page.locator("#tab-users").click();
 
-    const userRow = page.locator("#users-table tr").filter({ hasText: "BadUser" });
+    const userRow = page.locator("#users-table .users-card").filter({ hasText: "BadUser" });
     const blacklistBtn = userRow.getByRole("button", { name: "封鎖" });
     await expect(blacklistBtn).toBeVisible();
     await blacklistBtn.click();
@@ -407,7 +407,7 @@ test.describe("Features E2E", () => {
     await seedAdminSession(page);
 
     await page.goto("/dashboard.html");
-    const orderCard = page.locator("#orders-list > div").filter({ hasText: "ORD2" });
+    const orderCard = page.locator("#orders-list > .order-card").filter({ hasText: "ORD2" });
     const select = orderCard.locator("select");
     await select.selectOption("shipped");
     await orderCard.getByRole("button", { name: "確認" }).click();

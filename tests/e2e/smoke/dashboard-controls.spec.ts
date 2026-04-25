@@ -37,7 +37,7 @@ test.describe("smoke / dashboard controls", () => {
     await gotoDashboard(page);
     await page.locator("#tab-formfields").click();
 
-    const rows = page.locator("#formfields-sortable > div");
+    const rows = page.locator("#formfields-sortable [data-field-id]");
     await expect(rows).toHaveCount(1);
 
     await page.getByRole("button", { name: "+ 新增欄位" }).click();
@@ -45,8 +45,8 @@ test.describe("smoke / dashboard controls", () => {
     await expect(rows.filter({ hasText: "統一編號" })).toHaveCount(1);
 
     const receiptRow = rows.filter({ hasText: "收據類型" });
-    await receiptRow.getByRole("button", { name: "開" }).click();
-    await expect(receiptRow).toHaveClass(/opacity-50/);
+    await receiptRow.getByRole("button", { name: "停用" }).click();
+    await expect(receiptRow).toHaveClass(/is-disabled/);
 
     await rows.filter({ hasText: "統一編號" }).getByRole("button", { name: "刪除" }).click();
     await expect(rows).toHaveCount(1);
@@ -132,12 +132,12 @@ test.describe("smoke / dashboard controls", () => {
     await selectAllCheckbox.check();
     await expect(selectedCount).toHaveText("已選 3 筆");
 
-    const order1 = page.locator("#orders-list > div").filter({ hasText: "#ORD001" });
+    const order1 = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD001" });
     await order1.locator("select").selectOption("processing");
     await order1.getByRole("button", { name: "確認" }).click();
     await expect(order1).toContainText("處理中");
 
-    const order2 = page.locator("#orders-list > div").filter({ hasText: "#ORD002" });
+    const order2 = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD002" });
     await order2.getByRole("button", { name: "複製" }).click();
     await expect.poll(async () => {
       const writes = await getClipboardWrites(page);
@@ -146,7 +146,7 @@ test.describe("smoke / dashboard controls", () => {
     await order2.getByRole("button", { name: "確認已收款" }).click();
     await expect(order2).toContainText("已付款");
 
-    const order3 = page.locator("#orders-list > div").filter({ hasText: "#ORD003" });
+    const order3 = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD003" });
     await order3.getByRole("button", { name: /退款/ }).click();
     await expect(order3).toContainText("已退款");
 
@@ -167,7 +167,7 @@ test.describe("smoke / dashboard controls", () => {
     await gotoDashboard(page);
     await page.locator("#tab-products").click();
 
-    const rows = page.locator("#products-main-table tbody.sortable-tbody tr[data-id]");
+    const rows = page.locator("#products-main-table .product-card[data-id]");
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("後台測試商品");
 
@@ -213,7 +213,7 @@ test.describe("smoke / dashboard controls", () => {
     await gotoDashboard(page);
     await page.locator("#tab-categories").click();
 
-    const rows = page.locator("#categories-list > div[data-id]");
+    const rows = page.locator("#categories-list [data-id]");
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("測試分類");
 
@@ -255,7 +255,7 @@ test.describe("smoke / dashboard controls", () => {
     await expect(usersTable).toContainText("測試會員");
     await expect(usersTable).not.toContainText("管理測試員");
 
-    const userRow = usersTable.locator("tr").filter({ hasText: "測試會員" });
+    const userRow = usersTable.locator(".users-card").filter({ hasText: "測試會員" });
     await userRow.getByRole("button", { name: "設為管理員" }).click();
     await expect(userRow).toContainText("管理員");
     await expect(userRow.getByRole("button", { name: "移除管理員" })).toBeVisible();
@@ -270,7 +270,7 @@ test.describe("smoke / dashboard controls", () => {
     await expect(blacklistTable).toContainText("惡意棄單");
 
     await blacklistTable
-      .locator("tr")
+      .locator(".dashboard-item-card")
       .filter({ hasText: "測試會員" })
       .getByRole("button", { name: "解除封鎖" })
       .click();
@@ -290,7 +290,7 @@ test.describe("smoke / dashboard controls", () => {
     await gotoDashboard(page);
     await page.locator("#tab-promotions").click();
 
-    const rows = page.locator("#promotions-table tr[data-id]");
+    const rows = page.locator("#promotions-table .promotion-card[data-id]");
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toContainText("任選 2 件 9 折");
 
