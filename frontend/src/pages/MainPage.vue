@@ -297,11 +297,14 @@ import {
   onStorefrontEvent,
   STOREFRONT_EVENTS,
 } from "../features/storefront/storefrontEventBus.ts";
+import {
+  createStorefrontBodyController,
+  type StorefrontBodyController,
+} from "../features/storefront/storefrontBodySideEffects.ts";
 
-const originalBodyClass = document.body.className;
-const originalBodyOverflow = document.body.style.overflow;
 const policyCheckboxEl = ref<HTMLInputElement | null>(null);
 let unsubscribeStorefrontEvents: Array<() => void> = [];
+let storefrontBodyController: StorefrontBodyController | null = null;
 const {
   isOrderHistoryOpen,
   orderHistoryError,
@@ -519,7 +522,7 @@ function handleReceiptDateStampInput(event: Event) {
 }
 
 watch(isCartDrawerOpen, (open) => {
-  document.body.style.overflow = open ? "hidden" : originalBodyOverflow;
+  storefrontBodyController?.setCartDrawerOpen(open);
 });
 watch(
   policyAgreed,
@@ -538,7 +541,9 @@ async function handleShowProfile() {
 }
 
 onMounted(() => {
-  document.body.className = "p-4 md:p-6";
+  storefrontBodyController = createStorefrontBodyController();
+  storefrontBodyController.applyPageClass();
+  storefrontBodyController.setCartDrawerOpen(isCartDrawerOpen.value);
 
   unsubscribeStorefrontEvents = [
     onStorefrontEvent(STOREFRONT_EVENTS.cartUpdated, handleCartUpdated),
@@ -583,7 +588,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   unsubscribeStorefrontEvents.forEach((unsubscribe) => unsubscribe());
   unsubscribeStorefrontEvents = [];
-  document.body.className = originalBodyClass;
-  document.body.style.overflow = originalBodyOverflow;
+  storefrontBodyController?.restore();
+  storefrontBodyController = null;
 });
 </script>
