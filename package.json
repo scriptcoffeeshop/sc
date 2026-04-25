@@ -1,9 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "dev": "vite --config frontend/vite.config.js",
-    "build": "vite build --config frontend/vite.config.js && bash scripts/prepare_static_deploy.sh",
-    "preview": "vite preview --config frontend/vite.config.js",
+    "dev": "vite --config frontend/vite.config.ts",
+    "build": "vite build --config frontend/vite.config.ts && bash scripts/prepare_static_deploy.sh",
+    "preview": "vite preview --config frontend/vite.config.ts",
     "preview:e2e": "bash scripts/serve_e2e_preview.sh",
     "hygiene": "python3 scripts/repo_hygiene_check.py",
     "fmt": "cd supabase/functions/coffee-api && deno fmt .",
@@ -12,7 +12,7 @@
     "lint": "cd supabase/functions/coffee-api && deno lint .",
     "check": "cd supabase/functions/coffee-api && deno check index.ts",
     "test": "cd supabase/functions/coffee-api && JWT_SECRET=mock SUPABASE_URL=https://mock.supabase.co SUPABASE_SERVICE_ROLE_KEY=mock deno test --allow-env --allow-net --allow-read tests/",
-    "test:unit": "vitest run --config frontend/vite.config.js",
+    "test:unit": "vitest run --config frontend/vite.config.ts",
     "typecheck": "vue-tsc --noEmit -p frontend/tsconfig.json",
     "typecheck:full": "vue-tsc --noEmit -p frontend/tsconfig.json",
     "e2e": "npx playwright test --config=playwright.config.ts",
@@ -23,7 +23,7 @@
     "deploy": "bash scripts/supabase_deploy.sh",
     "supabase:deploy": "bash scripts/supabase_deploy.sh",
     "supabase:db:push": "bash scripts/supabase_db_push.sh",
-    "serve": "vite preview --config frontend/vite.config.js --host 0.0.0.0 --port 5500"
+    "serve": "vite preview --config frontend/vite.config.ts --host 0.0.0.0 --port 5500"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.2.4",
@@ -40,6 +40,7 @@
     "@playwright/test": "^1.53.2",
     "@eslint/js": "^9.36.0",
     "@types/deno": "latest",
+    "@types/node": "^20.19.0",
     "@vitejs/plugin-vue": "^6.0.6",
     "autoprefixer": "^10.5.0",
     "eslint": "^9.36.0",
