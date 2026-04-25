@@ -1,4 +1,5 @@
 import { buildOrderDeliveryText } from "./order-delivery-display.ts";
+import { normalizeTrackingUrl } from "./tracking.ts";
 
 interface ReceiptInfo {
   buyer: string;
@@ -72,18 +73,6 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   failed: "#DC322F",
   cancelled: "#DC322F",
 };
-
-function normalizeTrackingUrl(url: unknown): string {
-  const raw = String(url || "").trim();
-  if (!raw || !/^https?:\/\//i.test(raw)) return "";
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
-    return parsed.toString();
-  } catch (_error) {
-    return "";
-  }
-}
 
 function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
