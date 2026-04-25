@@ -4,6 +4,10 @@ import {
   installGlobalStubs,
 } from "../support/smoke-fixtures";
 
+type DashboardSettingsUpdatePayload = {
+  settings?: Record<string, string>;
+};
+
 test.describe("smoke / dashboard settings", () => {
   test("dashboard checkout settings keeps delivery routing rows visible", async ({ page }) => {
     await installGlobalStubs(page);
@@ -104,12 +108,12 @@ test.describe("smoke / dashboard settings", () => {
   });
 
   test("dashboard settings save sends branding and section title state", async ({ page }) => {
-    let updatePayload: any = null;
+    let updatePayload: DashboardSettingsUpdatePayload | null = null;
 
     await installGlobalStubs(page);
     await installDashboardRoutes(page, {
       onUpdateSettings: (request) => {
-        updatePayload = request.postDataJSON();
+        updatePayload = request.postDataJSON() as DashboardSettingsUpdatePayload;
       },
     });
 
@@ -193,12 +197,12 @@ test.describe("smoke / dashboard settings", () => {
   });
 
   test("dashboard checkout settings save sends routing and payment option state", async ({ page }) => {
-    let updatePayload: any = null;
+    let updatePayload: DashboardSettingsUpdatePayload | null = null;
 
     await installGlobalStubs(page);
     await installDashboardRoutes(page, {
       onUpdateSettings: (request) => {
-        updatePayload = request.postDataJSON();
+        updatePayload = request.postDataJSON() as DashboardSettingsUpdatePayload;
       },
     });
 

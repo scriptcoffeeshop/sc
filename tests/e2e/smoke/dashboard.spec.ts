@@ -7,6 +7,19 @@ import {
   installGlobalStubs,
 } from "../support/smoke-fixtures";
 
+type LineFlexNotificationPayload = {
+  flexMessage?: {
+    altText?: string;
+  };
+  orderId?: string;
+  to?: string;
+};
+
+type OrderEmailPayload = {
+  orderId?: string;
+  userId?: string;
+};
+
 test.describe("smoke / dashboard core", () => {
   test("dashboard order status flow works", async ({ page }) => {
     await installGlobalStubs(page);
@@ -66,17 +79,17 @@ test.describe("smoke / dashboard core", () => {
 
     let lineFlexCalls = 0;
     let emailCalls = 0;
-    let lineFlexPayload: Record<string, any> | null = null;
-    let emailPayload: Record<string, any> | null = null;
+    let lineFlexPayload: LineFlexNotificationPayload | null = null;
+    let emailPayload: OrderEmailPayload | null = null;
 
     await installDashboardRoutes(page, {
       onSendLineFlexMessage: (request) => {
         lineFlexCalls += 1;
-        lineFlexPayload = request.postDataJSON() as Record<string, any>;
+        lineFlexPayload = request.postDataJSON() as LineFlexNotificationPayload;
       },
       onSendOrderEmail: (request) => {
         emailCalls += 1;
-        emailPayload = request.postDataJSON() as Record<string, any>;
+        emailPayload = request.postDataJSON() as OrderEmailPayload;
       },
     });
 
