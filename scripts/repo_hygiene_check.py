@@ -27,9 +27,7 @@ PRODUCTION_TS_IGNORE_PREFIXES = (
     "supabase/functions/coffee-api/",
 )
 
-ALLOWED_FRONTEND_SOURCE_JS = {
-    "frontend/src/lib/taiwanCityData.js",
-}
+ALLOWED_FRONTEND_SOURCE_JS: set[str] = set()
 
 SOURCE_SUFFIXES = (
     ".js",

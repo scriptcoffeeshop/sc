@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { districtData } from "../../lib/appConfig.ts";
-import { TAIWAN_CITY_DATA } from "../../lib/taiwanCityData.js";
+import { TAIWAN_CITY_DATA } from "../../lib/taiwanCityData.ts";
 import {
   getDeliveryIconFallbackKey,
   getIconUrlFromConfig,
