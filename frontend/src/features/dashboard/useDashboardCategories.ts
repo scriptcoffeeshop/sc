@@ -24,7 +24,7 @@ type CategorySortableInstance = {
 
 type CategorySortableService = {
   create?: (
-    element: Element,
+    element: HTMLElement,
     options: {
       handle: string;
       animation: number;

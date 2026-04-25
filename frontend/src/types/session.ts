@@ -24,7 +24,7 @@ export interface DashboardSwalLike {
 export interface DashboardSessionServices {
   API_URL: string;
   authFetch: (
-    input: RequestInfo | URL,
+    input: string,
     init?: RequestInit,
   ) => Promise<{ json: () => Promise<unknown> }>;
   Swal: DashboardSwalLike;

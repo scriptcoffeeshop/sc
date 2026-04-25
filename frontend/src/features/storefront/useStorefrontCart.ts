@@ -45,13 +45,13 @@ interface StorefrontShippingConfig {
 }
 
 interface StorefrontCartApi {
-  addToCart: (productId: unknown, specKey: unknown) => void;
+  addToCart: (productId: number | string, specKey: string) => void;
   getCartSnapshot: () => StorefrontCartItem[];
   removeCartItem: (index: number) => void;
   updateCartItemQty: (index: number, delta: number) => void;
   updateCartItemQtyByKeys: (
-    productId: unknown,
-    specKey: unknown,
+    productId: number | string,
+    specKey: string,
     delta: number,
   ) => void;
 }
@@ -219,11 +219,15 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
     return "確認送出訂單";
   });
 
-  function getSpecQty(productId: unknown, specKey: unknown) {
+  function getSpecQty(productId: number | string, specKey: string) {
     return cartQtyMap.value.get(toItemKey(productId, String(specKey || ""))) || 0;
   }
 
-  function changeSpecQty(productId: unknown, specKey: unknown, delta: number) {
+  function changeSpecQty(
+    productId: number | string,
+    specKey: string,
+    delta: number,
+  ) {
     if (delta > 0 && getSpecQty(productId, specKey) <= 0) {
       cartApi.addToCart(productId, specKey);
       return;

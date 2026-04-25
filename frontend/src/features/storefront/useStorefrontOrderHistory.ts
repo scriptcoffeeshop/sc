@@ -51,7 +51,7 @@ interface OrderHistorySwal {
 
 interface OrderHistoryDeps {
   authFetch?: (
-    input: RequestInfo | URL,
+    input: string,
     init?: RequestInit,
   ) => Promise<{ json: () => Promise<unknown> }>;
   Swal?: OrderHistorySwal;

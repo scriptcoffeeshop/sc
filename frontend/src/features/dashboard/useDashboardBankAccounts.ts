@@ -36,13 +36,13 @@ type BankAccountsSortableOptions = {
 
 type BankAccountsSortableFactory = {
   create?: (
-    element: Element,
+    element: HTMLElement,
     options: BankAccountsSortableOptions,
   ) => BankAccountsSortableInstance;
 };
 
 type BankAccountsSortableConstructor = new (
-  element: Element,
+  element: HTMLElement,
   options: BankAccountsSortableOptions,
 ) => BankAccountsSortableInstance;
 

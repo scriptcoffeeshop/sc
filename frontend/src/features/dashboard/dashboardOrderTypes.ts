@@ -1,3 +1,5 @@
+import type { SweetAlertOptions } from "sweetalert2";
+
 export interface DashboardOrderRecord extends Record<string, unknown> {
   orderId: string;
   timestamp: string;
@@ -62,7 +64,7 @@ export type DashboardSwal = {
 };
 
 export type DashboardToast = {
-  fire: (options: { icon?: string; title?: unknown }) => unknown;
+  fire: (options: SweetAlertOptions) => unknown;
 };
 
 export type DashboardOrderServices = {
