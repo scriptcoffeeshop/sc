@@ -1,11 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   setStorefrontHomeDeliveryAddress,
   setStorefrontLocalDeliveryAddress,
 } from "./storefrontDeliveryFormState.ts";
 import { collectSubmitDeliveryInfo } from "./storefrontOrderDeliveryInfo.ts";
+import {
+  clearStorefrontSelectedStore,
+  setStorefrontSelectedStore,
+} from "./storefrontSelectedStoreState.ts";
 
 describe("collectSubmitDeliveryInfo", () => {
+  beforeEach(() => {
+    clearStorefrontSelectedStore();
+  });
+
   it("collects local delivery address from Vue state", () => {
     setStorefrontLocalDeliveryAddress({
       city: "新竹市",
@@ -54,6 +62,30 @@ describe("collectSubmitDeliveryInfo", () => {
         address: "忠孝西路 1 號",
       },
       error: "",
+    });
+  });
+
+  it("collects store pickup selection from Vue state", () => {
+    setStorefrontSelectedStore({
+      storeId: "001",
+      storeName: "全家測試店",
+      storeAddress: "台北市測試路 1 號",
+    });
+
+    expect(collectSubmitDeliveryInfo("family_mart")).toEqual({
+      deliveryInfo: {
+        storeName: "全家測試店",
+        storeAddress: "台北市測試路 1 號",
+        storeId: "001",
+      },
+      error: "",
+    });
+  });
+
+  it("validates missing store pickup selection from Vue state", () => {
+    expect(collectSubmitDeliveryInfo("seven_eleven")).toEqual({
+      deliveryInfo: null,
+      error: "請填寫取貨門市名稱",
     });
   });
 });

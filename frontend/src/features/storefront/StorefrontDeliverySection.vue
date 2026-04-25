@@ -215,9 +215,6 @@
           </UiButton>
         </div>
       </div>
-      <input type="hidden" id="store-name-input" :value="selectedStore.storeName">
-      <input type="hidden" id="store-address-input" :value="selectedStore.storeAddress">
-      <input type="hidden" id="store-id-input" :value="selectedStore.storeId">
     </div>
 
     <div

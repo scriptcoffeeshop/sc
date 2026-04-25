@@ -1,9 +1,9 @@
 import type { DeliveryMethod, SubmitDeliveryInfo, SubmitDeliveryInfoResult } from "../../types";
-import { getFormControlValue } from "./storefrontDeliveryDom.ts";
 import {
   getStorefrontHomeDeliveryAddress,
   getStorefrontLocalDeliveryAddress,
 } from "./storefrontDeliveryFormState.ts";
+import { getStorefrontSelectedStore } from "./storefrontSelectedStoreState.ts";
 
 export const SUBMIT_DELIVERY_METHOD_TEXT = {
   delivery: "配送到府(限新竹)",
@@ -73,8 +73,9 @@ export function collectSubmitDeliveryInfo(
     };
   }
 
-  const storeName = getFormControlValue("store-name-input").trim();
-  const storeAddress = getFormControlValue("store-address-input").trim();
+  const selectedStore = getStorefrontSelectedStore();
+  const storeName = selectedStore.storeName.trim();
+  const storeAddress = selectedStore.storeAddress.trim();
   if (!storeName) {
     return { deliveryInfo: null, error: "請填寫取貨門市名稱" };
   }
@@ -82,7 +83,7 @@ export function collectSubmitDeliveryInfo(
     deliveryInfo: {
       storeName,
       storeAddress,
-      storeId: getFormControlValue("store-id-input"),
+      storeId: selectedStore.storeId.trim(),
     },
     error: "",
   };
