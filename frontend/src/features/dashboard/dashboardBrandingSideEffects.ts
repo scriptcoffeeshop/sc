@@ -1,0 +1,60 @@
+export type DashboardBrandingSideEffectView = {
+  cacheKey: string;
+  documentTitle: string;
+  logoUrl: string;
+  siteTitle: string;
+};
+
+function cacheDashboardPublicBranding(view: DashboardBrandingSideEffectView): void {
+  if (typeof window === "undefined" || !window.localStorage) return;
+
+  try {
+    window.localStorage.setItem(
+      view.cacheKey,
+      JSON.stringify({
+        site_title: view.siteTitle,
+        resolved_logo_url: view.logoUrl,
+      }),
+    );
+  } catch (_error) {
+  }
+}
+
+export function applyDashboardBrandingSideEffects(
+  view: DashboardBrandingSideEffectView,
+): void {
+  if (typeof document !== "undefined") {
+    const logoIds = [
+      "dashboard-login-logo",
+      "dashboard-header-logo",
+      "settings-brand-logo",
+    ];
+    logoIds.forEach((id) => {
+      const logoEl = document.getElementById(id);
+      if (!(logoEl instanceof HTMLImageElement) || !view.logoUrl) return;
+      logoEl.src = view.logoUrl;
+    });
+
+    const faviconEl = document.getElementById("dynamic-favicon");
+    if (faviconEl instanceof HTMLLinkElement && view.logoUrl) {
+      faviconEl.href = view.logoUrl;
+    }
+
+    document.title = view.documentTitle;
+
+    const loginTitleEl = document.querySelector("#login-page h1");
+    if (loginTitleEl instanceof HTMLElement) {
+      loginTitleEl.textContent = "後台登入";
+      loginTitleEl.classList.remove("ui-text-highlight");
+      loginTitleEl.classList.add("text-slate-800");
+    }
+
+    const loginSubtitleEl = document.querySelector("#login-page p");
+    if (loginSubtitleEl instanceof HTMLElement) {
+      loginSubtitleEl.classList.remove("ui-text-subtle");
+      loginSubtitleEl.classList.add("text-slate-600");
+    }
+  }
+
+  cacheDashboardPublicBranding(view);
+}

@@ -202,6 +202,7 @@
 - storefront 已選門市資訊已改由 Vue 管理：`storefrontSelectedStoreState.ts` 維護門市選擇 snapshot，`StorefrontDeliverySection.vue` 渲染門市卡與 hidden input value，`storefrontStoreSearch.ts` 不再寫入 `store-selected-info` / `selected-store-*` DOM。
 - storefront 初始化再收斂：`initMainApp()` 不再用 DOM 探針判斷 Vue 容器是否存在，`MainPage.vue` 也不再於 mounted 後手動補 `data-vue-managed`，由 Vue 元件模板自身宣告管理邊界。
 - storefront 品牌與區塊標題已改由 Vue 管理：`useStorefrontBranding.ts` 從 settings snapshot 建立品牌/商品/配送/備註標題 view model，Header、商品區、配送區與備註區直接吃 props；`storefrontFormRenderer.ts` 不再操作品牌或區塊標題 DOM。
+- dashboard 品牌副作用已集中到 `dashboardBrandingSideEffects.ts` 並補 jsdom 測試；`dashboardBranding.ts` 現在只負責把設定轉成後台品牌 view，不再散落 document/localStorage 操作。
 - storefront 政策同意提示已改由 Vue 管理：`useStorefrontPolicyAgreement.ts` 接收送單驗證事件並控制提示顯示，`storefrontOrderSubmit.ts` 不再直接切換 `policy-agree-hint` DOM class。
 - storefront 收據欄位展開/收合已改由 Vue 管理：`useStorefrontReceiptRequest.ts` 接收預設資料事件，`storefrontOrderReceiptPrefs.ts` 不再操作 `receipt-fields` class，也改用 runtime 付款可用性判斷預設付款方式。
 - storefront 初始化載入失敗畫面已改由 Vue 商品區塊顯示：`storefrontMainAppPayments.ts` 改發 `coffee:storefront-load-error-updated`，`StorefrontProductGrid.vue` 負責錯誤訊息與重試按鈕。
