@@ -53,9 +53,25 @@ export interface DashboardSettingsRecord {
   [key: string]: unknown;
 }
 
+export interface StorefrontProductSnapshot {
+  id?: number | string;
+  category?: string;
+  name?: string;
+  description?: string;
+  roastLevel?: string;
+  price?: number | string;
+  specs?: unknown;
+  [key: string]: unknown;
+}
+
+export interface StorefrontCategorySnapshot {
+  name?: string;
+  [key: string]: unknown;
+}
+
 export interface StorefrontUiSnapshot {
-  products?: Array<Record<string, unknown>>;
-  categories?: Array<Record<string, unknown>>;
+  products?: StorefrontProductSnapshot[];
+  categories?: StorefrontCategorySnapshot[];
   settings?: DashboardSettingsRecord;
   deliveryConfig?: DeliveryOption[];
   paymentOptionConfig?: Record<string, PaymentOption>;

@@ -4,7 +4,10 @@ import {
   type StorefrontPaymentAvailability,
 } from "./storefrontRuntime.ts";
 import type { SessionUser } from "../../types/session";
-import type { DashboardSettingsRecord } from "../../types/settings";
+import type {
+  DashboardSettingsRecord,
+  StorefrontCategorySnapshot,
+} from "../../types/settings";
 import type { Product } from "../../types/core";
 import type { StorefrontDynamicField } from "../../types/storefront";
 import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
@@ -13,11 +16,6 @@ import {
   type StorefrontSelectedStore,
 } from "./storefrontSelectedStoreState.ts";
 
-interface StorefrontCategoryRecord {
-  name?: string;
-  [key: string]: unknown;
-}
-
 interface StorefrontBankAccount {
   id?: string | number;
   [key: string]: unknown;
@@ -25,7 +23,7 @@ interface StorefrontBankAccount {
 
 export interface StorefrontUiSnapshot {
   products: Product[];
-  categories: StorefrontCategoryRecord[];
+  categories: StorefrontCategorySnapshot[];
   formFields: StorefrontDynamicField[];
   currentUser: SessionUser | null;
   isStoreOpen: boolean;
@@ -39,7 +37,7 @@ export interface StorefrontUiSnapshot {
   selectedStore: StorefrontSelectedStore;
 }
 
-function cloneArrayItems<T extends Record<string, unknown>>(items: unknown): T[] {
+function cloneArrayItems<T extends object>(items: unknown): T[] {
   if (!Array.isArray(items)) return [];
   return items.map((item) =>
     item && typeof item === "object" ? { ...(item as T) } : item as T
@@ -72,7 +70,7 @@ function getRuntimeDeliveryConfig(): StorefrontDeliveryOption[] {
 export function getStorefrontUiSnapshot(): StorefrontUiSnapshot {
   return {
     products: cloneArrayItems<Product>(state.products),
-    categories: cloneArrayItems<StorefrontCategoryRecord>(state.categories),
+    categories: cloneArrayItems<StorefrontCategorySnapshot>(state.categories),
     formFields: cloneArrayItems<StorefrontDynamicField>(state.formFields),
     currentUser: state.currentUser ? { ...state.currentUser } : null,
     isStoreOpen: state.isStoreOpen !== false,
