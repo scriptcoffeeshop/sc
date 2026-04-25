@@ -3,6 +3,10 @@ import {
   installDashboardRoutes,
   installGlobalStubs,
 } from "../support/smoke-fixtures";
+import {
+  gotoDashboard,
+  installDashboardControlsHarness,
+} from "../support/dashboard-smoke";
 
 type DashboardSettingsUpdatePayload = {
   settings?: Record<string, string>;
@@ -261,17 +265,24 @@ test.describe("smoke / dashboard settings", () => {
       }],
     });
 
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "coffee_admin",
-        JSON.stringify({
-          userId: "admin-1",
-          displayName: "測試管理員",
-          role: "SUPER_ADMIN",
-        }),
-      );
-      localStorage.setItem("coffee_jwt", "mock-token");
+    await installDashboardControlsHarness(page, {
+      swalResponses: [
+        {
+          title: "新增匯款帳號",
+          response: {
+            value: {
+              bankCode: "812",
+              bankName: "台新銀行",
+              accountNumber: "9876543210",
+              accountName: "新帳戶",
+            },
+          },
+        },
+        { title: "刪除帳號？", response: { isConfirmed: true } },
+      ],
+    });
 
+    await page.addInitScript(() => {
       const originalInnerHTML = Object.getOwnPropertyDescriptor(
         Element.prototype,
         "innerHTML",
@@ -302,28 +313,9 @@ test.describe("smoke / dashboard settings", () => {
         }
         return originalAddEventListener.call(this, type, listener, options);
       };
-
-      const baseFire = (window as any).Swal.fire;
-      (window as any).Swal.fire = async (input: any) => {
-        const title = typeof input === "string" ? input : input?.title;
-        if (title === "新增匯款帳號") {
-          return {
-            value: {
-              bankCode: "812",
-              bankName: "台新銀行",
-              accountNumber: "9876543210",
-              accountName: "新帳戶",
-            },
-          };
-        }
-        if (title === "刪除帳號？") {
-          return { isConfirmed: true };
-        }
-        return await baseFire(input);
-      };
     });
 
-    await page.goto("/dashboard.html");
+    await gotoDashboard(page);
     await page.locator("#tab-settings").click();
 
     await expect(page.locator("[data-bank-account-row]")).toHaveCount(1);
