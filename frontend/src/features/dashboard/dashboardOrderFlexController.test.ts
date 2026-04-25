@@ -2,12 +2,19 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createOrderFlexController } from "./dashboardOrderFlexController.ts";
+import type {
+  DashboardOrderFlexControllerDeps,
+} from "./dashboardOrderNotificationTypes.ts";
 
-function jsonResponse(payload) {
-  return { json: async () => payload };
+function jsonResponse(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    headers: { "content-type": "application/json" },
+  });
 }
 
-function createBaseDeps(overrides = {}) {
+function createBaseDeps(
+  overrides: Partial<DashboardOrderFlexControllerDeps> = {},
+): DashboardOrderFlexControllerDeps {
   return {
     API_URL: "https://api.example",
     authFetch: vi.fn(async () => jsonResponse({ success: true })),
@@ -26,7 +33,7 @@ function createBaseDeps(overrides = {}) {
     normalizeReceiptInfo: () => null,
     normalizeTrackingUrl: (value) => String(value || ""),
     buildLineFlexMessage: () => ({
-      type: "flex",
+      type: "flex" as const,
       altText: "訂單通知",
       contents: { type: "bubble" },
     }),
@@ -35,7 +42,7 @@ function createBaseDeps(overrides = {}) {
   };
 }
 
-function installClipboard(writeText) {
+function installClipboard(writeText: (text: string) => Promise<void>) {
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText },
@@ -43,13 +50,14 @@ function installClipboard(writeText) {
 }
 
 function installLocalStorage() {
-  const storage = new Map();
+  const storage = new Map<string, string>();
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
     value: {
-      getItem: (key) => storage.get(String(key)) || null,
-      setItem: (key, value) => storage.set(String(key), String(value)),
-      removeItem: (key) => storage.delete(String(key)),
+      getItem: (key: string) => storage.get(String(key)) || null,
+      setItem: (key: string, value: string) =>
+        storage.set(String(key), String(value)),
+      removeItem: (key: string) => storage.delete(String(key)),
       clear: () => storage.clear(),
     },
   });
@@ -122,7 +130,7 @@ describe("dashboardOrderFlexController", () => {
           statusLabel: "待處理",
           timestamp: "2026-04-25T00:00:00.000Z",
           flex: {
-            type: "flex",
+            type: "flex" as const,
             altText: "歷史通知",
             contents: { type: "bubble" },
           },
@@ -139,9 +147,15 @@ describe("dashboardOrderFlexController", () => {
             document.body.appendChild(popup);
             options.didOpen?.(popup);
             expect(popup.textContent).toContain("#O-2001");
-            popup.querySelector(".dashboard-flex-history-list__copy")?.click();
+            const copyButton = popup.querySelector(
+              ".dashboard-flex-history-list__copy",
+            ) as HTMLButtonElement | null;
+            copyButton?.click();
             await Promise.resolve();
-            popup.querySelector(".dashboard-flex-history-list__clear")?.click();
+            const clearButton = popup.querySelector(
+              ".dashboard-flex-history-list__clear",
+            ) as HTMLButtonElement | null;
+            clearButton?.click();
             await Promise.resolve();
             options.willClose?.();
             popup.remove();

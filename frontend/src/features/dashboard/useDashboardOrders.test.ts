@@ -2,8 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-function jsonResponse(payload) {
-  return { json: async () => payload };
+function jsonResponse(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    headers: { "content-type": "application/json" },
+  });
 }
 
 async function loadOrdersModule() {
@@ -19,11 +21,12 @@ function mountSwalVueContent(options) {
   return popup;
 }
 
-function setControlValue(id, value) {
+function setControlValue(id: string, value: string) {
   const control = document.getElementById(id);
   expect(control).toBeInstanceOf(HTMLInputElement);
-  control.value = value;
-  control.dispatchEvent(new Event("input", { bubbles: true }));
+  const input = control as HTMLInputElement;
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 describe("useDashboardOrders", () => {

@@ -41,6 +41,7 @@ describe("storefrontOrderReceiptPrefs", () => {
     const listener = vi.fn();
     window.addEventListener("coffee:receipt-request-updated", listener);
     state.currentUser = {
+      userId: "user-1",
       defaultReceiptInfo: JSON.stringify({
         buyer: "測試公司",
         taxId: "12345678",

@@ -33,10 +33,12 @@ describe("applyStorefrontBrandingSideEffects", () => {
 
     applyStorefrontBrandingSideEffects(branding);
 
-    const favicon = document.getElementById("dynamic-favicon");
+    const favicon = document.getElementById(
+      "dynamic-favicon",
+    ) as HTMLLinkElement | null;
     expect(document.title).toBe("新的品牌名稱");
     expect(favicon).toBeInstanceOf(HTMLLinkElement);
-    expect(favicon.href).toContain("/icons/custom-brand.png");
+    expect(favicon?.href).toContain("/icons/custom-brand.png");
     expect(JSON.parse(
       localStorage.getItem(STOREFRONT_PUBLIC_BRANDING_CACHE_KEY) || "{}",
     )).toEqual({

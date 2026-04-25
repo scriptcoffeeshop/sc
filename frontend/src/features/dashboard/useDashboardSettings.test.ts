@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+  DashboardDeliveryOption,
+  DashboardPaymentOption,
+} from "./dashboardSettingsShared.ts";
 
-function jsonResponse(payload) {
-  return { json: async () => payload };
+function jsonResponse(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    headers: { "content-type": "application/json" },
+  });
 }
 
 function createLocalStorageMock(initialEntries = {}) {
@@ -18,25 +24,45 @@ function createLocalStorageMock(initialEntries = {}) {
 }
 
 function createSettingsServices(overrides = {}) {
-  const defaultDeliveryOptions = {
-    delivery: { id: "delivery", label: "宅配", name: "宅配", enabled: true },
-    home_delivery: {
-      id: "home_delivery",
-      label: "全台宅配",
-      name: "全台宅配",
+  const defaultDeliveryOptions: Record<string, DashboardDeliveryOption> = {
+    delivery: {
+      id: "delivery",
+      icon_url: "icons/delivery.png",
+      label: "宅配",
+      name: "宅配",
+      description: "宅配",
       enabled: true,
     },
-    in_store: { id: "in_store", label: "來店自取", name: "來店自取", enabled: true },
+    home_delivery: {
+      id: "home_delivery",
+      icon_url: "icons/home-delivery.png",
+      label: "全台宅配",
+      name: "全台宅配",
+      description: "宅配到府",
+      enabled: true,
+    },
+    in_store: {
+      id: "in_store",
+      icon_url: "icons/in-store.png",
+      label: "來店自取",
+      name: "來店自取",
+      description: "門市自取",
+      enabled: true,
+    },
     seven_eleven: {
       id: "seven_eleven",
+      icon_url: "icons/seven-eleven.png",
       label: "7-11 取件",
       name: "7-11 取件",
+      description: "超商取件",
       enabled: true,
     },
     family_mart: {
       id: "family_mart",
+      icon_url: "icons/family-mart.png",
       label: "全家取件",
       name: "全家取件",
+      description: "超商取件",
       enabled: true,
     },
   };
@@ -53,7 +79,10 @@ function createSettingsServices(overrides = {}) {
     Toast: { fire: vi.fn() },
     Swal: { fire: vi.fn() },
     defaultDeliveryOptions,
-    normalizePaymentOption: (method, option = {}) => ({
+    normalizePaymentOption: (
+      method: string,
+      option: Partial<DashboardPaymentOption> = {},
+    ) => ({
       icon_url: normalizeIconPath(option?.icon_url || ""),
       name: String(option?.name || method),
       description: String(option?.description || ""),
@@ -61,7 +90,7 @@ function createSettingsServices(overrides = {}) {
     getDefaultIconUrl: (key) => `icons/${key}.png`,
     sectionIconSettingKey: (section) => `${section}_section_icon_url`,
     normalizeIconPath,
-    normalizeDeliveryOption: (option = {}) => ({
+    normalizeDeliveryOption: (option: Partial<DashboardDeliveryOption> = {}) => ({
       id: String(option.id || ""),
       label: String(option.label || option.name || ""),
       icon_url: String(option.icon_url || ""),

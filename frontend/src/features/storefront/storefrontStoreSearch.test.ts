@@ -8,6 +8,11 @@ import {
   resetStoreListCache,
 } from "./storefrontStoreSearch.ts";
 
+type StoreSearchSwalOptions = {
+  html?: HTMLElement;
+  title?: string;
+};
+
 vi.mock("../../lib/swal.ts", () => ({
   default: {
     fire: vi.fn(async (options) => {
@@ -45,9 +50,17 @@ describe("openStoreSearchModal", () => {
   it("mounts the Vue picker into a SweetAlert HTMLElement root", async () => {
     await openStoreSearchModal();
 
-    const modalOptions = vi.mocked(Swal.fire).mock.calls.find(([options]) =>
-      options?.title === "搜尋門市"
-    )?.[0];
+    const swalCalls = vi.mocked(Swal.fire).mock.calls as Array<[unknown]>;
+    const modalOptions = swalCalls
+      .map(([options]) => options)
+      .find((options): options is StoreSearchSwalOptions =>
+        Boolean(
+          options &&
+            typeof options === "object" &&
+            "title" in options &&
+            options.title === "搜尋門市",
+        )
+      );
 
     expect(modalOptions?.html).toBeInstanceOf(HTMLElement);
     expect(modalOptions?.html.id).toBe("");

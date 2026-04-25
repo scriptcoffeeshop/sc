@@ -85,14 +85,34 @@ describe("useStorefrontProducts", () => {
   it("syncs product categories from view model events", () => {
     const products = useStorefrontProducts();
 
-    products.handleProductsUpdated({
-      detail: {
-        categories: [{ name: "咖啡豆", products: [{ id: 1, name: "測試豆" }] }],
-      },
-    });
+    products.handleProductsUpdated(
+      new CustomEvent("coffee:products-updated", {
+        detail: {
+          categories: [{
+            name: "咖啡豆",
+            products: [{
+              id: 1,
+              name: "測試豆",
+              description: "",
+              roastLevel: "",
+              specs: [],
+            }],
+          }],
+        },
+      }),
+    );
 
     expect(products.productsCategories.value).toEqual([
-      { name: "咖啡豆", products: [{ id: 1, name: "測試豆" }] },
+      {
+        name: "咖啡豆",
+        products: [{
+          id: 1,
+          name: "測試豆",
+          description: "",
+          roastLevel: "",
+          specs: [],
+        }],
+      },
     ]);
 
     products.syncProductsViewModel({});

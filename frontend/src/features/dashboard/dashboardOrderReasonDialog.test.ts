@@ -3,11 +3,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { openDashboardOrderReasonDialog } from "./dashboardOrderReasonDialog.ts";
 
-function setReason(value) {
+function setReason(value: string) {
   const textarea = document.getElementById("swal-cancel-reason");
   expect(textarea).toBeInstanceOf(HTMLTextAreaElement);
-  textarea.value = value;
-  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+  const reasonInput = textarea as HTMLTextAreaElement;
+  reasonInput.value = value;
+  reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 describe("dashboardOrderReasonDialog", () => {
@@ -22,9 +23,10 @@ describe("dashboardOrderReasonDialog", () => {
         const popup = document.createElement("div");
         document.body.appendChild(popup);
         options.didOpen?.(popup);
-        expect(document.getElementById("swal-cancel-reason")?.value).toBe(
-          "原原因",
-        );
+        const textarea = document.getElementById(
+          "swal-cancel-reason",
+        ) as HTMLTextAreaElement | null;
+        expect(textarea?.value).toBe("原原因");
         setReason("  付款逾時  ");
         const value = options.preConfirm();
         options.willClose?.();

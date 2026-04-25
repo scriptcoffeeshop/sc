@@ -59,6 +59,7 @@
   - dashboard users composable 已補上 users/blacklist/service 型別與 API normalize，會員列表、黑名單與權限操作不再依賴隱式 services/null 型別。
   - dashboard 訂單通知 controller 已補上 Email/Flex/notification deps 共用型別，Flex 歷史紀錄也改為 typed parse/write，不再吞掉 localStorage/clipboard 錯誤。
   - `frontend/src/**/*.vue` 已全面轉為 `<script setup lang="ts">`；共用 UI primitive、dashboard sections/settings/order/modals、storefront 顯示元件與 pages 都納入 Vue typecheck。
+  - `frontend/src/**/*.test.ts` 已納入 `frontend/tsconfig.json`；前端 unit test fixture 也必須通過 `vue-tsc`，不再用 tsconfig exclude 避開型別檢查。
 - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model 與資料正規化已拆到 `dashboardFormFieldsShared.ts`。
 - dashboard formfields 新增/編輯彈窗已改由 Vue `DashboardFormFieldDialogForm.vue` 掛載到 SweetAlert；原 `dashboardFormFieldsDialog.ts` HTML/DOM helper 已移除。
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`

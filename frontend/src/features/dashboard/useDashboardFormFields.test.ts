@@ -2,8 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-function jsonResponse(payload) {
-  return { json: async () => payload };
+function jsonResponse(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    headers: { "content-type": "application/json" },
+  });
 }
 
 async function loadFormFieldsModule() {
@@ -19,22 +21,24 @@ function mountSwalVueContent(options) {
   return popup;
 }
 
-function setControlValue(id, value) {
+function setControlValue(id: string, value: string) {
   const control = document.getElementById(id);
   expect(control).toBeTruthy();
-  control.value = value;
-  control.dispatchEvent(
-    new Event(control instanceof HTMLSelectElement ? "change" : "input", {
+  const fieldControl = control as HTMLInputElement | HTMLSelectElement;
+  fieldControl.value = value;
+  fieldControl.dispatchEvent(
+    new Event(fieldControl instanceof HTMLSelectElement ? "change" : "input", {
       bubbles: true,
     }),
   );
 }
 
-function setCheckboxChecked(selector, checked) {
+function setCheckboxChecked(selector: string, checked: boolean) {
   const checkbox = document.querySelector(selector);
   expect(checkbox).toBeInstanceOf(HTMLInputElement);
-  checkbox.checked = checked;
-  checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+  const input = checkbox as HTMLInputElement;
+  input.checked = checked;
+  input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 describe("useDashboardFormFields", () => {
@@ -149,7 +153,10 @@ describe("useDashboardFormFields", () => {
       fire: vi.fn(async (options) => {
         if (options?.title === "編輯欄位") {
           const popup = mountSwalVueContent(options);
-          expect(document.getElementById("swal-fl")?.value).toBe("收據");
+          const labelInput = document.getElementById(
+            "swal-fl",
+          ) as HTMLInputElement | null;
+          expect(labelInput?.value).toBe("收據");
           setControlValue("swal-fl", "收據類型");
           setControlValue("swal-ft", "select");
           setControlValue("swal-fp", "請選擇");
@@ -314,19 +321,21 @@ describe("useDashboardFormFields", () => {
       throw new Error(`unexpected url: ${url}`);
     });
     const Toast = { fire: vi.fn() };
-    const Sortable = {
-      create: vi.fn((element, options) => {
+    class SortableMock {
+      static create = vi.fn((element, options) => {
         sortableOptions = options;
         return sortableInstance;
-      }),
-    };
+      });
+
+      destroy = vi.fn();
+    }
 
     module.configureDashboardFormFieldsServices({
       API_URL: "https://api.example",
       authFetch,
       getAuthUserId: () => "admin-user",
       getDashboardSettings: () => ({ delivery_options_config: "[]" }),
-      Sortable,
+      Sortable: SortableMock,
       Swal: { fire: vi.fn() },
       Toast,
     });
@@ -343,7 +352,7 @@ describe("useDashboardFormFields", () => {
     await Promise.resolve();
     await sortableOptions.onEnd();
 
-    expect(Sortable.create).toHaveBeenCalledWith(
+    expect(SortableMock.create).toHaveBeenCalledWith(
       listElement,
       expect.objectContaining({
         handle: ".drag-handle",

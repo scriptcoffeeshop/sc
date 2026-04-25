@@ -41,8 +41,12 @@ describe("createStorefrontMainAppPayments", () => {
       selectedDelivery: "delivery",
       selectedDeliveryOption: {
         id: "delivery",
+        icon_url: "icons/delivery.png",
+        label: "配送到府",
+        name: "配送到府",
+        description: "配送",
         enabled: true,
-        payment: { cod: false, linepay: true, transfer: true },
+        payment: { cod: false, linepay: true, jkopay: true, transfer: true },
       },
       quote: {
         deliveryMethod: "seven_eleven",
@@ -66,6 +70,10 @@ describe("createStorefrontMainAppPayments", () => {
       selectedDelivery: "delivery",
       selectedDeliveryOption: {
         id: "delivery",
+        icon_url: "icons/delivery.png",
+        label: "配送到府",
+        name: "配送到府",
+        description: "配送",
         enabled: true,
         payment: { cod: true, linepay: true, jkopay: true, transfer: true },
       },

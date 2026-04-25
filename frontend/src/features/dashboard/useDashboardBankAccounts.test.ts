@@ -2,8 +2,10 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-function jsonResponse(payload) {
-  return { json: async () => payload };
+function jsonResponse(payload: unknown) {
+  return new Response(JSON.stringify(payload), {
+    headers: { "content-type": "application/json" },
+  });
 }
 
 async function loadBankAccountsModule() {
@@ -11,11 +13,12 @@ async function loadBankAccountsModule() {
   return await import("./useDashboardBankAccounts.ts");
 }
 
-function fillInput(id, value) {
+function fillInput(id: string, value: string) {
   const input = document.getElementById(id);
   expect(input).toBeInstanceOf(HTMLInputElement);
-  input.value = value;
-  input.dispatchEvent(new Event("input", { bubbles: true }));
+  const textInput = input as HTMLInputElement;
+  textInput.value = value;
+  textInput.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function mountSwalVueContent(options) {
@@ -139,7 +142,10 @@ describe("useDashboardBankAccounts", () => {
       fire: vi.fn(async (options) => {
         if (options?.title === "編輯匯款帳號") {
           const popup = mountSwalVueContent(options);
-          expect(document.getElementById("swal-bc")?.value).toBe("013");
+          const bankCodeInput = document.getElementById(
+            "swal-bc",
+          ) as HTMLInputElement | null;
+          expect(bankCodeInput?.value).toBe("013");
           fillInput("swal-bc", "812");
           fillInput("swal-bn", "台新銀行");
           fillInput("swal-an", "5566778899");

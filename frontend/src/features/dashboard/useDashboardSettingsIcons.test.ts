@@ -87,7 +87,7 @@ describe("useDashboardSettingsIcons", () => {
     expect(
       module.dashboardSettingsIconActions.previewSectionIconFile(
         "products",
-        { type: "image/png" },
+        new File([""], "products-icon.png", { type: "image/png" }),
       ),
     ).toBe(true);
 
