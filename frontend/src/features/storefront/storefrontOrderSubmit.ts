@@ -48,7 +48,23 @@ function persistOrderDraftPreference(key: string, value: unknown) {
   return true;
 }
 
-function syncUserProfileInBackground(payload: Record<string, unknown>) {
+interface UserProfilePreferencePayload {
+  phone: string;
+  email: string;
+  defaultCustomFields: string;
+  defaultDeliveryMethod: string;
+  defaultCity: string;
+  defaultDistrict: string;
+  defaultAddress: string;
+  defaultStoreId: string;
+  defaultStoreName: string;
+  defaultStoreAddress: string;
+  defaultPaymentMethod: PaymentMethod | string;
+  defaultTransferAccountLast5: string;
+  defaultReceiptInfo: ReceiptInfo | string;
+}
+
+function syncUserProfileInBackground(payload: UserProfilePreferencePayload) {
   try {
     void authFetch(`${API_URL}?action=updateUserProfile`, {
       method: "POST",
@@ -84,7 +100,7 @@ function isStorePickupMethod(deliveryMethod: string): boolean {
 function buildSubmittedOrderPreferencePayload(
   input: SubmittedOrderPreferenceInput,
   options: { serializeReceiptInfo: boolean },
-): Record<string, unknown> {
+): UserProfilePreferencePayload {
   const deliveryInfo = input.deliveryInfo;
   const isDeliveryAddress = isDeliveryAddressMethod(input.deliveryMethod);
   const isStorePickup = isStorePickupMethod(input.deliveryMethod);

@@ -8,7 +8,17 @@ import {
   type StorefrontDeliveryOption,
 } from "./storefrontModels.ts";
 
-export type DeliveryPrefs = Record<string, unknown>;
+export interface DeliveryPrefs {
+  method?: unknown;
+  city?: unknown;
+  district?: unknown;
+  address?: unknown;
+  companyOrBuilding?: unknown;
+  storeId?: unknown;
+  storeName?: unknown;
+  storeAddress?: unknown;
+  [key: string]: unknown;
+}
 
 export type StoreRecord = {
   id: string;
@@ -35,7 +45,7 @@ export function parseDeliveryConfig(value: unknown): StorefrontDeliveryOption[] 
   );
 }
 
-export function buildFormBody(data: Record<string, unknown>): URLSearchParams {
+export function buildFormBody(data: { [key: string]: unknown }): URLSearchParams {
   const body = new URLSearchParams();
   Object.entries(data).forEach(([key, value]) => {
     body.set(key, String(value || ""));
