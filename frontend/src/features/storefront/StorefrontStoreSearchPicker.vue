@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import type { StoreRecord } from "./storefrontDeliveryDom";
+import type { StoreRecord } from "./storefrontDeliveryData";
 
 const props = withDefaults(
   defineProps<{

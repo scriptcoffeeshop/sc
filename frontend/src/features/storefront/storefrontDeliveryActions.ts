@@ -12,7 +12,7 @@ import {
   parseDeliveryConfig,
   parseDeliveryPrefs,
   type DeliveryPrefs,
-} from "./storefrontDeliveryDom.ts";
+} from "./storefrontDeliveryData.ts";
 import {
   emitStorefrontHomeDeliveryAddressUpdated,
   emitStorefrontLocalDeliveryAddressUpdated,

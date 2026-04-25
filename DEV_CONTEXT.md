@@ -85,7 +85,7 @@
 - 後端門市地圖 `api/stores.ts` 已共用門市 session 建立、clientUrl allowlist 驗證、callback 欄位取值與成功頁 HTML；綠界/PCSC callback 不再各自複製導回頁。
 - 後端門市地圖 callback 再收斂：綠界與 PCSC 共用門市選擇 DB update helper 與錯誤頁 HTML builder，只保留各自 token / 欄位 mapping。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
-- storefront 送單配送資訊已改讀 Vue 狀態（新竹配送、全台宅配、已選超商門市）；不再透過隱藏 input 或 `storefrontDeliveryDom.ts` 讀配送資料，剩餘 DOM 讀值主要集中在 SweetAlert 會員資料彈窗邊界。
+- storefront 送單配送資訊已改讀 Vue 狀態（新竹配送、全台宅配、已選超商門市）；不再透過隱藏 input 讀配送資料。原 `storefrontDeliveryDom.ts` 已拆成純資料 helper `storefrontDeliveryData.ts` 與 SweetAlert 會員資料彈窗邊界 `storefrontModalFormControls.ts`。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。
 - 原則：新功能以 Vue-first 為主；剩餘相容層只接受 hotfix、部署修正或移除型重構。
 - 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。

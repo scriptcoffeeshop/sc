@@ -9,12 +9,7 @@ export type StoreRecord = {
   address: string;
 };
 
-type FormControlElement =
-  | HTMLInputElement
-  | HTMLSelectElement
-  | HTMLTextAreaElement;
-
-export function asRecord(value: unknown): Record<string, unknown> {
+function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
@@ -35,22 +30,6 @@ export function normalizeStoreRecord(value: unknown): StoreRecord {
 
 export function parseDeliveryConfig(value: unknown): StorefrontDeliveryOption[] {
   return parseJsonArray(value) as StorefrontDeliveryOption[];
-}
-
-export function getFormControlElement(id: string): FormControlElement | null {
-  const element = document.getElementById(id);
-  if (
-    element instanceof HTMLInputElement ||
-    element instanceof HTMLSelectElement ||
-    element instanceof HTMLTextAreaElement
-  ) {
-    return element;
-  }
-  return null;
-}
-
-export function getFormControlValue(id: string): string {
-  return getFormControlElement(id)?.value.trim() || "";
 }
 
 export function buildFormBody(data: Record<string, unknown>): URLSearchParams {

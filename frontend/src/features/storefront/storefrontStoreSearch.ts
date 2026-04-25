@@ -7,7 +7,7 @@ import StorefrontStoreSearchPicker from "./StorefrontStoreSearchPicker.vue";
 import {
   normalizeStoreRecord,
   type StoreRecord,
-} from "./storefrontDeliveryDom.ts";
+} from "./storefrontDeliveryData.ts";
 import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 import {
   clearStorefrontSelectedStore,
