@@ -1,3 +1,4 @@
+import { formatDateTimeText } from "../../lib/dateTime.ts";
 import type { FlexContent } from "./dashboardOrderFlexLayout.ts";
 import type { DashboardLineFlexMessage } from "./dashboardOrderNotificationTypes";
 
@@ -40,7 +41,7 @@ export function buildOrderFlexMessageBubble({
 
   footerContents.push({
     type: "text",
-    text: `更新時間：${new Date().toLocaleString("zh-TW")}`,
+    text: `更新時間：${formatDateTimeText(new Date())}`,
     size: "xxs",
     color: "#93A1A1",
     align: "center",

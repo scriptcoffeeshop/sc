@@ -4,6 +4,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes";
+import { formatDateTimeText } from "../../lib/dateTime.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { getDashboardActiveTab } from "./useDashboardSession.ts";
 
@@ -143,9 +144,7 @@ function buildUserViewModel(user: DashboardUserRecord, isSuperAdmin: boolean) {
     statusBadgeClass: isBlocked
       ? "bg-red-100 text-red-800"
       : "bg-green-100 text-green-800",
-    lastLoginText: user.lastLogin
-      ? new Date(user.lastLogin).toLocaleString("zh-TW")
-      : "無紀錄",
+    lastLoginText: formatDateTimeText(user.lastLogin) || "無紀錄",
     blacklistActionBlocksUser: !isBlocked,
     blacklistActionLabel: isBlocked ? "解除封鎖" : "封鎖",
     blacklistActionClass: isBlocked
@@ -159,9 +158,7 @@ function buildBlacklistViewModel(blacklistEntry: DashboardBlacklistRecord) {
   return {
     displayName: String(blacklistEntry.displayName || ""),
     lineUserId: String(blacklistEntry.lineUserId || ""),
-    blockedAtText: blacklistEntry.blockedAt
-      ? new Date(blacklistEntry.blockedAt).toLocaleString("zh-TW")
-      : "無紀錄",
+    blockedAtText: formatDateTimeText(blacklistEntry.blockedAt) || "無紀錄",
     reasonText: blacklistEntry.reason || "(無原因)",
   };
 }

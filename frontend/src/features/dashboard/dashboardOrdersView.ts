@@ -160,7 +160,7 @@ export function buildOrderViewModel(
 
   return {
     orderId: String(order.orderId || ""),
-    timestampText: new Date(order.timestamp).toLocaleString("zh-TW"),
+    timestampText: formatOrderDateTimeText(order.timestamp),
     deliveryMethod: order.deliveryMethod || "",
     deliveryLabel: orderMethodLabel[order.deliveryMethod || ""] ||
       order.deliveryMethod ||

@@ -1,4 +1,5 @@
 import { createApp, type App } from "vue";
+import { formatDateTimeText } from "../../lib/dateTime.ts";
 import { tryParseJsonArray } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type { DashboardOrderRecord } from "./dashboardOrderTypes";
@@ -199,7 +200,7 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
       orderId: item.orderId,
       statusLabel: item.statusLabel,
       timestamp: item.timestamp,
-      timeText: new Date(item.timestamp).toLocaleString("zh-TW"),
+      timeText: formatDateTimeText(item.timestamp),
       flexJson: JSON.stringify(item.flex, null, 2),
     }));
     const root = document.createElement("div");
