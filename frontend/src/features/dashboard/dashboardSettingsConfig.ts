@@ -14,11 +14,12 @@ export const SECTION_TITLE_ORDER = ["products", "delivery", "notes"] as const;
 
 export type DashboardPaymentMethod = typeof PAYMENT_METHOD_ORDER[number];
 export type DashboardSectionKey = typeof SECTION_TITLE_ORDER[number];
-export type DashboardSettingsRecord = Record<string, unknown>;
-export type DashboardPaymentOptionsMap = Record<
-  DashboardPaymentMethod,
-  DashboardPaymentOption
->;
+export interface DashboardSettingsRecord {
+  [key: string]: unknown;
+}
+export type DashboardPaymentOptionsMap = {
+  [method in DashboardPaymentMethod]: DashboardPaymentOption;
+};
 
 export interface DashboardBrandingSettings {
   siteTitle: string;
@@ -47,7 +48,7 @@ export type DashboardSectionTitleSettingsMap = Record<
 >;
 
 export interface DashboardSettingsConfigDeps {
-  defaultDeliveryOptions: Record<string, DashboardDeliveryOption>;
+  defaultDeliveryOptions: { [id: string]: DashboardDeliveryOption };
   getDefaultIconUrl: (kind: string) => string;
   normalizeDeliveryOption: (
     item: DashboardSettingsRecord | DashboardDeliveryOption,
@@ -62,7 +63,7 @@ export interface DashboardSettingsConfigDeps {
 }
 
 export interface DashboardSettingsPersistedConfig {
-  settings: Record<string, string>;
+  settings: { [key: string]: string };
   linePaySandboxChecked: boolean;
 }
 
@@ -85,10 +86,10 @@ function parseSettingsRecordArray(value: unknown): DashboardSettingsRecord[] {
 
 function buildLegacyRoutingConfig(
   settings: DashboardSettingsRecord,
-): Record<string, DashboardPaymentRouting> {
+): { [deliveryMethod: string]: DashboardPaymentRouting } {
   const routingConfig = parseSettingsRecord(settings["payment_routing_config"]);
   if (Object.keys(routingConfig).length) {
-    return routingConfig as Record<string, DashboardPaymentRouting>;
+    return routingConfig as { [deliveryMethod: string]: DashboardPaymentRouting };
   }
 
   const linePayEnabled = String(settings["linepay_enabled"]) === "true";

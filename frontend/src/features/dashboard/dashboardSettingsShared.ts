@@ -1,7 +1,9 @@
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDefaultIconUrl, normalizeIconPath } from "../../lib/icons.ts";
 
-type SettingsRecord = Record<string, unknown>;
+interface SettingsRecord {
+  [key: string]: unknown;
+}
 
 export interface DashboardPaymentRouting {
   cod: boolean;

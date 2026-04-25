@@ -8,7 +8,8 @@ import type {
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
-interface DashboardCategoryRecord extends Record<string, unknown> {
+interface DashboardCategoryRecord {
+  [key: string]: unknown;
   id: number | string;
   name: string;
 }

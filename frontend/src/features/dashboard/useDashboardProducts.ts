@@ -21,10 +21,21 @@ interface DashboardSortableInstance {
   destroy?: () => void;
 }
 
+interface DashboardProductSortableEvent {
+  oldIndex?: number | undefined;
+  newIndex?: number | undefined;
+}
+
+interface DashboardProductSortableOptions {
+  handle: string;
+  animation: number;
+  onEnd: (event: DashboardProductSortableEvent) => void | Promise<void>;
+}
+
 interface DashboardSortableConstructor {
   create?: (
     element: HTMLElement,
-    options: Record<string, unknown>,
+    options: DashboardProductSortableOptions,
   ) => DashboardSortableInstance;
 }
 
@@ -173,7 +184,7 @@ async function syncProductSortables() {
     const sortable = Sortable.create?.(tbody, {
       handle: ".drag-handle",
       animation: 150,
-      onEnd: async (event: { oldIndex?: number; newIndex?: number }) => {
+      onEnd: async (event) => {
         if (event.oldIndex === event.newIndex) return;
         const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
           .map((row) =>

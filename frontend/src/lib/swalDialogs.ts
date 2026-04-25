@@ -10,7 +10,9 @@ export interface SwalDialogResult {
 }
 
 export type SwalDialogPromise = Promise<SwalDialogResult>;
-export type SwalDialogOptions = Record<string, unknown>;
+export interface SwalDialogOptions {
+  [key: string]: unknown;
+}
 
 export function showAlert(
   title: string,

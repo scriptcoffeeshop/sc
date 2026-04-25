@@ -7,7 +7,9 @@ export const orderStatusColorMap: Record<string, string> = {
   cancelled: "#DC322F",
 };
 
-export type FlexContent = Record<string, unknown>;
+export interface FlexContent {
+  [key: string]: unknown;
+}
 
 type FlexTextWeight = "regular" | "bold";
 

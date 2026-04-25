@@ -13,6 +13,16 @@ type CreateDashboardOrdersBulkActionsOptions = {
   resetSelection: () => void;
 };
 
+interface BatchUpdateOrderPayload {
+  userId: string;
+  orderIds: string[];
+  status: string;
+  paymentStatus?: string;
+  trackingNumber?: string;
+  shippingProvider?: string;
+  trackingUrl?: string;
+}
+
 export function createDashboardOrdersBulkActions(
   options: CreateDashboardOrdersBulkActionsOptions,
 ) {
@@ -30,9 +40,9 @@ export function createDashboardOrdersBulkActions(
       return;
     }
 
-    let trackingNumber;
-    let shippingProvider;
-    let trackingUrl;
+    let trackingNumber = "";
+    let shippingProvider = "";
+    let trackingUrl = "";
     if (options.batchForm.status === "shipped") {
       const { value, isConfirmed } = await openDashboardShippingInfoDialog({
         Swal,
@@ -48,18 +58,18 @@ export function createDashboardOrdersBulkActions(
       trackingUrl = String(shippingInfo.trackingUrl || "");
     }
 
-    const payload: Record<string, unknown> = {
+    const payload: BatchUpdateOrderPayload = {
       userId: getAuthUserId(),
       orderIds,
       status: options.batchForm.status,
     };
     if (options.batchForm.paymentStatus !== "__keep__") {
-      payload["paymentStatus"] = options.batchForm.paymentStatus;
+      payload.paymentStatus = options.batchForm.paymentStatus;
     }
     if (options.batchForm.status === "shipped") {
-      payload["trackingNumber"] = trackingNumber;
-      payload["shippingProvider"] = shippingProvider;
-      payload["trackingUrl"] = trackingUrl;
+      payload.trackingNumber = trackingNumber;
+      payload.shippingProvider = shippingProvider;
+      payload.trackingUrl = trackingUrl;
     }
 
     try {

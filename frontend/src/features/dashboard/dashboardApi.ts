@@ -1,7 +1,9 @@
 import { authFetch } from "../../lib/auth.ts";
 import { API_URL } from "../../lib/appConfig.ts";
 
-type DashboardPayload = Record<string, unknown>;
+interface DashboardPayload {
+  [key: string]: unknown;
+}
 
 export const API = {
   getOrders: async (userId: string | number) => {

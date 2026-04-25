@@ -25,6 +25,16 @@ type OrderStatusControllerDeps = {
   orderStatusLabel: Record<string, string>;
 };
 
+interface OrderStatusUpdatePayload {
+  userId: string;
+  orderId: string;
+  status: string;
+  trackingNumber?: string;
+  shippingProvider?: string;
+  trackingUrl?: string;
+  cancelReason?: string;
+}
+
 export function createOrderStatusController(deps: OrderStatusControllerDeps) {
   function getOrders() {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
@@ -95,19 +105,19 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
         }
       }
 
-      const payload: Record<string, unknown> = {
+      const payload: OrderStatusUpdatePayload = {
         userId: deps.getAuthUserId(),
         orderId,
         status,
       };
       if (status === "shipped") {
-        payload["trackingNumber"] = trackingNumber;
-        payload["shippingProvider"] = shippingProvider;
-        payload["trackingUrl"] = trackingUrl;
+        payload.trackingNumber = trackingNumber;
+        payload.shippingProvider = shippingProvider;
+        payload.trackingUrl = trackingUrl;
       } else if (status === "cancelled" || status === "failed") {
-        payload["cancelReason"] = cancelReason;
+        payload.cancelReason = cancelReason;
       } else {
-        payload["cancelReason"] = "";
+        payload.cancelReason = "";
       }
 
       const response = await deps.authFetch(`${deps.API_URL}?action=updateOrderStatus`, {

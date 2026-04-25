@@ -22,7 +22,8 @@ import StorefrontPaymentDialogSummary, {
 export { PAYMENT_METHOD_TEXT, PAYMENT_STATUS_TEXT };
 export { formatDateTimeText };
 
-export interface PaymentDialogOptions extends Record<string, unknown> {
+export interface PaymentDialogOptions {
+  [key: string]: unknown;
   icon: "success" | "error" | "warning" | "info";
   title: string;
   html: HTMLElement;

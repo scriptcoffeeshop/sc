@@ -13,6 +13,7 @@ import {
   type DashboardProductRecord,
   type DashboardPromotionRecord,
   type PromotionFormState,
+  type PromotionTargetItem,
 } from "./dashboardPromotionsShared.ts";
 
 type PromotionSortableEvent = {
@@ -62,7 +63,7 @@ const promotionForm = reactive<PromotionFormState>({
   targetItems: [],
 });
 
-let promotionsMap: Record<string, DashboardPromotionRecord> = {};
+let promotionsMap: { [id: string]: DashboardPromotionRecord } = {};
 let services: DashboardPromotionsServices | null = null;
 let promotionsTableElement: HTMLElement | null = null;
 let promotionSortable: PromotionSortableInstance | null = null;
@@ -280,7 +281,17 @@ async function savePromotion(event?: Event) {
   event?.preventDefault?.();
   const { API_URL, authFetch, getAuthUserId, Toast, Swal } = getServices();
 
-  const payload: Record<string, unknown> = {
+  const payload: {
+    userId: string;
+    name: string;
+    type: string;
+    targetItems: PromotionTargetItem[];
+    minQuantity: number;
+    discountType: string;
+    discountValue: number;
+    enabled: boolean;
+    id?: number;
+  } = {
     userId: getAuthUserId(),
     name: String(promotionForm.name || "").trim(),
     type: String(promotionForm.type || "bundle"),

@@ -1,6 +1,10 @@
+export interface ExternalPostFormFields {
+  [name: string]: unknown;
+}
+
 export type ExternalPostFormOptions = {
   action: string;
-  fields: Record<string, unknown>;
+  fields: ExternalPostFormFields;
   target?: string;
   documentRef?: Document;
 };

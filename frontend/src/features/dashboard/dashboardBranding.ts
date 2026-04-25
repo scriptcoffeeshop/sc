@@ -19,7 +19,9 @@ interface DashboardBrandingDeps {
   resolveAssetUrl: (url: string) => string;
 }
 
-type DashboardSettings = Record<string, unknown>;
+interface DashboardSettings {
+  [key: string]: unknown;
+}
 
 export function createDashboardBrandingController(
   deps: DashboardBrandingDeps,
