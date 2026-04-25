@@ -1,27 +1,10 @@
-import { expect, type Page, type Route, test } from "@playwright/test";
-import { installGlobalStubs } from "./support/smoke-fixtures";
-
-const API_URL =
-  "https://avnvsjyyeofivgmrchte.supabase.co/functions/v1/coffee-api";
-const SUPABASE_REST_PREFIX =
-  "https://avnvsjyyeofivgmrchte.supabase.co/rest/v1/";
-
-function jsonHeaders() {
-  return {
-    "access-control-allow-origin": "*",
-    "access-control-allow-methods": "GET,POST,OPTIONS",
-    "access-control-allow-headers": "*",
-    "content-type": "application/json",
-  };
-}
-
-async function fulfillJson(route: Route, payload: unknown, status = 200) {
-  await route.fulfill({
-    status,
-    headers: jsonHeaders(),
-    body: JSON.stringify(payload),
-  });
-}
+import { expect, type Page, test } from "@playwright/test";
+import {
+  API_URL,
+  fulfillJson,
+  installGlobalStubs,
+  SUPABASE_REST_PREFIX,
+} from "./support/smoke-fixtures";
 
 type DashboardDownloadRecord = {
   download: string;
