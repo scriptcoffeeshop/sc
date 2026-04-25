@@ -19,6 +19,7 @@ import {
   getStorefrontLocalDeliveryAddress,
   setStorefrontLocalDeliveryAddress,
 } from "./storefrontDeliveryFormState.ts";
+import { submitExternalPostForm } from "./storefrontExternalPostForm.ts";
 import {
   applyStoreSelection,
   clearSelectedStore,
@@ -148,31 +149,20 @@ export async function openStoreMap() {
       const result = await res.json();
       if (!result.success) throw new Error(result.error || "建立地圖會話失敗");
 
-      // 以 POST 表單提交到 PCSC 電子地圖
-      const form = document.createElement("form");
-      form.method = "POST";
-      form.action = "https://emap.presco.com.tw/c2cemap.ashx";
-      form.target = "_self";
-
-      const fields = {
-        eshopid: result.eshopid || "870",
-        url: result.callbackUrl,
-        tempvar: result.token,
-        sid: "1",
-        stoession: "",
-        showtype: "1",
-        servicetype: "1",
-      };
-      Object.entries(fields).forEach(([k, v]) => {
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = k;
-        input.value = String(v || "");
-        form.appendChild(input);
-      });
-      document.body.appendChild(form);
       Swal.close();
-      form.submit();
+      submitExternalPostForm({
+        action: "https://emap.presco.com.tw/c2cemap.ashx",
+        target: "_self",
+        fields: {
+          eshopid: result.eshopid || "870",
+          url: result.callbackUrl,
+          tempvar: result.token,
+          sid: "1",
+          stoession: "",
+          showtype: "1",
+          servicetype: "1",
+        },
+      });
     } catch (e) {
       const choice = await Swal.fire({
         icon: "error",
@@ -206,18 +196,10 @@ export async function openStoreMap() {
     const result = await res.json();
     if (!result.success) throw new Error(result.error || "建立地圖會話失敗");
 
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = result.mapUrl;
-    Object.entries(result.params || {}).forEach(([k, v]) => {
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.name = k;
-      input.value = String(v || "");
-      form.appendChild(input);
+    submitExternalPostForm({
+      action: result.mapUrl,
+      fields: result.params || {},
     });
-    document.body.appendChild(form);
-    form.submit();
   } catch (e) {
     const choice = await Swal.fire({
       icon: "error",
