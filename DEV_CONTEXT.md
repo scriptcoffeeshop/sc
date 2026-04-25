@@ -18,7 +18,7 @@
 8. `google6cb7aa3783369937.html` 為受保護檔案，不可刪除或修改。
 9. `.env*` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；只有 `.example` / `.sample` / `.template` 類範本可入版控。
 10. 金流正式金鑰只放在 Supabase / GitHub secrets，不寫入 repo、文件或測試 fixture。
-11. `frontend/src/types/` 是共享型別來源；新的 composable 請直接用 `.ts`，`guardrails` 會跑 `scripts/check_new_composables_ts.py` 阻擋新增 `use*.js`。
+11. `frontend/src/types/` 是共享型別來源；新的 composable 請直接用 `.ts`，`guardrails` 會透過 repo hygiene 阻擋 tracked `.js` 回流。
 
 ---
 
@@ -280,7 +280,7 @@
 - 依健康度檢查處理 npm audit：`sweetalert2` 已由 `^11.10.6` 更新到 `^11.26.24`，`tw-city-selector` 連帶的 `docsify/marked/vue2` 風險已透過移除該依賴與本地相容 class 收斂。
 - 完成 `tw-city-selector` audit 收斂：已移除 npm dependency 與本地相容 class，保留 `taiwanCityData.ts` 作為繁中縣市/區域/郵遞區號資料來源以維持全台宅配行為；`npm audit --omit=dev` 目前為 0 vulnerabilities。
 - 前端型別守門已完成升級：`npm run typecheck` 現在直接執行完整 `frontend/tsconfig.json`，並已串入 `ci-local`；補齊 dashboard products、storefront cart/delivery/form/main app/order submit/order history 等型別邊界與相容全域宣告後，`npm run typecheck:full` 目前可通過。
-- Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，`check_new_composables_ts.py` allowlist 已清空。
+- Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，tracked `.js` 回流改由 repo hygiene 統一阻擋。
 - 舊 `storefrontOrderActions.ts` 出口層已移除：付款狀態/文案走 `storefrontPaymentDisplay.ts`，送單流程走 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別走 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`。
 - 前台訂單流程已補強共享型別：新增 `frontend/src/types/storefront.ts`，並讓送單、配送資訊、收據偏好、付款顯示與確認彈窗核心函式改用明確參數/回傳型別；`frontend/src/lib/swalDialogs.ts` 也開始集中常見 SweetAlert2 模式，後續可逐步把重複的 `Swal.fire()` 呼叫收斂到 helper。
 - shared legacy 最後一哩路已推進：`config.js`、`auth.js`、`utils.js`、`state.js`、`dashboard/api.js`、`dashboard-branding.js`、`order-shared.js` 的實作已搬到 `frontend/src/lib/*` 或 `frontend/src/features/dashboard/*`；Vite 內部 import 不再直接依賴這批 shared legacy 檔，2026-04-25 已移除 `js/` re-export 相容殼。
@@ -310,12 +310,11 @@
 - dashboard promotions composable 已補上 promotion/product/service/sortable 型別，活動目標商品、排序與儲存流程不再依賴隱式 services/null 型別。
 - dashboard bank accounts composable 已補上 account/service/sortable 型別與 API normalize，匯款帳號排序與 CRUD 不再依賴隱式 services/null 型別。
 - dashboard composable unit test 已補齊缺口：新增 `useDashboardSettings`、`useDashboardFormFields`、`useDashboardCategories`、`useDashboardUsers`、`useDashboardBankAccounts`、`useDashboardSession`、`useDashboardSettingsIcons` tests，dashboard composable 目前全數都有 unit test 檔保護。
-- dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；`check_new_composables_ts.py` allowlist 同步移除這三支，避免回退到 JS。
+- dashboard composable `.ts` 轉換續推：`useDashboardOrders.ts`、`useDashboardFormFields.ts`、`useDashboardSettings.ts` 已完成轉檔並更新引用；目前 repo hygiene 已統一阻擋 tracked `.js` 回流。
 - backend settings round-trip tests 已補強：新增專門 `settings_test.ts`，除了既有 routing smoke 外，再覆蓋 `updateSettings -> getSettings` 的正規化/round-trip/upsert/public visibility，特別保護 `delivery_options_config`、`payment_options_config`、`linepay_sandbox` 與相關 icon path 正規化。
 - backend `index.ts` 已再拆一層：`routing/action-map.ts` 集中 action → handler 規則，`utils/rate-limit-config.ts` 集中 rate limit 常數與 store 初始化，降低單檔密度。
 - frontend 已開始漸進式 TypeScript 引入：新增 `frontend/src/types/`、`frontend/tsconfig.json`，並將 `useDashboardSession`、`useDashboardOrders`、`useDashboardFormFields`、`useDashboardSettings`、`useStorefrontOrderHistory` 轉為 `.ts`。
-- 新增 `scripts/check_new_composables_ts.py`，`guardrails` 會阻擋新增 `frontend/src/features/**/use*.js`（既有 allowlist 除外）。
-- `scripts/check_new_composables_ts.py` 的 storefront allowlist 已移除 `useStorefrontCart.js`、`useStorefrontShell.js`，避免後續又把這兩支退回 JS。
+- `scripts/check_new_composables_ts.py` 已移除；它原本只擋 `frontend/src/features/**/use*.js`，現在由 `repo_hygiene_check.py` 的 tracked `.js` 守門涵蓋，避免重疊規則漂移。
 - 根目錄 `main.html` / `dashboard.html` 已瘦身為本機 compat redirect，不再保留大量 legacy 前後台靜態結構。
 - `npm run ci-local` 已納入 `npm run test:unit`，讓 frontend composable unit test 成為日常守門，而不是只在 `health` 才執行。
 
