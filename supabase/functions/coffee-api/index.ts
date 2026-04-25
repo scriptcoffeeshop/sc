@@ -7,6 +7,7 @@ import { cors } from "hono/cors";
 import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
 import { type AuthResult } from "./utils/auth.ts";
+import type { JsonRecord } from "./utils/json.ts";
 import {
   type RateLimitConfig,
   type RateLimitStore,
@@ -167,7 +168,7 @@ function logActionAudit(params: {
 
 function wrapHandler(
   handler: (
-    data: Record<string, unknown>,
+    data: JsonRecord,
     req: Request,
     context: WrappedActionContext,
   ) => Promise<unknown>,
@@ -188,7 +189,7 @@ function wrapHandler(
 
     try {
       const url = new URL(req.url);
-      const data = options?.parseBody !== false
+      const data: JsonRecord = options?.parseBody !== false
         ? await parseRequestData(req, url)
         : Object.fromEntries(url.searchParams);
       action = resolveActionName(data);

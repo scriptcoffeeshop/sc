@@ -7,6 +7,7 @@ import { getBankAccounts } from "./bank-accounts.ts";
 import { getPromotions } from "./promotions.ts";
 import {
   asJsonRecord,
+  type JsonRecord,
   tryParseJsonArray,
   tryParseJsonRecord,
 } from "../utils/json.ts";
@@ -99,7 +100,7 @@ function normalizePaymentOptionsConfig(value: string): string {
     return value;
   }
 
-  const normalized: Record<string, unknown> = {};
+  const normalized: JsonRecord = {};
   for (const [method, option] of Object.entries(parsed)) {
     if (!option || typeof option !== "object" || Array.isArray(option)) {
       normalized[method] = option;
@@ -149,7 +150,7 @@ export async function getSettings(isAdmin = false) {
 }
 
 export async function updateSettingsAction(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -174,7 +175,7 @@ function sanitizeFileName(fileName = "icon.png") {
 }
 
 export async function uploadAsset(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

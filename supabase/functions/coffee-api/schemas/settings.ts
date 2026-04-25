@@ -92,7 +92,7 @@ export const updateFormFieldSchema = z.object({
   section: z.string().trim().min(1, "section 不能為空").optional(),
   deliveryVisibility: z.union([z.string(), z.null()]).optional(),
 }).refine(
-  (data: Record<string, unknown>) => Object.keys(data).some((k) => k !== "id"),
+  (data) => Object.keys(data).some((k) => k !== "id"),
   {
     message: "沒有可更新的欄位",
   },
@@ -117,7 +117,7 @@ export const updateBankAccountSchema = z.object({
   accountName: optionalTrimmed,
   enabled: optionalBoolSchema,
 }).refine(
-  (data: Record<string, unknown>) => Object.keys(data).some((k) => k !== "id"),
+  (data) => Object.keys(data).some((k) => k !== "id"),
   {
     message: "沒有可更新的欄位",
   },

@@ -123,10 +123,11 @@ import {
   reorderFormFields,
   updateFormField,
 } from "../api/form-fields.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import type { RateLimitConfig } from "../utils/rate-limit.ts";
 
 export type ActionHandler = (
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) => Promise<unknown>;
 type ValidatedActionHandler<T extends z.ZodTypeAny> = (
@@ -457,7 +458,7 @@ export function shouldAuditAction(actionConfig: ActionConfig): boolean {
     Boolean(actionConfig.methods?.includes("POST"));
 }
 
-export function resolveActionName(data: Record<string, unknown>): string {
+export function resolveActionName(data: JsonRecord): string {
   return String(data.action || "getProducts").trim() || "getProducts";
 }
 
