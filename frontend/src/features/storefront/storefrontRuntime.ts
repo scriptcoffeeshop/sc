@@ -1,5 +1,9 @@
 import type { DashboardSettingsRecord } from "../../types/settings";
-import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
+import {
+  normalizeStorefrontDeliveryOption,
+  type StorefrontDeliveryOption,
+} from "./storefrontModels.ts";
 
 export type StorefrontQuoteRefreshOptions = { silent?: boolean };
 export type StorefrontPaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
@@ -66,7 +70,9 @@ export function setStorefrontAppSettings(
 
 export function setStorefrontDeliveryConfig(deliveryConfig: unknown) {
   storefrontRuntime.currentDeliveryConfig = Array.isArray(deliveryConfig)
-    ? deliveryConfig as StorefrontDeliveryOption[]
+    ? deliveryConfig.map((option) =>
+      normalizeStorefrontDeliveryOption(asJsonRecord(option))
+    )
     : [];
 }
 

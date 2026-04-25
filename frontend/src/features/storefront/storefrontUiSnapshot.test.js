@@ -44,7 +44,22 @@ describe("getStorefrontUiSnapshot", () => {
     expect(snapshot.settings.delivery_options_config).toBe(
       JSON.stringify(deliveryOptions),
     );
-    expect(snapshot.deliveryConfig).toEqual(deliveryOptions);
+    expect(snapshot.deliveryConfig).toEqual([
+      {
+        id: "delivery",
+        name: "後台配送名稱",
+        label: "後台配送名稱",
+        description: "後台配送說明",
+        icon_url: "",
+        enabled: true,
+        payment: {
+          cod: false,
+          linepay: false,
+          jkopay: false,
+          transfer: false,
+        },
+      },
+    ]);
   });
 
   it("ignores legacy global settings and reads only runtime state", () => {

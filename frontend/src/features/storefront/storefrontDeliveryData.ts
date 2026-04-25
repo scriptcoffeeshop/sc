@@ -1,5 +1,12 @@
-import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
-import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
+import {
+  asJsonRecord,
+  parseJsonArray,
+  parseJsonRecord,
+} from "../../lib/jsonUtils.ts";
+import {
+  normalizeStorefrontDeliveryOption,
+  type StorefrontDeliveryOption,
+} from "./storefrontModels.ts";
 
 export type DeliveryPrefs = Record<string, unknown>;
 
@@ -9,18 +16,12 @@ export type StoreRecord = {
   address: string;
 };
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
-}
-
 export function parseDeliveryPrefs(rawPrefs: string | null): DeliveryPrefs {
   return parseJsonRecord(rawPrefs);
 }
 
 export function normalizeStoreRecord(value: unknown): StoreRecord {
-  const record = asRecord(value);
+  const record = asJsonRecord(value);
   return {
     id: String(record.id || ""),
     name: String(record.name || ""),
@@ -29,7 +30,9 @@ export function normalizeStoreRecord(value: unknown): StoreRecord {
 }
 
 export function parseDeliveryConfig(value: unknown): StorefrontDeliveryOption[] {
-  return parseJsonArray(value) as StorefrontDeliveryOption[];
+  return parseJsonArray(value).map((option) =>
+    normalizeStorefrontDeliveryOption(asJsonRecord(option))
+  );
 }
 
 export function buildFormBody(data: Record<string, unknown>): URLSearchParams {
