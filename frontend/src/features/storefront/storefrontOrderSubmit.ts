@@ -1,6 +1,6 @@
 import { API_URL } from "../../lib/appConfig.ts";
 import { authFetch } from "../../lib/auth.ts";
-import { escapeHtml, isValidEmail } from "../../lib/sharedUtils.ts";
+import { isValidEmail } from "../../lib/sharedUtils.ts";
 import { state } from "../../lib/appState.ts";
 import { cart, clearCart } from "./storefrontCartStore.ts";
 import { collectDynamicFields } from "./storefrontFormRenderer.ts";
@@ -21,7 +21,10 @@ import {
   getStorefrontOrderFormState,
 } from "./storefrontOrderFormState.ts";
 import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
-import { buildPaymentLaunchDialogOptions } from "./storefrontPaymentDisplay.ts";
+import {
+  buildPaymentLaunchDialogOptions,
+  buildTransferOrderSuccessDialogOptions,
+} from "./storefrontPaymentDisplay.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import {
   confirmWarning,
@@ -385,32 +388,11 @@ export async function submitOrder(): Promise<void> {
         const b = state.bankAccounts.find((x) =>
           String(x.id) === String(state.selectedBankAccountId)
         );
-        const bankHtml = b
-          ? `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
-                        <b>${escapeHtml(b.bankName)} (${
-            escapeHtml(b.bankCode)
-          })</b><br>
-                        <span style="font-size:1.1em;font-family:monospace;">${
-            escapeHtml(b.accountNumber)
-          }</span>
-                        ${
-            b.accountName
-              ? '<br><span style="color:#666">戶名: ' +
-                escapeHtml(b.accountName) + "</span>"
-              : ""
-          }
-                    </div>`
-          : "";
-
-        Swal.fire({
-          icon: "success",
-          title: "訂單已成立",
-          html: `<p>訂單編號：<b>${result.orderId}</b></p>
-                           <p>請匯款 <b style="color:#e63946">$${result.total}</b> 至以下帳號：</p>
-                           ${bankHtml}
-          <p style="color:#666;font-size:0.9em;">(您的匯款末5碼已記錄，將用於對帳)</p>`,
-          confirmButtonColor: "#3C2415",
-        }).then(() => {
+        Swal.fire(buildTransferOrderSuccessDialogOptions({
+          orderId: result.orderId,
+          total: result.total,
+          bankAccount: b || null,
+        })).then(() => {
           resetOrderDraft();
         });
         return;

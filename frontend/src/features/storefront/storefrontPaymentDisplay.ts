@@ -400,3 +400,45 @@ export function buildPaymentLaunchDialogOptions(
     cancelButtonColor: "#94a3b8",
   };
 }
+
+export function buildTransferOrderSuccessDialogOptions(params: {
+  orderId?: unknown;
+  total?: unknown;
+  bankAccount?: {
+    bankName?: unknown;
+    bankCode?: unknown;
+    accountNumber?: unknown;
+    accountName?: unknown;
+  } | null;
+}): PaymentDialogOptions {
+  const bankAccount = params.bankAccount;
+  const bankHtml = bankAccount
+    ? `<div style="text-align:left;padding:8px;background:#f0f5fa;border-radius:8px;margin-bottom:8px;">
+          <b>${escapeHtml(String(bankAccount.bankName || ""))} (${
+      escapeHtml(String(bankAccount.bankCode || ""))
+    })</b><br>
+          <span style="font-size:1.1em;font-family:monospace;">${
+      escapeHtml(String(bankAccount.accountNumber || ""))
+    }</span>
+          ${
+      bankAccount.accountName
+        ? '<br><span style="color:#666">戶名: ' +
+          escapeHtml(String(bankAccount.accountName || "")) + "</span>"
+        : ""
+    }
+        </div>`
+    : "";
+
+  return {
+    icon: "success",
+    title: "訂單已成立",
+    html: `<p>訂單編號：<b>${escapeHtml(String(params.orderId || ""))}</b></p>
+           <p>請匯款 <b style="color:#e63946">$${
+      Number(params.total || 0)
+    }</b> 至以下帳號：</p>
+           ${bankHtml}
+           <p style="color:#666;font-size:0.9em;">(您的匯款末5碼已記錄，將用於對帳)</p>`,
+    confirmButtonColor: "#3C2415",
+    confirmButtonText: "我知道了",
+  };
+}
