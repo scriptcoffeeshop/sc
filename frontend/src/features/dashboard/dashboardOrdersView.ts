@@ -103,7 +103,7 @@ export function filterDashboardOrders(
       return false;
     }
 
-  const timestamp = new Date(order.timestamp);
+    const timestamp = new Date(order.timestamp);
     if (dateFrom && timestamp < dateFrom) return false;
     if (dateTo && timestamp > dateTo) return false;
 
@@ -119,6 +119,10 @@ export function filterDashboardOrders(
   });
 }
 
+export function formatOrderSummaryAmount(amount: unknown): string {
+  return (Number(amount) || 0).toLocaleString("zh-TW");
+}
+
 export function buildOrdersSummaryText(
   orderList: DashboardOrderRecord[],
   filteredOrders: DashboardOrderRecord[],
@@ -129,7 +133,7 @@ export function buildOrdersSummaryText(
   );
   return `總訂單 ${orderList.length} 筆｜篩選結果 ${
     filteredOrders.length
-  } 筆｜金額合計 $${totalAmount.toLocaleString("zh-TW")}`;
+  } 筆｜金額合計 $${formatOrderSummaryAmount(totalAmount)}`;
 }
 
 export function buildOrderViewModel(
