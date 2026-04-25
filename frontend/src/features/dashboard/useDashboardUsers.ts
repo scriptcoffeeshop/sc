@@ -64,14 +64,11 @@ function getServices(): DashboardUsersServices {
 function normalizeUser(value: unknown): DashboardUserRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const record = asJsonRecord(value);
-  return {
-    ...record,
+  const normalized: DashboardUserRecord = {
     userId: String(record.userId || ""),
     displayName: String(record.displayName || ""),
     role: typeof record.role === "string" ? record.role : "USER",
     status: typeof record.status === "string" ? record.status : "ACTIVE",
-    pictureUrl:
-      typeof record.pictureUrl === "string" ? record.pictureUrl : undefined,
     email: String(record.email || ""),
     phone: String(record.phone || ""),
     defaultDeliveryMethod:
@@ -85,6 +82,10 @@ function normalizeUser(value: unknown): DashboardUserRecord | null {
     defaultStoreId: String(record.defaultStoreId || ""),
     lastLogin: typeof record.lastLogin === "string" ? record.lastLogin : "",
   };
+  if (typeof record.pictureUrl === "string") {
+    normalized.pictureUrl = record.pictureUrl;
+  }
+  return normalized;
 }
 
 function normalizeBlacklistEntry(value: unknown): DashboardBlacklistRecord | null {

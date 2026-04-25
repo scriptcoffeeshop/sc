@@ -19,8 +19,8 @@ type BankAccountRecord = BankAccountFormValues & {
 };
 
 type BankAccountsSortableEvent = {
-  oldIndex?: number;
-  newIndex?: number;
+  oldIndex?: number | undefined;
+  newIndex?: number | undefined;
 };
 
 type BankAccountsSortableInstance = {
@@ -77,14 +77,17 @@ function getServices(): DashboardBankAccountsServices {
 
 function normalizeBankAccount(value: unknown): BankAccountRecord {
   const record = asJsonRecord(value);
-  return {
+  const normalized: BankAccountRecord = {
     id: record.id as number | string,
     bankCode: String(record.bankCode || ""),
     bankName: String(record.bankName || ""),
     accountNumber: String(record.accountNumber || ""),
     accountName: String(record.accountName || ""),
-    enabled: record.enabled === undefined ? undefined : Boolean(record.enabled),
   };
+  if (record.enabled !== undefined) {
+    normalized.enabled = Boolean(record.enabled);
+  }
+  return normalized;
 }
 
 function hasSortableCreate(

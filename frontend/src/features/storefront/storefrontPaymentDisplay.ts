@@ -238,11 +238,13 @@ function createPaymentRow(
   value: unknown,
   options: { strong?: boolean; tone?: StorefrontPaymentDialogRow["tone"] } = {},
 ): StorefrontPaymentDialogRow {
-  return {
+  const row: StorefrontPaymentDialogRow = {
     label,
     value: String(value || ""),
-    ...options,
   };
+  if (options.strong !== undefined) row.strong = options.strong;
+  if (options.tone !== undefined) row.tone = options.tone;
+  return row;
 }
 
 export function buildPaymentStatusDialogOptions(
@@ -306,11 +308,16 @@ export function buildPaymentStatusDialogOptions(
 export function buildPaymentLaunchDialogOptions(
   params: PaymentDisplayInput = {},
 ): PaymentDialogOptions {
-  const display = getCustomerPaymentDisplay({
-    paymentMethod: params?.paymentMethod,
+  const displayInput: PaymentDisplayInput = {
     paymentStatus: "pending",
-    paymentExpiresAt: params?.paymentExpiresAt,
-  });
+  };
+  if (params?.paymentMethod !== undefined) {
+    displayInput.paymentMethod = params.paymentMethod;
+  }
+  if (params?.paymentExpiresAt !== undefined) {
+    displayInput.paymentExpiresAt = params.paymentExpiresAt;
+  }
+  const display = getCustomerPaymentDisplay(displayInput);
   const total = Number(params?.total || 0);
   const rows = [
     createPaymentRow("訂單編號", String(params?.orderId || "") || "未提供"),

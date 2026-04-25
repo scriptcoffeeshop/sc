@@ -14,8 +14,8 @@ interface DashboardCategoryRecord extends Record<string, unknown> {
 }
 
 type CategorySortableEvent = {
-  oldIndex?: number;
-  newIndex?: number;
+  oldIndex?: number | undefined;
+  newIndex?: number | undefined;
 };
 
 type CategorySortableInstance = {

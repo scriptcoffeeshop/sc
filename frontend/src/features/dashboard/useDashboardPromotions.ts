@@ -16,8 +16,8 @@ import {
 } from "./dashboardPromotionsShared.ts";
 
 type PromotionSortableEvent = {
-  oldIndex?: number;
-  newIndex?: number;
+  oldIndex?: number | undefined;
+  newIndex?: number | undefined;
 };
 
 type PromotionEditableField = Exclude<keyof PromotionFormState, "targetItems">;

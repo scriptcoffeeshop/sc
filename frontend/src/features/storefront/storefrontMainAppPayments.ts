@@ -149,11 +149,16 @@ export function createStorefrontMainAppPayments(
     const selectedDeliveryOption = activeDeliveryOptions.find((option) =>
       option.id === state.selectedDelivery
     );
-    const currentConfig = resolveStorefrontPaymentAvailability({
+    const availabilityInput: Parameters<
+      typeof resolveStorefrontPaymentAvailability
+    >[0] = {
       selectedDelivery: state.selectedDelivery,
-      selectedDeliveryOption,
       quote: state.orderQuote,
-    });
+    };
+    if (selectedDeliveryOption) {
+      availabilityInput.selectedDeliveryOption = selectedDeliveryOption;
+    }
+    const currentConfig = resolveStorefrontPaymentAvailability(availabilityInput);
 
     setStorefrontAvailablePaymentMethods(currentConfig);
 
