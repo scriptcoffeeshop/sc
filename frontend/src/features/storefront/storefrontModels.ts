@@ -62,15 +62,11 @@ export interface StorefrontDeliveryOption extends JsonRecord {
   payment: StorefrontPaymentConfig;
 }
 
-function asRecord(value: unknown): JsonRecord {
-  return asJsonRecord(value);
-}
-
 export function parseEnabledProductSpecs(
   product: StorefrontProductInput = {},
 ): StorefrontProductSpec[] {
   const specs = parseJsonArray(product.specs)
-    .map((spec) => asRecord(spec) as StorefrontProductSpecInput);
+    .map((spec) => asJsonRecord(spec) as StorefrontProductSpecInput);
 
   const enabledSpecs = specs.filter((spec) => spec && spec.enabled !== false);
   if (enabledSpecs.length) {
@@ -125,7 +121,7 @@ export function buildStorefrontProductsViewModel(
 export function normalizeDeliveryPaymentConfig(
   payment: unknown = {},
 ): StorefrontPaymentConfig {
-  const source = asRecord(payment);
+  const source = asJsonRecord(payment);
   const hasJkoPay = Object.prototype.hasOwnProperty.call(source, "jkopay");
   return {
     cod: Boolean(source.cod),
@@ -138,7 +134,7 @@ export function normalizeDeliveryPaymentConfig(
 export function normalizeStorefrontDeliveryOption(
   option: JsonRecord = {},
 ): StorefrontDeliveryOption {
-  const payment = asRecord(option.payment);
+  const payment = asJsonRecord(option.payment);
   const normalized = { ...option };
   delete normalized.icon;
   delete normalized.iconUrl;
@@ -160,7 +156,7 @@ export function normalizeStorefrontDeliveryConfig(
   const configuredDeliveryOptions = parseJsonArray(settings.delivery_options_config);
   if (configuredDeliveryOptions.length) {
     return configuredDeliveryOptions.map((option) =>
-      normalizeStorefrontDeliveryOption(asRecord(option))
+      normalizeStorefrontDeliveryOption(asJsonRecord(option))
     );
   }
 
