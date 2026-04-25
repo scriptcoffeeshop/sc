@@ -1,18 +1,16 @@
-import { nextTick, ref } from "vue";
+import { createApp, nextTick, ref, type App } from "vue";
 import type {
   DashboardAuthFetch,
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
+import DashboardBankAccountForm, {
+  type DashboardBankAccountFormExpose,
+  type DashboardBankAccountFormValues,
+} from "./DashboardBankAccountForm.vue";
 
-interface BankAccountFormValues {
-  bankCode?: string;
-  bankName?: string;
-  accountNumber?: string;
-  accountName?: string;
-}
+type BankAccountFormValues = DashboardBankAccountFormValues;
 
 type BankAccountRecord = BankAccountFormValues & {
   id: number | string;
@@ -197,36 +195,36 @@ async function openBankAccountModal({
   initialValues?: BankAccountFormValues;
 }): Promise<BankAccountFormValues | undefined> {
   const { Swal } = getServices();
+  const root = document.createElement("div");
+  let bankAccountFormApp: App<Element> | null = null;
+  let bankAccountFormRef: DashboardBankAccountFormExpose | null = null;
   const result = await Swal.fire({
     title,
-    html: `<div style="text-align:left;">
-            <label class="block text-sm mb-1 font-medium">銀行代碼</label>
-            <input id="swal-bc" class="swal2-input" value="${
-      String(initialValues.bankCode || "")
-    }" placeholder="例：013" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">銀行名稱</label>
-            <input id="swal-bn" class="swal2-input" value="${
-      String(initialValues.bankName || "")
-    }" placeholder="例：國泰世華" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">帳號</label>
-            <input id="swal-an" class="swal2-input" value="${
-      String(initialValues.accountNumber || "")
-    }" placeholder="帳號號碼" style="margin:0 0 12px 0;width:100%">
-            <label class="block text-sm mb-1 font-medium">戶名（選填）</label>
-            <input id="swal-am" class="swal2-input" value="${
-      String(initialValues.accountName || "")
-    }" placeholder="戶名" style="margin:0 0 12px 0;width:100%">
-        </div>`,
+    html: root,
     focusConfirm: false,
     showCancelButton: true,
     confirmButtonText,
     cancelButtonText: "取消",
-    preConfirm: () => ({
-      bankCode: getDashboardFormControlValue("swal-bc"),
-      bankName: getDashboardFormControlValue("swal-bn"),
-      accountNumber: getDashboardFormControlValue("swal-an"),
-      accountName: getDashboardFormControlValue("swal-am"),
-    }),
+    didOpen: (popup: unknown) => {
+      if (
+        !root.isConnected &&
+        popup &&
+        typeof (popup as { appendChild?: unknown }).appendChild === "function"
+      ) {
+        (popup as { appendChild: (node: Node) => void }).appendChild(root);
+      }
+      bankAccountFormApp = createApp(DashboardBankAccountForm, {
+        initialValues,
+      });
+      bankAccountFormRef = bankAccountFormApp.mount(root) as unknown as
+        DashboardBankAccountFormExpose;
+    },
+    willClose: () => {
+      bankAccountFormApp?.unmount();
+      bankAccountFormApp = null;
+      bankAccountFormRef = null;
+    },
+    preConfirm: () => bankAccountFormRef?.getValues() || initialValues,
   });
 
   return result?.value as BankAccountFormValues | undefined;

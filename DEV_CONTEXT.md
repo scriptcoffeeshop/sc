@@ -33,6 +33,7 @@
 - 部署模式：
   - push 到 `main` / `master` 後會跑 GitHub Actions
   - GitHub Pages 會以 `workflow` 模式自動部署前端
+  - Vite helper chunk 已固定輸出為 `sharedUtils.js/css`，避免 `_plugin-vue_export-helper` 這類內部名稱被部署腳本誤判為 hashed asset。
   - GitHub Pages deploy actions 使用 Node 24 compatible 版本：`actions/configure-pages@v6`、`actions/upload-pages-artifact@v5`、`actions/deploy-pages@v5`
   - `.github/workflows/ci.yml` 的 `workflow_dispatch` 預設 `deploy=true`，可在 `main/master` 手動補跑前端與 Supabase deploy jobs
   - Supabase `db push` / `coffee-api` deploy 需 repo secrets 已設好
@@ -61,6 +62,7 @@
 - `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、bank accounts 等卡片元件；取貨方式與付款對應、金流選項顯示已抽到獨立 `付款與取貨` 頁籤 (`DashboardCheckoutSettingsSection.vue`)
+  - dashboard bank accounts 新增/編輯彈窗已改由 Vue `DashboardBankAccountForm.vue` 掛載到 SweetAlert；`useDashboardBankAccounts.ts` 不再拼 HTML 表單或透過 `dashboardFormControls` 讀欄位。
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，tracked `js/` 相容殼已移除
   - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`

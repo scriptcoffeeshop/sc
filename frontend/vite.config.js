@@ -24,8 +24,14 @@ export default defineConfig({
       },
       output: {
         entryFileNames: "assets/[name].js",
-        chunkFileNames: "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+        chunkFileNames: (chunkInfo) =>
+          chunkInfo.name === "_plugin-vue_export-helper"
+            ? "assets/sharedUtils.js"
+            : "assets/[name].js",
+        assetFileNames: (assetInfo) =>
+          assetInfo.name === "_plugin-vue_export-helper.css"
+            ? "assets/sharedUtils.css"
+            : "assets/[name][extname]",
       },
     },
   },

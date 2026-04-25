@@ -1,3 +1,5 @@
+/** @vitest-environment jsdom */
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 function jsonResponse(payload) {
@@ -9,9 +11,25 @@ async function loadBankAccountsModule() {
   return await import("./useDashboardBankAccounts.ts");
 }
 
+function fillInput(id, value) {
+  const input = document.getElementById(id);
+  expect(input).toBeInstanceOf(HTMLInputElement);
+  input.value = value;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function mountSwalVueContent(options) {
+  expect(options.html).toBeInstanceOf(HTMLElement);
+  const popup = document.createElement("div");
+  document.body.appendChild(popup);
+  options.didOpen?.(popup);
+  return popup;
+}
+
 describe("useDashboardBankAccounts", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    document.body.innerHTML = "";
   });
 
   it("loads bank accounts and adds a new transfer account from the modal", async () => {
@@ -39,14 +57,15 @@ describe("useDashboardBankAccounts", () => {
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "新增匯款帳號") {
-          return {
-            value: {
-              bankCode: "822",
-              bankName: "中國信託",
-              accountNumber: "9988776655",
-              accountName: "Script Coffee",
-            },
-          };
+          const popup = mountSwalVueContent(options);
+          fillInput("swal-bc", "822");
+          fillInput("swal-bn", "中國信託");
+          fillInput("swal-an", "9988776655");
+          fillInput("swal-am", "Script Coffee");
+          const value = options.preConfirm?.();
+          options.willClose?.();
+          popup.remove();
+          return { value };
         }
         return {};
       }),
@@ -119,14 +138,16 @@ describe("useDashboardBankAccounts", () => {
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "編輯匯款帳號") {
-          return {
-            value: {
-              bankCode: "812",
-              bankName: "台新銀行",
-              accountNumber: "5566778899",
-              accountName: "好日子要來了咖啡商行",
-            },
-          };
+          const popup = mountSwalVueContent(options);
+          expect(document.getElementById("swal-bc")?.value).toBe("013");
+          fillInput("swal-bc", "812");
+          fillInput("swal-bn", "台新銀行");
+          fillInput("swal-an", "5566778899");
+          fillInput("swal-am", "好日子要來了咖啡商行");
+          const value = options.preConfirm?.();
+          options.willClose?.();
+          popup.remove();
+          return { value };
         }
         if (options?.title === "刪除帳號？") {
           return { isConfirmed: true };
