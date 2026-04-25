@@ -42,13 +42,17 @@ test.describe("smoke / dashboard settings", () => {
       "tagName",
       "TEXTAREA",
     );
-    await expect.poll(async () => {
-      const fileBox = await deliveryRows.first().locator(".icon-upload-file")
-        .boundingBox();
-      const uploadBox = await deliveryRows.first().locator(".icon-upload-action")
-        .boundingBox();
-      return Boolean(fileBox && uploadBox && uploadBox.y > fileBox.y);
-    }).toBe(true);
+    await expect(deliveryRows.first().locator(".delivery-panel-title")).toContainText([
+      "基本資訊",
+      "費用與規則",
+      "付款設定",
+    ]);
+    await expect(deliveryRows.first().locator(".delivery-icon-uploader")).toBeVisible();
+    await expect(deliveryRows.first().locator(".icon-upload-file")).toBeHidden();
+    await expect(deliveryRows.first().locator(".icon-upload-action")).toBeVisible();
+    await expect(deliveryRows.first().locator(".delivery-toggle__track")).toBeVisible();
+    await expect(deliveryRows.first().locator(".delivery-toggle__text"))
+      .toContainText("啟用");
     await expect.poll(() =>
       page.locator("#delivery-routing-table").evaluate((element) =>
         element.scrollWidth <= element.clientWidth + 2
@@ -367,6 +371,24 @@ test.describe("smoke / dashboard settings", () => {
     });
 
     await page.goto("/dashboard.html");
+
+    await page.locator("#tab-checkout-settings").click();
+    const deliveryRow = page.locator("#delivery-routing-table .delivery-option-row")
+      .first();
+    await deliveryRow.locator(".icon-upload-file").setInputFiles({
+      name: "delivery.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+y3c8AAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+    await expect(deliveryRow.locator(".do-icon-url")).toHaveValue(
+      "icons/uploaded-brand.png",
+    );
+    await expect(deliveryRow.locator(".do-icon-url-display"))
+      .toContainText("uploaded-brand.png");
+
     await page.locator("#tab-settings").click();
 
     await page.locator("#s-site-icon-upload").setInputFiles({

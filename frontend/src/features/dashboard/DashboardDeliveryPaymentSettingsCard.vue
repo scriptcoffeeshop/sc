@@ -62,34 +62,41 @@
 
           <label class="delivery-toggle">
             <input v-model="item.enabled" type="checkbox" class="do-enabled">
-            <span>{{ item.enabled ? "啟用" : "停用" }}</span>
+            <span class="delivery-toggle__track" aria-hidden="true"></span>
+            <span class="delivery-toggle__text">
+              {{ item.enabled ? "啟用" : "停用" }}
+            </span>
           </label>
         </header>
 
         <div class="delivery-routing-card__body">
-          <section class="delivery-routing-card__section">
-            <div class="delivery-icon-editor icon-upload-row">
+          <section class="delivery-routing-card__section delivery-config-panel">
+            <div class="delivery-panel-title">基本資訊</div>
+
+            <div class="delivery-icon-uploader">
               <input v-model="item.icon_url" type="hidden" class="do-icon-url">
-              <div class="icon-upload-controls">
-                <input
-                  type="file"
-                  :ref="(element) => registerDeliveryIconInput(item.id, element)"
-                  class="text-xs icon-upload-file"
-                  accept="image/png,image/webp,image/jpeg,image/jpg"
-                  @change="handleDeliveryIconPreview(item.id, $event)"
-                >
-                <button
-                  type="button"
-                  @click="handleDeliveryIconUpload(item.id)"
-                  class="dashboard-action dashboard-action--primary icon-upload-action"
-                >
-                  <UploadCloud class="h-4 w-4" aria-hidden="true" />
-                  上傳圖示
-                </button>
-                <p class="do-icon-url-display delivery-icon-path">
-                  {{ getDisplayUrl(item.icon_url) }}
-                </p>
+              <input
+                type="file"
+                :ref="(element) => registerDeliveryIconInput(item.id, element)"
+                class="icon-upload-file delivery-icon-file"
+                accept="image/png,image/webp,image/jpeg,image/jpg"
+                hidden
+                @change="handleDeliveryIconSelection(item.id, $event)"
+              >
+              <div class="delivery-icon-uploader__copy">
+                <span class="delivery-icon-uploader__label">圖示</span>
+                <span class="do-icon-url-display delivery-icon-path">
+                  {{ getDisplayUrl(item.icon_url) || "使用預設圖示" }}
+                </span>
               </div>
+              <button
+                type="button"
+                @click="openDeliveryIconPicker(item.id)"
+                class="dashboard-action dashboard-action--primary icon-upload-action"
+              >
+                <UploadCloud class="h-4 w-4" aria-hidden="true" />
+                更換圖示
+              </button>
             </div>
 
             <label class="delivery-field">
@@ -103,28 +110,38 @@
             </label>
           </section>
 
-          <section class="delivery-routing-card__section">
+          <section class="delivery-routing-card__section delivery-config-panel">
+            <div class="delivery-panel-title">費用與規則</div>
             <div class="delivery-money-grid">
               <label class="delivery-field">
                 <span>運費</span>
-                <input
-                  v-model.number="item.fee"
-                  type="number"
-                  class="input-field do-fee"
-                  min="0"
-                >
+                <div class="delivery-money-input">
+                  <input
+                    v-model.number="item.fee"
+                    type="number"
+                    class="input-field do-fee"
+                    min="0"
+                  >
+                  <span>元</span>
+                </div>
               </label>
               <label class="delivery-field">
                 <span>免運門檻</span>
-                <input
-                  v-model.number="item.free_threshold"
-                  type="number"
-                  class="input-field do-free-threshold"
-                  min="0"
-                >
+                <div class="delivery-money-input">
+                  <input
+                    v-model.number="item.free_threshold"
+                    type="number"
+                    class="input-field do-free-threshold"
+                    min="0"
+                  >
+                  <span>元</span>
+                </div>
               </label>
             </div>
 
+            <div class="delivery-panel-title delivery-panel-title--payments">
+              付款設定
+            </div>
             <div class="delivery-payment-list">
               <div class="delivery-payment-list__title">支援付款方式</div>
               <label
@@ -254,22 +271,27 @@ function registerDeliveryIconInput(
   deliveryIconInputs.delete(key);
 }
 
-function handleDeliveryIconPreview(deliveryId: string, event: Event) {
+function openDeliveryIconPicker(deliveryId: string | number) {
+  const input = deliveryIconInputs.get(String(deliveryId || "").trim());
+  input?.click();
+}
+
+async function handleDeliveryIconSelection(
+  deliveryId: string | number,
+  event: Event,
+) {
   const input = event.target instanceof HTMLInputElement
     ? event.target
     : null;
-  dashboardSettingsIconActions.previewDeliveryIconFile(
-    deliveryId,
-    input?.files?.[0] || null,
+  const file = input?.files?.[0] || null;
+  const key = String(deliveryId || "").trim();
+  const previewed = dashboardSettingsIconActions.previewDeliveryIconFile(
+    key,
+    file,
   );
-}
-
-async function handleDeliveryIconUpload(deliveryId: string) {
-  const input = deliveryIconInputs.get(String(deliveryId || "").trim());
-  await dashboardSettingsIconActions.uploadDeliveryIconFile(
-    deliveryId,
-    input?.files?.[0] || null,
-  );
+  if (previewed && file) {
+    await dashboardSettingsIconActions.uploadDeliveryIconFile(key, file);
+  }
   if (input) input.value = "";
 }
 </script>
@@ -354,9 +376,10 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 }
 
 .delivery-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   min-height: 2.45rem;
   color: #073642;
   font-size: 0.84rem;
@@ -366,15 +389,52 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 }
 
 .delivery-toggle input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.delivery-toggle__track {
+  position: relative;
+  width: 2.35rem;
+  height: 1.32rem;
+  border-radius: 999px;
+  background: #D8CFB8;
+  transition: background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.delivery-toggle__track::after {
+  position: absolute;
+  top: 0.16rem;
+  left: 0.16rem;
   width: 1rem;
   height: 1rem;
-  accent-color: #268BD2;
+  border-radius: 999px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(7, 54, 66, 0.22);
+  content: "";
+  transition: transform 0.16s ease;
+}
+
+.delivery-toggle input:checked + .delivery-toggle__track {
+  background: #268BD2;
+  box-shadow: 0 0 0 3px rgba(38, 139, 210, 0.12);
+}
+
+.delivery-toggle input:checked + .delivery-toggle__track::after {
+  transform: translateX(1.03rem);
+}
+
+.delivery-toggle__text {
+  min-width: 2rem;
 }
 
 .delivery-routing-card__body {
   display: grid;
   grid-template-columns: minmax(18rem, 0.95fr) minmax(21rem, 1.05fr);
-  gap: 1.05rem;
+  gap: 1.35rem;
   min-width: 0;
 }
 
@@ -385,8 +445,50 @@ async function handleDeliveryIconUpload(deliveryId: string) {
   min-width: 0;
 }
 
-.delivery-icon-editor {
-  grid-template-columns: minmax(0, 1fr);
+.delivery-config-panel {
+  padding-top: 0.15rem;
+}
+
+.delivery-panel-title {
+  color: #073642;
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.delivery-panel-title--payments {
+  margin-top: 0.2rem;
+}
+
+.delivery-icon-uploader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+  border: 1px dashed #C9C0A8;
+  border-radius: 8px;
+  background: #FDF6E3;
+  padding: 0.7rem 0.8rem;
+}
+
+.delivery-icon-uploader__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.delivery-icon-uploader__label {
+  color: #657B83;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.delivery-icon-uploader .icon-upload-action {
+  min-height: 2.35rem;
+  border-radius: 8px;
+  padding-inline: 0.75rem;
 }
 
 .delivery-icon-path {
@@ -408,7 +510,28 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 .delivery-money-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem;
+  gap: 0.75rem;
+}
+
+.delivery-money-input {
+  display: inline-grid;
+  grid-template-columns: minmax(6rem, 8.5rem) auto;
+  gap: 0.45rem;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.delivery-money-input .input-field {
+  min-height: 2.45rem;
+  padding: 0.5rem 0.65rem;
+  text-align: right;
+}
+
+.delivery-money-input span {
+  color: #657B83;
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .delivery-payment-list {
@@ -423,14 +546,14 @@ async function handleDeliveryIconUpload(deliveryId: string) {
 
 .delivery-payment-row {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: 1rem 1.4rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.55rem;
+  gap: 0.6rem;
   min-height: 2.45rem;
   border: 1px solid #E2DCC8;
   border-radius: 8px;
   background: #FDF6E3;
-  padding: 0.45rem 0.55rem;
+  padding: 0.5rem 0.65rem;
   color: #073642;
   cursor: pointer;
 }
