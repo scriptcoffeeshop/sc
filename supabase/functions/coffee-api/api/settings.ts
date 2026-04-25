@@ -5,7 +5,11 @@ import { getCategories } from "./categories.ts";
 import { getFormFields } from "./form-fields.ts";
 import { getBankAccounts } from "./bank-accounts.ts";
 import { getPromotions } from "./promotions.ts";
-import { asJsonRecord, tryParseJsonArray, tryParseJsonRecord } from "../utils/json.ts";
+import {
+  asJsonRecord,
+  tryParseJsonArray,
+  tryParseJsonRecord,
+} from "../utils/json.ts";
 
 const PUBLIC_SETTINGS_KEYS = [
   "is_open",
