@@ -15,7 +15,8 @@ type DashboardCurrentUser = {
   role?: DashboardUserRole;
 };
 
-interface DashboardUserRecord extends Record<string, unknown> {
+interface DashboardUserRecord {
+  [key: string]: unknown;
   userId: string;
   displayName: string;
   role?: DashboardUserRole;
@@ -32,7 +33,8 @@ interface DashboardUserRecord extends Record<string, unknown> {
   lastLogin?: string;
 }
 
-interface DashboardBlacklistRecord extends Record<string, unknown> {
+interface DashboardBlacklistRecord {
+  [key: string]: unknown;
   displayName: string;
   lineUserId: string;
   blockedAt?: string;

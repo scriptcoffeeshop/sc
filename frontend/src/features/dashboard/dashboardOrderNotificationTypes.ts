@@ -9,10 +9,11 @@ import type {
 
 export type DashboardOrderLabelMap = Record<string, string>;
 
-export interface DashboardLineFlexMessage extends Record<string, unknown> {
+export interface DashboardLineFlexMessage {
+  [key: string]: unknown;
   type: "flex";
   altText: string;
-  contents: Record<string, unknown>;
+  contents: FlexContent;
 }
 
 export type DashboardOrderNotificationDeps = {

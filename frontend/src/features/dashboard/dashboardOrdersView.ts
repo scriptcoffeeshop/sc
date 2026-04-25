@@ -65,40 +65,40 @@ export function filterDashboardOrders(
   orderList: DashboardOrderRecord[],
   filters: DashboardOrderFilters,
 ) {
-  const dateFrom = parseDateBound(filters["dateFrom"] || "");
-  const dateTo = parseDateBound(filters["dateTo"] || "", true);
-  const minAmount = filters["minAmount"] === "" ? null : Number(filters["minAmount"]);
-  const maxAmount = filters["maxAmount"] === "" ? null : Number(filters["maxAmount"]);
+  const dateFrom = parseDateBound(filters.dateFrom || "");
+  const dateTo = parseDateBound(filters.dateTo || "", true);
+  const minAmount = filters.minAmount === "" ? null : Number(filters.minAmount);
+  const maxAmount = filters.maxAmount === "" ? null : Number(filters.maxAmount);
 
   return orderList.filter((order) => {
-    if (filters["status"] !== "all" && order.status !== filters["status"]) {
+    if (filters.status !== "all" && order.status !== filters.status) {
       return false;
     }
 
     const paymentMethod = order.paymentMethod || "cod";
     if (
-      filters["paymentMethod"] !== "all" &&
-      paymentMethod !== filters["paymentMethod"]
+      filters.paymentMethod !== "all" &&
+      paymentMethod !== filters.paymentMethod
     ) {
       return false;
     }
 
     const paymentStatus = String(order.paymentStatus || "");
-    if (filters["paymentStatus"] !== "all") {
-      if (filters["paymentStatus"] === "empty" && paymentStatus !== "") {
+    if (filters.paymentStatus !== "all") {
+      if (filters.paymentStatus === "empty" && paymentStatus !== "") {
         return false;
       }
       if (
-        filters["paymentStatus"] !== "empty" &&
-        paymentStatus !== filters["paymentStatus"]
+        filters.paymentStatus !== "empty" &&
+        paymentStatus !== filters.paymentStatus
       ) {
         return false;
       }
     }
 
     if (
-      filters["deliveryMethod"] !== "all" &&
-      order.deliveryMethod !== filters["deliveryMethod"]
+      filters.deliveryMethod !== "all" &&
+      order.deliveryMethod !== filters.deliveryMethod
     ) {
       return false;
     }

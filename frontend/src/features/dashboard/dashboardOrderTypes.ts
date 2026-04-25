@@ -1,6 +1,7 @@
 import type { SweetAlertIcon, SweetAlertOptions } from "sweetalert2";
 
-export interface DashboardOrderRecord extends Record<string, unknown> {
+export interface DashboardOrderRecord {
+  [key: string]: unknown;
   orderId: string;
   timestamp: string;
   deliveryMethod?: string;
@@ -33,9 +34,19 @@ export interface DashboardOrderRecord extends Record<string, unknown> {
   total?: number | string;
 }
 
-export type DashboardOrderFilters = Record<string, string>;
+export interface DashboardOrderFilters {
+  status: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  deliveryMethod: string;
+  dateFrom: string;
+  dateTo: string;
+  minAmount: string;
+  maxAmount: string;
+}
 
-export interface DashboardApiJson extends Record<string, unknown> {
+export interface DashboardApiJson {
+  [key: string]: unknown;
   success?: boolean;
   orders?: DashboardOrderRecord[];
   message?: string;
