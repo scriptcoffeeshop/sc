@@ -52,6 +52,7 @@ export type DashboardRouteOptions = {
   blacklist?: DashboardBlacklistEntry[];
   formFields?: DashboardFormField[];
   bankAccounts?: DashboardBankAccount[];
+  settings?: Record<string, string>;
 };
 
 export interface DashboardRouteState {
@@ -63,6 +64,7 @@ export interface DashboardRouteState {
   blacklist: DashboardBlacklistEntry[];
   formFields: DashboardFormField[];
   bankAccounts: DashboardBankAccount[];
+  settings: Record<string, string>;
 }
 
 export interface DashboardRouteContext {
@@ -191,6 +193,7 @@ export function createDashboardRouteState(
     bankAccounts: Array.isArray(options.bankAccounts)
       ? cloneArrayItems(options.bankAccounts)
       : [],
+    settings: { ...(options.settings || {}) },
     formFields: Array.isArray(options.formFields)
       ? cloneArrayItems(options.formFields)
       : [{

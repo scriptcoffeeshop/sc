@@ -1,5 +1,6 @@
 import { fulfillJson } from "./smoke-shared.ts";
 import {
+  asJsonRecord,
   asNumber,
   asString,
   getRequestBody,
@@ -11,6 +12,7 @@ function buildDashboardSettingsPayload() {
     site_title: "Script Coffee",
     site_subtitle: "咖啡豆｜耳掛",
     site_icon_url: "",
+    dashboard_title: "咖啡訂購後台",
     announcement_enabled: "false",
     announcement: "",
     order_confirmation_auto_email_enabled: "true",
@@ -77,7 +79,10 @@ export async function handleDashboardSettingsRoutes(
   if (action === "getSettings") {
     await fulfillJson(route, {
       success: true,
-      settings: buildDashboardSettingsPayload(),
+      settings: {
+        ...buildDashboardSettingsPayload(),
+        ...state.settings,
+      },
     });
     return true;
   }
@@ -99,6 +104,17 @@ export async function handleDashboardSettingsRoutes(
   }
 
   if (action === "updateSettings") {
+    const body = getRequestBody(request);
+    const nextSettings = asJsonRecord(body.settings);
+    state.settings = {
+      ...state.settings,
+      ...Object.fromEntries(
+        Object.entries(nextSettings).map(([key, value]) => [
+          key,
+          String(value ?? ""),
+        ]),
+      ),
+    };
     options.onUpdateSettings?.(request);
     await fulfillJson(route, { success: true });
     return true;

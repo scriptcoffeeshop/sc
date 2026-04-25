@@ -6,6 +6,7 @@ import {
   installDashboardRoutes,
   installGlobalStubs,
 } from "../support/smoke-fixtures";
+import { installDashboardControlsHarness } from "../support/dashboard-smoke";
 
 interface SmokeApiPayload {
   [key: string]: unknown;
@@ -22,6 +23,10 @@ type LineFlexNotificationPayload = {
 type OrderEmailPayload = {
   orderId?: string;
   userId?: string;
+};
+
+type DashboardSettingsUpdatePayload = {
+  settings?: Record<string, string>;
 };
 
 test.describe("smoke / dashboard core", () => {
@@ -158,6 +163,31 @@ test.describe("smoke / dashboard core", () => {
       "background-color",
       "rgba(0, 0, 0, 0)",
     );
+  });
+
+  test("dashboard title can be customized from header", async ({ page }) => {
+    let updatePayload: DashboardSettingsUpdatePayload | null = null;
+
+    await installGlobalStubs(page);
+    await installDashboardRoutes(page, {
+      onUpdateSettings: (request) => {
+        updatePayload = request.postDataJSON() as DashboardSettingsUpdatePayload;
+      },
+    });
+    await installDashboardControlsHarness(page, {
+      swalResponses: [{
+        title: "編輯後台名稱",
+        response: { isConfirmed: true, value: "團購後台" },
+      }],
+    });
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#dashboard-title")).toHaveText("咖啡訂購後台");
+    await page.getByRole("button", { name: "編輯後台名稱" }).click();
+    await expect.poll(() => updatePayload?.settings?.dashboard_title)
+      .toBe("團購後台");
+    await expect(page.locator("#dashboard-title")).toHaveText("團購後台");
   });
 
   test("dashboard users are touch-friendly on iPhone 13 mini", async ({ page }) => {

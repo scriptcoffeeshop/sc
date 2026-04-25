@@ -11,6 +11,7 @@ import type {
 
 export const PAYMENT_METHOD_ORDER = ["cod", "linepay", "jkopay", "transfer"] as const;
 export const SECTION_TITLE_ORDER = ["products", "delivery", "notes"] as const;
+export const DEFAULT_DASHBOARD_TITLE = "咖啡訂購後台";
 
 export type DashboardPaymentMethod = typeof PAYMENT_METHOD_ORDER[number];
 export type DashboardSectionKey = typeof SECTION_TITLE_ORDER[number];
@@ -25,6 +26,10 @@ export interface DashboardBrandingSettings {
   siteTitle: string;
   siteSubtitle: string;
   siteIconUrl: string;
+}
+
+export interface DashboardUiSettings {
+  dashboardTitle: string;
 }
 
 export interface DashboardStorefrontSettings {
@@ -68,6 +73,7 @@ export interface DashboardSettingsPersistedConfig {
 
 interface DashboardSettingsStateSnapshot {
   brandingSettings: DashboardBrandingSettings;
+  dashboardUiSettings: DashboardUiSettings;
   storefrontSettings: DashboardStorefrontSettings;
   sectionTitleSettings: DashboardSectionTitleSettingsMap;
   deliveryOptions: DashboardDeliveryOption[];
@@ -141,6 +147,12 @@ export function createDefaultBrandingSettings(): DashboardBrandingSettings {
     siteTitle: "",
     siteSubtitle: "",
     siteIconUrl: "",
+  };
+}
+
+export function createDefaultDashboardUiSettings(): DashboardUiSettings {
+  return {
+    dashboardTitle: DEFAULT_DASHBOARD_TITLE,
   };
 }
 
@@ -291,6 +303,8 @@ export function buildSettingsPersistedConfig(
       site_title: state.brandingSettings.siteTitle.trim(),
       site_subtitle: state.brandingSettings.siteSubtitle.trim(),
       site_icon_url: deps.normalizeIconPath(state.brandingSettings.siteIconUrl),
+      dashboard_title:
+        state.dashboardUiSettings.dashboardTitle.trim() || DEFAULT_DASHBOARD_TITLE,
       products_section_title: state.sectionTitleSettings.products.title.trim(),
       products_section_color: state.sectionTitleSettings.products.color,
       products_section_size: state.sectionTitleSettings.products.size,
@@ -324,6 +338,7 @@ export function buildSettingsStateFromConfig(
 ): Pick<
   DashboardSettingsStateSnapshot,
   | "brandingSettings"
+  | "dashboardUiSettings"
   | "storefrontSettings"
   | "sectionTitleSettings"
   | "paymentOptions"
@@ -336,6 +351,11 @@ export function buildSettingsStateFromConfig(
       siteTitle: String(settings["site_title"] || ""),
       siteSubtitle: String(settings["site_subtitle"] || ""),
       siteIconUrl: deps.normalizeIconPath(String(settings["site_icon_url"] || "")),
+    },
+    dashboardUiSettings: {
+      dashboardTitle:
+        String(settings["dashboard_title"] || DEFAULT_DASHBOARD_TITLE).trim() ||
+        DEFAULT_DASHBOARD_TITLE,
     },
     storefrontSettings: {
       announcementEnabled: String(settings["announcement_enabled"]) === "true",

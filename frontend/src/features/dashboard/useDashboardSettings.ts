@@ -11,6 +11,7 @@ import {
   buildSettingsStateFromConfig,
   createCustomDeliveryOption,
   createDefaultBrandingSettings,
+  createDefaultDashboardUiSettings,
   createDefaultStorefrontSettings,
   createEmptyPaymentOptions,
   PAYMENT_METHOD_ORDER,
@@ -19,6 +20,7 @@ import {
   type DashboardSettingsPersistedConfig,
   type DashboardSettingsRecord,
   type DashboardBrandingSettings,
+  type DashboardUiSettings,
   type DashboardStorefrontSettings,
   type DashboardPaymentOptionsMap,
 } from "./dashboardSettingsConfig.ts";
@@ -63,6 +65,9 @@ const deliveryOptions = ref<DashboardDeliveryOption[]>([]);
 const paymentOptions = ref<DashboardPaymentOptionsMap>(createEmptyPaymentOptions());
 const brandingSettings = ref<DashboardBrandingSettings>(
   createDefaultBrandingSettings(),
+);
+const dashboardUiSettings = ref<DashboardUiSettings>(
+  createDefaultDashboardUiSettings(),
 );
 const storefrontSettings = ref<DashboardStorefrontSettings>(
   createDefaultStorefrontSettings(),
@@ -171,6 +176,7 @@ function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
   rawSettings.value = settings;
   const nextState = buildSettingsStateFromConfig(settings, getServices());
   brandingSettings.value = nextState.brandingSettings;
+  dashboardUiSettings.value = nextState.dashboardUiSettings;
   storefrontSettings.value = nextState.storefrontSettings;
   sectionTitleSettings.value = nextState.sectionTitleSettings;
   paymentOptions.value = nextState.paymentOptions;
@@ -204,10 +210,18 @@ function removeDeliveryOption(id: string | number) {
   queueDeliverySortableSync();
 }
 
+function setDashboardTitle(title: string) {
+  dashboardUiSettings.value = {
+    ...dashboardUiSettings.value,
+    dashboardTitle: String(title || "").trim(),
+  };
+}
+
 function buildSettingsConfig(): DashboardSettingsPersistedConfig {
   return buildSettingsPersistedConfig(
     {
       brandingSettings: brandingSettings.value,
+      dashboardUiSettings: dashboardUiSettings.value,
       storefrontSettings: storefrontSettings.value,
       sectionTitleSettings: sectionTitleSettings.value,
       deliveryOptions: deliveryOptions.value,
@@ -285,6 +299,7 @@ export function configureDashboardSettingsServices(
 export function useDashboardSettings() {
   return {
     brandingSettings,
+    dashboardUiSettings,
     storefrontSettings,
     sectionTitleSettings,
     deliveryOptions,
@@ -300,6 +315,7 @@ export const dashboardSettingsActions = {
   loadSettings,
   saveSettings,
   resetSectionTitle,
+  setDashboardTitle,
   addDeliveryOption,
   removeDeliveryOption,
   buildSettingsConfig,

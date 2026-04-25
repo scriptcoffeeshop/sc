@@ -47,9 +47,21 @@
           fetchpriority="high"
         >
         <div>
-          <h1 class="text-xl font-bold ui-text-highlight">
-            咖啡訂購後台
-          </h1>
+          <div class="dashboard-title-row">
+            <h1 id="dashboard-title" class="text-xl font-bold ui-text-highlight">
+              {{ dashboardTitle }}
+            </h1>
+            <button
+              id="dashboard-title-edit"
+              type="button"
+              @click="handleEditDashboardTitle"
+              class="dashboard-title-edit-button"
+              aria-label="編輯後台名稱"
+              title="編輯後台名稱"
+            >
+              <Pencil class="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
           <p class="text-sm ui-text-subtle">
             歡迎，<span id="admin-name">{{ adminDisplayName }}</span>
           </p>
@@ -92,6 +104,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { Pencil } from "lucide-vue-next";
 import UiButton from "../components/ui/button/Button.vue";
 import UiCard from "../components/ui/card/Card.vue";
 import DashboardBlacklistSection from "../features/dashboard/DashboardBlacklistSection.vue";
@@ -111,12 +124,20 @@ import {
   DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
   dashboardShellActions,
 } from "../features/dashboard/bootstrapDashboard.ts";
+import {
+  DEFAULT_DASHBOARD_TITLE,
+} from "../features/dashboard/dashboardSettingsConfig.ts";
 import { readDashboardPublicBrandingCache } from "../features/dashboard/dashboardBranding.ts";
+import {
+  dashboardSettingsActions,
+  useDashboardSettings,
+} from "../features/dashboard/useDashboardSettings.ts";
 import { ICON_CATALOG, getDefaultIconUrl } from "../lib/icons.ts";
 import {
   dashboardSessionActions,
   useDashboardSession,
 } from "../features/dashboard/useDashboardSession.ts";
+import Swal from "../lib/swal.ts";
 
 const cachedDashboardBranding = readDashboardPublicBrandingCache(
   DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
@@ -125,9 +146,14 @@ const brandIconUrl = cachedDashboardBranding.logoUrl || getDefaultIconUrl("brand
 const originalBodyClass = document.body.className;
 const DASHBOARD_BODY_CLASSES = ["dashboard-enterprise", "p-4", "md:p-6"];
 const { isAuthenticated, adminDisplayName } = useDashboardSession();
+const { dashboardUiSettings } = useDashboardSettings();
 
 const iconLibraryCategory = ref("all");
 const iconLibraryKeyword = ref("");
+
+const dashboardTitle = computed(() =>
+  dashboardUiSettings.value.dashboardTitle || DEFAULT_DASHBOARD_TITLE
+);
 
 const iconLibraryCategories = computed(() => {
   const values = new Set(ICON_CATALOG.map((item) => item.category));
@@ -162,6 +188,32 @@ function handleLogout() {
   dashboardSessionActions.logout();
 }
 
+async function handleEditDashboardTitle() {
+  await dashboardSettingsActions.loadSettings();
+  const currentTitle = dashboardTitle.value;
+  const result = await Swal.fire({
+    title: "編輯後台名稱",
+    input: "text",
+    inputValue: currentTitle,
+    inputPlaceholder: "例如：團購後台",
+    showCancelButton: true,
+    confirmButtonText: "儲存",
+    cancelButtonText: "取消",
+    inputValidator: (value) => {
+      const nextTitle = String(value || "").trim();
+      if (!nextTitle) return "請輸入後台名稱";
+      if (nextTitle.length > 40) return "後台名稱請控制在 40 字以內";
+      return null;
+    },
+  });
+  if (!result.isConfirmed) return;
+
+  const nextTitle = String(result.value || "").trim();
+  if (!nextTitle) return;
+  dashboardSettingsActions.setDashboardTitle(nextTitle);
+  await dashboardSettingsActions.saveSettings();
+}
+
 function buildDashboardBodyClass() {
   const classSet = new Set(
     originalBodyClass
@@ -188,3 +240,41 @@ onBeforeUnmount(() => {
   document.body.className = originalBodyClass;
 });
 </script>
+
+<style scoped>
+.dashboard-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.dashboard-title-row h1 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-title-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #657B83;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.dashboard-title-edit-button:hover,
+.dashboard-title-edit-button:focus-visible {
+  border-color: #D8CFB8;
+  background: #FDF6E3;
+  color: #073642;
+  outline: none;
+}
+</style>

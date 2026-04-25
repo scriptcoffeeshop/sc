@@ -158,6 +158,7 @@ describe("useDashboardSettings", () => {
         },
       }),
       site_title: "Script Coffee",
+      dashboard_title: "團購後台",
       site_icon_url: "/icons/logo.png",
       announcement_enabled: "true",
       products_section_title: "咖啡豆選購",
@@ -165,6 +166,7 @@ describe("useDashboardSettings", () => {
     });
 
     const dashboard = module.useDashboardSettings();
+    expect(dashboard.dashboardUiSettings.value.dashboardTitle).toBe("團購後台");
 
     expect(dashboard.deliveryOptions.value.find((item) => item.id === "delivery"))
       .toMatchObject({
@@ -187,12 +189,14 @@ describe("useDashboardSettings", () => {
     });
 
     dashboard.brandingSettings.value.siteTitle = " Script Coffee ";
+    dashboard.dashboardUiSettings.value.dashboardTitle = " 團購後台 ";
     dashboard.sectionTitleSettings.value.products.title = " 咖啡豆 ";
 
     const settingsConfig = module.dashboardSettingsActions.buildSettingsConfig();
     expect(settingsConfig).toMatchObject({
       settings: {
         site_title: "Script Coffee",
+        dashboard_title: "團購後台",
         products_section_title: "咖啡豆",
         site_icon_url: "icons/logo.png",
       },
@@ -229,6 +233,7 @@ describe("useDashboardSettings", () => {
           success: true,
           settings: {
             site_title: "Script Coffee",
+            dashboard_title: "咖啡訂購後台",
             site_subtitle: "咖啡豆",
             site_icon_url: "/icons/logo.png",
             announcement_enabled: "true",
@@ -281,6 +286,7 @@ describe("useDashboardSettings", () => {
     const dashboard = module.useDashboardSettings();
     dashboard.storefrontSettings.value.announcement = " 更新後公告 ";
     dashboard.brandingSettings.value.siteTitle = " Script Coffee ";
+    dashboard.dashboardUiSettings.value.dashboardTitle = "團購後台";
 
     await module.dashboardSettingsActions.saveSettings();
 
@@ -288,6 +294,7 @@ describe("useDashboardSettings", () => {
       userId: "admin-user",
       settings: {
         site_title: "Script Coffee",
+        dashboard_title: "團購後台",
         announcement: " 更新後公告 ",
       },
     });
