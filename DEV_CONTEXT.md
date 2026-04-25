@@ -67,6 +67,7 @@
   - `settings` / `formfields` / `orders` / `categories` / `products` / `promotions` / `users` / `blacklist` 的按鈕互動已改成元件事件直連；`products` / `promotions` modal 儲存也已改成元件內 submit，`orders` 也已脫離 `createOrdersActionHandlers()` 與 document-level click/change delegation
   - dashboard 單筆/批次出貨物流欄位已改共用 Vue `DashboardShippingInfoForm.vue` + `dashboardShippingInfoDialog.ts`；不再各自拼 SweetAlert HTML 或從 DOM 讀物流欄位。
   - dashboard 訂單取消/失敗原因彈窗已改由 Vue `DashboardOrderReasonForm.vue` 掛載；`dashboardOrderStatusController.ts` 已不再依賴 `dashboardFormControls.ts`。
+  - dashboard 舊的 `dashboardFormControls.ts` 已無引用並移除；SweetAlert 表單欄位改由 Vue component expose 取得。
   - dashboard feature 層已不再依賴 `js/dashboard/events.js`，也不再暴露 `window.loginWithLine` / `window.showTab` / `window.linePayRefundOrder` 這類全域 API；dashboard boot/service wiring 已移到 `frontend/src/features/dashboard/bootstrapDashboard.ts`，tracked `js/` 相容殼已移除
   - `frontend/tsconfig.json` 與 `frontend/src/types/` 已建立，核心型別先落到 `Order` / `Product` / `CartItem` / `Settings` / `SessionUser`；新的 composable 由 guardrail 阻擋回退到 `.js`
 - 前台 `MainPage.vue` 已存在，根目錄 `main.html` 已瘦身為本機 compat redirect；tracked `js/` 相容殼已移除，Vite bundle 直接使用 `frontend/src/` 的 Vue/TS 入口。storefront 的登入／我的訂單／會員資料／登出、公告關閉、付款切換、配送選擇、門市搜尋結果、我的訂單關閉、物流單號複製、轉帳帳號互動與載入失敗重試，已改成 Vue 元件事件或區域 DOM listener，body-level click delegation 已從 storefront 正常流程移除。
