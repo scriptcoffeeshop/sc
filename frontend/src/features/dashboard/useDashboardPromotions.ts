@@ -1,4 +1,5 @@
 import { computed, nextTick, reactive, ref } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 import type {
   DashboardAuthFetch,
   DashboardSwal,
@@ -15,6 +16,8 @@ import {
   type PromotionFormState,
   type PromotionTargetItem,
 } from "./dashboardPromotionsShared.ts";
+
+const logger = createLogger("dashboard-promotions");
 
 type PromotionSortableEvent = {
   oldIndex?: number | undefined;
@@ -229,7 +232,7 @@ async function loadPromotions() {
     syncPromotionsMap();
     await queuePromotionsSync();
   } catch (error) {
-    console.error(error);
+    logger.error("載入優惠活動失敗", error);
   }
 }
 

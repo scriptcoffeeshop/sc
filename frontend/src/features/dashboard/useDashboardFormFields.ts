@@ -1,5 +1,6 @@
 import { computed, createApp, nextTick, ref, type App } from "vue";
 import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
+import { createLogger } from "../../lib/logger.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import DashboardFormFieldDialogForm, {
   type DashboardDeliveryOptionLike,
@@ -12,6 +13,8 @@ import {
   type DashboardFormField,
 } from "./dashboardFormFieldsShared.ts";
 import type { DashboardSwal, DashboardToast } from "./dashboardOrderTypes.ts";
+
+const logger = createLogger("dashboard-form-fields");
 
 interface DashboardSettingsRecord {
   delivery_options_config?: string;
@@ -202,7 +205,7 @@ async function loadFormFields() {
     formFields.value = Array.isArray(data.fields) ? data.fields : [];
     await queueFormFieldsSync();
   } catch (error) {
-    console.error(error);
+    logger.error("載入表單欄位失敗", error);
   }
 }
 

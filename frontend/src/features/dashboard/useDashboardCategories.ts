@@ -1,4 +1,5 @@
 import { computed, nextTick, ref } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 
 import type {
   DashboardAuthFetch,
@@ -7,6 +8,8 @@ import type {
 } from "./dashboardOrderTypes";
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
+
+const logger = createLogger("dashboard-categories");
 
 interface DashboardCategoryRecord {
   [key: string]: unknown;
@@ -162,7 +165,7 @@ async function loadCategories() {
     notifyCategoriesChanged();
     await queueCategoriesSync();
   } catch (error) {
-    console.error(error);
+    logger.error("載入分類失敗", error);
   }
 }
 

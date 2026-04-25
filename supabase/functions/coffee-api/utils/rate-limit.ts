@@ -1,3 +1,7 @@
+import { createLogger } from "./logger.ts";
+
+const logger = createLogger("rate-limit");
+
 export interface RateLimitBucket {
   count: number;
   resetTime: number;
@@ -129,7 +133,7 @@ export function createUpstashRateLimitStore(
         if (options.fallbackStore) {
           return await options.fallbackStore.consume(key, config, now);
         }
-        console.warn("[rate-limit] Upstash backend unavailable:", error);
+        logger.warn("Upstash backend unavailable", error);
         return null;
       }
     },

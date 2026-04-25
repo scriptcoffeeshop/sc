@@ -5,6 +5,7 @@ import { sendEmail } from "../utils/email.ts";
 import { sanitize } from "../utils/html.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
+import { createLogger } from "../utils/logger.ts";
 import { parseReceiptInfoRecord } from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
@@ -28,6 +29,8 @@ export type LinePayStatus = "paid" | "cancelled";
 interface JkoLineNotifyOptions {
   force?: boolean;
 }
+
+const logger = createLogger("payment-shared");
 
 export function isTerminalJkoPaymentStatus(status: string): boolean {
   return ["paid", "failed", "cancelled", "expired", "refunded"].includes(
@@ -141,9 +144,11 @@ async function updateJkoLineNotifyState(
     orderId,
   );
   if (error) {
-    console.warn(
-      `[jkoPayStatusNotify] ${failureContext}: ${orderId} (${error.message})`,
-    );
+    logger.warn("Failed to update JKO LINE notify state", {
+      orderId,
+      context: failureContext,
+      error: error.message,
+    });
   }
 }
 
@@ -250,11 +255,10 @@ export async function notifyLinePayPaymentStatusChanged(
     ).eq("id", orderId).maybeSingle();
 
     if (error || !order) {
-      console.error(
-        `[linePayStatusNotify] failed to load order: ${orderId} (${
-          error?.message || "not found"
-        })`,
-      );
+      logger.error("Failed to load LINE Pay order for status notification", {
+        orderId,
+        error: error?.message || "not found",
+      });
       return;
     }
 
@@ -285,9 +289,11 @@ export async function notifyLinePayPaymentStatusChanged(
       });
       const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
       if (!flexResult.success) {
-        console.error(
-          `[linePayStatusNotify] failed to send LINE flex: ${orderId} -> ${lineUserId} (${flexResult.error})`,
-        );
+        logger.error("Failed to send LINE Pay status flex", {
+          orderId,
+          lineUserId,
+          error: flexResult.error,
+        });
       }
     }
 
@@ -308,18 +314,18 @@ export async function notifyLinePayPaymentStatusChanged(
       });
       const emailResult = await sendEmail(customerEmail, subject, html);
       if (!emailResult.success) {
-        console.error(
-          `[linePayStatusNotify] failed to send email: ${orderId} -> ${customerEmail} (${
-            emailResult.error || "unknown"
-          })`,
-        );
+        logger.error("Failed to send LINE Pay status email", {
+          orderId,
+          customerEmail,
+          error: emailResult.error || "unknown",
+        });
       }
     }
   } catch (error) {
-    console.error(
-      `[linePayStatusNotify] unexpected error while notifying order ${orderId}`,
+    logger.error("Unexpected error while notifying LINE Pay order", {
+      orderId,
       error,
-    );
+    });
   }
 }
 
@@ -334,11 +340,10 @@ export async function notifyJkoPayPaymentStatusChanged(
     ).eq("id", orderId).maybeSingle();
 
     if (error || !order) {
-      console.error(
-        `[jkoPayStatusNotify] failed to load order: ${orderId} (${
-          error?.message || "not found"
-        })`,
-      );
+      logger.error("Failed to load JKO Pay order for status notification", {
+        orderId,
+        error: error?.message || "not found",
+      });
       return;
     }
 
@@ -387,18 +392,20 @@ export async function notifyJkoPayPaymentStatusChanged(
     });
     const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
     if (!flexResult.success) {
-      console.error(
-        `[jkoPayStatusNotify] failed to send LINE flex: ${orderId} -> ${lineUserId} (${flexResult.error})`,
-      );
+      logger.error("Failed to send JKO Pay status flex", {
+        orderId,
+        lineUserId,
+        error: flexResult.error,
+      });
       await persistJkoLineNotifyError(orderId, flexResult.error);
       return;
     }
     await persistJkoLineNotifySuccess(orderId, normalizedPaymentStatus);
   } catch (error) {
-    console.error(
-      `[jkoPayStatusNotify] unexpected error while notifying order ${orderId}`,
+    logger.error("Unexpected error while notifying JKO Pay order", {
+      orderId,
       error,
-    );
+    });
     await persistJkoLineNotifyError(
       orderId,
       error,

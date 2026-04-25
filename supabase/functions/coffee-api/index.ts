@@ -8,6 +8,7 @@ import { ALLOWED_REDIRECT_ORIGINS } from "./utils/config.ts";
 import { parseRequestData } from "./utils/request.ts";
 import { type AuthResult } from "./utils/auth.ts";
 import type { JsonRecord } from "./utils/json.ts";
+import { createLogger } from "./utils/logger.ts";
 import {
   type RateLimitConfig,
   type RateLimitStore,
@@ -31,6 +32,7 @@ import {
 
 // ============ 建立 Hono 應用程式 ============
 const app = new Hono();
+const actionAuditLogger = createLogger("action-audit");
 
 // CORS 中介層
 app.use(
@@ -154,16 +156,15 @@ function logActionAudit(params: {
     success: params.success,
     error: String(params.error || "").trim(),
   };
-  const payload = `[audit] ${JSON.stringify(record)}`;
   if (params.status >= 500) {
-    console.error(payload);
+    actionAuditLogger.error("Action completed with server error", record);
     return;
   }
   if (!params.success || params.status >= 400) {
-    console.warn(payload);
+    actionAuditLogger.warn("Action completed with client warning", record);
     return;
   }
-  console.info(payload);
+  actionAuditLogger.info("Action completed", record);
 }
 
 function wrapHandler(

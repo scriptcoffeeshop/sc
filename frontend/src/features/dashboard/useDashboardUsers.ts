@@ -1,4 +1,5 @@
 import { computed, ref } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 import type {
   DashboardApiJson,
   DashboardAuthFetch,
@@ -15,6 +16,8 @@ import {
   normalizeDashboardAdminPermissions,
   type DashboardAdminPermissionMap,
 } from "./dashboardAdminPermissions.ts";
+
+const logger = createLogger("dashboard-users");
 
 type DashboardUserRole = "SUPER_ADMIN" | "ADMIN" | "USER" | string;
 
@@ -259,7 +262,7 @@ async function loadBlacklist() {
         .filter((entry) => entry !== null)
       : [];
   } catch (error) {
-    console.error(error);
+    logger.error("載入黑名單失敗", error);
   }
 }
 

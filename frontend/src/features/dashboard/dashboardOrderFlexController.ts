@@ -1,6 +1,7 @@
 import { createApp, type App } from "vue";
 import { formatDateTimeText } from "../../lib/dateTime.ts";
 import { tryParseJsonArray } from "../../lib/jsonUtils.ts";
+import { createLogger } from "../../lib/logger.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type { DashboardOrderRecord } from "./dashboardOrderTypes";
 import type {
@@ -14,6 +15,7 @@ import DashboardFlexHistoryList, {
 
 const FLEX_HISTORY_KEY = "coffee_flex_message_history";
 const FLEX_HISTORY_MAX = 50;
+const logger = createLogger("dashboard-flex");
 
 type FlexHistoryItem = {
   orderId: string;
@@ -33,7 +35,7 @@ function readFlexHistory(): FlexHistoryItem[] {
   if (!rawHistory) return [];
   const history = tryParseJsonArray(rawHistory);
   if (!history) {
-    console.warn("[dashboard] 無法解析 LINE Flex 歷史紀錄");
+    logger.warn("無法解析 LINE Flex 歷史紀錄");
     return [];
   }
   return history.filter(isFlexHistoryItem);
@@ -44,7 +46,7 @@ function writeFlexHistory(history: FlexHistoryItem[]) {
   try {
     globalThis.localStorage.setItem(FLEX_HISTORY_KEY, JSON.stringify(history));
   } catch (error) {
-    console.warn("[dashboard] 無法寫入 LINE Flex 歷史紀錄", error);
+    logger.warn("無法寫入 LINE Flex 歷史紀錄", error);
   }
 }
 
@@ -171,7 +173,7 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
         await navigator.clipboard.writeText(jsonStr);
         deps.Toast.fire({ icon: "success", title: "Flex Message 已複製" });
       } catch (error) {
-        console.warn("[dashboard] 無法自動複製 Flex Message", error);
+        logger.warn("無法自動複製 Flex Message", error);
         deps.Swal.fire("提醒", "自動複製失敗，請手動選取後 Ctrl+C 複製", "info");
       }
     }
@@ -230,7 +232,7 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
               await navigator.clipboard.writeText(item.flexJson);
               deps.Toast.fire({ icon: "success", title: "已複製" });
             } catch (error) {
-              console.warn("[dashboard] 無法複製 Flex Message 歷史紀錄", error);
+              logger.warn("無法複製 Flex Message 歷史紀錄", error);
               deps.Swal.fire("提醒", "複製失敗，請手動操作", "info");
             }
           },

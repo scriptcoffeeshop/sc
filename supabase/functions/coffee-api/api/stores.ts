@@ -10,6 +10,7 @@ import {
 import { htmlResponse } from "../utils/cors.ts";
 import { escapeHtml } from "../utils/html.ts";
 import type { JsonRecord } from "../utils/json.ts";
+import { createLogger } from "../utils/logger.ts";
 
 const CVS_TYPE_MAP: Record<string, string> = {
   seven_eleven: "UNIMART",
@@ -24,6 +25,7 @@ const MAP_SUBTYPE_MAP: Record<string, string> = {
   UNIMARTC2C: "UNIMARTC2C",
   FAMIC2C: "FAMIC2C",
 };
+const logger = createLogger("stores");
 
 function toSafeJsStringLiteral(value: string): string {
   return JSON.stringify(value)
@@ -159,7 +161,7 @@ async function createStoreSelectionSession(
   try {
     await cleanupOldStoreSelections();
   } catch (error) {
-    console.warn("[stores] failed to cleanup old store selections", error);
+    logger.warn("Failed to cleanup old store selections", error);
   }
 
   const { error } = await supabase.from("coffee_store_selections").upsert({

@@ -1,5 +1,9 @@
 // utils/env-check.ts — 啟動時檢查必要環境變數
 
+import { createLogger } from "./logger.ts";
+
+const logger = createLogger("env-check");
+
 const REQUIRED_VARS = [
   "JWT_SECRET",
   "SUPABASE_URL",
@@ -43,7 +47,7 @@ export function assertRequiredEnv(): void {
   for (const name of OPTIONAL_VARS) {
     const val = Deno.env.get(name);
     if (!val || val.trim() === "") {
-      console.warn(`[WARN] 環境變數 ${name} 未設定，相關功能可能無法使用。`);
+      logger.warn("Optional env var is not configured", { name });
     }
   }
 }

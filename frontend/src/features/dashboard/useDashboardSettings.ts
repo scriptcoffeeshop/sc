@@ -1,4 +1,5 @@
 import { nextTick, ref } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type { DashboardSwal, DashboardToast } from "./dashboardOrderTypes.ts";
 import type {
@@ -21,6 +22,8 @@ import {
   type DashboardStorefrontSettings,
   type DashboardPaymentOptionsMap,
 } from "./dashboardSettingsConfig.ts";
+
+const logger = createLogger("dashboard-settings");
 
 interface DashboardSortableInstance {
   destroy: () => void;
@@ -257,7 +260,7 @@ async function loadSettings() {
     if (currentLoadToken !== settingsLoadToken) return;
     await loadBankAccounts?.();
   } catch (error) {
-    console.error(error);
+    logger.error("載入設定失敗", error);
   }
 }
 

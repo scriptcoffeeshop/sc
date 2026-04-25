@@ -3,6 +3,7 @@
 // ============================================
 
 import { API_URL, districtData } from "../../lib/appConfig.ts";
+import { createLogger } from "../../lib/logger.ts";
 import { Toast } from "../../lib/sharedUtils.ts";
 import Swal from "../../lib/swal.ts";
 import { state } from "../../lib/appState.ts";
@@ -26,6 +27,8 @@ import {
   openStoreSearchModal,
   resetStoreListCache,
 } from "./storefrontStoreSearch.ts";
+
+const logger = createLogger("storefront-delivery");
 
 export {
   applyStoreSelection,
@@ -279,7 +282,7 @@ export function loadDeliveryPrefs() {
         }
       }
     }
-  } catch (e) {
-    console.error("載入配送偏好失敗", e);
+  } catch (error) {
+    logger.error("載入配送偏好失敗", error);
   }
 }

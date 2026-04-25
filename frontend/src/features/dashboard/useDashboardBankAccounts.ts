@@ -1,4 +1,5 @@
 import { createApp, nextTick, ref, type App } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 import type {
   DashboardAuthFetch,
   DashboardSwal,
@@ -10,6 +11,8 @@ import DashboardBankAccountForm, {
   type DashboardBankAccountFormExpose,
   type DashboardBankAccountFormValues,
 } from "./DashboardBankAccountForm.vue";
+
+const logger = createLogger("dashboard-bank-accounts");
 
 type BankAccountFormValues = DashboardBankAccountFormValues;
 
@@ -191,7 +194,7 @@ async function loadBankAccounts() {
       : [];
     await queueBankAccountsSync();
   } catch (error) {
-    console.error(error);
+    logger.error("載入銀行帳戶失敗", error);
   }
 }
 

@@ -8,9 +8,11 @@ import {
 } from "./config.ts";
 import { tryParseJsonRecord } from "./json.ts";
 import type { JsonRecord } from "./json.ts";
+import { createLogger } from "./logger.ts";
 
 const DEFAULT_JKOPAY_UAT_BASE_URL = "https://uat-onlinepay.jkopay.app";
 const DEFAULT_JKOPAY_PROD_BASE_URL = "https://onlinepay.jkopay.com";
+const logger = createLogger("jkopay");
 
 interface JkoPayRuntimeConfig {
   apiKey: string;
@@ -155,7 +157,7 @@ function createProxyClient(proxyUrl: string): Deno.HttpClient | null {
       proxy: { url: raw },
     });
   } catch (error) {
-    console.warn("[jkopay] create proxy client failed:", error);
+    logger.warn("Create proxy client failed", error);
     return null;
   }
 }

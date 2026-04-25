@@ -1,36 +1,16 @@
 import type { Request as PlaywrightRequest } from "@playwright/test";
+import type {
+  FixtureDeliveryOption,
+  FixtureFormField,
+  FixturePaymentConfig,
+  FixtureQuoteRequestItem,
+  FixtureSettingsRecord,
+} from "./smoke-domain-fixtures.ts";
 
-export interface MainRoutePaymentConfig {
-  cod: boolean;
-  linepay: boolean;
-  jkopay?: boolean;
-  transfer: boolean;
-}
-
-export interface MainRouteDeliveryOption {
-  id: string;
-  icon?: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  payment: MainRoutePaymentConfig;
-}
-
-export interface MainRouteFormField {
-  id?: number;
-  field_key: string;
-  label: string;
-  field_type: string;
-  placeholder?: string;
-  options?: string;
-  required?: boolean;
-  enabled?: boolean;
-  delivery_visibility?: string | null;
-}
-
-export interface MainRouteSettings {
-  [key: string]: unknown;
-}
+export type MainRoutePaymentConfig = FixturePaymentConfig;
+export type MainRouteDeliveryOption = FixtureDeliveryOption;
+export type MainRouteFormField = FixtureFormField;
+export type MainRouteSettings = FixtureSettingsRecord;
 
 export type MainRouteOptions = {
   payment?: MainRoutePaymentConfig;
@@ -59,11 +39,7 @@ export interface MainRouteState {
   settings: MainRouteSettings;
 }
 
-interface QuoteRequestItem {
-  productId?: number | string;
-  specKey?: string;
-  qty?: number | string;
-}
+type QuoteRequestItem = FixtureQuoteRequestItem;
 
 export function createMainRouteState(options: MainRouteOptions): MainRouteState {
   const paymentSource = options.payment ??

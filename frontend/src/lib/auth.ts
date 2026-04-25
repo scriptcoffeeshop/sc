@@ -2,6 +2,9 @@
 
 import Swal from "./swal.ts";
 import { API_URL } from "./appConfig.ts";
+import { createLogger } from "./logger.ts";
+
+const logger = createLogger("auth");
 
 /**
  * 啟動 LINE Login 流程
@@ -66,7 +69,7 @@ export async function authFetch(
   });
 
   if (response.status === 401) {
-    console.warn("Unauthorized request, token might be expired or invalid.");
+    logger.warn("Unauthorized request, token might be expired or invalid.");
     localStorage.removeItem(tokenKey);
     throw new Error("登入已過期，請重新登入");
   }

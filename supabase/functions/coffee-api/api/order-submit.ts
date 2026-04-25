@@ -27,6 +27,7 @@ import { requestJkoPayEntry } from "../utils/jkopay.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
+import { createLogger } from "../utils/logger.ts";
 import { supabase } from "../utils/supabase.ts";
 import { registerOrUpdateUser } from "../utils/users.ts";
 
@@ -43,6 +44,7 @@ interface LinePayRequestResponse {
 }
 
 const ORDER_RESUBMIT_INTERVAL_MS = 3 * 60 * 1000;
+const logger = createLogger("order-submit");
 
 function createOrderId(now: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -347,17 +349,17 @@ export async function submitOrder(data: JsonRecord, req: Request) {
         confirmationHtml,
       );
       if (!emailResult.success) {
-        console.error(
-          `[submitOrder] failed to auto send confirmation email: ${orderId} -> ${customerEmail} (${
-            emailResult.error || "unknown"
-          })`,
-        );
+        logger.error("Failed to auto send confirmation email", {
+          orderId,
+          customerEmail,
+          error: emailResult.error || "unknown",
+        });
       }
     } catch (error) {
-      console.error(
-        `[submitOrder] unexpected error while sending confirmation email: ${orderId}`,
+      logger.error("Unexpected error while sending confirmation email", {
+        orderId,
         error,
-      );
+      });
     }
   }
 
@@ -381,9 +383,12 @@ export async function submitOrder(data: JsonRecord, req: Request) {
     try {
       await sendAdminOrderCreatedFlexNotification(lineNotifyPayload);
     } catch (error) {
-      console.error(
-        `[submitOrder] unexpected error while sending admin LINE flex notification: ${orderId}`,
-        error,
+      logger.error(
+        "Unexpected error while sending admin LINE flex notification",
+        {
+          orderId,
+          error,
+        },
       );
     }
     if (shouldSendCustomerNotifications) {
@@ -400,9 +405,12 @@ export async function submitOrder(data: JsonRecord, req: Request) {
           customerNotifyResult,
         );
       } catch (error) {
-        console.error(
-          `[submitOrder] unexpected error while sending customer LINE flex notification: ${orderId}`,
-          error,
+        logger.error(
+          "Unexpected error while sending customer LINE flex notification",
+          {
+            orderId,
+            error,
+          },
         );
         await persistOrderCreatedLineNotifyResult(orderId, {
           attempted: true,
@@ -530,9 +538,10 @@ export async function submitOrder(data: JsonRecord, req: Request) {
           })
           .eq("id", orderId);
         if (updateEntryError) {
-          console.warn(
-            `[jkopay] failed to persist entry metadata: ${orderId} (${updateEntryError.message})`,
-          );
+          logger.warn("Failed to persist JKO Pay entry metadata", {
+            orderId,
+            error: updateEntryError.message,
+          });
         }
         return {
           success: true,
@@ -564,7 +573,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
       if (resultObjectSummary) {
         failureParts.push(`detail=${resultObjectSummary}`);
       }
-      console.error("[jkopay] entry failed", {
+      logger.error("JKO Pay entry failed", {
         orderId,
         resultCode,
         resultMessage,

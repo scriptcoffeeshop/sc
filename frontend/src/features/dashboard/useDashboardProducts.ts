@@ -1,4 +1,5 @@
 import { computed, nextTick, reactive, ref } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 import {
   buildGroupedProductsView,
   buildSaveProductPayload,
@@ -16,6 +17,8 @@ import type {
   DashboardSwalResult,
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
+
+const logger = createLogger("dashboard-products");
 
 interface DashboardSortableInstance {
   destroy?: () => void;
@@ -233,7 +236,7 @@ async function loadProducts() {
     syncProductsMap();
     await queueProductTableSync();
   } catch (error) {
-    console.error(error);
+    logger.error("載入商品失敗", error);
   }
 }
 

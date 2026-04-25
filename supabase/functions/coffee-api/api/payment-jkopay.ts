@@ -16,7 +16,10 @@ import {
 } from "../utils/jkopay.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
+import { createLogger } from "../utils/logger.ts";
 import { supabase } from "../utils/supabase.ts";
+
+const logger = createLogger("payment-jkopay");
 
 function normalizePaymentRedirectUrl(value: unknown): string {
   const raw = String(value || "").trim();
@@ -246,9 +249,10 @@ export async function jkoPayInquiry(
           payment_redirect_url: paymentUrl,
         }).eq("id", orderId);
         if (persistRedirectError) {
-          console.warn(
-            `[jkopay] failed to persist payment redirect url: ${orderId} (${persistRedirectError.message})`,
-          );
+          logger.warn("Failed to persist payment redirect URL", {
+            orderId,
+            error: persistRedirectError.message,
+          });
         }
       }
       if (syncResult.statusChanged) {

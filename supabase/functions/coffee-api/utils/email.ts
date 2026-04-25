@@ -1,6 +1,9 @@
 // @deno-types="npm:@types/nodemailer"
 import nodemailer from "nodemailer";
 import { SMTP_PASS, SMTP_USER } from "./config.ts";
+import { createLogger } from "./logger.ts";
+
+const logger = createLogger("email");
 
 export async function sendEmail(
   to: string,
@@ -28,7 +31,7 @@ export async function sendEmail(
     });
     return { success: true };
   } catch (e: unknown) {
-    console.error("Failed to send email:", e);
+    logger.error("Failed to send email", e);
     return {
       success: false,
       error: e instanceof Error ? e.message : String(e),

@@ -1,4 +1,5 @@
 import { computed, reactive, ref } from "vue";
+import { createLogger } from "../../lib/logger.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { createDashboardOrdersBulkActions } from "./dashboardOrdersBulkActions.ts";
 import {
@@ -24,6 +25,8 @@ import type {
   DashboardOrderServices,
 } from "./dashboardOrderTypes.ts";
 import { orderStatusLabel, orderStatusOptions } from "./orderShared.ts";
+
+const logger = createLogger("dashboard-orders");
 
 const orders = ref<DashboardOrderRecord[]>([]);
 const selectedOrderIds = ref<Set<string>>(new Set());
@@ -109,7 +112,7 @@ async function loadOrders() {
     syncSelectedOrderIds(orders, selectedOrderIds);
     syncPendingStatuses(orders, pendingStatusByOrderId);
   } catch (error) {
-    console.error(error);
+    logger.error("載入訂單失敗", error);
   }
 }
 

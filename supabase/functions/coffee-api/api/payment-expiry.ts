@@ -1,9 +1,11 @@
 import { supabase } from "../utils/supabase.ts";
 import type { JsonRecord } from "../utils/json.ts";
+import { createLogger } from "../utils/logger.ts";
 
 export const EXPIRED_PAYMENT_FAILURE_REASON = "付款期限已過，自動設為失敗訂單";
 
 const LINEPAY_PAYMENT_TIMEOUT_MS = 20 * 60 * 1000;
+const logger = createLogger("payment-expiry");
 
 export function normalizePaymentStatus(
   value: unknown,
@@ -118,9 +120,10 @@ export async function expireOnlinePaymentOrderIfNeeded(
       orderId,
     );
     if (error) {
-      console.error(
-        `[payment-expiry] failed to persist expired order state: ${orderId} (${error.message})`,
-      );
+      logger.error("Failed to persist expired order state", {
+        orderId,
+        error: error.message,
+      });
     }
   }
 

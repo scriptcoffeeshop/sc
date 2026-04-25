@@ -1,7 +1,10 @@
 import { authFetch } from "../../lib/auth.ts";
 import { API_URL } from "../../lib/appConfig.ts";
+import { createLogger } from "../../lib/logger.ts";
 import { showDialog, showError, showLoading } from "../../lib/swalDialogs.ts";
 import { buildPaymentStatusDialogOptions } from "./storefrontPaymentDisplay.ts";
+
+const logger = createLogger("storefront-payments");
 
 type StorefrontMainAppReturnsDeps = {
   getErrorMessage: (error: unknown, fallback?: string) => string;
@@ -55,10 +58,10 @@ export function createStorefrontMainAppReturns(
           if (!response.ok) {
             const result = await response.json().catch(() => ({}));
             const message = String(result.error || "").trim();
-            if (message) console.warn("[linepay-cancel] ", message);
+            if (message) logger.warn("LINE Pay cancel notify returned error", { message });
           }
         } catch (error) {
-          console.warn("[linepay-cancel] failed to notify backend:", error);
+          logger.warn("LINE Pay cancel notify failed", error);
         }
       }
 

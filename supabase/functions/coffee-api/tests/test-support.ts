@@ -1,21 +1,23 @@
 import { supabase } from "../utils/supabase.ts";
 
-export interface MockRow {
+export interface DomainTableRow {
   [key: string]: unknown;
 }
-export type MockTables = Record<string, MockRow[]>;
+export type DomainTableMap = Record<string, DomainTableRow[]>;
+export type MockRow = DomainTableRow;
+export type MockTables = DomainTableMap;
 
 function cloneRow<T>(value: T): T {
   return structuredClone(value);
 }
 
-function normalizeRows(value: unknown): MockRow[] {
+function normalizeRows(value: unknown): DomainTableRow[] {
   if (!Array.isArray(value)) return [];
-  return value.map((row) => cloneRow((row || {}) as MockRow));
+  return value.map((row) => cloneRow((row || {}) as DomainTableRow));
 }
 
-class MockQueryBuilder implements PromiseLike<MockRow> {
-  private filters: Array<(row: MockRow) => boolean> = [];
+class MockQueryBuilder implements PromiseLike<DomainTableRow> {
+  private filters: Array<(row: DomainTableRow) => boolean> = [];
   private orders: Array<{ column: string; ascending: boolean }> = [];
   private rangeStart: number | null = null;
   private rangeEnd: number | null = null;
@@ -24,7 +26,7 @@ class MockQueryBuilder implements PromiseLike<MockRow> {
   private wantsCount = false;
 
   constructor(
-    private readonly tables: MockTables,
+    private readonly tables: DomainTableMap,
     private readonly tableName: string,
   ) {}
 
@@ -100,9 +102,9 @@ class MockQueryBuilder implements PromiseLike<MockRow> {
     };
   }
 
-  then<TResult1 = MockRow, TResult2 = never>(
+  then<TResult1 = DomainTableRow, TResult2 = never>(
     onfulfilled?:
-      | ((value: MockRow) => TResult1 | PromiseLike<TResult1>)
+      | ((value: DomainTableRow) => TResult1 | PromiseLike<TResult1>)
       | null,
     onrejected?:
       | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
@@ -111,14 +113,14 @@ class MockQueryBuilder implements PromiseLike<MockRow> {
     return Promise.resolve(this.execute()).then(onfulfilled, onrejected);
   }
 
-  private getTable(): MockRow[] {
+  private getTable(): DomainTableRow[] {
     if (!this.tables[this.tableName]) {
       this.tables[this.tableName] = [];
     }
     return this.tables[this.tableName];
   }
 
-  private readRows(): MockRow[] {
+  private readRows(): DomainTableRow[] {
     let rows = [...this.getTable()];
     for (const filter of this.filters) {
       rows = rows.filter(filter);
@@ -158,7 +160,7 @@ class MockQueryBuilder implements PromiseLike<MockRow> {
 
   private executeUpdate() {
     const table = this.getTable();
-    const updates = cloneRow((this.payload || {}) as MockRow);
+    const updates = cloneRow((this.payload || {}) as DomainTableRow);
     for (const row of table) {
       if (this.filters.every((filter) => filter(row))) {
         Object.assign(row, updates);
@@ -216,10 +218,10 @@ class MockQueryBuilder implements PromiseLike<MockRow> {
 }
 
 export async function withMockedSupabaseTables<T>(
-  initialTables: MockTables,
-  fn: (tables: MockTables) => Promise<T>,
+  initialTables: DomainTableMap,
+  fn: (tables: DomainTableMap) => Promise<T>,
 ): Promise<T> {
-  const tables: MockTables = Object.fromEntries(
+  const tables: DomainTableMap = Object.fromEntries(
     Object.entries(initialTables).map((
       [table, rows],
     ) => [table, normalizeRows(rows)]),

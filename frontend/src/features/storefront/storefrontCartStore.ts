@@ -4,6 +4,7 @@
 
 import { state } from "../../lib/appState.ts";
 import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
+import { createLogger } from "../../lib/logger.ts";
 import Swal from "../../lib/swal.ts";
 import {
   calcCartSummaryFromState,
@@ -12,6 +13,8 @@ import {
 } from "./storefrontCartSummary.ts";
 import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
+
+const logger = createLogger("storefront-cart");
 
 export interface StorefrontCartItem {
   productId: number | string;
@@ -99,7 +102,7 @@ export function loadCart() {
     updateCartUI();
     triggerQuoteRefresh();
   } catch (error) {
-    console.warn("[storefront] 無法讀取購物車快取", error);
+    logger.warn("無法讀取購物車快取", error);
     cart = [];
     updateCartUI();
     triggerQuoteRefresh();

@@ -2,108 +2,40 @@ import type {
   Request as PlaywrightRequest,
   Route,
 } from "@playwright/test";
+import type {
+  FixtureBankAccount,
+  FixtureBlacklistEntry,
+  FixtureFormField,
+  FixtureOrder,
+  FixtureProduct,
+  FixtureProductCategory,
+  FixturePromotion,
+  FixturePromotionTargetItem,
+  FixtureUser,
+} from "./smoke-domain-fixtures.ts";
 
-export interface DashboardCategory {
-  id: number;
-  name: string;
-}
+export type DashboardFixtureCategory = FixtureProductCategory;
+export type DashboardCategory = DashboardFixtureCategory;
 
-export interface DashboardProduct {
-  id: number;
-  category: string;
-  name: string;
-  description?: string;
-  price?: number;
-  roastLevel?: string;
-  specs?: string;
-  enabled?: boolean;
-}
+export type DashboardFixtureProduct = FixtureProduct;
+export type DashboardProduct = DashboardFixtureProduct;
 
-export interface DashboardPromotionTargetItem {
-  productId: number;
-  specKey?: string;
-}
+export type DashboardPromotionTargetItem = FixturePromotionTargetItem;
 
-export interface DashboardPromotion {
-  id: number;
-  name: string;
-  type: string;
-  targetProductIds?: number[];
-  targetItems?: DashboardPromotionTargetItem[];
-  minQuantity: number;
-  discountType: string;
-  discountValue: number;
-  enabled?: boolean;
-  startTime?: string | null;
-  endTime?: string | null;
-  sortOrder?: number;
-}
+export type DashboardFixturePromotion = FixturePromotion;
+export type DashboardPromotion = DashboardFixturePromotion;
 
-export interface DashboardOrder {
-  orderId: string;
-  timestamp?: string;
-  deliveryMethod?: string;
-  status?: string;
-  lineUserId?: string;
-  lineName?: string;
-  phone?: string;
-  email?: string;
-  items?: string;
-  total?: number;
-  paymentMethod?: string;
-  paymentStatus?: string;
-  trackingNumber?: string;
-  shippingProvider?: string;
-  trackingUrl?: string;
-  cancelReason?: string;
-  [key: string]: unknown;
-}
+export type DashboardFixtureOrder = FixtureOrder;
+export type DashboardOrder = DashboardFixtureOrder;
 
-export interface DashboardUser {
-  userId: string;
-  displayName: string;
-  pictureUrl?: string;
-  email?: string;
-  phone?: string;
-  defaultDeliveryMethod?: string;
-  defaultCity?: string;
-  defaultDistrict?: string;
-  defaultAddress?: string;
-  defaultStoreName?: string;
-  defaultStoreId?: string;
-  lastLogin?: string;
-  role?: string;
-  status?: string;
-  adminNote?: string;
-  adminPermissions?: Record<string, boolean>;
-}
+export type DashboardFixtureUser = FixtureUser;
+export type DashboardUser = DashboardFixtureUser;
 
-export interface DashboardBlacklistEntry {
-  lineUserId: string;
-  displayName: string;
-  blockedAt?: string;
-  reason?: string;
-}
+export type DashboardBlacklistEntry = FixtureBlacklistEntry;
 
-export interface DashboardFormField {
-  id: number;
-  field_key: string;
-  label: string;
-  field_type: string;
-  placeholder?: string;
-  options?: string;
-  required?: boolean;
-  enabled?: boolean;
-  delivery_visibility?: string | null;
-}
+export type DashboardFormField = FixtureFormField & { id: number };
 
-export interface DashboardBankAccount {
-  id: number;
-  bankCode: string;
-  bankName: string;
-  accountNumber: string;
-  accountName?: string;
-}
+export type DashboardBankAccount = FixtureBankAccount;
 
 export type DashboardRouteOptions = {
   onAdminLineLogin?: (request: PlaywrightRequest) => void;

@@ -18,11 +18,14 @@ import {
   type ReceiptInfo,
 } from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
+import { createLogger } from "../utils/logger.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import { supabase } from "../utils/supabase.ts";
 
 export { normalizeReceiptInfo, parseReceiptInfo };
 export type { ReceiptInfo };
+
+const logger = createLogger("order-shared");
 
 export type CustomFields = Record<string, string>;
 
@@ -257,16 +260,14 @@ export async function sendAdminOrderCreatedFlexNotification(
     String(LINE_ORDER_NOTIFY_TO || ""),
   );
   if (!notifyTargets.length) {
-    console.error(
-      "[submitOrder] missing LINE_ORDER_NOTIFY_TO, skip admin notification",
-    );
+    logger.error("Missing LINE_ORDER_NOTIFY_TO, skip admin notification");
     return;
   }
   const notifyToken = String(LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN || "")
     .trim();
   if (!notifyToken) {
-    console.error(
-      "[submitOrder] missing LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN, skip admin notification",
+    logger.error(
+      "Missing LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN, skip admin notification",
     );
     return;
   }
@@ -275,9 +276,11 @@ export async function sendAdminOrderCreatedFlexNotification(
   for (const target of notifyTargets) {
     const result = await pushLineFlexMessage(target, flexMessage, notifyToken);
     if (!result.success) {
-      console.error(
-        `[submitOrder] failed to send admin LINE flex notification: ${params.orderId} -> ${target} (${result.error})`,
-      );
+      logger.error("Failed to send admin LINE flex notification", {
+        orderId: params.orderId,
+        target,
+        error: result.error,
+      });
     }
   }
 }
@@ -317,9 +320,10 @@ export async function persistOrderCreatedLineNotifyResult(
     orderId,
   );
   if (error) {
-    console.warn(
-      `[submitOrder] failed to persist line notification result: ${orderId} (${error.message})`,
-    );
+    logger.warn("Failed to persist line notification result", {
+      orderId,
+      error: error.message,
+    });
   }
 }
 
