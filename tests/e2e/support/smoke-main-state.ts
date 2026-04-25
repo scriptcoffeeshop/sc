@@ -28,11 +28,15 @@ export interface MainRouteFormField {
   delivery_visibility?: string | null;
 }
 
+export interface MainRouteSettings {
+  [key: string]: unknown;
+}
+
 export type MainRouteOptions = {
   payment?: MainRoutePaymentConfig;
   deliveryOptions?: MainRouteDeliveryOption[];
   formFields?: MainRouteFormField[];
-  settings?: Record<string, unknown>;
+  settings?: MainRouteSettings;
   onCustomerLineLogin?: (request: PlaywrightRequest) => void;
 };
 
@@ -52,7 +56,7 @@ export interface MainRouteState {
   payment: Required<MainRoutePaymentConfig>;
   deliveryOptions: MainRouteDeliveryOption[];
   formFields: MainRouteNormalizedFormField[];
-  settings: Record<string, unknown>;
+  settings: MainRouteSettings;
 }
 
 interface QuoteRequestItem {

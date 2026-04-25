@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
 function jsonResponse(payload: DashboardApiJson) {
@@ -109,7 +110,7 @@ describe("useDashboardUsers", () => {
 
   it("adds users to blacklist and refreshes blacklist data when the blacklist tab is active", async () => {
     const module = await loadUsersModule("blacklist");
-    const requestBodies: Array<Record<string, unknown>> = [];
+    const requestBodies: Array<JsonRecord> = [];
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "封鎖用戶") {

@@ -1,13 +1,14 @@
 import { assertEquals, assertExists } from "@std/assert";
 import app from "../index.ts";
 import { signJwt } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { withMockedSupabaseTables } from "./test-support.ts";
 
 function buildActionRequest(
   action: string,
   options: {
     method?: "GET" | "POST";
-    body?: Record<string, unknown>;
+    body?: JsonRecord;
     headers?: HeadersInit;
   } = {},
 ): Request {

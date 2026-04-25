@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 
 interface SwalVueOptions {
   html?: unknown;
@@ -198,7 +199,7 @@ describe("useDashboardOrders", () => {
 
   it("sends selected order ids and payment status during batch updates", async () => {
     const module = await loadOrdersModule();
-    let batchPayload: Record<string, unknown> | null = null;
+    let batchPayload: JsonRecord | null = null;
     const orders = [
       {
         orderId: "O-2001",
@@ -313,7 +314,7 @@ describe("useDashboardOrders", () => {
 
   it("includes shared shipping metadata when batch shipping orders", async () => {
     const module = await loadOrdersModule();
-    let batchPayload: Record<string, unknown> | null = null;
+    let batchPayload: JsonRecord | null = null;
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("batchUpdateOrderStatus")) {
         batchPayload = JSON.parse(String(options.body || "{}"));

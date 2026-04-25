@@ -6,6 +6,10 @@ import {
 } from "../support/smoke-fixtures";
 import { gotoStorefront, installStorefrontUser } from "../support/storefront-smoke";
 
+interface SmokeApiPayload {
+  [key: string]: unknown;
+}
+
 test.describe("smoke / storefront basics", () => {
   test("storefront note textarea stays empty and keeps legacy warm palette", async ({ page }) => {
     await installGlobalStubs(page);
@@ -32,14 +36,14 @@ test.describe("smoke / storefront basics", () => {
     await installGlobalStubs(page);
 
     let loginRequest:
-      | { method: string; url: string; body: Record<string, unknown> }
+      | { method: string; url: string; body: SmokeApiPayload }
       | null = null;
     await installMainRoutes(page, {
       onCustomerLineLogin: (request) => {
         loginRequest = {
           method: request.method(),
           url: request.url(),
-          body: request.postDataJSON() as Record<string, unknown>,
+          body: request.postDataJSON() as SmokeApiPayload,
         };
       },
     });

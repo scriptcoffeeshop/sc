@@ -140,7 +140,9 @@ export interface DashboardRouteContext {
   url: URL;
 }
 
-export type DashboardJsonRecord = Record<string, unknown>;
+export interface DashboardJsonRecord {
+  [key: string]: unknown;
+}
 
 function cloneArrayItems<T extends object>(items: T[]): T[] {
   return items.map((item) => ({ ...item }));

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
 function jsonResponse(payload: DashboardApiJson) {
@@ -17,7 +18,7 @@ describe("useDashboardCategories", () => {
 
   it("loads categories, keeps input state, and adds a new category", async () => {
     const module = await loadCategoriesModule();
-    const payloads: Array<Record<string, unknown>> = [];
+    const payloads: Array<JsonRecord> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getCategories")) {
         return jsonResponse({
@@ -74,7 +75,7 @@ describe("useDashboardCategories", () => {
     const module = await loadCategoriesModule();
     const payloads: Array<{
       url: string;
-      body: Record<string, unknown>;
+      body: JsonRecord;
     }> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getCategories")) {

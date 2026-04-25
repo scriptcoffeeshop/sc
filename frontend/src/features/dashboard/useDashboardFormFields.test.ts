@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 
 interface SwalVueOptions {
   html?: unknown;
@@ -148,7 +149,7 @@ describe("useDashboardFormFields", () => {
 
   it("edits fields and toggles enabled state through update endpoints", async () => {
     const module = await loadFormFieldsModule();
-    const updatePayloads: Array<Record<string, unknown>> = [];
+    const updatePayloads: Array<JsonRecord> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getFormFieldsAdmin")) {
         return jsonResponse({
@@ -241,7 +242,7 @@ describe("useDashboardFormFields", () => {
 
   it("normalizes all-visible delivery visibility when adding new fields", async () => {
     const module = await loadFormFieldsModule();
-    let addPayload: Record<string, unknown> | null = null;
+    let addPayload: JsonRecord | null = null;
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getFormFieldsAdmin")) {
         return jsonResponse({ success: true, fields: [] });
@@ -309,7 +310,7 @@ describe("useDashboardFormFields", () => {
   it("persists sortable field order from the rendered DOM", async () => {
     const module = await loadFormFieldsModule();
     let sortableOptions: SortableTestOptions | null = null;
-    let reorderPayload: Record<string, unknown> | null = null;
+    let reorderPayload: JsonRecord | null = null;
     const sortableInstance = { destroy: vi.fn() };
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getFormFieldsAdmin")) {

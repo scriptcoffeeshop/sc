@@ -147,7 +147,7 @@
 - 基本檢查以 `guardrails`、Deno lint/check/test、Playwright smoke 為主。
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
-- `frontend/tsconfig.json` 已啟用完整 `strict: true`，並額外啟用 `exactOptionalPropertyTypes`、`noFallthroughCasesInSwitch`、`noPropertyAccessFromIndexSignature`、`noUncheckedIndexedAccess` 與 `noUnusedLocals`；前端新增參數、測試 fixture、動態 import 模組、全域 bridge、服務注入 callback、nullable / optional 資料邊界、索引讀取、index-signature 存取與暫存宣告都要補明確型別或清除。frontend runtime 已清除 `Record<string, unknown>` 型別邊界，後續需用命名介面、共享 `JsonRecord` 或具體 payload 型別。
+- `frontend/tsconfig.json` 已啟用完整 `strict: true`，並額外啟用 `exactOptionalPropertyTypes`、`noFallthroughCasesInSwitch`、`noPropertyAccessFromIndexSignature`、`noUncheckedIndexedAccess` 與 `noUnusedLocals`；前端新增參數、測試 fixture、動態 import 模組、全域 bridge、服務注入 callback、nullable / optional 資料邊界、索引讀取、index-signature 存取與暫存宣告都要補明確型別或清除。frontend runtime、dashboard unit tests、Playwright smoke/features tests 與 Supabase function tests 已清除 `Record<string, unknown>` 型別邊界，後續需用命名介面、共享 `JsonRecord` 或具體 payload 型別。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`、`@ts-expect-error`、`eslint-disable` 與 `as any`，避免型別/品質錯誤被靜音。
 - `repo_hygiene_check.py` 已禁止 frontend runtime 與 backend production 新增 `Record<string, unknown>`，並阻擋 production `catch (...) { /* ignore */ }` 類型的吞錯寫法，避免已收斂的資料邊界與可觀測性回退。
 - `repo_hygiene_check.py` 已禁止 tracked `.js` 回流；前端/測試需用 TypeScript 或 Vue，工具設定需用 `.cjs` / `.mjs`。目前 `frontend/src/` 已無 JS allowlist，entry、Swal wrapper、UI helper 與資料邊界皆已轉 TypeScript。

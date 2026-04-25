@@ -1,6 +1,8 @@
 import { supabase } from "../utils/supabase.ts";
 
-export type MockRow = Record<string, unknown>;
+export interface MockRow {
+  [key: string]: unknown;
+}
 export type MockTables = Record<string, MockRow[]>;
 
 function cloneRow<T>(value: T): T {
@@ -12,7 +14,7 @@ function normalizeRows(value: unknown): MockRow[] {
   return value.map((row) => cloneRow((row || {}) as MockRow));
 }
 
-class MockQueryBuilder implements PromiseLike<Record<string, unknown>> {
+class MockQueryBuilder implements PromiseLike<MockRow> {
   private filters: Array<(row: MockRow) => boolean> = [];
   private orders: Array<{ column: string; ascending: boolean }> = [];
   private rangeStart: number | null = null;
@@ -98,9 +100,9 @@ class MockQueryBuilder implements PromiseLike<Record<string, unknown>> {
     };
   }
 
-  then<TResult1 = Record<string, unknown>, TResult2 = never>(
+  then<TResult1 = MockRow, TResult2 = never>(
     onfulfilled?:
-      | ((value: Record<string, unknown>) => TResult1 | PromiseLike<TResult1>)
+      | ((value: MockRow) => TResult1 | PromiseLike<TResult1>)
       | null,
     onrejected?:
       | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)

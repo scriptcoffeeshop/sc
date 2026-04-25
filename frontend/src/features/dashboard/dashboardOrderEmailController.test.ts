@@ -2,13 +2,14 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createOrderEmailController } from "./dashboardOrderEmailController.ts";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 import type { DashboardApiJson } from "./dashboardOrderTypes.ts";
 
 function jsonResponse(payload: DashboardApiJson) {
   return { json: async () => payload };
 }
 
-function createDeps(overrides: Record<string, unknown> = {}) {
+function createDeps(overrides: JsonRecord = {}) {
   return {
     API_URL: "https://api.example",
     authFetch: vi.fn(async () => jsonResponse({ success: true, message: "已發送" })),

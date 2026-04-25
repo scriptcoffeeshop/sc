@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 
 interface SwalVueOptions {
   html?: unknown;
@@ -45,7 +46,7 @@ describe("useDashboardBankAccounts", () => {
 
   it("loads bank accounts and adds a new transfer account from the modal", async () => {
     const module = await loadBankAccountsModule();
-    const requestBodies: Array<Record<string, unknown>> = [];
+    const requestBodies: Array<JsonRecord> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getBankAccounts")) {
         return jsonResponse({
@@ -122,7 +123,7 @@ describe("useDashboardBankAccounts", () => {
     const module = await loadBankAccountsModule();
     const requestBodies: Array<{
       url: string;
-      body: Record<string, unknown>;
+      body: JsonRecord;
     }> = [];
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getBankAccounts")) {

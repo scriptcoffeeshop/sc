@@ -7,6 +7,10 @@ import {
   installGlobalStubs,
 } from "../support/smoke-fixtures";
 
+interface SmokeApiPayload {
+  [key: string]: unknown;
+}
+
 type LineFlexNotificationPayload = {
   flexMessage?: {
     altText?: string;
@@ -205,14 +209,14 @@ test.describe("smoke / dashboard core", () => {
     await installGlobalStubs(page);
 
     let loginRequest:
-      | { method: string; url: string; body: Record<string, unknown> }
+      | { method: string; url: string; body: SmokeApiPayload }
       | null = null;
     await installDashboardRoutes(page, {
       onAdminLineLogin: (request) => {
         loginRequest = {
           method: request.method(),
           url: request.url(),
-          body: request.postDataJSON() as Record<string, unknown>,
+          body: request.postDataJSON() as SmokeApiPayload,
         };
       },
     });

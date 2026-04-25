@@ -17,6 +17,10 @@ type FeatureSwalResult = {
   value?: unknown;
 };
 
+interface FeatureJsonRecord {
+  [key: string]: unknown;
+}
+
 type FeatureSwal = {
   close: () => void;
   fire: () => Promise<FeatureSwalResult>;
@@ -92,11 +96,11 @@ async function installStorefrontFeatureRoutes(page: Page) {
 }
 
 type DashboardFeatureRouteOptions = {
-  onAddToBlacklist?: (payload: Record<string, unknown>) => void;
-  onUpdateOrderStatus?: (payload: Record<string, unknown>) => void;
-  orders?: Array<Record<string, unknown>>;
-  users?: Array<Record<string, unknown>>;
-  blacklist?: Array<Record<string, unknown>>;
+  onAddToBlacklist?: (payload: FeatureJsonRecord) => void;
+  onUpdateOrderStatus?: (payload: FeatureJsonRecord) => void;
+  orders?: Array<FeatureJsonRecord>;
+  users?: Array<FeatureJsonRecord>;
+  blacklist?: Array<FeatureJsonRecord>;
 };
 
 async function installDashboardFeatureRoutes(
@@ -177,7 +181,7 @@ async function installDashboardFeatureRoutes(
       });
     }
     if (action === "addToBlacklist") {
-      const payload = request.postDataJSON() as Record<string, unknown>;
+      const payload = request.postDataJSON() as FeatureJsonRecord;
       options.onAddToBlacklist?.(payload);
       const targetUserId = String(payload.targetUserId || "");
       const targetUser = usersState.find((user) =>
@@ -197,7 +201,7 @@ async function installDashboardFeatureRoutes(
       return fulfillJson(route, { success: true });
     }
     if (action === "updateOrderStatus") {
-      const payload = request.postDataJSON() as Record<string, unknown>;
+      const payload = request.postDataJSON() as FeatureJsonRecord;
       options.onUpdateOrderStatus?.(payload);
       return fulfillJson(route, { success: true });
     }
@@ -343,7 +347,7 @@ test.describe("Features E2E", () => {
   test("Admin can add user to blacklist", async ({ page }) => {
     await installGlobalStubs(page);
 
-    let blacklistPayload: Record<string, unknown> | null = null;
+    let blacklistPayload: FeatureJsonRecord | null = null;
     await installDashboardFeatureRoutes(page, {
       users: [{
         userId: "U123",
@@ -381,7 +385,7 @@ test.describe("Features E2E", () => {
   test("Admin status change triggers API update correctly", async ({ page }) => {
     await installGlobalStubs(page);
 
-    let updatePayload: Record<string, unknown> | null = null;
+    let updatePayload: FeatureJsonRecord | null = null;
     await installDashboardFeatureRoutes(page, {
       orders: [{
         orderId: "ORD2",

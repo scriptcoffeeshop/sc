@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { JsonRecord } from "../../lib/jsonUtils.ts";
 import type {
   DashboardDeliveryOption,
   DashboardPaymentOption,
@@ -229,7 +230,7 @@ describe("useDashboardSettings", () => {
     const localStorage = createLocalStorageMock();
     vi.stubGlobal("localStorage", localStorage);
 
-    let updatePayload: Record<string, unknown> | null = null;
+    let updatePayload: JsonRecord | null = null;
     const authFetch = vi.fn(async (url, options = {}) => {
       if (String(url).includes("getSettings")) {
         return jsonResponse({

@@ -6,13 +6,14 @@ import {
 } from "../api/order-shared.ts";
 import { actionMap, enforceActionMethod } from "../routing/action-map.ts";
 import { signJwt } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { withMockedSupabaseTables } from "./test-support.ts";
 
 function buildActionRequest(
   action: string,
   options: {
     method?: "GET" | "POST";
-    body?: Record<string, unknown>;
+    body?: JsonRecord;
     headers?: HeadersInit;
   } = {},
 ): Request {
@@ -629,7 +630,7 @@ Deno.test({
         assertEquals(payload.success, true);
 
         const orderById = Object.fromEntries(
-          payload.orders.map((order: Record<string, unknown>) => [
+          payload.orders.map((order: JsonRecord) => [
             String(order.orderId || ""),
             order,
           ]),
