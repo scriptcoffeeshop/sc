@@ -89,6 +89,7 @@
 - 後端 Email template 的出貨/處理中訂單摘要區塊已集中到 `buildOrderStatusSummaryHtml()`，付款狀態、配送文字、備註與追蹤附加內容共用同一套 HTML 組裝。
 - 後端 Email template 的訂單摘要動態欄位已補齊 HTML escaping，未知付款/配送代碼與訂單編號不會以 raw HTML 注入；`smoke_test.ts` 已覆蓋惡意 payload。
 - 後端物流追蹤 URL 正規化與各配送方式預設追蹤頁已集中到 `utils/tracking.ts`；Email template 與 LINE Flex 共用同一份 helper，並以 `tracking_test.ts` 覆蓋 URL scheme 過濾與預設頁。
+- 後端 Email logo URL resolution 已集中到 `utils/email-assets.ts`；一般訂單 email 與 LINE Pay 狀態 email 共用相對/絕對 logo URL 規則，並以 `email_assets_test.ts` 覆蓋。
 - 後端報價引擎 `api/quote.ts` 的商品規格解析與單價決定已抽成純 helper，主計價迴圈專注於 quote line 組裝。
 - 後端 action routing 的 schema 驗證樣板已集中到 `publicPost` / `authPost` / `adminPost` helper；action map 不再逐筆手寫 `validate(schema, data)`。
 - 後端下單流程 `api/order-submit.ts` 已抽出訂單編號、超商類型與付款建單失敗狀態更新 helper，主流程少一層重複更新語句。

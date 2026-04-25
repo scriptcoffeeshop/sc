@@ -1,6 +1,6 @@
 import { hmacSign } from "../utils/auth.ts";
 import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notification-policy.ts";
-import { FRONTEND_URL } from "../utils/config.ts";
+import { resolveEmailLogoUrl } from "../utils/email-assets.ts";
 import { sendEmail } from "../utils/email.ts";
 import { sanitize } from "../utils/html.ts";
 import { tryParseJsonRecord } from "../utils/json.ts";
@@ -108,18 +108,6 @@ function parseJkoStatusCode(value: unknown): number | null {
   if (!normalized) return null;
   const parsed = Number.parseInt(normalized, 10);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
-  const raw = String(rawLogoUrl || "").trim();
-  if (!raw) return `${FRONTEND_URL}/icons/logo.png`;
-  if (/^https?:\/\//i.test(raw)) return raw;
-
-  const frontendBase = String(FRONTEND_URL || "").replace(/\/+$/, "");
-  const normalized = raw.replace(/^\.?\//, "");
-  if (!frontendBase) return normalized;
-  if (!normalized) return `${frontendBase}/icons/logo.png`;
-  return `${frontendBase}/${normalized}`;
 }
 
 function getDeliveryAddressText(order: Record<string, unknown>): string {

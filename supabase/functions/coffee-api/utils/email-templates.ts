@@ -1,5 +1,6 @@
 import { sanitize } from "./html.ts";
 import { FRONTEND_URL } from "./config.ts";
+import { resolveEmailLogoUrl } from "./email-assets.ts";
 import { buildOrderDeliveryText } from "./order-delivery-display.ts";
 import { getDefaultTrackingUrl, normalizeTrackingUrl } from "./tracking.ts";
 
@@ -54,18 +55,6 @@ interface EmailHeaderParams {
   subtitle?: string;
   logoAlt: string;
   logoUrl?: string;
-}
-
-function resolveEmailLogoUrl(rawLogoUrl: unknown): string {
-  const raw = String(rawLogoUrl || "").trim();
-  if (!raw) return `${FRONTEND_URL}/icons/logo.png`;
-  if (/^https?:\/\//i.test(raw)) return raw;
-
-  const frontendBase = String(FRONTEND_URL || "").replace(/\/+$/, "");
-  const normalized = raw.replace(/^\.?\//, "");
-  if (!frontendBase) return normalized;
-  if (!normalized) return `${frontendBase}/icons/logo.png`;
-  return `${frontendBase}/${normalized}`;
 }
 
 function buildEmailHeaderHtml(params: EmailHeaderParams): string {
