@@ -2,7 +2,7 @@ import {
   LINE_MESSAGING_API_BASE_URL,
   LINE_MESSAGING_CHANNEL_ACCESS_TOKEN,
 } from "./config.ts";
-import { tryParseJsonRecord } from "./json.ts";
+import { asJsonRecord, tryParseJsonRecord } from "./json.ts";
 
 type PushMessageResult =
   | { success: true }
@@ -19,7 +19,7 @@ function buildLineApiError(status: number, responseText: string): string {
       )
       : [];
     const detailText = details.map((item: unknown) => {
-      const row = item as Record<string, unknown>;
+      const row = asJsonRecord(item);
       const property = String(row.property || "").trim();
       const message = String(row.message || "").trim();
       if (property && message) return `${property}: ${message}`;

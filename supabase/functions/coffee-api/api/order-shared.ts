@@ -106,9 +106,7 @@ export function parseCustomFieldsRecord(
   }
 
   const normalized: CustomFields = {};
-  for (
-    const [key, value] of Object.entries(parsed as Record<string, unknown>)
-  ) {
+  for (const [key, value] of Object.entries(asJsonRecord(parsed))) {
     const normalizedKey = String(key || "").trim();
     if (!normalizedKey) continue;
     const normalizedValue = normalizeCustomFieldValue(value);

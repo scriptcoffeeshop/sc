@@ -20,6 +20,8 @@ type PromotionSortableEvent = {
   newIndex?: number;
 };
 
+type PromotionEditableField = Exclude<keyof PromotionFormState, "targetItems">;
+
 type PromotionSortableInstance = {
   destroy: () => void;
 };
@@ -100,12 +102,22 @@ function resetPromotionForm() {
   promotionForm.targetItems = [];
 }
 
-function updatePromotionField(field: keyof PromotionFormState, value: unknown) {
-  if (field === "enabled") {
-    promotionForm.enabled = Boolean(value);
-    return;
+function updatePromotionField(field: PromotionEditableField, value: unknown) {
+  switch (field) {
+    case "id":
+    case "name":
+    case "type":
+    case "discountType":
+      promotionForm[field] = String(value ?? "");
+      break;
+    case "minQuantity":
+    case "discountValue":
+      promotionForm[field] = Number(value) || 0;
+      break;
+    case "enabled":
+      promotionForm.enabled = Boolean(value);
+      break;
   }
-  (promotionForm as Record<string, unknown>)[field] = value;
 }
 
 function isPromotionTargetSelected(productId: number | string, specKey = "") {

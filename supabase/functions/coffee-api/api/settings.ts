@@ -5,7 +5,7 @@ import { getCategories } from "./categories.ts";
 import { getFormFields } from "./form-fields.ts";
 import { getBankAccounts } from "./bank-accounts.ts";
 import { getPromotions } from "./promotions.ts";
-import { tryParseJsonArray, tryParseJsonRecord } from "../utils/json.ts";
+import { asJsonRecord, tryParseJsonArray, tryParseJsonRecord } from "../utils/json.ts";
 
 const PUBLIC_SETTINGS_KEYS = [
   "is_open",
@@ -74,7 +74,7 @@ function normalizeDeliveryOptionsConfig(value: string): string {
 
   const normalized = parsed.map((item) => {
     if (!item || typeof item !== "object" || Array.isArray(item)) return item;
-    const rawItem = item as Record<string, unknown>;
+    const rawItem = asJsonRecord(item);
     const rest = { ...rawItem };
     delete rest.icon;
     delete rest.iconUrl;
@@ -95,27 +95,24 @@ function normalizePaymentOptionsConfig(value: string): string {
     return value;
   }
 
-  const normalized = Object.entries(parsed).reduce(
-    (acc, [method, option]) => {
-      if (!option || typeof option !== "object" || Array.isArray(option)) {
-        acc[method] = option;
-        return acc;
-      }
-      const rawOption = option as Record<string, unknown>;
-      const rest = { ...rawOption };
-      delete rest.icon;
-      delete rest.iconUrl;
-      const normalizedIconUrl = normalizeIconPath(
-        rawOption.icon_url ?? rawOption.iconUrl ?? "",
-      );
-      acc[method] = {
-        ...rest,
-        icon_url: normalizedIconUrl,
-      };
-      return acc;
-    },
-    {} as Record<string, unknown>,
-  );
+  const normalized: Record<string, unknown> = {};
+  for (const [method, option] of Object.entries(parsed)) {
+    if (!option || typeof option !== "object" || Array.isArray(option)) {
+      normalized[method] = option;
+      continue;
+    }
+    const rawOption = asJsonRecord(option);
+    const rest = { ...rawOption };
+    delete rest.icon;
+    delete rest.iconUrl;
+    const normalizedIconUrl = normalizeIconPath(
+      rawOption.icon_url ?? rawOption.iconUrl ?? "",
+    );
+    normalized[method] = {
+      ...rest,
+      icon_url: normalizedIconUrl,
+    };
+  }
 
   return JSON.stringify(normalized);
 }
@@ -230,14 +227,14 @@ export async function getInitData(isAdmin = false) {
     getBankAccounts(),
     getPromotions(),
   ]);
-  const settings = s.success ? (s as Record<string, unknown>).settings : {};
+  const settings = s.success ? asJsonRecord(s).settings : {};
   return {
     success: true,
-    products: p.success ? (p as Record<string, unknown>).products : [],
-    categories: c.success ? (c as Record<string, unknown>).categories : [],
+    products: p.success ? asJsonRecord(p).products : [],
+    categories: c.success ? asJsonRecord(c).categories : [],
     settings,
-    formFields: f.success ? (f as Record<string, unknown>).fields : [],
-    bankAccounts: b.success ? (b as Record<string, unknown>).accounts : [],
-    promotions: pr.success ? (pr as Record<string, unknown>).promotions : [],
+    formFields: f.success ? asJsonRecord(f).fields : [],
+    bankAccounts: b.success ? asJsonRecord(b).accounts : [],
+    promotions: pr.success ? asJsonRecord(pr).promotions : [],
   };
 }
