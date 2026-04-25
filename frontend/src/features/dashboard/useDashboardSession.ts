@@ -1,5 +1,6 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 import { tryParseJsonRecord } from "../../lib/jsonUtils.ts";
+import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type {
   DashboardSessionServices,
   SessionUser,
@@ -151,7 +152,7 @@ async function handleLineCallback(code: string | null, state: string | null) {
 
     Swal.fire("錯誤", result.error || "無管理員權限", "error");
   } catch (error) {
-    Swal.fire("錯誤", error?.message || "登入失敗", "error");
+    Swal.fire("錯誤", getDashboardErrorMessage(error, "登入失敗"), "error");
   }
 }
 
