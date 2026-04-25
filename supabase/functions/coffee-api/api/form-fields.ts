@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getFormFields(includeDisabled: boolean) {
   let query = supabase.from("coffee_form_fields").select("*").order(
@@ -26,7 +27,7 @@ export async function getFormFieldsAdmin(req: Request) {
 }
 
 export async function addFormField(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -56,13 +57,13 @@ export async function addFormField(
 }
 
 export async function updateFormField(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
   const id = parseInt(String(data.id));
   if (!id) return { success: false, error: "缺少欄位 ID" };
-  const updates: Record<string, unknown> = {};
+  const updates: JsonRecord = {};
   if (data.label !== undefined) updates.label = String(data.label);
   if (data.fieldType !== undefined) updates.field_type = String(data.fieldType);
   if (data.placeholder !== undefined) {
@@ -84,7 +85,7 @@ export async function updateFormField(
 }
 
 export async function deleteFormField(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -99,7 +100,7 @@ export async function deleteFormField(
 }
 
 export async function reorderFormFields(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

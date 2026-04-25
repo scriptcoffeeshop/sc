@@ -1,8 +1,9 @@
 import { requireAuth } from "../utils/auth.ts";
 import { supabase } from "../utils/supabase.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function updateTransferInfo(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   const auth = await requireAuth(req);

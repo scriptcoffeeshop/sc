@@ -1,12 +1,13 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
 import { parseJsonArray } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getPromotions() {
   const { data, error } = await supabase.from("coffee_promotions").select("*")
     .order("sort_order", { ascending: true });
   if (error) return { success: false, error: error.message };
-  const promotions = (data || []).map((r: Record<string, unknown>) => ({
+  const promotions = (data || []).map((r: JsonRecord) => ({
     id: r.id,
     name: r.name,
     type: r.type,
@@ -24,7 +25,7 @@ export async function getPromotions() {
 }
 
 export async function addPromotion(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -45,7 +46,7 @@ export async function addPromotion(
 }
 
 export async function updatePromotion(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -66,7 +67,7 @@ export async function updatePromotion(
 }
 
 export async function deletePromotion(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -79,7 +80,7 @@ export async function deletePromotion(
 }
 
 export async function reorderPromotionsBulk(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

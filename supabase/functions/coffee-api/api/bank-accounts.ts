@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getBankAccounts() {
   const { data, error } = await supabase.from("coffee_bank_accounts").select(
@@ -8,7 +9,7 @@ export async function getBankAccounts() {
   if (error) return { success: false, error: error.message };
   return {
     success: true,
-    accounts: (data || []).map((r: Record<string, unknown>) => ({
+    accounts: (data || []).map((r: JsonRecord) => ({
       id: r.id,
       bankCode: r.bank_code,
       bankName: r.bank_name,
@@ -19,7 +20,7 @@ export async function getBankAccounts() {
 }
 
 export async function addBankAccount(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -41,13 +42,13 @@ export async function addBankAccount(
 }
 
 export async function updateBankAccount(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
   const id = parseInt(String(data.id));
   if (!id) return { success: false, error: "缺少帳號 ID" };
-  const updates: Record<string, unknown> = {};
+  const updates: JsonRecord = {};
   if (data.bankCode !== undefined) updates.bank_code = String(data.bankCode);
   if (data.bankName !== undefined) updates.bank_name = String(data.bankName);
   if (data.accountNumber !== undefined) {
@@ -64,7 +65,7 @@ export async function updateBankAccount(
 }
 
 export async function deleteBankAccount(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -79,7 +80,7 @@ export async function deleteBankAccount(
 }
 
 export async function reorderBankAccounts(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

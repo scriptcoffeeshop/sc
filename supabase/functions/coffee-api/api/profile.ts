@@ -1,8 +1,9 @@
 import { supabase } from "../utils/supabase.ts";
 import { extractAuth } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getUserProfile(
-  _data: Record<string, unknown>,
+  _data: JsonRecord,
   req: Request,
 ) {
   const auth = await extractAuth(req);
@@ -41,13 +42,13 @@ export async function getUserProfile(
 }
 
 export async function updateUserProfile(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   const auth = await extractAuth(req);
   if (!auth?.userId) return { success: false, error: "請先登入" };
 
-  const updates: Record<string, unknown> = {};
+  const updates: JsonRecord = {};
 
   if (data.phone !== undefined) updates.phone = String(data.phone);
   if (data.email !== undefined) updates.email = String(data.email);

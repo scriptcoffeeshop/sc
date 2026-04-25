@@ -126,6 +126,7 @@
 - 街口支付已切正式環境：正式 API base URL 為 `https://onlinepay.jkopay.com`，`JKOPAY_STORE_ID` / `JKOPAY_API_KEY` / `JKOPAY_SECRET_KEY` / `JKOPAY_BASE_URL` 皆走 Supabase secrets。
 - Supabase Edge Function production code 已移除匿名 `catch {}`；目前容錯 fallback 行為維持不變，但錯誤變數統一命名為 `_error`，方便後續補觀測與分級紀錄。
 - Supabase Edge Function production code 的直接 JSON 解析已集中到 `utils/json.ts`；settings/quote/order/payment/request/JWT/LINE/JKO/user profile 路徑共用 record/array/text helper。
+- Supabase Edge Function 的 `utils/json.ts` 已改成共享 `JsonRecord` 介面；categories/promotions/bank accounts/form fields/users/profile/transfer 等低耦合 API 已開始改用命名 JSON 邊界，後續再收斂 quote/payment/order admin 等高耦合模組。
 - 後端 Email template 與 LINE Flex 的配送文字判斷已集中到共用 helper；訂單成立、出貨通知、處理中通知與 LINE 訂單狀態通知不再各自拼接宅配/超商地址文案，LINE Flex 欄位 row 也已改走 helper 組裝。
 - 後端報價引擎已把商品規格解析、規格啟用判斷與單價決定從主計價迴圈抽成 `resolveQuoteProductPrice()` helper，既有 quote tests 保護規格、無效付款與折扣計算。
 - 後端報價引擎的配送設定相容轉換已抽成 `resolveDeliveryConfigFromSettings()`；DB 設定讀取與標準配送/付款矩陣組裝分離，quote tests 覆蓋全域金流開關與顯式 delivery config。

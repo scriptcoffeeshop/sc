@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getCategories() {
   const { data, error } = await supabase.from("coffee_categories").select("*")
@@ -7,14 +8,14 @@ export async function getCategories() {
   if (error) return { success: false, error: error.message };
   return {
     success: true,
-    categories: (data || []).map((r: Record<string, unknown>) => ({
+    categories: (data || []).map((r: JsonRecord) => ({
       id: r.id,
       name: r.name,
     })),
   };
 }
 
-export async function addCategory(data: Record<string, unknown>, req: Request) {
+export async function addCategory(data: JsonRecord, req: Request) {
   await requireAdmin(req);
   const { data: ins, error } = await supabase.from("coffee_categories").insert({
     name: data.name,
@@ -24,7 +25,7 @@ export async function addCategory(data: Record<string, unknown>, req: Request) {
 }
 
 export async function updateCategory(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -59,7 +60,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -72,7 +73,7 @@ export async function deleteCategory(
 }
 
 export async function reorderCategory(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

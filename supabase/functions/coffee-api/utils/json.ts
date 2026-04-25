@@ -1,4 +1,6 @@
-export type JsonRecord = Record<string, unknown>;
+export interface JsonRecord {
+  [key: string]: unknown;
+}
 
 export function asJsonRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value)

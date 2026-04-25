@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin, requireSuperAdmin } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getUsers(req: Request) {
   await requireSuperAdmin(req);
@@ -26,7 +27,7 @@ export async function getUsers(req: Request) {
   const { data: users, count, error } = await query;
   if (error) return { success: false, error: error.message };
 
-  const formatted = (users || []).map((u: Record<string, unknown>) => ({
+  const formatted = (users || []).map((u: JsonRecord) => ({
     userId: u.line_user_id,
     displayName: u.display_name,
     pictureUrl: u.picture_url,
@@ -56,7 +57,7 @@ export async function getUsers(req: Request) {
 }
 
 export async function updateUserRole(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireSuperAdmin(req);
@@ -82,7 +83,7 @@ export async function getBlacklist(req: Request) {
     "line_user_id, display_name, picture_url, role, status, blocked_at, blacklist_reason",
   ).not("blocked_at", "is", null);
   if (error) return { success: false, error: error.message };
-  const blacklist = (data || []).map((u: Record<string, unknown>) => ({
+  const blacklist = (data || []).map((u: JsonRecord) => ({
     lineUserId: u.line_user_id,
     displayName: u.display_name,
     pictureUrl: u.picture_url,
@@ -95,7 +96,7 @@ export async function getBlacklist(req: Request) {
 }
 
 export async function addToBlacklist(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -112,7 +113,7 @@ export async function addToBlacklist(
 }
 
 export async function removeFromBlacklist(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
