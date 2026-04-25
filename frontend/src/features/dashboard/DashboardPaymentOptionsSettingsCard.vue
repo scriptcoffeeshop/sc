@@ -18,58 +18,60 @@
         :key="method"
         class="payment-option-card settings-config-card payment-display-card-item"
       >
-        <div class="payment-display-card-item__icon-panel">
+        <div class="payment-display-card-item__media">
           <img
             :id="`po-${method}-icon-preview`"
             :src="getPaymentPreviewUrl(method)"
             alt=""
             class="payment-display-card-item__icon"
           >
+
+          <input
+            v-model="paymentOptions[method].icon_url"
+            type="hidden"
+            :id="`po-${method}-icon-url`"
+          >
+          <input
+            type="file"
+            :id="`po-${method}-icon-file`"
+            accept="image/png,image/webp,image/jpeg,image/jpg"
+            :ref="(element) => registerPaymentIconInput(method, element)"
+            class="icon-upload-file payment-icon-file"
+            hidden
+            @change="handlePaymentIconSelection(method, $event)"
+          >
+          <button
+            type="button"
+            @click="openPaymentIconPicker(method)"
+            class="dashboard-action dashboard-action--primary icon-upload-action"
+          >
+            <UploadCloud class="h-4 w-4" aria-hidden="true" />
+            更換圖示
+          </button>
+          <span
+            :id="`po-${method}-icon-url-display`"
+            class="payment-icon-path"
+          >
+            {{ getDisplayUrl(paymentOptions[method].icon_url) || "使用預設圖示" }}
+          </span>
         </div>
 
-        <div class="payment-display-card-item__main">
+        <div class="payment-display-card-item__content">
           <header class="payment-display-card-item__header">
             <span class="payment-display-card-item__code">{{ method }}</span>
-            <input
-              v-model.trim="paymentOptions[method].name"
-              type="text"
-              :id="`po-${method}-name`"
-              class="input-field"
-              placeholder="顯示名稱"
-            >
+            <div class="payment-display-card-item__name-field">
+              <label :for="`po-${method}-name`">前台付款名稱</label>
+              <input
+                v-model.trim="paymentOptions[method].name"
+                type="text"
+                :id="`po-${method}-name`"
+                class="input-field"
+                placeholder="顯示名稱"
+              >
+            </div>
           </header>
 
-          <div class="payment-display-card-item__body">
-            <div class="payment-icon-editor icon-upload-row">
-              <div class="icon-upload-controls">
-                <input
-                  v-model="paymentOptions[method].icon_url"
-                  type="hidden"
-                  :id="`po-${method}-icon-url`"
-                >
-                <input
-                  type="file"
-                  :id="`po-${method}-icon-file`"
-                  accept="image/*"
-                  :ref="(element) => registerPaymentIconInput(method, element)"
-                  class="text-sm icon-upload-file"
-                  @change="handlePaymentIconPreview(method, $event)"
-                >
-                <button
-                  type="button"
-                  @click="handlePaymentIconUpload(method)"
-                  class="dashboard-action dashboard-action--primary icon-upload-action"
-                >
-                  <UploadCloud class="h-4 w-4" aria-hidden="true" />
-                  上傳付款圖示
-                </button>
-                <span
-                  :id="`po-${method}-icon-url-display`"
-                  class="payment-icon-path"
-                >{{ getDisplayUrl(paymentOptions[method].icon_url) }}</span>
-              </div>
-            </div>
-
+          <section class="payment-display-section">
             <label class="payment-display-field">
               <span>付款說明</span>
               <textarea
@@ -80,7 +82,7 @@
                 rows="3"
               ></textarea>
             </label>
-          </div>
+          </section>
         </div>
       </article>
     </div>
@@ -111,22 +113,23 @@ function registerPaymentIconInput(method: string, element: TemplateRefElement) {
   paymentIconInputs.delete(key);
 }
 
-function handlePaymentIconPreview(method: string, event: Event) {
+function openPaymentIconPicker(method: string) {
+  const input = paymentIconInputs.get(String(method || "").trim());
+  input?.click();
+}
+
+async function handlePaymentIconSelection(method: string, event: Event) {
   const input = event.target instanceof HTMLInputElement
     ? event.target
     : null;
-  dashboardSettingsIconActions.previewPaymentIconFile(
+  const file = input?.files?.[0] || null;
+  const previewed = dashboardSettingsIconActions.previewPaymentIconFile(
     method,
-    input?.files?.[0] || null,
+    file,
   );
-}
-
-async function handlePaymentIconUpload(method: string) {
-  const input = paymentIconInputs.get(String(method || "").trim());
-  await dashboardSettingsIconActions.uploadPaymentIconFile(
-    method,
-    input?.files?.[0] || null,
-  );
+  if (previewed && file) {
+    await dashboardSettingsIconActions.uploadPaymentIconFile(method, file);
+  }
   if (input) input.value = "";
 }
 </script>
@@ -149,43 +152,81 @@ async function handlePaymentIconUpload(method: string) {
 
 .payment-display-card-item {
   display: grid;
-  grid-template-columns: 4.75rem minmax(0, 1fr);
+  grid-template-columns: 7.25rem minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
   min-width: 0;
 }
 
-.payment-display-card-item__icon-panel {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 4.75rem;
-  border: 1px solid #E2DCC8;
-  border-radius: 8px;
-  background: #FFFFFF;
+.payment-display-card-item__media {
+  display: grid;
+  justify-items: stretch;
+  gap: 0.55rem;
+  min-width: 0;
 }
 
 .payment-display-card-item__icon {
-  width: 3.8rem;
-  height: 3.8rem;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #E2DCC8;
+  border-radius: 8px;
+  background: #FFFFFF;
   object-fit: contain;
+  padding: 0.75rem;
 }
 
-.payment-display-card-item__main {
+.payment-display-card-item__media .icon-upload-action {
+  min-height: 2.35rem;
+  border-radius: 8px;
+  padding-inline: 0.65rem;
+}
+
+.payment-icon-path {
+  width: 100%;
+  overflow: hidden;
+  color: #839496;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-display-card-item__content {
   display: grid;
   min-width: 0;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .payment-display-card-item__header {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  align-items: end;
   gap: 0.75rem;
   min-width: 0;
 }
 
-.payment-display-card-item__header .input-field {
+.payment-display-card-item__name-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.payment-display-card-item__name-field label,
+.payment-display-field span {
+  color: #657B83;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.payment-display-card-item .input-field {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.payment-display-card-item__name-field .input-field {
   min-height: 2.45rem;
   font-size: 0.95rem;
   font-weight: 800;
@@ -194,6 +235,7 @@ async function handlePaymentIconUpload(method: string) {
 .payment-display-card-item__code {
   width: fit-content;
   max-width: 100%;
+  margin-bottom: 0.45rem;
   border-radius: 999px;
   background: #F6F0DE;
   color: #657B83;
@@ -203,29 +245,14 @@ async function handlePaymentIconUpload(method: string) {
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-.payment-display-card-item__body {
-  display: grid;
-  grid-template-columns: minmax(13rem, 0.72fr) minmax(17rem, 1.28fr);
-  gap: 0.85rem;
-  align-items: start;
-  min-width: 0;
-}
-
-.payment-icon-editor {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.payment-icon-path {
-  width: 100%;
-  overflow: hidden;
-  color: #839496;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.payment-display-section {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+  min-width: 0;
 }
 
 .payment-display-field {
@@ -234,22 +261,16 @@ async function handlePaymentIconUpload(method: string) {
   min-width: 0;
 }
 
-.payment-display-field span {
-  color: #657B83;
-  font-size: 0.76rem;
-  font-weight: 800;
-  line-height: 1.35;
-}
-
 .payment-display-field textarea {
+  width: 100%;
   min-height: 5.75rem;
   line-height: 1.55;
   white-space: pre-wrap;
 }
 
 @media (max-width: 1180px) {
-  .payment-display-card-item__body {
-    grid-template-columns: 1fr;
+  .payment-display-card-item {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
   }
 }
 
@@ -264,15 +285,28 @@ async function handlePaymentIconUpload(method: string) {
     grid-template-columns: 1fr;
   }
 
-  .payment-display-card-item__icon-panel {
-    justify-content: flex-start;
-    min-height: auto;
-    border: 0;
-    background: transparent;
+  .payment-display-card-item__media {
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+  }
+
+  .payment-display-card-item__icon {
+    grid-row: 1 / span 2;
+    padding: 0.55rem;
+  }
+
+  .payment-icon-path {
+    text-align: left;
   }
 
   .payment-display-card-item__header {
     grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .payment-display-card-item__code {
+    margin-bottom: 0;
   }
 }
 </style>

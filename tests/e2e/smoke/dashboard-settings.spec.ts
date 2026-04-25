@@ -61,11 +61,22 @@ test.describe("smoke / dashboard settings", () => {
     const paymentCards = page.locator("#payment-options-table .payment-option-card");
     await expect(paymentCards).toHaveCount(4);
     await expect(page.locator("#payment-options-table")).toContainText("linepay");
+    const linePayCard = paymentCards.filter({ hasText: "linepay" }).first();
+    await expect(linePayCard.locator(".payment-display-card-item__media")).toBeVisible();
+    await expect(linePayCard.locator(".icon-upload-file")).toBeHidden();
+    await expect(linePayCard.locator(".icon-upload-action")).toBeVisible();
+    await expect(linePayCard.locator("#po-linepay-desc")).toHaveJSProperty(
+      "tagName",
+      "TEXTAREA",
+    );
     await expect.poll(async () => {
-      const linePayCard = paymentCards.filter({ hasText: "linepay" }).first();
-      const fileBox = await linePayCard.locator(".icon-upload-file").boundingBox();
-      const uploadBox = await linePayCard.locator(".icon-upload-action").boundingBox();
-      return Boolean(fileBox && uploadBox && uploadBox.y > fileBox.y);
+      const cardBox = await linePayCard.boundingBox();
+      const textareaBox = await linePayCard.locator("#po-linepay-desc").boundingBox();
+      return Boolean(
+        cardBox &&
+        textareaBox &&
+        textareaBox.x + textareaBox.width <= cardBox.x + cardBox.width + 2,
+      );
     }).toBe(true);
     await expect.poll(() =>
       page.locator("#payment-options-table").evaluate((element) =>
@@ -387,6 +398,23 @@ test.describe("smoke / dashboard settings", () => {
       "icons/uploaded-brand.png",
     );
     await expect(deliveryRow.locator(".do-icon-url-display"))
+      .toContainText("uploaded-brand.png");
+
+    const linePayCard = page.locator("#payment-options-table .payment-option-card")
+      .filter({ hasText: "linepay" })
+      .first();
+    await linePayCard.locator(".icon-upload-file").setInputFiles({
+      name: "linepay.png",
+      mimeType: "image/png",
+      buffer: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+y3c8AAAAASUVORK5CYII=",
+        "base64",
+      ),
+    });
+    await expect(page.locator("#po-linepay-icon-url")).toHaveValue(
+      "icons/uploaded-brand.png",
+    );
+    await expect(page.locator("#po-linepay-icon-url-display"))
       .toContainText("uploaded-brand.png");
 
     await page.locator("#tab-settings").click();
