@@ -9,6 +9,7 @@ import {
 } from "../utils/config.ts";
 import { htmlResponse } from "../utils/cors.ts";
 import { escapeHtml } from "../utils/html.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 const CVS_TYPE_MAP: Record<string, string> = {
   seven_eleven: "UNIMART",
@@ -191,7 +192,7 @@ async function getAllowedStoreSelectionClientUrl(
   }
 }
 
-function getDataValue(data: Record<string, unknown>, keys: string[]): string {
+function getDataValue(data: JsonRecord, keys: string[]): string {
   for (const key of keys) {
     const value = data[key];
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -327,7 +328,7 @@ export async function getStoreSelection(token: string) {
   };
 }
 
-export async function handleStoreMapCallback(data: Record<string, unknown>) {
+export async function handleStoreMapCallback(data: JsonRecord) {
   const token = String(data.ExtraData || "");
   if (!token) return new Response("Miss Token", { status: 400 });
 
@@ -411,7 +412,7 @@ export async function createPcscMapSession(
  * PCSC 會以 POST 方式回傳 storeid, storename, storeaddress, storeTel 等欄位
  */
 export async function handlePcscMapCallback(
-  data: Record<string, unknown>,
+  data: JsonRecord,
 ) {
   const token = String(
     data.tempvar || data.Tempvar || data.TempVar || data.sid || "",
