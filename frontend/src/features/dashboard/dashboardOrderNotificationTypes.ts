@@ -9,10 +9,6 @@ import type {
 
 export type DashboardOrderLabelMap = Record<string, string>;
 
-export type DashboardOrderNotificationSwal = DashboardSwal & {
-  getPopup?: () => HTMLElement | null;
-};
-
 export type DashboardLineFlexMessage = Record<string, unknown> & {
   type: "flex";
   altText: string;
@@ -26,7 +22,7 @@ export type DashboardOrderNotificationDeps = {
   getSiteTitle?: () => unknown;
   getOrders?: () => DashboardOrderRecord[];
   Toast: DashboardToast;
-  Swal: DashboardOrderNotificationSwal;
+  Swal: DashboardSwal;
   esc: (value: unknown) => string;
   orderStatusLabel: DashboardOrderLabelMap;
   orderMethodLabel: DashboardOrderLabelMap;
@@ -53,4 +49,3 @@ export type DashboardOrderFlexMessageBuilder = {
 
 export type DashboardOrderFlexControllerDeps =
   DashboardOrderNotificationDeps & DashboardOrderFlexMessageBuilder;
-
