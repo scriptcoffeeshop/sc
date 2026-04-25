@@ -1,10 +1,12 @@
 <template>
-  <div class="mb-6 p-4 bg-white rounded-xl border">
-    <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
-      <img src="../../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
-      公告設定
-    </h3>
-    <label class="flex items-center gap-2 mb-3 cursor-pointer">
+  <div class="dashboard-settings-card">
+    <div class="dashboard-settings-card__header">
+      <h3 class="dashboard-settings-card__title">
+        <img src="../../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
+        公告設定
+      </h3>
+    </div>
+    <label class="settings-choice">
       <input v-model="storefrontSettings.announcementEnabled" type="checkbox" id="s-ann-enabled" class="w-4 h-4">
       <span>啟用公告</span>
     </label>
@@ -17,12 +19,14 @@
     />
   </div>
 
-  <div class="mb-6 p-4 bg-white rounded-xl border">
-    <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
-      <img src="../../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
-      訂單通知設定
-    </h3>
-    <label class="flex items-center gap-2 cursor-pointer">
+  <div class="dashboard-settings-card">
+    <div class="dashboard-settings-card__header">
+      <h3 class="dashboard-settings-card__title">
+        <img src="../../../../icons/announcement-bell.png" alt="" class="ui-icon-inline-lg">
+        訂單通知設定
+      </h3>
+    </div>
+    <label class="settings-choice">
       <input
         v-model="storefrontSettings.autoOrderEmailEnabled"
         type="checkbox"
@@ -36,13 +40,15 @@
     </p>
   </div>
 
-  <div class="mb-6 p-4 bg-white rounded-xl border">
-    <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
-      <img src="../../../../icons/status-store.png" alt="" class="ui-icon-inline-lg">
-      營業狀態
-    </h3>
-    <div class="flex gap-4">
-      <label class="flex items-center gap-2 cursor-pointer">
+  <div class="dashboard-settings-card">
+    <div class="dashboard-settings-card__header">
+      <h3 class="dashboard-settings-card__title">
+        <img src="../../../../icons/status-store.png" alt="" class="ui-icon-inline-lg">
+        營業狀態
+      </h3>
+    </div>
+    <div class="settings-choice-grid">
+      <label class="settings-choice">
         <input
           v-model="storefrontSettings.isOpen"
           type="radio"
@@ -52,7 +58,7 @@
         >
         營業中
       </label>
-      <label class="flex items-center gap-2 cursor-pointer">
+      <label class="settings-choice">
         <input
           v-model="storefrontSettings.isOpen"
           type="radio"
@@ -72,3 +78,27 @@ import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 const { storefrontSettings } = useDashboardSettings();
 </script>
+
+<style scoped>
+.settings-choice,
+.settings-choice-grid {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.settings-choice {
+  align-items: center;
+  min-height: 2.4rem;
+  border: 1px solid #e2dcc8;
+  border-radius: 8px;
+  background: #fdf6e3;
+  padding: 0.55rem 0.7rem;
+  color: #073642;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.settings-choice-grid {
+  flex-wrap: wrap;
+}
+</style>

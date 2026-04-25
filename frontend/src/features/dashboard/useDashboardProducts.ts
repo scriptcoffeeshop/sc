@@ -180,19 +180,21 @@ async function syncProductSortables() {
   productsWindow.productSortables = productSortables;
   if (!productsTableElement) return;
 
-  const sortables = productsTableElement.querySelectorAll("tbody.sortable-tbody");
-  sortables.forEach((tbody) => {
-    if (!(tbody instanceof HTMLElement)) return;
-    if (!tbody.querySelector("tr[data-id]")) return;
-    const sortable = Sortable.create?.(tbody, {
+  const sortableGroups = productsTableElement.querySelectorAll(
+    ".sortable-products-group, tbody.sortable-tbody",
+  );
+  sortableGroups.forEach((groupElement) => {
+    if (!(groupElement instanceof HTMLElement)) return;
+    if (!groupElement.querySelector("[data-id]")) return;
+    const sortable = Sortable.create?.(groupElement, {
       handle: ".drag-handle",
       animation: 150,
       onEnd: async (event) => {
         if (event.oldIndex === event.newIndex) return;
-        const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
-          .map((row) =>
-            row instanceof HTMLElement
-              ? Number.parseInt(row.dataset["id"] || "", 10)
+        const ids = Array.from(groupElement.querySelectorAll("[data-id]"))
+          .map((element) =>
+            element instanceof HTMLElement
+              ? Number.parseInt(element.dataset["id"] || "", 10)
               : NaN
           )
           .filter((id) => !Number.isNaN(id));

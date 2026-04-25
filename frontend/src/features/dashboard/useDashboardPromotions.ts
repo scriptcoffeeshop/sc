@@ -174,17 +174,17 @@ async function syncPromotionSortable() {
   destroyPromotionSortable();
   if (!Sortable?.create) return;
   const tableElement = promotionsTableElement;
-  if (!tableElement?.querySelector?.("tr[data-id]")) return;
+  if (!tableElement?.querySelector?.("[data-id]")) return;
 
   promotionSortable = Sortable.create(tableElement, {
     handle: ".drag-handle-promo",
     animation: 150,
     onEnd: async (event) => {
       if (event.oldIndex === event.newIndex) return;
-      const ids = Array.from(tableElement.querySelectorAll("tr[data-id]"))
-        .map((row) =>
-          row instanceof HTMLElement
-            ? Number.parseInt(row.dataset["id"] || "", 10)
+      const ids = Array.from(tableElement.querySelectorAll("[data-id]"))
+        .map((element) =>
+          element instanceof HTMLElement
+            ? Number.parseInt(element.dataset["id"] || "", 10)
             : NaN
         )
         .filter((id) => !Number.isNaN(id));

@@ -2,16 +2,23 @@
   <div
     id="checkout-settings-section"
     v-show="activeTab === 'checkout-settings'"
-    class="glass-card p-6"
+    class="glass-card dashboard-panel"
   >
-    <h2 class="text-lg font-bold mb-6 ui-text-highlight">
-      付款與取貨設定
-    </h2>
+    <div class="dashboard-section-header">
+      <div>
+        <h2 class="dashboard-section-title">
+          付款與取貨設定
+        </h2>
+        <p class="dashboard-section-hint">
+          管理配送方式、支援付款規則與前台付款選項顯示。
+        </p>
+      </div>
+    </div>
 
     <DashboardDeliveryPaymentSettingsCard />
     <DashboardPaymentOptionsSettingsCard />
 
-    <div class="text-center">
+    <div class="text-center mt-4">
       <button type="button" @click="handleSaveSettings" class="btn-primary">
         儲存設定
       </button>

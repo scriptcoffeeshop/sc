@@ -1,9 +1,11 @@
 <template>
-  <div class="mb-6 p-4 bg-white rounded-xl border">
-    <h3 class="font-semibold text-lg mb-3 flex items-center ui-text-highlight">
-      <img src="../../../../icons/payment-cash.png" alt="" class="ui-icon-inline-lg">
-      金流選項顯示設定
-    </h3>
+  <div class="dashboard-settings-card">
+    <div class="dashboard-settings-card__header">
+      <h3 class="dashboard-settings-card__title">
+        <img src="../../../../icons/payment-cash.png" alt="" class="ui-icon-inline-lg">
+        金流選項顯示設定
+      </h3>
+    </div>
     <p class="text-sm ui-text-subtle mb-4">
       您可以自訂前台四種預設付款方式的圖示、名稱與說明。系統將會依據上方「取貨方式與付款對應設定」中打勾的規則加上這裡設定的名稱呈現給顧客。
     </p>
@@ -71,19 +73,19 @@
                 v-model.trim="paymentOptions[method].name"
                 type="text"
                 :id="`po-${method}-name`"
-                class="border rounded p-2 w-full"
+                class="input-field"
                 placeholder="顯示名稱"
               >
             </label>
             <label class="payment-option-field settings-config-field">
               <span>簡短說明</span>
-              <input
+              <textarea
                 v-model.trim="paymentOptions[method].description"
-                type="text"
                 :id="`po-${method}-desc`"
-                class="border rounded p-2 w-full text-sm ui-text-strong"
+                class="input-field text-sm ui-text-strong"
                 placeholder="簡短說明"
-              >
+                rows="2"
+              ></textarea>
             </label>
           </div>
         </div>

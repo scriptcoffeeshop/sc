@@ -1,10 +1,15 @@
 <template>
   <div class="flex flex-col gap-4 mb-4">
-    <div class="flex justify-between items-center gap-3 flex-wrap">
-      <h2 class="text-lg font-bold ui-text-highlight">
-        訂單列表
-      </h2>
-      <div class="flex gap-2 items-center">
+    <div class="dashboard-section-header mb-0">
+      <div>
+        <h2 class="dashboard-section-title">
+          訂單列表
+        </h2>
+        <p class="dashboard-section-hint">
+          篩選、批次更新、匯出與逐筆處理訂單。
+        </p>
+      </div>
+      <div class="dashboard-section-actions">
         <button
           type="button"
           @click="handleShowFlexHistory"
@@ -26,7 +31,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
+    <div class="dashboard-toolbar-card grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
       <select
         id="order-filter"
         v-model="filters.status"
@@ -110,7 +115,7 @@
       >
     </div>
 
-    <div class="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-white border">
+    <div class="dashboard-toolbar-card flex flex-wrap gap-2 items-center">
       <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
         <input
           ref="selectAllCheckbox"

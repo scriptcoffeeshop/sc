@@ -2,14 +2,14 @@
   <div
     id="icon-library-section"
     v-show="activeTab === 'icon-library'"
-    class="glass-card p-6"
+    class="glass-card dashboard-panel"
   >
-    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4">
+    <div class="dashboard-section-header">
       <div>
-        <h2 class="text-lg font-bold ui-text-highlight">
+        <h2 class="dashboard-section-title">
           Icon 素材庫管理
         </h2>
-        <p class="text-sm ui-text-subtle mt-1">
+        <p class="dashboard-section-hint">
           依分類瀏覽 icon，選擇套用目標後可一鍵快速套用到設定欄位。
         </p>
       </div>
@@ -64,7 +64,7 @@
         class="ui-card-section flex flex-col gap-3"
       >
         <div class="flex items-start gap-3">
-          <span class="w-12 h-12 rounded-xl border border-slate-200 bg-white p-2 inline-flex items-center justify-center">
+          <span class="w-12 h-12 rounded-lg border border-slate-200 bg-white p-2 inline-flex items-center justify-center">
             <img :src="getDefaultIconUrl(icon.key)" :alt="icon.label" class="ui-icon-img">
           </span>
           <div class="min-w-0">

@@ -1,7 +1,7 @@
 <template>
-  <div id="section-title-settings-card" class="mb-6 p-4 bg-white rounded-xl border">
-    <div class="flex items-center justify-between gap-3 mb-3">
-      <h3 class="font-semibold flex items-center ui-text-highlight">
+  <div id="section-title-settings-card" class="dashboard-settings-card">
+    <div class="dashboard-settings-card__header">
+      <h3 class="dashboard-settings-card__title">
         <img src="../../../../icons/section-tag.png" alt="" class="ui-icon-inline-lg">
         區塊標題樣式設定
       </h3>

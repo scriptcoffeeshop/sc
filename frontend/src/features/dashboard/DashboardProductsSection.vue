@@ -1,109 +1,95 @@
 <template>
-  <div id="products-section" v-show="activeTab === 'products'" class="glass-card p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-bold ui-text-highlight">
-        咖啡豆商品
-      </h2>
+  <div id="products-section" v-show="activeTab === 'products'" class="glass-card dashboard-panel">
+    <div class="dashboard-section-header">
+      <div>
+        <h2 class="dashboard-section-title">
+          咖啡豆商品
+        </h2>
+        <p class="dashboard-section-hint">
+          依分類管理商品、價格規格與上架狀態，可拖曳卡片調整顯示順序。
+        </p>
+      </div>
       <button type="button" @click="handleShowProductModal" class="btn-primary text-sm">
         + 新增商品
       </button>
     </div>
-    <div class="overflow-x-auto">
-      <table ref="productsTable" class="w-full" id="products-main-table">
-        <thead>
-          <tr class="border-b-2 ui-border">
-            <th class="p-3 text-left w-10 ui-text-highlight">
-              排序
-            </th>
-            <th class="p-3 text-left ui-text-highlight">
-              分類
-            </th>
-            <th class="p-3 text-left ui-text-highlight">
-              品名
-            </th>
-            <th class="p-3 text-right ui-text-highlight">
-              價格
-            </th>
-            <th class="p-3 text-center ui-text-highlight">
-              狀態
-            </th>
-            <th class="p-3 text-center ui-text-highlight">
-              操作
-            </th>
-          </tr>
-        </thead>
-        <tbody v-if="productsGroupsView.length === 0">
-          <tr>
-            <td colspan="6" class="text-center py-8 ui-text-subtle">
-              尚無商品
-            </td>
-          </tr>
-        </tbody>
-        <template v-else>
-          <tbody
-            v-for="group in productsGroupsView"
-            :key="`products-${group.category}`"
-            class="sortable-tbody"
+
+    <div ref="productsTable" id="products-main-table" class="dashboard-card-list products-groups">
+      <p v-if="productsGroupsView.length === 0" class="dashboard-empty-state">
+        尚無商品
+      </p>
+      <template v-else>
+        <section
+          v-for="group in productsGroupsView"
+          :key="`products-${group.category}`"
+          class="products-group"
+        >
+          <div class="products-group__header">
+            <h3 class="products-group__title">{{ group.category }}</h3>
+            <span class="dashboard-chip">{{ group.items.length }} 項商品</span>
+          </div>
+          <div
+            class="dashboard-card-grid sortable-products-group"
             :data-cat="group.category"
           >
-            <tr
+            <article
               v-for="product in group.items"
               :key="`product-${product.id}`"
-              class="border-b"
-              style="border-color:#f0e6db;"
+              class="dashboard-item-card product-card"
               :data-id="product.id"
             >
-              <td class="p-3 text-center">
+              <div class="dashboard-card-row">
                 <span
-                  class="drag-handle cursor-move ui-text-muted hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
+                  class="drag-handle dashboard-drag-handle"
                   title="拖曳排序"
-                  style="touch-action: none;"
+                  aria-label="拖曳排序"
                 ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
-              </td>
-              <td class="p-3 text-sm">{{ product.category }}</td>
-              <td class="p-3">
-                <div class="font-medium mb-1">{{ product.name }}</div>
-                <div class="text-xs ui-text-subtle">
-                  {{ product.description }}<span v-if="product.roastLevel">・{{ product.roastLevel }}</span>
+                <div class="dashboard-card-main">
+                  <div class="dashboard-card-title">{{ product.name }}</div>
+                  <div class="dashboard-card-subtitle">
+                    {{ product.description || "未填商品描述" }}<span v-if="product.roastLevel">・{{ product.roastLevel }}</span>
+                  </div>
+                  <div class="product-card__prices">
+                    <template
+                      v-for="(line, lineIndex) in product.priceLines"
+                      :key="`product-${product.id}-price-${lineIndex}`"
+                    >
+                      <span v-if="line.isSpec" class="dashboard-chip dashboard-chip--info">
+                        {{ line.label }} ${{ line.price }}
+                      </span>
+                      <span v-else class="product-card__base-price">${{ line.price }}</span>
+                    </template>
+                  </div>
                 </div>
-              </td>
-              <td class="p-3 text-right font-medium">
-                <template v-for="(line, lineIndex) in product.priceLines" :key="`product-${product.id}-price-${lineIndex}`">
-                  <div v-if="line.isSpec" class="text-xs">{{ line.label }}: ${{ line.price }}</div>
-                  <span v-else>${{ line.price }}</span>
-                </template>
-              </td>
-              <td class="p-3 text-center">
-                <button
-                  type="button"
-                  @click="handleToggleProductEnabled(product.id, !product.enabled)"
-                  class="text-sm font-medium hover:underline"
-                  :class="product.statusClass"
-                >
-                  {{ product.statusLabel }}
-                </button>
-              </td>
-              <td class="p-3 text-center">
-                <button
-                  type="button"
-                  @click="handleEditProduct(product.id)"
-                  class="text-sm mr-2"
-                  style="color:var(--primary)"
-                >
-                  編輯
-                </button>
-                <button
-                  type="button"
-                  @click="handleDeleteProduct(product.id)"
-                  class="text-sm ui-text-danger"
-                >
-                  刪除
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </template>
-      </table>
+                <div class="dashboard-card-actions">
+                  <button
+                    type="button"
+                    @click="handleToggleProductEnabled(product.id, !product.enabled)"
+                    class="dashboard-action"
+                    :class="product.enabled ? 'dashboard-action--success' : ''"
+                  >
+                    {{ product.statusLabel }}
+                  </button>
+                  <button
+                    type="button"
+                    @click="handleEditProduct(product.id)"
+                    class="dashboard-action dashboard-action--primary"
+                  >
+                    編輯
+                  </button>
+                  <button
+                    type="button"
+                    @click="handleDeleteProduct(product.id)"
+                    class="dashboard-action dashboard-action--danger"
+                  >
+                    刪除
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </template>
     </div>
   </div>
 </template>
@@ -143,3 +129,40 @@ function handleDeleteProduct(id: number) {
 onMounted(syncProductsTable);
 watch(productsGroupsView, syncProductsTable, { deep: true });
 </script>
+
+<style scoped>
+.products-groups {
+  gap: 1rem;
+}
+
+.products-group {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.products-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.products-group__title {
+  color: #657b83;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.product-card__prices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.product-card__base-price {
+  color: #b58900;
+  font-weight: 900;
+}
+</style>

@@ -1,9 +1,14 @@
 <template>
-  <div id="promotions-section" v-show="activeTab === 'promotions'" class="glass-card p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-bold ui-text-highlight">
-        促銷活動管理
-      </h2>
+  <div id="promotions-section" v-show="activeTab === 'promotions'" class="glass-card dashboard-panel">
+    <div class="dashboard-section-header">
+      <div>
+        <h2 class="dashboard-section-title">
+          促銷活動管理
+        </h2>
+        <p class="dashboard-section-hint">
+          管理優惠條件、折扣與啟用狀態，可拖曳活動卡片調整前台套用順序。
+        </p>
+      </div>
       <button
         type="button"
         @click="handleShowPromotionModal"
@@ -12,87 +17,62 @@
         + 新增活動
       </button>
     </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b-2 ui-border">
-            <th class="p-3 text-left w-10 text-center ui-text-highlight">
-              排序
-            </th>
-            <th class="p-3 text-left ui-text-highlight">
-              活動名稱
-            </th>
-            <th class="p-3 text-left ui-text-highlight">
-              條件與折扣
-            </th>
-            <th class="p-3 text-center w-24 ui-text-highlight">
-              狀態
-            </th>
-            <th class="p-3 text-right w-32 ui-text-highlight">
-              操作
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          ref="promotionsTable"
-          id="promotions-table"
-          class="sortable-tbody"
+
+    <div
+      ref="promotionsTable"
+      id="promotions-table"
+      class="dashboard-card-list promotions-list"
+    >
+      <p v-if="promotionsView.length === 0" class="dashboard-empty-state">
+        尚無活動
+      </p>
+      <template v-else>
+        <article
+          v-for="promotion in promotionsView"
+          :key="`promotion-${promotion.id}`"
+          class="dashboard-item-card promotion-card"
+          :data-id="promotion.id"
         >
-          <tr v-if="promotionsView.length === 0">
-            <td colspan="5" class="text-center py-8 ui-text-subtle">
-              尚無活動
-            </td>
-          </tr>
-          <template v-else>
-            <tr
-              v-for="promotion in promotionsView"
-              :key="`promotion-${promotion.id}`"
-              class="border-b"
-              style="border-color:#f0e6db;"
-              :data-id="promotion.id"
-            >
-              <td class="p-3 text-center">
-                <span
-                  class="drag-handle-promo cursor-move ui-text-muted hover:text-amber-700 text-xl font-bold select-none px-2 inline-block"
-                  title="拖曳排序"
-                  style="touch-action: none;"
-                ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
-              </td>
-              <td class="p-3 font-medium">{{ promotion.name }}</td>
-              <td class="p-3 text-sm ui-text-strong">
-                {{ promotion.conditionText }} <span class="font-bold ui-text-danger">{{ promotion.discountText }}</span>
-              </td>
-              <td class="p-3 text-center">
-                <button
-                  type="button"
-                  @click="handleTogglePromotionEnabled(promotion.id, !promotion.enabled)"
-                  class="text-sm font-medium hover:underline"
-                  :class="promotion.statusClass"
-                >
-                  {{ promotion.statusLabel }}
-                </button>
-              </td>
-              <td class="p-3 text-right">
-                <button
-                  type="button"
-                  @click="handleEditPromotion(promotion.id)"
-                  class="text-sm mr-2"
-                  style="color:var(--primary)"
-                >
-                  編輯
-                </button>
-                <button
-                  type="button"
-                  @click="handleDeletePromotion(promotion.id)"
-                  class="text-sm ui-text-danger"
-                >
-                  刪除
-                </button>
-              </td>
-            </tr>
-          </template>
-        </tbody>
-      </table>
+          <div class="dashboard-card-row">
+            <span
+              class="drag-handle-promo dashboard-drag-handle"
+              title="拖曳排序"
+              aria-label="拖曳排序"
+            ><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" viewBox="0 0 256 256" class="drag-handle-icon"><path d="M104,60A12,12,0,1,1,92,48,12,12,0,0,1,104,60Zm60-12a12,12,0,1,0,12,12A12,12,0,0,0,164,48ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,184a12,12,0,1,0,12,12A12,12,0,0,0,92,184Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,184Z"></path></svg></span>
+            <div class="dashboard-card-main">
+              <div class="dashboard-card-title">{{ promotion.name }}</div>
+              <div class="dashboard-card-subtitle">
+                {{ promotion.conditionText }}
+                <span class="promotion-card__discount">{{ promotion.discountText }}</span>
+              </div>
+            </div>
+            <div class="dashboard-card-actions">
+              <button
+                type="button"
+                @click="handleTogglePromotionEnabled(promotion.id, !promotion.enabled)"
+                class="dashboard-action"
+                :class="promotion.enabled ? 'dashboard-action--success' : ''"
+              >
+                {{ promotion.statusLabel }}
+              </button>
+              <button
+                type="button"
+                @click="handleEditPromotion(promotion.id)"
+                class="dashboard-action dashboard-action--primary"
+              >
+                編輯
+              </button>
+              <button
+                type="button"
+                @click="handleDeletePromotion(promotion.id)"
+                class="dashboard-action dashboard-action--danger"
+              >
+                刪除
+              </button>
+            </div>
+          </div>
+        </article>
+      </template>
     </div>
   </div>
 </template>
@@ -134,3 +114,10 @@ function handleDeletePromotion(id: number | string) {
 onMounted(syncPromotionsTable);
 watch(promotionsView, syncPromotionsTable, { deep: true });
 </script>
+
+<style scoped>
+.promotion-card__discount {
+  color: #dc322f;
+  font-weight: 900;
+}
+</style>

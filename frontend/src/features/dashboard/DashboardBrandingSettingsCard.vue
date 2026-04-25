@@ -1,12 +1,14 @@
 <template>
-  <div class="mb-6 p-4 bg-white rounded-xl border">
-    <h3 class="font-semibold mb-3 flex items-center ui-text-highlight">
-      <img id="settings-brand-logo" src="../../../../icons/logo.png" alt="" class="ui-icon-inline-lg">
-      品牌設定
-    </h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 settings-two-col-grid">
-      <div>
-        <label class="block text-sm ui-text-strong mb-1">網站標題</label>
+  <div class="dashboard-settings-card">
+    <div class="dashboard-settings-card__header">
+      <h3 class="dashboard-settings-card__title">
+        <img id="settings-brand-logo" src="../../../../icons/logo.png" alt="" class="ui-icon-inline-lg">
+        品牌設定
+      </h3>
+    </div>
+    <div class="dashboard-form-grid mb-3 settings-two-col-grid">
+      <div class="dashboard-setting-field">
+        <label class="dashboard-setting-label">網站標題</label>
         <input
           v-model.trim="brandingSettings.siteTitle"
           type="text"
@@ -15,8 +17,8 @@
           placeholder="Script Coffee"
         >
       </div>
-      <div>
-        <label class="block text-sm ui-text-strong mb-1">副標題</label>
+      <div class="dashboard-setting-field">
+        <label class="dashboard-setting-label">副標題</label>
         <input
           v-model.trim="brandingSettings.siteSubtitle"
           type="text"
@@ -26,9 +28,9 @@
         >
       </div>
     </div>
-    <div class="mb-3">
-      <label class="block text-sm ui-text-strong mb-1">品牌自訂 Logo</label>
-      <div class="flex gap-3 items-center">
+    <div class="dashboard-setting-field">
+      <label class="dashboard-setting-label">品牌自訂 Logo</label>
+      <div class="branding-upload">
         <img
           id="s-icon-preview"
           :src="getSiteIconPreviewUrl()"
@@ -98,3 +100,17 @@ function getSiteIconDisplayText() {
   return brandingSettings.value.siteIconUrl ? "自訂 Logo" : "未設定 (預設)";
 }
 </script>
+
+<style scoped>
+.branding-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (max-width: 520px) {
+  .branding-upload {
+    align-items: flex-start;
+  }
+}
+</style>

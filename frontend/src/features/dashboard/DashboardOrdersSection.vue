@@ -1,9 +1,9 @@
 <template>
-  <div id="orders-section" v-show="activeTab === 'orders'" class="glass-card p-6">
+  <div id="orders-section" v-show="activeTab === 'orders'" class="glass-card dashboard-panel">
     <DashboardOrdersToolbar />
     <div id="orders-summary" class="text-sm ui-text-strong mb-3">{{ summaryText }}</div>
-    <div id="orders-list">
-      <p v-if="ordersView.length === 0" class="text-center ui-text-subtle py-8">
+    <div id="orders-list" class="dashboard-card-list">
+      <p v-if="ordersView.length === 0" class="dashboard-empty-state">
         沒有符合的訂單
       </p>
       <template v-else>

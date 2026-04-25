@@ -1,5 +1,5 @@
 <template>
-  <div id="users-section" v-show="activeTab === 'users'" class="glass-card users-panel">
+  <div id="users-section" v-show="activeTab === 'users'" class="glass-card users-panel dashboard-panel">
     <div class="users-panel__header">
       <div>
         <h2 class="text-lg font-bold ui-text-highlight">用戶管理</h2>
@@ -30,12 +30,15 @@
     </div>
 
     <div v-else class="users-card-list">
-      <button
+      <article
         v-for="user in usersView"
         :key="`user-card-${user.userId}`"
-        type="button"
         class="users-card"
+        role="button"
+        tabindex="0"
         @click="handleOpenUserAdminDialog(user.userId)"
+        @keydown.enter.prevent="handleOpenUserAdminDialog(user.userId)"
+        @keydown.space.prevent="handleOpenUserAdminDialog(user.userId)"
       >
         <UserAvatar :src="user.pictureUrl" :name="user.displayName" size="md" />
         <span class="users-card__body">
@@ -55,70 +58,29 @@
           </span>
           <span v-if="user.adminNote" class="users-card__note">{{ user.adminNote }}</span>
         </span>
-      </button>
-    </div>
-
-    <div v-if="usersView.length > 0" class="users-table-wrap">
-      <table class="users-table">
-        <thead>
-          <tr>
-            <th class="w-12">頭像</th>
-            <th>用戶資訊</th>
-            <th>角色與狀態</th>
-            <th class="text-right">操作</th>
-          </tr>
-        </thead>
-        <tbody id="users-table">
-          <tr
-            v-for="user in usersView"
-            :key="`user-row-${user.userId}`"
-            class="users-table__row"
-            @click="handleOpenUserAdminDialog(user.userId)"
-          >
-            <td>
-              <UserAvatar :src="user.pictureUrl" :name="user.displayName" size="sm" />
-            </td>
-            <td>
-              <div class="font-medium ui-text-strong">{{ user.displayName || user.userId }}</div>
-              <div class="text-xs ui-text-subtle">
-                {{ user.email || "未填 Email" }}<span v-if="user.phone">・{{ user.phone }}</span>
-              </div>
-              <div class="text-xs ui-text-subtle mt-1">{{ user.defaultDeliveryText }}</div>
-              <div v-if="user.adminNote" class="users-note-preview">{{ user.adminNote }}</div>
-              <div class="text-xs ui-text-muted font-mono mt-1 opacity-50">{{ user.userId }}</div>
-            </td>
-            <td>
-              <div class="users-badges users-badges--stacked">
-                <span class="users-badge" :class="user.roleBadgeClass">{{ user.roleBadgeText }}</span>
-                <span class="users-badge" :class="user.statusBadgeClass">{{ user.statusBadgeText }}</span>
-              </div>
-              <div v-if="user.isAdmin" class="users-permission-summary">
-                {{ user.permissionSummary }}
-              </div>
-              <div class="text-xs ui-text-muted mt-1">登入：{{ user.lastLoginText }}</div>
-            </td>
-            <td class="text-right">
-              <button
-                type="button"
-                @click.stop="handleToggleUserBlacklist(user.userId, user.blacklistActionBlocksUser)"
-                class="users-action"
-                :class="user.blacklistActionClass"
-              >
-                {{ user.blacklistActionLabel }}
-              </button>
-              <button
-                v-if="user.roleAction"
-                type="button"
-                @click.stop="handleToggleUserRole(user.userId, user.roleAction.newRole)"
-                class="users-action"
-                :class="user.roleAction.className"
-              >
-                {{ user.roleAction.label }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        <span class="users-card__actions">
+          <span class="users-card__last-login">登入：{{ user.lastLoginText }}</span>
+          <span>
+            <button
+              type="button"
+              @click.stop="handleToggleUserBlacklist(user.userId, user.blacklistActionBlocksUser)"
+              class="users-action dashboard-action"
+              :class="user.blacklistActionClass"
+            >
+              {{ user.blacklistActionLabel }}
+            </button>
+            <button
+              v-if="user.roleAction"
+              type="button"
+              @click.stop="handleToggleUserRole(user.userId, user.roleAction.newRole)"
+              class="users-action dashboard-action"
+              :class="user.roleAction.className"
+            >
+              {{ user.roleAction.label }}
+            </button>
+          </span>
+        </span>
+      </article>
     </div>
   </div>
 </template>
@@ -199,39 +161,79 @@ function handleToggleUserRole(userId: string, newRole: string) {
 }
 
 .users-card-list {
-  display: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  gap: 0.85rem;
 }
 
-.users-table-wrap {
-  overflow-x: auto;
-}
-
-.users-table {
+.users-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
   width: 100%;
-  font-size: 0.875rem;
-  border-collapse: collapse;
-}
-
-.users-table th {
-  padding: 0.75rem;
+  min-height: 7rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 14%, #e2d8cc);
+  border-radius: 0.5rem;
+  background: #fffdf8;
   text-align: left;
-  color: var(--primary);
-  border-bottom: 2px solid color-mix(in srgb, var(--primary) 22%, #e5dccf);
-}
-
-.users-table td {
-  padding: 0.75rem;
-  border-bottom: 1px solid #f0e6db;
-  vertical-align: middle;
-}
-
-.users-table__row {
   cursor: pointer;
-  transition: background 0.16s ease;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
-.users-table__row:hover {
-  background: rgba(255, 251, 244, 0.84);
+.users-card:hover,
+.users-card:focus-visible {
+  border-color: #c9c0a8;
+  box-shadow: 0 8px 18px -16px rgba(7, 54, 66, 0.36);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.users-card__body,
+.users-card__topline {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+.users-card__name {
+  overflow: hidden;
+  font-weight: 800;
+  color: var(--primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.users-card__meta,
+.users-card__permissions,
+.users-card__note,
+.users-card__last-login {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.users-card__note {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.users-card__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid #f0e6db;
+}
+
+.users-card__last-login {
+  color: #93a1a1;
 }
 
 .users-badges {
@@ -252,13 +254,6 @@ function handleToggleUserRole(userId: string, newRole: string) {
   padding: 0.15rem 0.5rem;
   border-radius: 0.35rem;
   font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.users-action {
-  min-height: 2.25rem;
-  padding: 0.3rem 0.45rem;
-  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -298,57 +293,8 @@ function handleToggleUserRole(userId: string, newRole: string) {
     min-height: 2.75rem;
   }
 
-  .users-table-wrap {
-    display: none;
-  }
-
   .users-card-list {
-    display: grid;
     gap: 0.75rem;
-  }
-
-  .users-card {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.75rem;
-    width: 100%;
-    min-height: 5.5rem;
-    padding: 0.9rem;
-    border: 1px solid color-mix(in srgb, var(--primary) 14%, #e2d8cc);
-    border-radius: 0.5rem;
-    background: #fffdf8;
-    text-align: left;
-  }
-
-  .users-card__body,
-  .users-card__topline {
-    display: grid;
-    min-width: 0;
-    gap: 0.35rem;
-  }
-
-  .users-card__name {
-    overflow: hidden;
-    font-weight: 800;
-    color: var(--primary);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .users-card__meta,
-  .users-card__permissions,
-  .users-card__note {
-    display: block;
-    overflow-wrap: anywhere;
-    font-size: 0.78rem;
-    line-height: 1.45;
-  }
-
-  .users-card__note {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
   }
 }
 
