@@ -172,7 +172,7 @@ export async function submitOrder(): Promise<void> {
   }
 
   // 從動態欄位取值（相容舊的 phone / email）
-  const dynamicFieldData = fieldsResult.data as Record<string, unknown>;
+  const dynamicFieldData = fieldsResult.data;
   const phone = String(dynamicFieldData.phone || "");
   const email = String(dynamicFieldData.email || "");
 
@@ -226,11 +226,11 @@ export async function submitOrder(): Promise<void> {
   const deliveryMethod = quote.deliveryMethod || state.selectedDelivery;
 
   const deliveryResult = collectSubmitDeliveryInfo(deliveryMethod);
-  if (deliveryResult.error) {
-    showError("錯誤", deliveryResult.error);
+  if (deliveryResult.error || !deliveryResult.deliveryInfo) {
+    showError("錯誤", deliveryResult.error || "請確認配送資訊");
     return;
   }
-  const deliveryInfo = deliveryResult.deliveryInfo as SubmitDeliveryInfo;
+  const deliveryInfo = deliveryResult.deliveryInfo;
 
   const note = orderForm.orderNote.trim();
   const receiptResult = getReceiptFormValues();
@@ -277,7 +277,7 @@ export async function submitOrder(): Promise<void> {
   }
 
   // 組合自訂欄位（排除 phone / email，轉為 JSON）
-  const customFieldsData: Record<string, unknown> = {};
+  const customFieldsData: Record<string, string> = {};
   for (const [k, v] of Object.entries(dynamicFieldData)) {
     if (k !== "phone" && k !== "email") {
       customFieldsData[k] = v;
