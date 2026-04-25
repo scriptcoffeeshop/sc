@@ -1,6 +1,5 @@
-import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
+import { openDashboardShippingInfoDialog } from "./dashboardShippingInfoDialog.ts";
 import type { DashboardOrderServices } from "./dashboardOrderTypes.ts";
 
 type CreateDashboardOrdersBulkActionsOptions = {
@@ -35,48 +34,15 @@ export function createDashboardOrdersBulkActions(
     let shippingProvider;
     let trackingUrl;
     if (options.batchForm.status === "shipped") {
-      const { value, isConfirmed } = await Swal.fire({
+      const { value, isConfirmed } = await openDashboardShippingInfoDialog({
+        Swal,
         title: "批次出貨設定",
-        html: `
-        <div class="text-left space-y-2">
-          <label class="text-sm ui-text-strong block">共用物流單號（可選）</label>
-          <input id="swal-batch-tracking-number" class="swal2-input" placeholder="請輸入物流單號">
-          <label class="text-sm ui-text-strong block">共用物流商（可選）</label>
-          <input id="swal-batch-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便">
-          <label class="text-sm ui-text-strong block">共用物流追蹤網址（可選）</label>
-          <input id="swal-batch-tracking-url" class="swal2-input" placeholder="https://...">
-        </div>
-      `,
-        showCancelButton: true,
         confirmButtonText: "確定",
-        cancelButtonText: "取消",
-        confirmButtonColor: "#268BD2",
-        focusConfirm: false,
-        preConfirm: () => {
-          const trackingNumberValue = getDashboardFormControlValue(
-            "swal-batch-tracking-number",
-          );
-          const shippingProviderValue = getDashboardFormControlValue(
-            "swal-batch-shipping-provider",
-          );
-          const trackingUrlValue = getDashboardFormControlValue(
-            "swal-batch-tracking-url",
-          );
-          if (trackingUrlValue && !/^https?:\/\//i.test(trackingUrlValue)) {
-            Swal.showValidationMessage?.(
-              "物流追蹤網址需以 http:// 或 https:// 開頭",
-            );
-            return false;
-          }
-          return {
-            trackingNumber: trackingNumberValue,
-            shippingProvider: shippingProviderValue,
-            trackingUrl: trackingUrlValue,
-          };
-        },
+        idPrefix: "swal-batch",
+        shared: true,
       });
       if (!isConfirmed) return;
-      const shippingInfo = asJsonRecord(value);
+      const shippingInfo = value && typeof value === "object" ? value : {};
       trackingNumber = String(shippingInfo.trackingNumber || "");
       shippingProvider = String(shippingInfo.shippingProvider || "");
       trackingUrl = String(shippingInfo.trackingUrl || "");

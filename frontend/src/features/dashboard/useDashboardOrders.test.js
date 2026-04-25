@@ -11,6 +11,21 @@ async function loadOrdersModule() {
   return await import("./useDashboardOrders.ts");
 }
 
+function mountSwalVueContent(options) {
+  expect(options.html).toBeInstanceOf(HTMLElement);
+  const popup = document.createElement("div");
+  document.body.appendChild(popup);
+  options.didOpen?.(popup);
+  return popup;
+}
+
+function setControlValue(id, value) {
+  const control = document.getElementById(id);
+  expect(control).toBeInstanceOf(HTMLInputElement);
+  control.value = value;
+  control.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 describe("useDashboardOrders", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -250,12 +265,13 @@ describe("useDashboardOrders", () => {
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "批次出貨設定") {
-          document.body.innerHTML = `
-            <input id="swal-batch-tracking-number" value="JP-123">
-            <input id="swal-batch-shipping-provider" value="黑貓宅急便">
-            <input id="swal-batch-tracking-url" value="ftp://invalid.example">
-          `;
+          const popup = mountSwalVueContent(options);
+          setControlValue("swal-batch-tracking-number", "JP-123");
+          setControlValue("swal-batch-shipping-provider", "黑貓宅急便");
+          setControlValue("swal-batch-tracking-url", "ftp://invalid.example");
           const value = options.preConfirm();
+          options.willClose?.();
+          popup.remove();
           return value === false ? { isConfirmed: false } : { isConfirmed: true, value };
         }
         return {};
@@ -310,12 +326,17 @@ describe("useDashboardOrders", () => {
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "批次出貨設定") {
-          document.body.innerHTML = `
-            <input id="swal-batch-tracking-number" value="JP-5001">
-            <input id="swal-batch-shipping-provider" value="黑貓宅急便">
-            <input id="swal-batch-tracking-url" value="https://tracking.example/JP-5001">
-          `;
-          return { isConfirmed: true, value: options.preConfirm() };
+          const popup = mountSwalVueContent(options);
+          setControlValue("swal-batch-tracking-number", "JP-5001");
+          setControlValue("swal-batch-shipping-provider", "黑貓宅急便");
+          setControlValue(
+            "swal-batch-tracking-url",
+            "https://tracking.example/JP-5001",
+          );
+          const value = options.preConfirm();
+          options.willClose?.();
+          popup.remove();
+          return { isConfirmed: true, value };
         }
         return {};
       }),

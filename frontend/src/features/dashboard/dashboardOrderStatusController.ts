@@ -1,6 +1,7 @@
 import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { getDashboardFormControlValue } from "./dashboardFormControls.ts";
+import { openDashboardShippingInfoDialog } from "./dashboardShippingInfoDialog.ts";
 import type {
   DashboardAuthFetch,
   DashboardOrderRecord,
@@ -41,60 +42,23 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
       let trackingUrl = "";
       let cancelReason = "";
       if (status === "shipped") {
-        const { value: shippingInfo, isConfirmed } = await deps.Swal.fire({
+        const { value: shippingInfo, isConfirmed } = await openDashboardShippingInfoDialog({
+          Swal: deps.Swal,
           title: "設定已出貨",
-          html: `
-          <div class="text-left space-y-2">
-            <label class="text-sm ui-text-strong block">物流單號（可選）</label>
-            <input id="swal-tracking-number" class="swal2-input" placeholder="請輸入物流單號" value="${
-            deps.esc(targetOrder.trackingNumber || "")
-          }">
-            <label class="text-sm ui-text-strong block">物流商（可選）</label>
-            <input id="swal-shipping-provider" class="swal2-input" placeholder="例如：黑貓宅急便" value="${
-            deps.esc(targetOrder.shippingProvider || "")
-          }">
-            <label class="text-sm ui-text-strong block">物流追蹤網址（可選）</label>
-            <input id="swal-tracking-url" class="swal2-input" placeholder="https://..." value="${
-            deps.esc(targetOrder.trackingUrl || "")
-          }">
-          </div>
-        `,
-          showCancelButton: true,
           confirmButtonText: "確定出貨",
-          cancelButtonText: "取消",
-          confirmButtonColor: "#268BD2",
-          focusConfirm: false,
-          preConfirm: () => {
-            const trackingNumberValue = getDashboardFormControlValue(
-              "swal-tracking-number",
-            );
-            const shippingProviderValue = getDashboardFormControlValue(
-              "swal-shipping-provider",
-            );
-            const trackingUrlValue = getDashboardFormControlValue(
-              "swal-tracking-url",
-            );
-            if (
-              trackingUrlValue &&
-              !/^https?:\/\//i.test(trackingUrlValue)
-            ) {
-              deps.Swal.showValidationMessage?.(
-                "物流追蹤網址需以 http:// 或 https:// 開頭",
-              );
-              return false;
-            }
-            return {
-              trackingNumber: trackingNumberValue,
-              shippingProvider: shippingProviderValue,
-              trackingUrl: trackingUrlValue,
-            };
+          initialValues: {
+            trackingNumber: String(targetOrder.trackingNumber || ""),
+            shippingProvider: String(targetOrder.shippingProvider || ""),
+            trackingUrl: String(targetOrder.trackingUrl || ""),
           },
         });
         if (!isConfirmed) {
           deps.loadOrders();
           return;
         }
-        const shippingInfoRecord = asJsonRecord(shippingInfo);
+        const shippingInfoRecord = shippingInfo && typeof shippingInfo === "object"
+          ? shippingInfo
+          : {};
         trackingNumber = String(shippingInfoRecord.trackingNumber || "");
         shippingProvider = String(shippingInfoRecord.shippingProvider || "");
         trackingUrl = String(shippingInfoRecord.trackingUrl || "");
