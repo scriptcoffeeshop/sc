@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
@@ -50,6 +51,10 @@ ALLOWED_DIRECT_JSON_PARSE = {
     "frontend/src/lib/jsonUtils.ts",
     "supabase/functions/coffee-api/utils/json.ts",
 }
+
+DANGEROUS_GIT_ADD_DOT_PATTERN = re.compile(
+    r"(?:\bgit\s+add\s+\.|[\"']git[\"']\s*,\s*[\"']add[\"']\s*,\s*[\"']\.[\"'])"
+)
 
 
 def git_ls_files() -> list[str]:
@@ -169,6 +174,22 @@ def find_frontend_js_violations(path: str) -> list[str]:
     ]
 
 
+def find_script_git_add_dot_violations(path: str) -> list[str]:
+    if not path.startswith("scripts/") or not path.endswith((".py", ".sh")):
+        return []
+
+    lines, error = read_source_lines(path)
+    if error:
+        return [error]
+
+    return [
+        "禁止 scripts 使用全倉暫存指令，請明確列出要 stage 的路徑，"
+        f"避免自動化誤提交無關變更：{path}:{line_no}"
+        for line_no, line in enumerate(lines, start=1)
+        if DANGEROUS_GIT_ADD_DOT_PATTERN.search(line)
+    ]
+
+
 def main() -> int:
     tracked_files = git_ls_files()
     violations: list[str] = []
@@ -194,6 +215,7 @@ def main() -> int:
         violations.extend(find_frontend_js_violations(path))
         violations.extend(find_runtime_parse_violations(path))
         violations.extend(find_anonymous_catch_violations(path))
+        violations.extend(find_script_git_add_dot_violations(path))
 
     if violations:
         print("[repo-hygiene] 發現違規檔案：", file=sys.stderr)
