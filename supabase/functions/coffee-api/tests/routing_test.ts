@@ -198,6 +198,42 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Routing Guards - scoped admins can only use permitted admin pages",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "orders-only-admin",
+        role: "ADMIN",
+        status: "ACTIVE",
+        admin_permissions: { orders: true },
+      }],
+      coffee_orders: [],
+    }, async () => {
+      const token = await signJwt({ userId: "orders-only-admin" });
+      const headers = { authorization: `Bearer ${token}` };
+
+      const ordersResponse = await app.fetch(
+        buildActionRequest("getOrders", { method: "GET", headers }),
+      );
+      assertEquals(ordersResponse.status, 200);
+
+      const settingsResponse = await app.fetch(
+        buildActionRequest("updateSettings", {
+          method: "POST",
+          headers,
+          body: { settings: { site_title: "Nope" } },
+        }),
+      );
+      const settingsPayload = await settingsResponse.json();
+      assertEquals(settingsResponse.status, 401);
+      assertEquals(settingsPayload.error, "此管理員沒有此頁面的操作權限");
+    });
+  },
+});
+
+Deno.test({
   name: "Routing Guards - submitOrder has stricter action rate limit",
   sanitizeOps: false,
   sanitizeResources: false,
@@ -330,6 +366,131 @@ Deno.test({
           needDateStamp: true,
         }),
       );
+    });
+  },
+});
+
+Deno.test({
+  name: "Routing Integration - submitOrder blocks identical repeat submits",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "user-duplicate-order",
+        role: "USER",
+        status: "ACTIVE",
+      }],
+      coffee_products: [{
+        id: 111,
+        name: "防重複測試豆",
+        price: 180,
+        specs: "",
+        enabled: true,
+      }],
+      coffee_settings: [],
+      coffee_promotions: [],
+      coffee_orders: [],
+      coffee_form_fields: [],
+    }, async (tables) => {
+      const token = await signJwt({ userId: "user-duplicate-order" });
+      const body = {
+        lineName: "重複顧客",
+        phone: "0912345678",
+        items: [{ productId: 111, qty: 1 }],
+        deliveryMethod: "in_store",
+        paymentMethod: "cod",
+        idempotencyKey: "same-submit-attempt",
+      };
+      const headers = {
+        authorization: `Bearer ${token}`,
+        "x-real-ip": `duplicate-${crypto.randomUUID()}`,
+      };
+
+      const firstResponse = await app.fetch(
+        buildActionRequest("submitOrder", { method: "POST", headers, body }),
+      );
+      const firstPayload = await firstResponse.json();
+      assertEquals(firstPayload.success, true);
+
+      const secondResponse = await app.fetch(
+        buildActionRequest("submitOrder", { method: "POST", headers, body }),
+      );
+      const secondPayload = await secondResponse.json();
+
+      assertEquals(secondResponse.status, 200);
+      assertEquals(secondPayload.success, false);
+      assertEquals(secondPayload.code, "duplicate_order");
+      assertStringIncludes(String(secondPayload.error || ""), "我的訂單");
+      assertEquals(tables.coffee_orders.length, 1);
+    });
+  },
+});
+
+Deno.test({
+  name: "Routing Integration - submitOrder enforces three minute order spacing",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "user-rate-order",
+        role: "USER",
+        status: "ACTIVE",
+      }],
+      coffee_products: [{
+        id: 112,
+        name: "節流測試豆",
+        price: 210,
+        specs: "",
+        enabled: true,
+      }],
+      coffee_settings: [],
+      coffee_promotions: [],
+      coffee_orders: [],
+      coffee_form_fields: [],
+    }, async (tables) => {
+      const token = await signJwt({ userId: "user-rate-order" });
+      const headers = {
+        authorization: `Bearer ${token}`,
+        "x-real-ip": `spacing-${crypto.randomUUID()}`,
+      };
+
+      const firstResponse = await app.fetch(
+        buildActionRequest("submitOrder", {
+          method: "POST",
+          headers,
+          body: {
+            lineName: "節流顧客",
+            phone: "0912345678",
+            items: [{ productId: 112, qty: 1 }],
+            deliveryMethod: "in_store",
+            paymentMethod: "cod",
+          },
+        }),
+      );
+      const firstPayload = await firstResponse.json();
+      assertEquals(firstPayload.success, true);
+
+      const secondResponse = await app.fetch(
+        buildActionRequest("submitOrder", {
+          method: "POST",
+          headers,
+          body: {
+            lineName: "節流顧客",
+            phone: "0912345678",
+            items: [{ productId: 112, qty: 2 }],
+            deliveryMethod: "in_store",
+            paymentMethod: "cod",
+          },
+        }),
+      );
+      const secondPayload = await secondResponse.json();
+
+      assertEquals(secondPayload.success, false);
+      assertEquals(secondPayload.code, "order_rate_limited");
+      assertStringIncludes(String(secondPayload.error || ""), "3 分鐘");
+      assertEquals(tables.coffee_orders.length, 1);
     });
   },
 });

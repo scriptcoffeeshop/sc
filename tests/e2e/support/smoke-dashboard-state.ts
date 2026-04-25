@@ -74,6 +74,8 @@ export interface DashboardUser {
   lastLogin?: string;
   role?: string;
   status?: string;
+  adminNote?: string;
+  adminPermissions?: Record<string, boolean>;
 }
 
 export interface DashboardBlacklistEntry {
@@ -226,6 +228,7 @@ export function createDashboardRouteState(
           lastLogin: "2026-04-20T10:00:00.000Z",
           role: "USER",
           status: "ACTIVE",
+          adminNote: "偏好週末取貨",
         },
         {
           userId: "admin-002",
@@ -239,6 +242,8 @@ export function createDashboardRouteState(
           lastLogin: "2026-04-19T09:30:00.000Z",
           role: "ADMIN",
           status: "BLACKLISTED",
+          adminNote: "只開放訂單頁",
+          adminPermissions: { orders: true },
         },
       ],
     blacklist: Array.isArray(options.blacklist)

@@ -1,5 +1,5 @@
 import { supabase } from "../utils/supabase.ts";
-import { signJwt } from "../utils/auth.ts";
+import { normalizeAdminPermissions, signJwt } from "../utils/auth.ts";
 import {
   ALLOWED_REDIRECT_ORIGINS,
   LINE_ADMIN_USER_ID,
@@ -89,17 +89,21 @@ export async function handleAdminLogin(code: string, redirectUri: string) {
     await registerOrUpdateUser(userData);
     // 檢查管理員權限
     let isAdmin = false, role = "USER";
+    let adminPermissions = {};
     if (profile.userId === LINE_ADMIN_USER_ID) {
       isAdmin = true;
       role = "SUPER_ADMIN";
     } else {
-      const { data } = await supabase.from("coffee_users").select("role").eq(
+      const { data } = await supabase.from("coffee_users").select(
+        "role, admin_permissions",
+      ).eq(
         "line_user_id",
         profile.userId,
       ).single();
       if (data?.role === "ADMIN") {
         isAdmin = true;
         role = "ADMIN";
+        adminPermissions = normalizeAdminPermissions(data.admin_permissions);
       }
     }
     if (!isAdmin) return { success: false, error: "您沒有管理員權限" };
@@ -107,7 +111,13 @@ export async function handleAdminLogin(code: string, redirectUri: string) {
       userId: profile.userId,
       displayName: profile.displayName,
     });
-    return { success: true, isAdmin: true, role, user: userData, token };
+    return {
+      success: true,
+      isAdmin: true,
+      role,
+      user: { ...userData, role, adminPermissions },
+      token,
+    };
   } catch (error) {
     return { success: false, error: String(error) };
   }

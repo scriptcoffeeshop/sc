@@ -78,6 +78,7 @@ export type DashboardSwal = {
   };
   showValidationMessage?: (message: string) => void;
   showLoading?: () => void;
+  getPopup?: () => HTMLElement | null;
   close?: () => void;
 };
 

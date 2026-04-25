@@ -177,43 +177,45 @@
       class="fade-in p-4 rounded-xl ui-card-section"
       :class="{ hidden: !isStorePickupDelivery }"
     >
-      <h3 class="font-semibold mb-3" style="color: var(--primary)">
-        <span class="tab-with-icon"><img src="../../../../icons/store-front.png" alt="" class="ui-icon-inline">取貨門市資訊</span>
+      <h3 class="store-pickup-title">
+        <span class="store-pickup-title__icon"><Store class="store-pickup-title__svg" aria-hidden="true" /></span>
+        <span>取貨門市資訊</span>
       </h3>
-      <div class="mb-3 text-center">
-        <UiButton class="store-select-btn" @click="$emit('open-store-map')">
-          <span class="tab-with-icon"><img src="../../../../icons/map-route.png" alt="" class="ui-icon-inline">選擇門市</span>
-        </UiButton>
-        <p class="text-xs text-gray-500 mt-1">
-          點擊後將開啟超商地圖選擇門市
-        </p>
-      </div>
       <div
         v-if="selectedStore.storeName"
         id="store-selected-info"
-        class="store-info-card mb-3"
+        class="store-info-card store-pickup-card"
       >
-        <div class="flex justify-between items-start">
-          <div>
-            <p id="selected-store-name" class="font-semibold">
-              {{ selectedStore.storeName }}
-            </p>
-            <p id="selected-store-address" class="text-sm text-gray-600">
-              {{ selectedStore.storeAddress }}
-            </p>
-            <p id="selected-store-id" class="text-xs text-gray-400">
-              門市代號：{{ selectedStore.storeId }}
-            </p>
-          </div>
-          <UiButton
-            variant="ghost"
-            size="sm"
-            class="text-red-600 hover:text-red-700"
-            @click="$emit('clear-selected-store')"
-          >
-            清除
-          </UiButton>
+        <div class="store-pickup-card__content">
+          <p id="selected-store-name" class="store-pickup-card__name">
+            {{ selectedStore.storeName }}
+          </p>
+          <p id="selected-store-address" class="store-pickup-card__address">
+            {{ selectedStore.storeAddress }}
+          </p>
+          <p id="selected-store-id" class="store-pickup-card__id">
+            門市代號：{{ selectedStore.storeId }}
+          </p>
         </div>
+        <UiButton
+          variant="ghost"
+          size="sm"
+          class="store-pickup-card__clear"
+          @click="$emit('clear-selected-store')"
+        >
+          清除
+        </UiButton>
+      </div>
+      <div class="store-pickup-actions">
+        <UiButton class="store-select-btn store-pickup-actions__button" @click="$emit('open-store-map')">
+          <span class="store-pickup-actions__icon">
+            <MapPinned class="store-pickup-actions__svg" aria-hidden="true" />
+          </span>
+          <span class="store-pickup-actions__label">選擇門市</span>
+        </UiButton>
+        <p class="store-pickup-actions__hint">
+          點擊後將開啟超商地圖選擇門市
+        </p>
       </div>
     </div>
 
@@ -256,6 +258,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { MapPinned, Store } from "lucide-vue-next";
 import UiButton from "../../components/ui/button/Button.vue";
 import type {
   StorefrontDeliveryOption,
@@ -371,3 +374,126 @@ const isStorePickupDelivery = computed(() =>
   !["delivery", "home_delivery", "in_store"].includes(props.selectedDelivery)
 );
 </script>
+
+<style scoped>
+.delivery-option-description {
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.store-pickup-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.store-pickup-title__icon,
+.store-pickup-actions__icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  color: #344256;
+}
+
+.store-pickup-title__icon {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #e1d6c7;
+  border-radius: 0.5rem;
+  background: #fffdf8;
+}
+
+.store-pickup-title__svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  stroke-width: 1.9;
+}
+
+.store-pickup-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+}
+
+.store-pickup-card__name {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+.store-pickup-card__address {
+  margin-top: 0.2rem;
+  color: #52606b;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.store-pickup-card__id {
+  margin-top: 0.25rem;
+  color: #8a96a0;
+  font-size: 0.76rem;
+}
+
+.store-pickup-card__clear {
+  min-height: 2.25rem;
+  color: #b91c1c;
+}
+
+.store-pickup-actions {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.store-pickup-actions__button {
+  width: 100%;
+  min-height: 3.1rem;
+  justify-content: center;
+  gap: 0.55rem;
+  font-weight: 800;
+}
+
+.store-pickup-actions__icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.store-pickup-actions__svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 2.2;
+}
+
+.store-pickup-actions__hint {
+  color: #6b7280;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+@media (max-width: 430px) {
+  #store-pickup-section {
+    padding: 1rem;
+  }
+
+  .store-pickup-card {
+    grid-template-columns: 1fr;
+    margin-bottom: 1.15rem;
+  }
+
+  .store-pickup-card__clear {
+    justify-self: stretch;
+    min-height: 2.5rem;
+  }
+
+  .store-pickup-actions__button {
+    min-height: 3.35rem;
+  }
+}
+</style>

@@ -92,6 +92,8 @@ describe("useDashboardSession", () => {
       JSON.stringify({
         userId: "admin-user",
         displayName: "Script Admin",
+        role: "SUPER_ADMIN",
+        adminPermissions: {},
       }),
     );
     expect(localStorage.setItem).toHaveBeenCalledWith("coffee_jwt", "jwt-token");

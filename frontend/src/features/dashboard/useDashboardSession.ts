@@ -5,10 +5,15 @@ import type {
   DashboardSessionServices,
   SessionUser,
 } from "../../types/index";
+import {
+  getVisibleDashboardTabs,
+  normalizeDashboardAdminPermissions,
+} from "./dashboardAdminPermissions.ts";
 
 interface LineLoginResult {
   success?: boolean;
   isAdmin?: boolean;
+  role?: string;
   token?: string;
   user?: SessionUser;
   error?: string;
@@ -46,7 +51,9 @@ function clearStoredSession() {
 
 function normalizeTab(tab: string) {
   const { tabs = [], defaultTab = "orders" } = getServices();
-  return tabs.includes(tab) ? tab : defaultTab;
+  const visibleTabs = getVisibleDashboardTabs(tabs, currentUser.value);
+  const fallbackTab = visibleTabs[0] || defaultTab;
+  return visibleTabs.includes(tab) ? tab : fallbackTab;
 }
 
 async function runTabLoader(tab: string) {
@@ -139,8 +146,14 @@ async function handleLineCallback(code: string | null, state: string | null) {
     window.history.replaceState({}, "", "dashboard.html");
 
     if (result.success && result.isAdmin && result.user) {
-      currentUser.value = result.user;
-      localStorage.setItem(adminStorageKey, JSON.stringify(result.user));
+      currentUser.value = {
+        ...result.user,
+        role: result.user.role || result.role || "SUPER_ADMIN",
+        adminPermissions: normalizeDashboardAdminPermissions(
+          result.user["adminPermissions"],
+        ),
+      };
+      localStorage.setItem(adminStorageKey, JSON.stringify(currentUser.value));
       if (result.token) {
         localStorage.setItem(jwtStorageKey, result.token);
       }
@@ -182,7 +195,17 @@ async function checkLogin() {
     initialDataLoaded = false;
     return;
   }
-  currentUser.value = { ...storedAdmin, userId } as SessionUser;
+  const storedAdminRecord = storedAdmin || {};
+  currentUser.value = {
+    ...storedAdminRecord,
+    userId,
+    role: typeof storedAdminRecord["role"] === "string"
+      ? storedAdminRecord["role"]
+      : "SUPER_ADMIN",
+    adminPermissions: normalizeDashboardAdminPermissions(
+      storedAdminRecord["adminPermissions"],
+    ),
+  } as SessionUser;
   await enterAdmin(defaultTab);
 }
 

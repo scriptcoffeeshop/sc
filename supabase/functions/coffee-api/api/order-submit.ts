@@ -42,6 +42,8 @@ interface LinePayRequestResponse {
   };
 }
 
+const ORDER_RESUBMIT_INTERVAL_MS = 3 * 60 * 1000;
+
 function createOrderId(now: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   const uuidHex = crypto.randomUUID().replace(/-/g, "").slice(0, 8)
@@ -49,6 +51,81 @@ function createOrderId(now: Date): string {
   return `C${now.getFullYear()}${pad(now.getMonth() + 1)}${
     pad(now.getDate())
   }-${uuidHex}`;
+}
+
+function stableJson(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  const record = value as JsonRecord;
+  return `{${
+    Object.keys(record).sort().map((key) =>
+      `${JSON.stringify(key)}:${stableJson(record[key])}`
+    ).join(",")
+  }}`;
+}
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function buildOrderFingerprint(input: {
+  lineUserId: string;
+  items: unknown;
+  total: number;
+  deliveryMethod: string;
+  deliveryInfo: JsonRecord;
+  paymentMethod: string;
+  customFields: unknown;
+  receiptInfo: unknown;
+  note: string;
+}) {
+  return await sha256Hex(stableJson(input));
+}
+
+async function findRecentOrderSubmitConflict(
+  lineUserId: string,
+  orderFingerprint: string,
+  now: Date,
+) {
+  const { data: recentRows, error } = await supabase.from("coffee_orders")
+    .select("id, created_at, order_fingerprint")
+    .eq("line_user_id", lineUserId)
+    .order("created_at", { ascending: false })
+    .range(0, 20);
+  if (error || !Array.isArray(recentRows)) return null;
+
+  const cutoff = now.getTime() - ORDER_RESUBMIT_INTERVAL_MS;
+  const recentOrder = recentRows.map((row) => asJsonRecord(row)).find((row) => {
+    const createdAt = Date.parse(String(row.created_at || ""));
+    return Number.isFinite(createdAt) && createdAt >= cutoff;
+  });
+  if (!recentOrder) return null;
+
+  const createdAt = Date.parse(String(recentOrder.created_at || ""));
+  const retryAfterSeconds = Math.max(
+    1,
+    Math.ceil((createdAt + ORDER_RESUBMIT_INTERVAL_MS - now.getTime()) / 1000),
+  );
+  if (recentOrder.order_fingerprint === orderFingerprint) {
+    return {
+      code: "duplicate_order",
+      error: "此筆訂單可能已送出，請先到我的訂單查看是否已成立。",
+      orderId: String(recentOrder.id || ""),
+      retryAfterSeconds,
+    };
+  }
+  return {
+    code: "order_rate_limited",
+    error: "為避免大量或重複送單，請間隔 3 分鐘以上再下單。",
+    orderId: String(recentOrder.id || ""),
+    retryAfterSeconds,
+  };
 }
 
 function resolveStoreType(deliveryMethod: string): string {
@@ -124,6 +201,32 @@ export async function submitOrder(data: JsonRecord, req: Request) {
 
   const now = new Date();
   const idempotencyKey = String(data.idempotencyKey || "").trim();
+  const orderFingerprint = await buildOrderFingerprint({
+    lineUserId,
+    items: quote.items,
+    total,
+    deliveryMethod,
+    deliveryInfo: {
+      city: String(data.city || ""),
+      district: String(data.district || ""),
+      address: String(data.address || ""),
+      storeId: String(data.storeId || ""),
+      storeName: String(data.storeName || ""),
+      storeAddress: String(data.storeAddress || ""),
+    },
+    paymentMethod,
+    customFields,
+    receiptInfo,
+    note: String(data.note || ""),
+  });
+  const recentConflict = await findRecentOrderSubmitConflict(
+    lineUserId,
+    orderFingerprint,
+    now,
+  );
+  if (recentConflict) {
+    return { success: false, ...recentConflict };
+  }
   const orderId = createOrderId(now);
 
   const insertPayload: JsonRecord = {
@@ -155,6 +258,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
     payment_id: paymentMethod === "transfer"
       ? String(data.transferTargetAccount || "")
       : "",
+    order_fingerprint: orderFingerprint,
   };
   if (receiptInfo) insertPayload.receipt_info = receiptInfo;
   if (idempotencyKey) insertPayload.idempotency_key = idempotencyKey;
@@ -163,7 +267,11 @@ export async function submitOrder(data: JsonRecord, req: Request) {
 
   if (error) {
     if (error.code === "23505") {
-      return { success: false, error: "此訂單已提交過，請勿重複送出" };
+      return {
+        success: false,
+        code: "duplicate_order",
+        error: "此筆訂單可能已送出，請先到我的訂單查看是否已成立。",
+      };
     }
     return { success: false, error: error.message };
   }

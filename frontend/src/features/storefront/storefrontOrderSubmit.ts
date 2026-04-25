@@ -1,6 +1,7 @@
-import { API_URL } from "../../lib/appConfig.ts";
-import { authFetch } from "../../lib/auth.ts";
+import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
+import { authFetch, loginWithLine } from "../../lib/auth.ts";
 import { isValidEmail } from "../../lib/sharedUtils.ts";
+import { tryParseJsonRecord, type JsonRecord } from "../../lib/jsonUtils.ts";
 import { state } from "../../lib/appState.ts";
 import { cart, clearCart } from "./storefrontCartStore.ts";
 import { collectDynamicFields } from "./storefrontDynamicFieldSubmission.ts";
@@ -38,6 +39,54 @@ import type {
   SessionUser,
   SubmitDeliveryInfo,
 } from "../../types";
+
+const ORDER_IDEMPOTENCY_STORAGE_KEY = "coffee_order_idempotency";
+
+let isSubmitOrderInFlight = false;
+
+function stableJson(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  const record = value as JsonRecord;
+  return `{${Object.keys(record).sort().map((key) =>
+    `${JSON.stringify(key)}:${stableJson(record[key])}`
+  ).join(",")}}`;
+}
+
+function readStoredIdempotencyKey(signature: string) {
+  const stored = tryParseJsonRecord(
+    localStorage.getItem(ORDER_IDEMPOTENCY_STORAGE_KEY),
+  );
+  if (
+    String(stored?.["signature"] || "") === signature &&
+    typeof stored?.["key"] === "string"
+  ) return stored["key"];
+  return "";
+}
+
+function getOrderIdempotencyKey(signature: string) {
+  const existing = readStoredIdempotencyKey(signature);
+  if (existing) return existing;
+  const key = crypto.randomUUID();
+  try {
+    localStorage.setItem(
+      ORDER_IDEMPOTENCY_STORAGE_KEY,
+      JSON.stringify({ signature, key, createdAt: Date.now() }),
+    );
+  } catch (_error) {
+    return key;
+  }
+  return key;
+}
+
+function clearOrderIdempotencyKey(signature: string) {
+  const stored = tryParseJsonRecord(
+    localStorage.getItem(ORDER_IDEMPOTENCY_STORAGE_KEY),
+  );
+  if (!stored || String(stored["signature"] || "") === signature) {
+    localStorage.removeItem(ORDER_IDEMPOTENCY_STORAGE_KEY);
+  }
+}
 
 function persistOrderDraftPreference(key: string, value: unknown) {
   try {
@@ -162,9 +211,13 @@ function setPolicyAgreeHintVisible(visible: boolean) {
 
 /** 送出訂單 */
 export async function submitOrder(): Promise<void> {
+  if (isSubmitOrderInFlight) {
+    showWarning("訂單送出中", "請稍候，不需要重複點選送出。");
+    return;
+  }
   const u = state.currentUser;
   if (!u) {
-    showWarning("請先登入", "使用 LINE 登入後再訂購");
+    await loginWithLine(LINE_REDIRECT.main, "coffee_line_state");
     return;
   }
 
@@ -317,6 +370,7 @@ export async function submitOrder(): Promise<void> {
   });
   if (!confirmResult.isConfirmed) return;
 
+  isSubmitOrderInFlight = true;
   showLoading("送出中...");
 
   const payloadItems = cart.map((c) => ({
@@ -330,6 +384,21 @@ export async function submitOrder(): Promise<void> {
       deliveryMethod,
       deliveryInfo,
     );
+    const orderDraftSignature = stableJson({
+      lineName: u.displayName || u["display_name"],
+      phone,
+      email,
+      items: payloadItems,
+      deliveryMethod,
+      note,
+      customFields: customFieldsJson,
+      receiptInfo: receiptInfo || null,
+      paymentMethod,
+      transferTargetAccount: transferTargetAccountInfo,
+      transferAccountLast5,
+      submitDeliveryInfo,
+    });
+    const idempotencyKey = getOrderIdempotencyKey(orderDraftSignature);
 
     const res = await authFetch(`${API_URL}?action=submitOrder`, {
       method: "POST",
@@ -345,12 +414,13 @@ export async function submitOrder(): Promise<void> {
         paymentMethod,
         transferTargetAccount: transferTargetAccountInfo,
         transferAccountLast5,
-        idempotencyKey: crypto.randomUUID(),
+        idempotencyKey,
         ...submitDeliveryInfo,
       }),
     });
     const result = await res.json();
     if (result.success) {
+      clearOrderIdempotencyKey(orderDraftSignature);
       persistSubmittedOrderPreferences(u, {
         phone,
         email,
@@ -422,6 +492,16 @@ export async function submitOrder(): Promise<void> {
       }).then(() => {
         resetOrderDraft();
       });
+    } else if (result.code === "duplicate_order") {
+      showWarning(
+        "可能已送出",
+        result.error || "請先到我的訂單查看是否已成立。",
+      );
+    } else if (result.code === "order_rate_limited") {
+      showWarning(
+        "請稍後再下單",
+        result.error || "請間隔 3 分鐘以上再送出下一筆訂單。",
+      );
     } else throw new Error(result.error || "訂單送出發生未知錯誤");
   } catch (e: unknown) {
     const msg = e instanceof Error
@@ -431,5 +511,7 @@ export async function submitOrder(): Promise<void> {
       ? "網路連線失敗，請檢查網路後再試"
       : msg;
     showError("送出失敗", displayMsg);
+  } finally {
+    isSubmitOrderInFlight = false;
   }
 }

@@ -46,6 +46,45 @@ export async function handleDashboardMembersRoutes(
     return true;
   }
 
+  if (action === "updateUserAdminNote") {
+    const body = getRequestBody(request);
+    state.users = state.users.map((user) =>
+      user.userId === asString(body.targetUserId)
+        ? { ...user, adminNote: asString(body.adminNote) }
+        : user
+    );
+    await fulfillJson(route, { success: true });
+    return true;
+  }
+
+  if (action === "updateUserPermissions") {
+    const body = getRequestBody(request);
+    state.users = state.users.map((user) =>
+      user.userId === asString(body.targetUserId)
+        ? {
+          ...user,
+          adminPermissions: body.adminPermissions &&
+              typeof body.adminPermissions === "object"
+            ? body.adminPermissions as Record<string, boolean>
+            : {},
+        }
+        : user
+    );
+    await fulfillJson(route, { success: true });
+    return true;
+  }
+
+  if (action === "deleteUser") {
+    const body = getRequestBody(request);
+    const targetUserId = asString(body.targetUserId);
+    state.users = state.users.filter((user) => user.userId !== targetUserId);
+    state.blacklist = state.blacklist.filter((entry) =>
+      entry.lineUserId !== targetUserId
+    );
+    await fulfillJson(route, { success: true });
+    return true;
+  }
+
   if (action === "addToBlacklist") {
     const body = getRequestBody(request);
     const targetUserId = asString(body.targetUserId);

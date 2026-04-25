@@ -160,6 +160,45 @@ test.describe("smoke / dashboard core", () => {
     );
   });
 
+  test("dashboard users are touch-friendly on iPhone 13 mini", async ({ page }) => {
+    await installDashboardRoutes(page);
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+    await page.locator("#tab-users").scrollIntoViewIfNeeded();
+    await page.locator("#tab-users").click();
+
+    const usersPanel = page.locator("#users-section");
+    await expect(usersPanel).toBeVisible();
+    await expect(usersPanel.locator(".users-card-list")).toBeVisible();
+    await expect(usersPanel.locator(".users-table-wrap")).toBeHidden();
+
+    const firstCard = usersPanel.locator(".users-card").first();
+    await expect(firstCard).toContainText("測試會員");
+    const cardBox = await firstCard.boundingBox();
+    expect(cardBox?.width || 0).toBeLessThanOrEqual(355);
+    expect(cardBox?.height || 0).toBeGreaterThanOrEqual(80);
+
+    await firstCard.click();
+    const noteInput = page.locator("#dashboard-user-admin-note");
+    await expect(noteInput).toBeVisible();
+    await expect(noteInput).toHaveValue("偏好週末取貨");
+    const dialogBox = await page.locator(".swal2-popup").boundingBox();
+    expect(dialogBox?.width || 0).toBeLessThanOrEqual(360);
+  });
+
   test("dashboard tab icons use vector sizing and currentColor", async ({ page }) => {
     await installGlobalStubs(page);
     await installDashboardRoutes(page);

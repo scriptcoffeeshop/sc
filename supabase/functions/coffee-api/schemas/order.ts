@@ -70,6 +70,7 @@ export const submitOrderSchema = z.object({
     (v: string | undefined) => !v || /^\d{5}$/.test(v),
     "帳號末五碼應為5位數字",
   ),
+  idempotencyKey: z.string().trim().max(120, "重複送單識別碼過長").optional(),
 });
 
 export const quoteOrderSchema = z.object({

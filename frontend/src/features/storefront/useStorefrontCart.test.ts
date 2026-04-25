@@ -98,7 +98,7 @@ describe("useStorefrontCart", () => {
     expect(cart.isCartDrawerOpen.value).toBe(true);
 
     cart.submitOrderFromCart();
-    expect(cart.isCartDrawerOpen.value).toBe(false);
+    expect(cart.isCartDrawerOpen.value).toBe(true);
     expect(orderApi.submitOrder).toHaveBeenCalledTimes(1);
   });
 
@@ -111,8 +111,13 @@ describe("useStorefrontCart", () => {
       getStorefrontUiSnapshot: () => snapshot,
     });
 
+    cart.handleCartUpdated({
+      detail: {
+        items: [{ productId: 10, specKey: "half", qty: 1 }],
+      },
+    });
     cart.refreshCartSubmitState();
-    expect(cart.canSubmitOrder.value).toBe(false);
+    expect(cart.canSubmitOrder.value).toBe(true);
     expect(cart.submitOrderText.value).toBe("請先登入後再送出訂單");
 
     snapshot = {
@@ -134,6 +139,31 @@ describe("useStorefrontCart", () => {
     cart.refreshCartSubmitState();
     expect(cart.canSubmitOrder.value).toBe(true);
     expect(cart.submitOrderText.value).toBe("確認送出訂單");
+  });
+
+  it("closes the cart drawer only after the customer is logged in", () => {
+    let snapshot: Partial<StorefrontUiSnapshot> = {
+      currentUser: null,
+      isStoreOpen: true,
+    };
+    const orderApi = { submitOrder: vi.fn() };
+    const cart = useStorefrontCart({
+      orderApi,
+      getStorefrontUiSnapshot: () => snapshot,
+    });
+    cart.handleCartUpdated({
+      detail: { items: [{ productId: 10, specKey: "", qty: 1 }] },
+    });
+    cart.toggleCartDrawer();
+
+    cart.submitOrderFromCart();
+    expect(cart.isCartDrawerOpen.value).toBe(true);
+
+    snapshot = { currentUser: { userId: "line-1" }, isStoreOpen: true };
+    cart.refreshCartSubmitState();
+    cart.submitOrderFromCart();
+    expect(cart.isCartDrawerOpen.value).toBe(false);
+    expect(orderApi.submitOrder).toHaveBeenCalledTimes(2);
   });
 
   it("handles zero-quantity boundaries and flat shipping rules", () => {

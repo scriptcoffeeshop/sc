@@ -56,12 +56,12 @@
         </UiButton>
       </div>
       <div v-else id="user-info" class="flex items-center gap-3">
-        <img
+        <UserAvatar
           id="user-avatar"
           :src="userAvatarUrl"
-          :alt="userDisplayName"
-          class="w-12 h-12 rounded-full border-2 border-green-300"
-        >
+          :name="userDisplayName"
+          size="md"
+        />
         <div class="flex-1">
           <p class="text-sm text-gray-500">已登入</p>
           <p id="user-display-name" class="font-semibold text-gray-700">
@@ -96,6 +96,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { ListOrdered, UserRound } from "lucide-vue-next";
+import UserAvatar from "../../components/UserAvatar.vue";
 import UiButton from "../../components/ui/button/Button.vue";
 import type { SessionUser } from "../../types/session";
 import {

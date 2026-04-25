@@ -209,7 +209,7 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   );
 
   const canSubmitOrder = computed(() =>
-    isCustomerLoggedIn.value && isStoreOpen.value && cartItemCount.value > 0
+    isStoreOpen.value && cartItemCount.value > 0
   );
 
   const submitOrderText = computed(() => {
@@ -248,7 +248,9 @@ export function useStorefrontCart(deps: StorefrontCartDeps = {}) {
   }
 
   function submitOrderFromCart() {
-    isCartDrawerOpen.value = false;
+    if (isCustomerLoggedIn.value) {
+      isCartDrawerOpen.value = false;
+    }
     void orderApi.submitOrder();
   }
 

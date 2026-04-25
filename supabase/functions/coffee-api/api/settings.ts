@@ -1,5 +1,9 @@
 import { supabase } from "../utils/supabase.ts";
-import { requireAdmin } from "../utils/auth.ts";
+import {
+  type AdminPermissionKey,
+  canAccessAdminPermission,
+  requireAdmin,
+} from "../utils/auth.ts";
 import { getProducts } from "./products.ts";
 import { getCategories } from "./categories.ts";
 import { getFormFields } from "./form-fields.ts";
@@ -40,6 +44,15 @@ const RELATIVE_ICON_HOSTS = new Set([
   "scriptcoffee.com.tw",
   "www.scriptcoffee.com.tw",
   "scriptcoffeeshop.github.io",
+]);
+
+const CHECKOUT_SETTING_KEYS = new Set([
+  "payment_enabled",
+  "linepay_enabled",
+  "linepay_sandbox",
+  "transfer_enabled",
+  "delivery_options_config",
+  "payment_options_config",
 ]);
 
 function normalizeIconPath(rawValue: unknown): string {
@@ -136,6 +149,23 @@ function normalizeSettingValue(key: string, rawValue: unknown): string {
   return value;
 }
 
+function getAllowedSettingPermissions(key: string): AdminPermissionKey[] {
+  if (CHECKOUT_SETTING_KEYS.has(key)) return ["settings", "checkoutSettings"];
+  if (key.endsWith("_icon_url") || key === "site_icon_url") {
+    return ["settings", "iconLibrary"];
+  }
+  return ["settings"];
+}
+
+function canUpdateSettingKey(
+  auth: Awaited<ReturnType<typeof requireAdmin>>,
+  key: string,
+) {
+  return getAllowedSettingPermissions(key).some((permission) =>
+    canAccessAdminPermission(auth, permission)
+  );
+}
+
 // ============ 設定 ============
 export async function getSettings(isAdmin = false) {
   const { data, error } = await supabase.from("coffee_settings").select("*");
@@ -153,8 +183,17 @@ export async function updateSettingsAction(
   data: JsonRecord,
   req: Request,
 ) {
-  await requireAdmin(req);
+  const auth = await requireAdmin(req);
   const settings = data.settings as Record<string, string>;
+  const deniedKey = Object.keys(settings).find((key) =>
+    !canUpdateSettingKey(auth, key)
+  );
+  if (deniedKey) {
+    return {
+      success: false,
+      error: `此管理員沒有修改 ${deniedKey} 的權限`,
+    };
+  }
   const itemsToUpsert = Object.entries(settings).map(([key, value]) => ({
     key,
     value: normalizeSettingValue(key, value),

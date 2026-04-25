@@ -78,9 +78,54 @@ export interface AuthResult {
   userId: string;
   role: string;
   isAdmin: boolean;
+  adminPermissions: JsonRecord;
 }
 
 const authRequestCache = new WeakMap<Request, Promise<AuthResult | null>>();
+
+export const ADMIN_PERMISSION_KEYS = [
+  "orders",
+  "products",
+  "categories",
+  "promotions",
+  "settings",
+  "checkoutSettings",
+  "iconLibrary",
+  "formfields",
+  "users",
+  "blacklist",
+] as const;
+
+export type AdminPermissionKey = typeof ADMIN_PERMISSION_KEYS[number];
+
+const ADMIN_PERMISSION_KEY_SET = new Set<string>(ADMIN_PERMISSION_KEYS);
+
+export function normalizeAdminPermissions(value: unknown): JsonRecord {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const record = value as JsonRecord;
+  const normalized: JsonRecord = {};
+  for (const key of ADMIN_PERMISSION_KEYS) {
+    if (record[key] === true) normalized[key] = true;
+  }
+  return normalized;
+}
+
+function hasExplicitAdminPermissions(permissions: JsonRecord): boolean {
+  return Object.keys(permissions).some((key) =>
+    ADMIN_PERMISSION_KEY_SET.has(key) && permissions[key] === true
+  );
+}
+
+export function canAccessAdminPermission(
+  auth: AuthResult,
+  permission: AdminPermissionKey,
+): boolean {
+  if (auth.role === "SUPER_ADMIN") return true;
+  if (auth.role !== "ADMIN") return false;
+  const permissions = normalizeAdminPermissions(auth.adminPermissions);
+  if (!hasExplicitAdminPermissions(permissions)) return true;
+  return permissions[permission] === true;
+}
 
 export async function extractAuth(req: Request): Promise<AuthResult | null> {
   const cached = authRequestCache.get(req);
@@ -95,11 +140,16 @@ export async function extractAuth(req: Request): Promise<AuthResult | null> {
     const userId = String(payload.userId);
 
     if (userId === LINE_ADMIN_USER_ID) {
-      return { userId, role: "SUPER_ADMIN", isAdmin: true };
+      return {
+        userId,
+        role: "SUPER_ADMIN",
+        isAdmin: true,
+        adminPermissions: {},
+      };
     }
     try {
       const { data } = await supabase.from("coffee_users").select(
-        "role, status",
+        "role, status, admin_permissions",
       )
         .eq("line_user_id", userId).single();
       if (data?.status === "BLACKLISTED") return null;
@@ -108,9 +158,10 @@ export async function extractAuth(req: Request): Promise<AuthResult | null> {
         userId,
         role,
         isAdmin: role === "ADMIN" || role === "SUPER_ADMIN",
+        adminPermissions: normalizeAdminPermissions(data?.admin_permissions),
       };
     } catch (_error) {
-      return { userId, role: "USER", isAdmin: false };
+      return { userId, role: "USER", isAdmin: false, adminPermissions: {} };
     }
   })();
 

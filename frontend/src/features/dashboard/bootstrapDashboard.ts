@@ -71,6 +71,7 @@ import {
   dashboardProductsActions,
   getDashboardProducts,
 } from "./useDashboardProducts.ts";
+import { canAccessDashboardTab } from "./dashboardAdminPermissions.ts";
 
 type DashboardTabLoader = () => Promise<unknown> | unknown;
 type DashboardTabLoaderMap = Record<string, DashboardTabLoader>;
@@ -319,12 +320,28 @@ dashboardTabLoaders = {
 };
 
 loadInitialDashboardData = async () => {
-  await Promise.all([
-    dashboardCategoriesActions.loadCategories(),
-    dashboardProductsActions.loadProducts(),
-    dashboardSettingsActions.loadSettings(),
-    dashboardOrdersActions.loadOrders(),
-  ]);
+  const currentUser = getDashboardCurrentUser();
+  const tasks: Array<Promise<unknown> | unknown> = [];
+  if (
+    canAccessDashboardTab(currentUser, "products") ||
+    canAccessDashboardTab(currentUser, "categories") ||
+    canAccessDashboardTab(currentUser, "promotions")
+  ) {
+    tasks.push(dashboardCategoriesActions.loadCategories());
+    tasks.push(dashboardProductsActions.loadProducts());
+  }
+  if (
+    canAccessDashboardTab(currentUser, "settings") ||
+    canAccessDashboardTab(currentUser, "checkout-settings") ||
+    canAccessDashboardTab(currentUser, "icon-library") ||
+    canAccessDashboardTab(currentUser, "formfields")
+  ) {
+    tasks.push(dashboardSettingsActions.loadSettings());
+  }
+  if (canAccessDashboardTab(currentUser, "orders")) {
+    tasks.push(dashboardOrdersActions.loadOrders());
+  }
+  await Promise.all(tasks);
 };
 
 export const dashboardShellActions = {

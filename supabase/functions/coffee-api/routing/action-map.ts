@@ -70,9 +70,12 @@ import {
 } from "../api/stores.ts";
 import {
   addToBlacklist,
+  deleteUser,
   getBlacklist,
   getUsers,
   removeFromBlacklist,
+  updateUserAdminNote,
+  updateUserPermissions,
   updateUserRole,
 } from "../api/users.ts";
 import { lineLoginSchema, transferInfoSchema } from "../schemas/auth.ts";
@@ -104,10 +107,18 @@ import {
 } from "../schemas/settings.ts";
 import {
   addToBlacklistSchema,
+  deleteUserSchema,
   removeFromBlacklistSchema,
+  updateUserAdminNoteSchema,
+  updateUserPermissionsSchema,
   updateUserRoleSchema,
 } from "../schemas/users.ts";
-import { type AuthResult, extractAuth } from "../utils/auth.ts";
+import {
+  type AdminPermissionKey,
+  type AuthResult,
+  canAccessAdminPermission,
+  extractAuth,
+} from "../utils/auth.ts";
 import {
   AUTH_ACTION_RATE_LIMIT,
   PAYMENT_ACTION_RATE_LIMIT,
@@ -144,6 +155,7 @@ export interface ActionConfig {
   methods?: readonly HttpMethod[];
   rateLimit?: RateLimitConfig;
   audit?: boolean;
+  permission?: AdminPermissionKey | readonly AdminPermissionKey[];
 }
 type ActionOptions = Omit<ActionConfig, "handler" | "access">;
 
@@ -236,6 +248,12 @@ function adminPost<T extends z.ZodTypeAny>(
 ): ActionConfig {
   return adminAction(validatedAction(schema, handler), withPostMethod(options));
 }
+
+const ANY_SETTINGS_PERMISSION = [
+  "settings",
+  "checkoutSettings",
+  "iconLibrary",
+] as const satisfies readonly AdminPermissionKey[];
 
 export const actionMap: Record<string, ActionConfig> = {
   getProducts: publicAction(async () => await getProducts()),
@@ -333,98 +351,166 @@ export const actionMap: Record<string, ActionConfig> = {
   verifyAdmin: authenticatedAction(async (_data, req) => {
     const auth = await extractAuth(req);
     return auth
-      ? { success: true, isAdmin: auth.isAdmin, role: auth.role, message: "OK" }
+      ? {
+        success: true,
+        isAdmin: auth.isAdmin,
+        role: auth.role,
+        adminPermissions: auth.adminPermissions,
+        message: "OK",
+      }
       : { success: false, isAdmin: false, message: "請先登入" };
   }),
-  getFormFieldsAdmin: adminAction(async (_data, req) =>
-    await getFormFieldsAdmin(req)
+  getFormFieldsAdmin: adminAction(
+    async (_data, req) => await getFormFieldsAdmin(req),
+    { permission: "formfields" },
   ),
-  getOrders: adminAction(async (_data, req) => await getOrders(req)),
-  addPromotion: adminPost(promotionSchema, addPromotion),
-  updatePromotion: adminPost(promotionSchema, updatePromotion),
-  deletePromotion: adminPost(deleteByIdSchema, deletePromotion),
+  getOrders: adminAction(async (_data, req) => await getOrders(req), {
+    permission: "orders",
+  }),
+  addPromotion: adminPost(promotionSchema, addPromotion, {
+    permission: "promotions",
+  }),
+  updatePromotion: adminPost(promotionSchema, updatePromotion, {
+    permission: "promotions",
+  }),
+  deletePromotion: adminPost(deleteByIdSchema, deletePromotion, {
+    permission: "promotions",
+  }),
   reorderPromotionsBulk: adminPost(
     reorderIdsSchema,
     reorderPromotionsBulk,
+    { permission: "promotions" },
   ),
-  addProduct: adminPost(productSchema, addProduct),
-  updateProduct: adminPost(productSchema, updateProduct),
-  deleteProduct: adminPost(deleteByIdSchema, deleteProduct),
+  addProduct: adminPost(productSchema, addProduct, { permission: "products" }),
+  updateProduct: adminPost(productSchema, updateProduct, {
+    permission: "products",
+  }),
+  deleteProduct: adminPost(deleteByIdSchema, deleteProduct, {
+    permission: "products",
+  }),
   reorderProduct: adminPost(
     reorderProductSchema,
     reorderProduct,
+    { permission: "products" },
   ),
   reorderProductsBulk: adminPost(
     reorderIdsSchema,
     reorderProductsBulk,
+    { permission: "products" },
   ),
-  addCategory: adminPost(categorySchema, addCategory),
-  updateCategory: adminPost(categorySchema, updateCategory),
-  deleteCategory: adminPost(deleteByIdSchema, deleteCategory),
-  reorderCategory: adminPost(reorderIdsSchema, reorderCategory),
+  addCategory: adminPost(categorySchema, addCategory, {
+    permission: "categories",
+  }),
+  updateCategory: adminPost(categorySchema, updateCategory, {
+    permission: "categories",
+  }),
+  deleteCategory: adminPost(deleteByIdSchema, deleteCategory, {
+    permission: "categories",
+  }),
+  reorderCategory: adminPost(reorderIdsSchema, reorderCategory, {
+    permission: "categories",
+  }),
   updateSettings: adminPost(
     updateSettingsSchema,
     updateSettingsAction,
+    { permission: ANY_SETTINGS_PERMISSION },
   ),
   updateOrderStatus: adminPost(
     updateOrderStatusSchema,
     updateOrderStatus,
+    { permission: "orders" },
   ),
   sendOrderEmail: adminPost(
     sendOrderEmailSchema,
     sendOrderEmail,
+    { permission: "orders" },
   ),
   batchUpdateOrderStatus: adminPost(
     batchUpdateOrderStatusSchema,
     batchUpdateOrderStatus,
+    { permission: "orders" },
   ),
-  deleteOrder: adminPost(deleteOrderSchema, deleteOrder),
+  deleteOrder: adminPost(deleteOrderSchema, deleteOrder, {
+    permission: "orders",
+  }),
   batchDeleteOrders: adminPost(
     batchDeleteOrdersSchema,
     batchDeleteOrders,
+    { permission: "orders" },
   ),
-  getUsers: adminAction(async (_data, req) => await getUsers(req)),
+  getUsers: adminAction(async (_data, req) => await getUsers(req), {
+    permission: "users",
+  }),
   updateUserRole: adminPost(
     updateUserRoleSchema,
     updateUserRole,
+    { permission: "users" },
   ),
-  getBlacklist: adminAction(async (_data, req) => await getBlacklist(req)),
+  updateUserAdminNote: adminPost(
+    updateUserAdminNoteSchema,
+    updateUserAdminNote,
+    { permission: "users" },
+  ),
+  updateUserPermissions: adminPost(
+    updateUserPermissionsSchema,
+    updateUserPermissions,
+    { permission: "users" },
+  ),
+  deleteUser: adminPost(
+    deleteUserSchema,
+    deleteUser,
+    { permission: "users" },
+  ),
+  getBlacklist: adminAction(async (_data, req) => await getBlacklist(req), {
+    permission: "blacklist",
+  }),
   addToBlacklist: adminPost(
     addToBlacklistSchema,
     addToBlacklist,
+    { permission: "blacklist" },
   ),
   removeFromBlacklist: adminPost(
     removeFromBlacklistSchema,
     removeFromBlacklist,
+    { permission: "blacklist" },
   ),
   testEmail: adminAction(async (data, req) => await testEmail(data, req), {
     methods: POST_ONLY,
+    permission: "settings",
   }),
   sendLineFlexMessage: adminPost(
     sendLineFlexMessageSchema,
     sendLineFlexMessage,
+    { permission: "orders" },
   ),
-  addFormField: adminPost(addFormFieldSchema, addFormField),
+  addFormField: adminPost(addFormFieldSchema, addFormField, {
+    permission: "formfields",
+  }),
   updateFormField: adminPost(
     updateFormFieldSchema,
     updateFormField,
+    { permission: "formfields" },
   ),
   deleteFormField: adminPost(
     deleteFormFieldSchema,
     deleteFormField,
+    { permission: "formfields" },
   ),
   reorderFormFields: adminPost(
     reorderIdsSchema,
     reorderFormFields,
+    { permission: "formfields" },
   ),
   uploadAsset: adminAction(async (data, req) => await uploadAsset(data, req), {
     methods: POST_ONLY,
+    permission: ANY_SETTINGS_PERMISSION,
   }),
   linePayRefund: adminAction(
     async (data, req) => await linePayRefund(data, req),
     {
       methods: POST_ONLY,
       rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+      permission: "orders",
     },
   ),
   jkoPayRefund: adminAction(
@@ -432,23 +518,28 @@ export const actionMap: Record<string, ActionConfig> = {
     {
       methods: POST_ONLY,
       rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+      permission: "orders",
     },
   ),
   addBankAccount: adminPost(
     addBankAccountSchema,
     addBankAccount,
+    { permission: "checkoutSettings" },
   ),
   updateBankAccount: adminPost(
     updateBankAccountSchema,
     updateBankAccount,
+    { permission: "checkoutSettings" },
   ),
   deleteBankAccount: adminPost(
     deleteBankAccountSchema,
     deleteBankAccount,
+    { permission: "checkoutSettings" },
   ),
   reorderBankAccounts: adminPost(
     reorderIdsSchema,
     reorderBankAccounts,
+    { permission: "checkoutSettings" },
   ),
 };
 
@@ -495,5 +586,17 @@ export function enforceActionAccess(
   if (!auth) throw new ActionRequestError(401, "請先登入");
   if (actionConfig.access === "admin" && !auth.isAdmin) {
     throw new ActionRequestError(401, "權限不足");
+  }
+  if (actionConfig.access === "admin" && actionConfig.permission) {
+    const permissions = Array.isArray(actionConfig.permission)
+      ? actionConfig.permission
+      : [actionConfig.permission];
+    if (
+      !permissions.some((permission) =>
+        canAccessAdminPermission(auth, permission)
+      )
+    ) {
+      throw new ActionRequestError(401, "此管理員沒有此頁面的操作權限");
+    }
   }
 }
