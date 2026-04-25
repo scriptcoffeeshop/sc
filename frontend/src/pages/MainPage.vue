@@ -288,8 +288,8 @@ import {
 import {
   formatDateTimeText,
   getCustomerPaymentDisplay,
-  submitOrder,
-} from "../features/storefront/storefrontOrderActions.ts";
+} from "../features/storefront/storefrontPaymentDisplay.ts";
+import { submitOrder } from "../features/storefront/storefrontOrderSubmit.ts";
 import { state } from "../lib/appState.ts";
 import { Toast } from "../lib/sharedUtils.ts";
 import { setStorefrontOrderFormState } from "../features/storefront/storefrontOrderFormState.ts";

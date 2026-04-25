@@ -14,7 +14,7 @@ import {
 } from "../../lib/swalDialogs.ts";
 import {
   applySavedOrderFormPrefs,
-} from "./storefrontOrderActions.ts";
+} from "./storefrontOrderReceiptPrefs.ts";
 import { loadDeliveryPrefs } from "./storefrontDeliveryActions.ts";
 import {
   buildInitialDynamicFieldValues,

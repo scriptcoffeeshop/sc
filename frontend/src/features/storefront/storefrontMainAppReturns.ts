@@ -1,7 +1,7 @@
 import { authFetch } from "../../lib/auth.ts";
 import { API_URL } from "../../lib/appConfig.ts";
 import { showDialog, showError, showLoading } from "../../lib/swalDialogs.ts";
-import { buildPaymentStatusDialogOptions } from "./storefrontOrderActions.ts";
+import { buildPaymentStatusDialogOptions } from "./storefrontPaymentDisplay.ts";
 
 type StorefrontMainAppReturnsDeps = {
   getErrorMessage: (error: unknown, fallback?: string) => string;

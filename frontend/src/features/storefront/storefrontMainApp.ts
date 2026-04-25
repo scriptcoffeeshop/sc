@@ -11,7 +11,7 @@ import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 import {
   applySavedOrderFormPrefs,
   initReceiptRequestUi,
-} from "./storefrontOrderActions.ts";
+} from "./storefrontOrderReceiptPrefs.ts";
 import { createStorefrontMainAppAuth } from "./storefrontMainAppAuth.ts";
 import { createStorefrontMainAppPayments } from "./storefrontMainAppPayments.ts";
 import { createStorefrontMainAppReturns } from "./storefrontMainAppReturns.ts";
