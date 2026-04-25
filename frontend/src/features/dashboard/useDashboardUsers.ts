@@ -5,6 +5,7 @@ import type {
   DashboardToast,
 } from "./dashboardOrderTypes";
 import { formatDateTimeText } from "../../lib/dateTime.ts";
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { getDashboardActiveTab } from "./useDashboardSession.ts";
 
@@ -61,8 +62,8 @@ function getServices(): DashboardUsersServices {
 }
 
 function normalizeUser(value: unknown): DashboardUserRecord | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = asJsonRecord(value);
   return {
     ...record,
     userId: String(record.userId || ""),
@@ -87,8 +88,8 @@ function normalizeUser(value: unknown): DashboardUserRecord | null {
 }
 
 function normalizeBlacklistEntry(value: unknown): DashboardBlacklistRecord | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = asJsonRecord(value);
   return {
     ...record,
     displayName: String(record.displayName || ""),

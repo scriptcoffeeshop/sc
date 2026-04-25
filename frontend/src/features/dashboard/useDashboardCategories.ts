@@ -5,6 +5,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes";
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 
 type DashboardCategoryRecord = Record<string, unknown> & {
@@ -59,8 +60,8 @@ function getServices(): DashboardCategoriesServices {
 }
 
 function normalizeCategory(value: unknown): DashboardCategoryRecord | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = asJsonRecord(value);
   if (record.id === undefined || record.id === null) return null;
   return {
     ...record,

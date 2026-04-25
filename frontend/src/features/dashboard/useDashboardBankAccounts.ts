@@ -4,6 +4,7 @@ import type {
   DashboardSwal,
   DashboardToast,
 } from "./dashboardOrderTypes.ts";
+import { asJsonRecord } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import DashboardBankAccountForm, {
   type DashboardBankAccountFormExpose,
@@ -68,9 +69,7 @@ function getServices(): DashboardBankAccountsServices {
 }
 
 function normalizeBankAccount(value: unknown): BankAccountRecord {
-  const record = value && typeof value === "object" && !Array.isArray(value)
-    ? value as Record<string, unknown>
-    : {};
+  const record = asJsonRecord(value);
   return {
     id: record.id as number | string,
     bankCode: String(record.bankCode || ""),
