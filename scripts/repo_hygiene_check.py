@@ -29,7 +29,6 @@ PRODUCTION_TS_IGNORE_PREFIXES = (
 
 ALLOWED_FRONTEND_SOURCE_JS = {
     "frontend/src/lib/taiwanCityData.js",
-    "frontend/src/lib/twCitySelector.js",
 }
 
 SOURCE_SUFFIXES = (

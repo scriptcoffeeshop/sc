@@ -114,7 +114,7 @@
 - frontend 日期時間顯示核心已集中到 `frontend/src/lib/dateTime.ts`；dashboard 訂單與 storefront 付款顯示保留原出口名稱但共用同一份 invalid/blank fallback。
 - 原則：新功能以 Vue-first 為主；剩餘相容層只接受 hotfix、部署修正或移除型重構。
 - 2026-04-23 補上 `frontend/src/lib/swal.js`，避免 npm bundle 的 SweetAlert2 覆蓋 Playwright 先注入的 `window.Swal` mock；若 CI 再出現前後台大量需要確認框的 E2E 同時失效，先檢查這層相容。
-- `tw-city-selector` 已由 CDN 改為 npm bundle（`frontend/src/lib/twCitySelector.js` + `frontend/src/features/storefront/storefrontDeliveryActions.ts`），`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
+- `tw-city-selector` 已不再進入 storefront runtime；全台宅配縣市/區域改由 Vue 狀態與 `frontend/src/lib/taiwanCityData.js` 直接提供，`frontend/main.html` / `frontend/index.html` 不再依賴外部 script。
 
 ### 後端演進
 
@@ -145,7 +145,7 @@
 - `ci-local` 已串入 `test:unit`，避免 frontend composable regression 只在 `health` 或 deploy/build 後才被看到。
 - `ci-local` 已串入完整前端 `typecheck`（`vue-tsc --noEmit -p frontend/tsconfig.json`）；先前的 baseline config 已移除，dashboard 與 storefront 目前都必須通過完整型別檢查。
 - `repo_hygiene_check.py` 已禁止 production source（`frontend/src/`、`supabase/functions/coffee-api/`）新增 `@ts-ignore`，避免型別錯誤被靜音。
-- `repo_hygiene_check.py` 已禁止新增 frontend production JS；目前 `frontend/src/` 只允許 `twCitySelector.js` / `taiwanCityData.js` 作為 vendor/data 邊界，entry、Swal wrapper、UI helper 已轉 TypeScript。
+- `repo_hygiene_check.py` 已禁止新增 frontend production JS；目前 `frontend/src/` 只允許 `taiwanCityData.js` 作為資料邊界，entry、Swal wrapper、UI helper 已轉 TypeScript。
 - `repo_hygiene_check.py` 已禁止 production runtime 直接新增 `JSON.parse` 與匿名 `catch {}`；JSON 解析需集中在 frontend/backend json helper，catch 需具名以便後續補觀測。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
 - 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
@@ -277,8 +277,8 @@
 - 依賴已升級至 Vue `3.5.33`、Reka UI `2.9.6`、SortableJS `1.15.7`、Vitest `4.1.5`、`@vitejs/plugin-vue 6.0.6`、Vite `8.0.10`、Tailwind CSS `4.2.4`，並新增 `@tailwindcss/postcss`；Tailwind 4 讓部分舊 utility 產出策略不同，已把購物車抽屜與我的訂單 modal 的 viewport 高度、圓角、捲動與 overlay 轉為顯式 CSS guard。
 - 品牌 logo 已從 4168px / 約 829.7KB 壓縮為 1024px / 約 82.6KB，建置後 `assets/logo.png` 約 84.6KB。
 - GitHub Actions Supabase deploy skipped 情境已補 summary / notice，避免 secrets 缺失時只靠 warning 追查。
-- 依健康度檢查處理第一段 npm audit：`sweetalert2` 已由 `^11.10.6` 更新到 `^11.26.24`，對應 advisory 已消失；剩餘 audit 風險集中在 `tw-city-selector@2.1.2` 連帶的 `docsify/marked/vue2`，不建議用 `npm audit fix --force` 降版，後續應以替換或 vendor runtime 方式處理。
-- 完成 `tw-city-selector` audit 收斂：已移除 npm dependency，改用本地 `frontend/src/lib/twCitySelector.js` 與 `taiwanCityData.js`，資料取自原 runtime 的繁中縣市/區域/郵遞區號以維持全台宅配行為；新增 `twCitySelector.test.js` 保護縣市、區域、郵遞區號與 `setValue()`。`npm audit --omit=dev` 目前為 0 vulnerabilities。
+- 依健康度檢查處理 npm audit：`sweetalert2` 已由 `^11.10.6` 更新到 `^11.26.24`，`tw-city-selector` 連帶的 `docsify/marked/vue2` 風險已透過移除該依賴與本地相容 class 收斂。
+- 完成 `tw-city-selector` audit 收斂：已移除 npm dependency 與本地相容 class，保留 `taiwanCityData.js` 作為繁中縣市/區域/郵遞區號資料來源以維持全台宅配行為；`npm audit --omit=dev` 目前為 0 vulnerabilities。
 - 前端型別守門已完成升級：`npm run typecheck` 現在直接執行完整 `frontend/tsconfig.json`，並已串入 `ci-local`；補齊 dashboard products、storefront cart/delivery/form/main app/order submit/order history 等型別邊界與相容全域宣告後，`npm run typecheck:full` 目前可通過。
 - Dashboard 剩餘 6 支 JS composable 已轉成 `.ts`：`useDashboardProducts.ts`、`useDashboardPromotions.ts`、`useDashboardCategories.ts`、`useDashboardUsers.ts`、`useDashboardBankAccounts.ts`、`useDashboardSettingsIcons.ts`；`bootstrapDashboard.ts` 也同步轉檔，`check_new_composables_ts.py` allowlist 已清空。
 - 舊 `storefrontOrderActions.ts` 出口層已移除：付款狀態/文案走 `storefrontPaymentDisplay.ts`，送單流程走 `storefrontOrderSubmit.ts`，收據偏好、配送資訊收集與確認彈窗分別走 `storefrontOrderReceiptPrefs.ts`、`storefrontOrderDeliveryInfo.ts`、`storefrontOrderConfirmDialog.ts`。
