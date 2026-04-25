@@ -30,8 +30,8 @@ export interface DashboardPaymentOption extends SettingsRecord {
 
 function omitLegacyIconFields(value: SettingsRecord): SettingsRecord {
   const sanitized = { ...value };
-  delete sanitized.icon;
-  delete sanitized.iconUrl;
+  delete sanitized["icon"];
+  delete sanitized["iconUrl"];
   return sanitized;
 }
 
@@ -99,7 +99,7 @@ export const DEFAULT_PAYMENT_OPTIONS: Record<string, DashboardPaymentOption> = {
 export function normalizeDeliveryOption(
   item: SettingsRecord = {},
 ): DashboardDeliveryOption {
-  const id = String(item.id || "").trim();
+  const id = String(item["id"] || "").trim();
   const defaults = DEFAULT_DELIVERY_OPTIONS[id] || {
     id: id || `custom_${Date.now()}`,
     icon_url: getDefaultIconUrl("delivery"),
@@ -107,35 +107,35 @@ export function normalizeDeliveryOption(
     description: "設定敘述",
     enabled: true,
   };
-  const payment = asJsonRecord(item.payment);
+  const payment = asJsonRecord(item["payment"]);
 
   const hasJkoPayInConfig = Object.prototype.hasOwnProperty.call(
     payment,
     "jkopay",
   );
   const inferredJkoPay = hasJkoPayInConfig
-    ? !!payment.jkopay
-    : !!payment.linepay;
+    ? !!payment["jkopay"]
+    : !!payment["linepay"];
 
   return {
     ...defaults,
     ...omitLegacyIconFields(item),
     id: id || defaults.id,
     icon_url: normalizeIconPath(
-      String(item.icon_url ?? item.iconUrl ?? defaults.icon_url ?? ""),
+      String(item["icon_url"] ?? item["iconUrl"] ?? defaults.icon_url ?? ""),
     ),
-    name: String(item.name ?? defaults.name ?? ""),
-    description: String(item.description ?? defaults.description ?? ""),
-    enabled: item.enabled !== false,
-    fee: Number.isFinite(Number(item.fee)) ? Number(item.fee) : 0,
-    free_threshold: Number.isFinite(Number(item.free_threshold))
-      ? Number(item.free_threshold)
+    name: String(item["name"] ?? defaults.name ?? ""),
+    description: String(item["description"] ?? defaults.description ?? ""),
+    enabled: item["enabled"] !== false,
+    fee: Number.isFinite(Number(item["fee"])) ? Number(item["fee"]) : 0,
+    free_threshold: Number.isFinite(Number(item["free_threshold"]))
+      ? Number(item["free_threshold"])
       : 0,
     payment: {
-      cod: payment.cod !== false,
-      linepay: !!payment.linepay,
+      cod: payment["cod"] !== false,
+      linepay: !!payment["linepay"],
       jkopay: inferredJkoPay,
-      transfer: !!payment.transfer,
+      transfer: !!payment["transfer"],
     },
   };
 }
@@ -144,7 +144,7 @@ export function normalizePaymentOption(
   method: string,
   option: SettingsRecord = {},
 ): DashboardPaymentOption {
-  const fallbackPaymentOption = DEFAULT_PAYMENT_OPTIONS.cod || {
+  const fallbackPaymentOption = DEFAULT_PAYMENT_OPTIONS["cod"] || {
     icon_url: getDefaultIconUrl("cod"),
     name: "取件 / 到付",
     description: "取貨時付現或宅配到付",
@@ -154,10 +154,10 @@ export function normalizePaymentOption(
     ...defaults,
     ...omitLegacyIconFields(option),
     icon_url: normalizeIconPath(
-      String(option.icon_url ?? option.iconUrl ?? defaults.icon_url ?? ""),
+      String(option["icon_url"] ?? option["iconUrl"] ?? defaults.icon_url ?? ""),
     ),
-    name: String(option.name ?? defaults.name ?? ""),
-    description: String(option.description ?? defaults.description ?? ""),
+    name: String(option["name"] ?? defaults.name ?? ""),
+    description: String(option["description"] ?? defaults.description ?? ""),
   };
 }
 

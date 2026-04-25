@@ -11,7 +11,7 @@ function normalizeAnnouncementText(value: unknown) {
 }
 
 function isAnnouncementEnabled(settings: DashboardSettingsRecord = {}) {
-  return String(settings.announcement_enabled || "") === "true";
+  return String(settings["announcement_enabled"] || "") === "true";
 }
 
 export function useStorefrontAnnouncement(
@@ -28,7 +28,7 @@ export function useStorefrontAnnouncement(
   function syncAnnouncementState(snapshot: Partial<StorefrontUiSnapshot> = {}) {
     const settings = snapshot.settings || {};
     announcementText.value = isAnnouncementEnabled(settings)
-      ? normalizeAnnouncementText(settings.announcement)
+      ? normalizeAnnouncementText(settings["announcement"])
       : "";
   }
 

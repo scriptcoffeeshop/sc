@@ -78,15 +78,15 @@ export function applySavedOrderFormPrefs(): void {
   const u = state.currentUser;
   if (!u) return;
 
-  const receiptInfo = parseStoredReceiptInfo(u.defaultReceiptInfo);
+  const receiptInfo = parseStoredReceiptInfo(u["defaultReceiptInfo"]);
   applyReceiptFormValues(receiptInfo);
 
-  const transferLast5 = String(u.defaultTransferAccountLast5 || "").trim();
+  const transferLast5 = String(u["defaultTransferAccountLast5"] || "").trim();
   emitStorefrontOrderFormStateUpdated({
     transferAccountLast5: /^\d{5}$/.test(transferLast5) ? transferLast5 : "",
   });
 
-  const paymentMethod = String(u.defaultPaymentMethod || "").trim() as PaymentMethod;
+  const paymentMethod = String(u["defaultPaymentMethod"] || "").trim() as PaymentMethod;
   if (!["cod", "linepay", "jkopay", "transfer"].includes(paymentMethod)) return;
 
   if (!storefrontRuntime.availablePaymentMethods[paymentMethod]) return;

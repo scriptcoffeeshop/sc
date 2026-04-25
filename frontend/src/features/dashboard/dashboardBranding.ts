@@ -25,11 +25,11 @@ export function createDashboardBrandingController(
   deps: DashboardBrandingDeps,
 ) {
   function applyDashboardBranding(settings: DashboardSettings = {}): void {
-    const siteIconUrl = String(settings.site_icon_url || "").trim();
+    const siteIconUrl = String(settings["site_icon_url"] || "").trim();
     const resolvedLogoUrl = siteIconUrl
       ? deps.resolveAssetUrl(siteIconUrl)
       : deps.getDefaultIconUrl("brand");
-    const siteTitle = String(settings.site_title || "").trim();
+    const siteTitle = String(settings["site_title"] || "").trim();
     applyDashboardBrandingSideEffects({
       cacheKey: deps.cacheKey,
       documentTitle: siteTitle

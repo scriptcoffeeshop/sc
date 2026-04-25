@@ -35,22 +35,22 @@ function parseStoredCart(rawCart: string | null): StorefrontCartItem[] {
   return parseJsonArray(rawCart)
     .map(asJsonRecord)
     .map((item) => ({
-      productId: Number.isFinite(Number(item.productId))
-        ? Number(item.productId)
-        : String(item.productId || ""),
-      productName: String(item.productName || ""),
-      specKey: String(item.specKey || ""),
-      specLabel: String(item.specLabel || ""),
-      qty: Math.max(1, Number(item.qty) || 1),
-      unitPrice: Number(item.unitPrice) || 0,
+      productId: Number.isFinite(Number(item["productId"]))
+        ? Number(item["productId"])
+        : String(item["productId"] || ""),
+      productName: String(item["productName"] || ""),
+      specKey: String(item["specKey"] || ""),
+      specLabel: String(item["specLabel"] || ""),
+      qty: Math.max(1, Number(item["qty"]) || 1),
+      unitPrice: Number(item["unitPrice"]) || 0,
     }));
 }
 
 function parseProductSpecs(specsValue: unknown): StorefrontProductSpec[] {
   return parseJsonArray(specsValue).map(asJsonRecord).map((spec) => ({
-    key: String(spec.key || ""),
-    label: String(spec.label || ""),
-    price: Number(spec.price) || 0,
+    key: String(spec["key"] || ""),
+    label: String(spec["label"] || ""),
+    price: Number(spec["price"]) || 0,
   }));
 }
 
@@ -214,11 +214,11 @@ export function getShippingConfig() {
   const config = parseJsonArray(
     storefrontRuntime.appSettings.delivery_options_config,
   ).map(asJsonRecord);
-  const sel = config.find((opt) => opt.id === state.selectedDelivery);
+  const sel = config.find((opt) => opt["id"] === state.selectedDelivery);
   return sel
     ? {
-      fee: Number(sel.fee) || 0,
-      freeThreshold: Number(sel.free_threshold) || 0,
+      fee: Number(sel["fee"]) || 0,
+      freeThreshold: Number(sel["free_threshold"]) || 0,
     }
     : { fee: 0, freeThreshold: 0 };
 }

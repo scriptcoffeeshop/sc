@@ -124,28 +124,28 @@ export function normalizeDeliveryPaymentConfig(
   const source = asJsonRecord(payment);
   const hasJkoPay = Object.prototype.hasOwnProperty.call(source, "jkopay");
   return {
-    cod: Boolean(source.cod),
-    linepay: Boolean(source.linepay),
-    jkopay: hasJkoPay ? Boolean(source.jkopay) : Boolean(source.linepay),
-    transfer: Boolean(source.transfer),
+    cod: Boolean(source["cod"]),
+    linepay: Boolean(source["linepay"]),
+    jkopay: hasJkoPay ? Boolean(source["jkopay"]) : Boolean(source["linepay"]),
+    transfer: Boolean(source["transfer"]),
   };
 }
 
 export function normalizeStorefrontDeliveryOption(
   option: JsonRecord = {},
 ): StorefrontDeliveryOption {
-  const payment = asJsonRecord(option.payment);
+  const payment = asJsonRecord(option["payment"]);
   const normalized = { ...option };
-  delete normalized.icon;
-  delete normalized.iconUrl;
+  delete normalized["icon"];
+  delete normalized["iconUrl"];
   return {
     ...normalized,
-    id: String(option.id || ""),
-    icon_url: String(option.icon_url || option.iconUrl || ""),
-    label: String(option.label || option.name || ""),
-    name: String(option.name || option.label || ""),
-    description: String(option.description || ""),
-    enabled: option.enabled !== false,
+    id: String(option["id"] || ""),
+    icon_url: String(option["icon_url"] || option["iconUrl"] || ""),
+    label: String(option["label"] || option["name"] || ""),
+    name: String(option["name"] || option["label"] || ""),
+    description: String(option["description"] || ""),
+    enabled: option["enabled"] !== false,
     payment: normalizeDeliveryPaymentConfig(payment),
   };
 }
@@ -153,7 +153,7 @@ export function normalizeStorefrontDeliveryOption(
 export function normalizeStorefrontDeliveryConfig(
   settings: JsonRecord = {},
 ): StorefrontDeliveryOption[] {
-  const configuredDeliveryOptions = parseJsonArray(settings.delivery_options_config);
+  const configuredDeliveryOptions = parseJsonArray(settings["delivery_options_config"]);
   if (configuredDeliveryOptions.length) {
     return configuredDeliveryOptions.map((option) =>
       normalizeStorefrontDeliveryOption(asJsonRecord(option))
@@ -161,11 +161,11 @@ export function normalizeStorefrontDeliveryConfig(
   }
 
   let paymentRoutingConfig = parseJsonRecord(
-    settings.payment_routing_config,
+    settings["payment_routing_config"],
   ) as Record<string, JsonRecord>;
   if (!Object.keys(paymentRoutingConfig).length) {
-    const linePayEnabled = String(settings.linepay_enabled) === "true";
-    const transferEnabled = String(settings.transfer_enabled) === "true";
+    const linePayEnabled = String(settings["linepay_enabled"]) === "true";
+    const transferEnabled = String(settings["transfer_enabled"]) === "true";
     paymentRoutingConfig = {
       in_store: {
         cod: true,
@@ -205,31 +205,31 @@ export function normalizeStorefrontDeliveryConfig(
       id: "in_store",
       name: "來店自取",
       description: "到店自取",
-      payment: paymentRoutingConfig.in_store,
+      payment: paymentRoutingConfig["in_store"],
     },
     {
       id: "delivery",
       name: "配送到府 (限新竹)",
       description: "專人外送",
-      payment: paymentRoutingConfig.delivery,
+      payment: paymentRoutingConfig["delivery"],
     },
     {
       id: "home_delivery",
       name: "全台宅配",
       description: "宅配到府",
-      payment: paymentRoutingConfig.home_delivery,
+      payment: paymentRoutingConfig["home_delivery"],
     },
     {
       id: "seven_eleven",
       name: "7-11 取件",
       description: "超商門市",
-      payment: paymentRoutingConfig.seven_eleven,
+      payment: paymentRoutingConfig["seven_eleven"],
     },
     {
       id: "family_mart",
       name: "全家取件",
       description: "超商門市",
-      payment: paymentRoutingConfig.family_mart,
+      payment: paymentRoutingConfig["family_mart"],
     },
   ].map((option) => normalizeStorefrontDeliveryOption(option));
 }

@@ -208,7 +208,7 @@ describe("useDashboardSettings", () => {
     expect(settingsConfig.settings).not.toHaveProperty("site_icon_emoji");
 
     const paymentConfig = JSON.parse(
-      String(settingsConfig.settings.payment_options_config),
+      String(settingsConfig.settings["payment_options_config"]),
     );
     expect(paymentConfig).toMatchObject({
       linepay: {
@@ -218,7 +218,7 @@ describe("useDashboardSettings", () => {
     });
     expect(paymentConfig.linepay).not.toHaveProperty("icon");
     const deliveryConfig = JSON.parse(
-      String(settingsConfig.settings.delivery_options_config),
+      String(settingsConfig.settings["delivery_options_config"]),
     );
     expect(deliveryConfig).toHaveLength(5);
     expect(deliveryConfig[0]).not.toHaveProperty("icon");

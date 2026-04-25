@@ -78,14 +78,14 @@ function getServices(): DashboardBankAccountsServices {
 function normalizeBankAccount(value: unknown): BankAccountRecord {
   const record = asJsonRecord(value);
   const normalized: BankAccountRecord = {
-    id: record.id as number | string,
-    bankCode: String(record.bankCode || ""),
-    bankName: String(record.bankName || ""),
-    accountNumber: String(record.accountNumber || ""),
-    accountName: String(record.accountName || ""),
+    id: record["id"] as number | string,
+    bankCode: String(record["bankCode"] || ""),
+    bankName: String(record["bankName"] || ""),
+    accountNumber: String(record["accountNumber"] || ""),
+    accountName: String(record["accountName"] || ""),
   };
-  if (record.enabled !== undefined) {
-    normalized.enabled = Boolean(record.enabled);
+  if (record["enabled"] !== undefined) {
+    normalized.enabled = Boolean(record["enabled"]);
   }
   return normalized;
 }
@@ -140,7 +140,7 @@ async function syncBankAccountsSortable() {
       )
         .map((element) =>
           element instanceof HTMLElement
-            ? Number.parseInt(element.dataset.bankAccountId || "", 10)
+            ? Number.parseInt(element.dataset["bankAccountId"] || "", 10)
             : NaN
         )
         .filter((id) => Number.isInteger(id));
@@ -186,8 +186,8 @@ async function loadBankAccounts() {
     );
     const data = await response.json();
     if (!data.success) return;
-    bankAccounts.value = Array.isArray(data.accounts)
-      ? data.accounts.map(normalizeBankAccount)
+    bankAccounts.value = Array.isArray(data["accounts"])
+      ? data["accounts"].map(normalizeBankAccount)
       : [];
     await queueBankAccountsSync();
   } catch (error) {

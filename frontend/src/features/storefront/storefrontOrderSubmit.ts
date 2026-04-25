@@ -173,8 +173,8 @@ export async function submitOrder(): Promise<void> {
 
   // 從動態欄位取值（相容舊的 phone / email）
   const dynamicFieldData = fieldsResult.data;
-  const phone = String(dynamicFieldData.phone || "");
-  const email = String(dynamicFieldData.email || "");
+  const phone = String(dynamicFieldData["phone"] || "");
+  const email = String(dynamicFieldData["email"] || "");
 
   if (!state.selectedDelivery) {
     showError("錯誤", "請選擇配送方式");
@@ -318,7 +318,7 @@ export async function submitOrder(): Promise<void> {
     const res = await authFetch(`${API_URL}?action=submitOrder`, {
       method: "POST",
       body: JSON.stringify({
-        lineName: u.displayName || u.display_name,
+        lineName: u.displayName || u["display_name"],
         phone,
         email,
         items: payloadItems,

@@ -178,7 +178,7 @@ async function syncProductSortables() {
         const ids = Array.from(tbody.querySelectorAll("tr[data-id]"))
           .map((row) =>
             row instanceof HTMLElement
-              ? Number.parseInt(row.dataset.id || "", 10)
+              ? Number.parseInt(row.dataset["id"] || "", 10)
               : NaN
           )
           .filter((id) => !Number.isNaN(id));

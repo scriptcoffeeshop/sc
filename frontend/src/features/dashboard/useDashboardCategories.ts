@@ -62,14 +62,14 @@ function getServices(): DashboardCategoriesServices {
 function normalizeCategory(value: unknown): DashboardCategoryRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const record = asJsonRecord(value);
-  if (record.id === undefined || record.id === null) return null;
+  if (record["id"] === undefined || record["id"] === null) return null;
   return {
     ...record,
     id:
-      typeof record.id === "number" || typeof record.id === "string"
-        ? record.id
-        : String(record.id),
-    name: String(record.name || ""),
+      typeof record["id"] === "number" || typeof record["id"] === "string"
+        ? record["id"]
+        : String(record["id"]),
+    name: String(record["name"] || ""),
   };
 }
 
@@ -114,7 +114,7 @@ async function syncCategorySortable() {
       const ids = Array.from(listElement.querySelectorAll("[data-id]"))
         .map((element) =>
           element instanceof HTMLElement
-            ? Number.parseInt(element.dataset.id || "", 10)
+            ? Number.parseInt(element.dataset["id"] || "", 10)
             : NaN
         )
         .filter((id) => !Number.isNaN(id));
@@ -154,8 +154,8 @@ async function loadCategories() {
     );
     const data = await response.json();
     if (!data.success) return;
-    categories.value = Array.isArray(data.categories)
-      ? data.categories.map(normalizeCategory).filter((category) => category !== null)
+    categories.value = Array.isArray(data["categories"])
+      ? data["categories"].map(normalizeCategory).filter((category) => category !== null)
       : [];
     syncCategoriesMap();
     notifyCategoriesChanged();

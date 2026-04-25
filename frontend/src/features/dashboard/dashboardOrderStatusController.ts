@@ -101,13 +101,13 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
         status,
       };
       if (status === "shipped") {
-        payload.trackingNumber = trackingNumber;
-        payload.shippingProvider = shippingProvider;
-        payload.trackingUrl = trackingUrl;
+        payload["trackingNumber"] = trackingNumber;
+        payload["shippingProvider"] = shippingProvider;
+        payload["trackingUrl"] = trackingUrl;
       } else if (status === "cancelled" || status === "failed") {
-        payload.cancelReason = cancelReason;
+        payload["cancelReason"] = cancelReason;
       } else {
-        payload.cancelReason = "";
+        payload["cancelReason"] = "";
       }
 
       const response = await deps.authFetch(`${deps.API_URL}?action=updateOrderStatus`, {

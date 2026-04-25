@@ -117,12 +117,12 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
       const option = paymentOptionConfig.value[method] || {};
       return {
         method,
-        name: String(option.name || defaults.name),
-        description: String(option.description || defaults.description),
+        name: String(option["name"] || defaults.name),
+        description: String(option["description"] || defaults.description),
         iconUrl: getIconUrlFromConfig(
           {
-            icon_url: option.icon_url,
-            iconUrl: option.iconUrl,
+            icon_url: option["icon_url"],
+            iconUrl: option["iconUrl"],
           },
           method,
         ),

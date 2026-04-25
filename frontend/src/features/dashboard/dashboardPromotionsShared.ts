@@ -98,9 +98,9 @@ export function parseProductSpecs(
   return parseJsonArray(product?.specs).map((item) => {
     const spec = asJsonRecord(item);
     return {
-      key: String(spec.key || ""),
-      label: String(spec.label || ""),
-      price: Number(spec.price) || 0,
+      key: String(spec["key"] || ""),
+      label: String(spec["label"] || ""),
+      price: Number(spec["price"]) || 0,
     };
   });
 }

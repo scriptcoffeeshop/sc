@@ -50,12 +50,12 @@ export function buildProfileFormFields(
   fields: StorefrontProfileFieldView[];
   values: StorefrontProfileFormValues;
 } {
-  const customDefaults = parseStringRecord(user.defaultCustomFields);
+  const customDefaults = parseStringRecord(user["defaultCustomFields"]);
   const profileFields: StorefrontProfileFieldView[] = [];
   const values: StorefrontProfileFormValues = {};
 
   for (const field of fields) {
-    const key = String(field.field_key || "");
+    const key = String(field["field_key"] || "");
     if (!key) continue;
     let currentValue = "";
     if (key === "phone") currentValue = String(user.phone || "");
@@ -64,11 +64,11 @@ export function buildProfileFormFields(
 
     profileFields.push({
       key,
-      label: String(field.label || ""),
-      placeholder: String(field.placeholder || ""),
-      type: String(field.field_type || "text"),
-      options: field.field_type === "select"
-        ? parseStringArray(field.options)
+      label: String(field["label"] || ""),
+      placeholder: String(field["placeholder"] || ""),
+      type: String(field["field_type"] || "text"),
+      options: field["field_type"] === "select"
+        ? parseStringArray(field["options"])
         : [],
     });
     values[key] = currentValue;
@@ -85,14 +85,14 @@ export function buildProfileUpdatePayload(
   const customFieldsData: StringRecord = {};
 
   for (const field of fields) {
-    const key = String(field.field_key || "");
+    const key = String(field["field_key"] || "");
     if (!key) continue;
     const value = String(values[key] || "");
-    if (key === "phone") profileData.phone = value;
-    else if (key === "email") profileData.email = value;
+    if (key === "phone") profileData["phone"] = value;
+    else if (key === "email") profileData["email"] = value;
     else if (value) customFieldsData[key] = value;
   }
-  profileData.defaultCustomFields = JSON.stringify(customFieldsData);
+  profileData["defaultCustomFields"] = JSON.stringify(customFieldsData);
   return profileData;
 }
 
@@ -162,7 +162,7 @@ export function createStorefrontMainAppAuth(
     const token = localStorage.getItem("coffee_jwt");
     if (saved && token) {
       const savedUser = parseJsonRecord(saved);
-      const userId = String(savedUser.userId || "");
+      const userId = String(savedUser["userId"] || "");
       if (userId) {
         state.currentUser = {
           ...savedUser,
@@ -225,7 +225,7 @@ export function createStorefrontMainAppAuth(
       preConfirm: () => {
         const values = profileFormRef?.getValues() || profileForm.values;
         latestProfileValues = { ...values };
-        const email = String(values.email || "");
+        const email = String(values["email"] || "");
         if (email && !isValidEmail(email)) {
           showValidationMessage("請填寫正確的電子郵件格式");
           return false;

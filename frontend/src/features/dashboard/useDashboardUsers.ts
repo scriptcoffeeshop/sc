@@ -65,25 +65,25 @@ function normalizeUser(value: unknown): DashboardUserRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const record = asJsonRecord(value);
   const normalized: DashboardUserRecord = {
-    userId: String(record.userId || ""),
-    displayName: String(record.displayName || ""),
-    role: typeof record.role === "string" ? record.role : "USER",
-    status: typeof record.status === "string" ? record.status : "ACTIVE",
-    email: String(record.email || ""),
-    phone: String(record.phone || ""),
+    userId: String(record["userId"] || ""),
+    displayName: String(record["displayName"] || ""),
+    role: typeof record["role"] === "string" ? record["role"] : "USER",
+    status: typeof record["status"] === "string" ? record["status"] : "ACTIVE",
+    email: String(record["email"] || ""),
+    phone: String(record["phone"] || ""),
     defaultDeliveryMethod:
-      typeof record.defaultDeliveryMethod === "string"
-        ? record.defaultDeliveryMethod
+      typeof record["defaultDeliveryMethod"] === "string"
+        ? record["defaultDeliveryMethod"]
         : "",
-    defaultCity: String(record.defaultCity || ""),
-    defaultDistrict: String(record.defaultDistrict || ""),
-    defaultAddress: String(record.defaultAddress || ""),
-    defaultStoreName: String(record.defaultStoreName || ""),
-    defaultStoreId: String(record.defaultStoreId || ""),
-    lastLogin: typeof record.lastLogin === "string" ? record.lastLogin : "",
+    defaultCity: String(record["defaultCity"] || ""),
+    defaultDistrict: String(record["defaultDistrict"] || ""),
+    defaultAddress: String(record["defaultAddress"] || ""),
+    defaultStoreName: String(record["defaultStoreName"] || ""),
+    defaultStoreId: String(record["defaultStoreId"] || ""),
+    lastLogin: typeof record["lastLogin"] === "string" ? record["lastLogin"] : "",
   };
-  if (typeof record.pictureUrl === "string") {
-    normalized.pictureUrl = record.pictureUrl;
+  if (typeof record["pictureUrl"] === "string") {
+    normalized.pictureUrl = record["pictureUrl"];
   }
   return normalized;
 }
@@ -93,10 +93,10 @@ function normalizeBlacklistEntry(value: unknown): DashboardBlacklistRecord | nul
   const record = asJsonRecord(value);
   return {
     ...record,
-    displayName: String(record.displayName || ""),
-    lineUserId: String(record.lineUserId || ""),
-    blockedAt: typeof record.blockedAt === "string" ? record.blockedAt : "",
-    reason: String(record.reason || ""),
+    displayName: String(record["displayName"] || ""),
+    lineUserId: String(record["lineUserId"] || ""),
+    blockedAt: typeof record["blockedAt"] === "string" ? record["blockedAt"] : "",
+    reason: String(record["reason"] || ""),
   };
 }
 
@@ -200,8 +200,8 @@ async function loadUsers() {
       Swal.fire("錯誤", String(data.error || "載入用戶失敗"), "error");
       return;
     }
-    users.value = Array.isArray(data.users)
-      ? data.users.map(normalizeUser).filter((user) => user !== null)
+    users.value = Array.isArray(data["users"])
+      ? data["users"].map(normalizeUser).filter((user) => user !== null)
       : [];
     Swal.close?.();
   } catch (error) {
@@ -217,8 +217,8 @@ async function loadBlacklist() {
     );
     const data = await response.json();
     if (!data.success) return;
-    blacklist.value = Array.isArray(data.blacklist)
-      ? data.blacklist
+    blacklist.value = Array.isArray(data["blacklist"])
+      ? data["blacklist"]
         .map(normalizeBlacklistEntry)
         .filter((entry) => entry !== null)
       : [];

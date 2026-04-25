@@ -136,7 +136,7 @@ async function syncDeliverySortable() {
       const ids = Array.from(
         tableElement.querySelectorAll<HTMLElement>("[data-delivery-id]"),
       )
-        .map((element) => String(element.dataset.deliveryId || "").trim())
+        .map((element) => String(element.dataset["deliveryId"] || "").trim())
         .filter(Boolean);
       reorderDeliveryOptions(ids);
     },
@@ -181,7 +181,7 @@ function replaceSettingsConfig(settings: DashboardSettingsRecord = {}) {
     "linepay_sandbox",
   );
   if (hasServerValue) {
-    linePaySandbox.value = parseBooleanSetting(settings.linepay_sandbox, true);
+    linePaySandbox.value = parseBooleanSetting(settings["linepay_sandbox"], true);
     globalThis.localStorage?.setItem(
       linePaySandboxCacheKey,
       String(linePaySandbox.value),

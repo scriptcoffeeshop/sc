@@ -83,7 +83,7 @@ describe("useStorefrontDynamicFields", () => {
       }],
     });
     dynamicFields.updateDynamicFieldValue("phone", "0912000000");
-    expect(dynamicFields.fieldValues.value.phone).toBe("0912000000");
+    expect(dynamicFields.fieldValues.value["phone"]).toBe("0912000000");
 
     dynamicFields.handleDynamicFieldValuesUpdated(
       new CustomEvent("coffee:dynamic-field-values-updated", {

@@ -180,7 +180,7 @@ async function syncPromotionSortable() {
       const ids = Array.from(tableElement.querySelectorAll("tr[data-id]"))
         .map((row) =>
           row instanceof HTMLElement
-            ? Number.parseInt(row.dataset.id || "", 10)
+            ? Number.parseInt(row.dataset["id"] || "", 10)
             : NaN
         )
         .filter((id) => !Number.isNaN(id));
@@ -222,8 +222,8 @@ async function loadPromotions() {
     );
     const data = await response.json();
     if (!data.success) return;
-    promotions.value = Array.isArray(data.promotions)
-      ? data.promotions.map(normalizePromotion)
+    promotions.value = Array.isArray(data["promotions"])
+      ? data["promotions"].map(normalizePromotion)
       : [];
     syncPromotionsMap();
     await queuePromotionsSync();
@@ -295,7 +295,7 @@ async function savePromotion(event?: Event) {
   };
 
   if (promotionForm.id) {
-    payload.id = Number.parseInt(promotionForm.id, 10);
+    payload["id"] = Number.parseInt(promotionForm.id, 10);
   }
 
   try {

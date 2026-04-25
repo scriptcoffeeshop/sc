@@ -227,54 +227,54 @@ export function loadDeliveryPrefs() {
     );
 
     const u = state.currentUser;
-    if (u && u.defaultDeliveryMethod) {
+    if (u && u["defaultDeliveryMethod"]) {
       prefs = {
-        method: u.defaultDeliveryMethod,
-        city: u.defaultCity,
-        district: u.defaultDistrict,
-        address: u.defaultAddress,
-        storeId: u.defaultStoreId,
-        storeName: u.defaultStoreName,
-        storeAddress: u.defaultStoreAddress,
+        method: u["defaultDeliveryMethod"],
+        city: u["defaultCity"],
+        district: u["defaultDistrict"],
+        address: u["defaultAddress"],
+        storeId: u["defaultStoreId"],
+        storeName: u["defaultStoreName"],
+        storeAddress: u["defaultStoreAddress"],
       };
       if (
         localPrefs &&
-        String(localPrefs.method || "") === String(u.defaultDeliveryMethod || "")
+        String(localPrefs["method"] || "") === String(u["defaultDeliveryMethod"] || "")
       ) {
-        prefs.companyOrBuilding = String(localPrefs.companyOrBuilding || "").trim();
+        prefs["companyOrBuilding"] = String(localPrefs["companyOrBuilding"] || "").trim();
       }
     } else {
       prefs = localPrefs;
     }
 
-    if (prefs && prefs.method) {
-      const method = String(prefs.method);
+    if (prefs && prefs["method"]) {
+      const method = String(prefs["method"]);
       selectDelivery(method);
 
       if (method === "delivery") {
         emitStorefrontLocalDeliveryAddressUpdated({
-          city: String(prefs.city || ""),
-          district: String(prefs.district || ""),
-          address: String(prefs.address || ""),
-          companyOrBuilding: String(prefs.companyOrBuilding || "").trim(),
+          city: String(prefs["city"] || ""),
+          district: String(prefs["district"] || ""),
+          address: String(prefs["address"] || ""),
+          companyOrBuilding: String(prefs["companyOrBuilding"] || "").trim(),
         });
       } else if (method === "home_delivery") {
         // home_delivery 的 district 可能是 "300 東區"，回填時需拆出區域名稱
-        const rawDistrict = String(prefs.district || "").trim();
+        const rawDistrict = String(prefs["district"] || "").trim();
         const districtText = rawDistrict.replace(/^\d{3}\s*/, "");
         const zipMatch = rawDistrict.match(/^(\d{3})/);
         emitStorefrontHomeDeliveryAddressUpdated({
-          city: String(prefs.city || ""),
+          city: String(prefs["city"] || ""),
           district: districtText,
           zipcode: zipMatch?.[1] || "",
-          address: String(prefs.address || ""),
+          address: String(prefs["address"] || ""),
         });
       } else if (method === "seven_eleven" || method === "family_mart") {
-        if (prefs.storeId) {
+        if (prefs["storeId"]) {
           applyStoreSelection({
-            storeId: prefs.storeId,
-            storeName: prefs.storeName,
-            storeAddress: prefs.storeAddress,
+            storeId: prefs["storeId"],
+            storeName: prefs["storeName"],
+            storeAddress: prefs["storeAddress"],
           });
         }
       }

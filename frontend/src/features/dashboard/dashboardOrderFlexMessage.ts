@@ -10,7 +10,7 @@ export function createOrderFlexMessageBuilder(
   deps: DashboardOrderNotificationDeps,
 ) {
   function resolveOrderLineUserId(order: DashboardOrderRecord) {
-    return String(order?.lineUserId || order?.line_user_id || "").trim();
+    return String(order?.lineUserId || order?.["line_user_id"] || "").trim();
   }
 
   function getSiteTitle() {

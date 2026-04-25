@@ -9,7 +9,7 @@ interface StorefrontAuthDeps {
 export function getStorefrontUserDisplayName(
   user: SessionUser | null | undefined,
 ) {
-  return String(user?.displayName || user?.display_name || "");
+  return String(user?.displayName || user?.["display_name"] || "");
 }
 
 export function getStorefrontUserAvatarUrl(
@@ -17,7 +17,7 @@ export function getStorefrontUserAvatarUrl(
 ) {
   return String(
     user?.pictureUrl ||
-      user?.picture_url ||
+      user?.["picture_url"] ||
       "https://via.placeholder.com/48",
   );
 }

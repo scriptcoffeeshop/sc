@@ -205,7 +205,7 @@ const orderNotificationsController = createOrderNotificationsController({
   API_URL,
   authFetch,
   getAuthUserId: dashboardSessionActions.getAuthUserId,
-  getSiteTitle: () => dashboardSettingsActions.getRawSettings()?.site_title,
+  getSiteTitle: () => dashboardSettingsActions.getRawSettings()?.["site_title"],
   getOrders: getDashboardOrders,
   Toast,
   Swal,

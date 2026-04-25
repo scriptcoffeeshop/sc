@@ -54,12 +54,12 @@ export function createDashboardOrdersBulkActions(
       status: options.batchForm.status,
     };
     if (options.batchForm.paymentStatus !== "__keep__") {
-      payload.paymentStatus = options.batchForm.paymentStatus;
+      payload["paymentStatus"] = options.batchForm.paymentStatus;
     }
     if (options.batchForm.status === "shipped") {
-      payload.trackingNumber = trackingNumber;
-      payload.shippingProvider = shippingProvider;
-      payload.trackingUrl = trackingUrl;
+      payload["trackingNumber"] = trackingNumber;
+      payload["shippingProvider"] = shippingProvider;
+      payload["trackingUrl"] = trackingUrl;
     }
 
     try {

@@ -73,10 +73,10 @@ export function normalizeStorefrontBranding(
   settings: DashboardSettingsRecord = {},
 ): StorefrontBrandingView {
   return {
-    siteTitle: String(settings.site_title || "Script Coffee"),
-    siteSubtitle: normalizeSiteSubtitle(settings.site_subtitle) || "咖啡豆 | 耳掛",
+    siteTitle: String(settings["site_title"] || "Script Coffee"),
+    siteSubtitle: normalizeSiteSubtitle(settings["site_subtitle"]) || "咖啡豆 | 耳掛",
     brandIconUrl: getIconUrlFromConfig(
-      { icon_url: settings.site_icon_url },
+      { icon_url: settings["site_icon_url"] },
       "brand",
     ),
     sections: {

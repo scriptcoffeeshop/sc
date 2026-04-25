@@ -86,13 +86,13 @@ function parseSettingsRecordArray(value: unknown): DashboardSettingsRecord[] {
 function buildLegacyRoutingConfig(
   settings: DashboardSettingsRecord,
 ): Record<string, DashboardPaymentRouting> {
-  const routingConfig = parseSettingsRecord(settings.payment_routing_config);
+  const routingConfig = parseSettingsRecord(settings["payment_routing_config"]);
   if (Object.keys(routingConfig).length) {
     return routingConfig as Record<string, DashboardPaymentRouting>;
   }
 
-  const linePayEnabled = String(settings.linepay_enabled) === "true";
-  const transferEnabled = String(settings.transfer_enabled) === "true";
+  const linePayEnabled = String(settings["linepay_enabled"]) === "true";
+  const transferEnabled = String(settings["transfer_enabled"]) === "true";
 
   return {
     in_store: {
@@ -227,7 +227,7 @@ export function migrateLegacyDeliveryConfig(
   settings: DashboardSettingsRecord,
   deps: DashboardSettingsConfigDeps,
 ): DashboardDeliveryOption[] {
-  const deliveryConfig = parseSettingsRecordArray(settings.delivery_options_config);
+  const deliveryConfig = parseSettingsRecordArray(settings["delivery_options_config"]);
   if (deliveryConfig.length) {
     return deliveryConfig.map((item) => deps.normalizeDeliveryOption(item));
   }
@@ -332,22 +332,22 @@ export function buildSettingsStateFromConfig(
   | "paymentOptions"
   | "deliveryOptions"
 > {
-  const parsedPaymentOptions = parseSettingsRecord(settings.payment_options_config);
+  const parsedPaymentOptions = parseSettingsRecord(settings["payment_options_config"]);
 
   return {
     brandingSettings: {
-      siteTitle: String(settings.site_title || ""),
-      siteSubtitle: String(settings.site_subtitle || ""),
-      siteIconUrl: deps.normalizeIconPath(String(settings.site_icon_url || "")),
+      siteTitle: String(settings["site_title"] || ""),
+      siteSubtitle: String(settings["site_subtitle"] || ""),
+      siteIconUrl: deps.normalizeIconPath(String(settings["site_icon_url"] || "")),
     },
     storefrontSettings: {
-      announcementEnabled: String(settings.announcement_enabled) === "true",
-      announcement: String(settings.announcement || ""),
+      announcementEnabled: String(settings["announcement_enabled"]) === "true",
+      announcement: String(settings["announcement"] || ""),
       autoOrderEmailEnabled: deps.parseBooleanSetting(
-        settings.order_confirmation_auto_email_enabled,
+        settings["order_confirmation_auto_email_enabled"],
         true,
       ),
-      isOpen: String(settings.is_open) !== "false",
+      isOpen: String(settings["is_open"]) !== "false",
     },
     sectionTitleSettings: buildSectionTitleSettings(settings, deps),
     paymentOptions: buildPaymentOptionsView(parsedPaymentOptions, deps),

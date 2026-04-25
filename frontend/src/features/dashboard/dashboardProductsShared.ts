@@ -83,10 +83,10 @@ function parseProductSpecs(value: unknown): DashboardProductSpec[] {
   const parsedSpecs = parseJsonArray(value).map((item) => {
     const spec = asJsonRecord(item);
     return {
-      key: String(spec.key || ""),
-      label: String(spec.label || ""),
-      price: Number(spec.price) || 0,
-      enabled: Boolean(spec.enabled),
+      key: String(spec["key"] || ""),
+      label: String(spec["label"] || ""),
+      price: Number(spec["price"]) || 0,
+      enabled: Boolean(spec["enabled"]),
     };
   });
   return cloneSpecs(parsedSpecs);

@@ -9,7 +9,7 @@ import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts"
 const dynamicFieldValues: StorefrontDynamicFieldValues = {};
 
 function parseUserCustomDefaults(currentUser: SessionUser | null) {
-  const rawDefaults = currentUser?.defaultCustomFields;
+  const rawDefaults = currentUser?.["defaultCustomFields"];
   if (!rawDefaults) return {};
   return parseJsonRecord(rawDefaults);
 }

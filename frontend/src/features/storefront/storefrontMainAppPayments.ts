@@ -38,10 +38,10 @@ function normalizeQuotePaymentAvailability(
   payment: Record<string, unknown> | null | undefined,
 ): StorefrontPaymentAvailability {
   return {
-    cod: Boolean(payment?.cod),
-    linepay: Boolean(payment?.linepay),
-    jkopay: Boolean(payment?.jkopay),
-    transfer: Boolean(payment?.transfer),
+    cod: Boolean(payment?.["cod"]),
+    linepay: Boolean(payment?.["linepay"]),
+    jkopay: Boolean(payment?.["jkopay"]),
+    transfer: Boolean(payment?.["transfer"]),
   };
 }
 
@@ -119,7 +119,7 @@ export function createStorefrontMainAppPayments(
   }
 
   function applySettings(settings: Record<string, unknown>) {
-    state.isStoreOpen = String(settings.is_open) !== "false";
+    state.isStoreOpen = String(settings["is_open"]) !== "false";
     updateFormState();
 
     setStorefrontAppSettings(settings);

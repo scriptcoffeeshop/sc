@@ -110,11 +110,11 @@ export function getDeliveryMeta(
   };
   const selected = parseJsonArray(deliveryOptionsConfig)
     .map(asJsonRecord)
-    .find((option) => option.id === selectedDelivery);
-  if (selected?.name) {
+    .find((option) => option["id"] === selectedDelivery);
+  if (selected?.["name"]) {
     return {
       selectedDelivery: selectedDelivery || "",
-      deliveryName: String(selected.name),
+      deliveryName: String(selected["name"]),
     };
   }
   return fallback;

@@ -23,9 +23,9 @@ export function parseDeliveryPrefs(rawPrefs: string | null): DeliveryPrefs {
 export function normalizeStoreRecord(value: unknown): StoreRecord {
   const record = asJsonRecord(value);
   return {
-    id: String(record.id || ""),
-    name: String(record.name || ""),
-    address: String(record.address || ""),
+    id: String(record["id"] || ""),
+    name: String(record["name"] || ""),
+    address: String(record["address"] || ""),
   };
 }
 

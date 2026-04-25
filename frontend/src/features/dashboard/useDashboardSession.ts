@@ -174,7 +174,7 @@ async function checkLogin() {
   }
 
   const storedAdmin = tryParseJsonRecord(savedAdmin);
-  const userId = String(storedAdmin?.userId || "").trim();
+  const userId = String(storedAdmin?.["userId"] || "").trim();
   if (!userId) {
     clearStoredSession();
     currentUser.value = null;

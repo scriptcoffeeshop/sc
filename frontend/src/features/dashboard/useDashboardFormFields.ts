@@ -83,10 +83,10 @@ function getDeliveryOptionsFromSettings(): DashboardDeliveryOptionLike[] {
 
   return parseJsonArray(configStr).map((option) => {
     const record = asJsonRecord(option);
-    const id = typeof record.id === "number" ? record.id : String(record.id || "");
+    const id = typeof record["id"] === "number" ? record["id"] : String(record["id"] || "");
     return {
       id,
-      label: String(record.label || id),
+      label: String(record["label"] || id),
     };
   });
 }
@@ -125,7 +125,7 @@ function destroyFormFieldsSortable() {
 
 function readSortedFieldIds(listElement: HTMLElement): number[] {
   return Array.from(listElement.querySelectorAll<HTMLElement>("[data-field-id]"))
-    .map((element) => Number.parseInt(element.dataset.fieldId || "", 10))
+    .map((element) => Number.parseInt(element.dataset["fieldId"] || "", 10))
     .filter((id) => !Number.isNaN(id));
 }
 
