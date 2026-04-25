@@ -1,4 +1,5 @@
 import { expect, type Page, type Route, test } from "@playwright/test";
+import { installGlobalStubs } from "./support/smoke-fixtures";
 
 const API_URL =
   "https://avnvsjyyeofivgmrchte.supabase.co/functions/v1/coffee-api";
@@ -22,39 +23,28 @@ async function fulfillJson(route: Route, payload: unknown, status = 200) {
   });
 }
 
-async function installGlobalStubs(page: Page) {
-  await page.route("**/*.html", async (route) => {
-    const response = await route.fetch();
-    let body = await response.text();
-    body = body.replace(/\s+integrity="[^"]*"/g, "");
-    body = body.replace(/\s+crossorigin="[^"]*"/g, "");
-    await route.fulfill({
-      response,
-      body,
-      headers: { ...response.headers(), "content-type": "text/html" },
-    });
-  });
+type DashboardDownloadRecord = {
+  download: string;
+  href: string;
+  text: string;
+};
 
-  await page.route(
-    "**/sweetalert2**",
-    (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: "application/javascript",
-        body: "/* swal blocked */",
-      }),
-  );
+type FeatureSwalResult = {
+  isConfirmed?: boolean;
+  value?: unknown;
+};
 
-  await page.addInitScript(() => {
-    const noop = () => {};
-    (window as any).Swal = {
-      fire: async () => ({ isConfirmed: true }),
-      close: noop,
-      showLoading: noop,
-      mixin: () => ({ fire: async () => ({}) }),
-    };
-  });
-}
+type FeatureSwal = {
+  close: () => void;
+  fire: () => Promise<FeatureSwalResult>;
+  mixin: () => { fire: () => Promise<Record<string, never>> };
+  showLoading: () => void;
+};
+
+type FeatureWindow = Window & typeof globalThis & {
+  __dashboardDownloads?: DashboardDownloadRecord[];
+  Swal: FeatureSwal;
+};
 
 async function installStorefrontFeatureRoutes(page: Page) {
   await page.route(
@@ -242,6 +232,68 @@ async function seedAdminSession(page: Page) {
   });
 }
 
+async function installDashboardDownloadRecorder(page: Page) {
+  await page.addInitScript(() => {
+    const testWindow = window as FeatureWindow;
+    const blobStore = new Map<string, Blob>();
+    const downloads: DashboardDownloadRecord[] = [];
+
+    testWindow.__dashboardDownloads = downloads;
+    URL.createObjectURL = ((blob: Blob) => {
+      const href = `blob:mock-${downloads.length + blobStore.size + 1}`;
+      blobStore.set(href, blob);
+      return href;
+    }) as typeof URL.createObjectURL;
+    URL.revokeObjectURL = ((href: string) => {
+      blobStore.delete(href);
+    }) as typeof URL.revokeObjectURL;
+    HTMLAnchorElement.prototype.click = function () {
+      const record = {
+        href: this.href,
+        download: this.download,
+        text: "",
+      };
+      downloads.push(record);
+      const blob = blobStore.get(this.href);
+      if (blob) {
+        void blob.text().then((text) => {
+          record.text = text;
+        });
+      }
+    };
+  });
+}
+
+async function getDashboardDownloads(page: Page) {
+  return await page.evaluate(() => {
+    const testWindow = window as Partial<FeatureWindow>;
+    const downloads = testWindow.__dashboardDownloads;
+    return Array.isArray(downloads)
+      ? downloads.map((record) => ({
+        download: String(record.download || ""),
+        href: String(record.href || ""),
+        text: String(record.text || ""),
+      }))
+      : [];
+  });
+}
+
+async function installFeatureSwalResponse(
+  page: Page,
+  response: FeatureSwalResult,
+) {
+  await page.addInitScript((swalResponse) => {
+    const noop = () => {};
+    const testWindow = window as FeatureWindow;
+    testWindow.Swal = {
+      fire: async () => swalResponse,
+      close: noop,
+      showLoading: noop,
+      mixin: () => ({ fire: async () => ({}) }),
+    };
+  }, response);
+}
+
 test.describe("Features E2E", () => {
   test("ECPay map integration triggers correctly payload", async ({ page }) => {
     await installGlobalStubs(page);
@@ -289,50 +341,20 @@ test.describe("Features E2E", () => {
         lineName: "匯出測試客戶",
       }],
     });
-    await page.addInitScript(() => {
-      const blobStore = new Map<string, Blob>();
-      const downloads: Array<{ href: string; download: string; text: string }> =
-        [];
-      (window as any).__dashboardDownloads = downloads;
-      URL.createObjectURL = ((blob: Blob) => {
-        const href = `blob:mock-${downloads.length + blobStore.size + 1}`;
-        blobStore.set(href, blob);
-        return href;
-      }) as typeof URL.createObjectURL;
-      URL.revokeObjectURL = ((href: string) => {
-        blobStore.delete(href);
-      }) as typeof URL.revokeObjectURL;
-      HTMLAnchorElement.prototype.click = function () {
-        const record = {
-          href: this.href,
-          download: this.download,
-          text: "",
-        };
-        downloads.push(record);
-        const blob = blobStore.get(this.href);
-        if (blob) {
-          void blob.text().then((text) => {
-            record.text = text;
-          });
-        }
-      };
-    });
+    await installDashboardDownloadRecorder(page);
     await seedAdminSession(page);
 
     await page.goto("/dashboard.html");
 
     await page.getByRole("button", { name: "匯出篩選 CSV" }).click();
 
+    await expect.poll(async () => (await getDashboardDownloads(page)).length)
+      .toBe(1);
     await expect.poll(async () =>
-      await page.evaluate(() => (window as any).__dashboardDownloads.length)
-    ).toBe(1);
-    await expect.poll(async () =>
-      await page.evaluate(() => (window as any).__dashboardDownloads[0]?.text || "")
+      (await getDashboardDownloads(page))[0]?.text || ""
     ).toContain("ORD-EXPORT-1");
-    const download = await page.evaluate(() =>
-      (window as any).__dashboardDownloads[0]
-    );
-    expect(download.download).toMatch(/^orders-filtered-.*\.csv$/);
+    const [download] = await getDashboardDownloads(page);
+    expect(download?.download).toMatch(/^orders-filtered-.*\.csv$/);
   });
 
   test("Admin can add user to blacklist", async ({ page }) => {
@@ -354,14 +376,9 @@ test.describe("Features E2E", () => {
       },
     });
 
-    await page.addInitScript(() => {
-      const noop = () => {};
-      (window as any).Swal = {
-        fire: async () => ({ isConfirmed: true, value: "Violation rule" }),
-        close: noop,
-        showLoading: noop,
-        mixin: () => ({ fire: async () => ({}) }),
-      };
+    await installFeatureSwalResponse(page, {
+      isConfirmed: true,
+      value: "Violation rule",
     });
     await seedAdminSession(page);
 
