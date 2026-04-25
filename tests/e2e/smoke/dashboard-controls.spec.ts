@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  getClipboardWrites,
   installDashboardRoutes,
   installGlobalStubs,
 } from "../support/smoke-fixtures";
@@ -138,12 +139,10 @@ test.describe("smoke / dashboard controls", () => {
 
     const order2 = page.locator("#orders-list > div").filter({ hasText: "#ORD002" });
     await order2.getByRole("button", { name: "複製" }).click();
-    await expect.poll(() =>
-      page.evaluate(() => {
-        const writes = (window as any).__clipboardWrites || [];
-        return writes[writes.length - 1] || null;
-      })
-    ).toBe("TRK-002");
+    await expect.poll(async () => {
+      const writes = await getClipboardWrites(page);
+      return writes[writes.length - 1] || null;
+    }).toBe("TRK-002");
     await order2.getByRole("button", { name: "確認已收款" }).click();
     await expect(order2).toContainText("已付款");
 
