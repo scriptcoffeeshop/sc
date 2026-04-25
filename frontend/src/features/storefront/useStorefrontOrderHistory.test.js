@@ -191,6 +191,29 @@ describe("useStorefrontOrderHistory", () => {
     expect(shippedHomeDelivery.hasShippingInfo).toBe(true);
   });
 
+  it("uses the shared customer payment display by default", () => {
+    const item = buildOrderHistoryItem({
+      orderId: "LINEPAY-PENDING-001",
+      deliveryMethod: "delivery",
+      status: "pending",
+      city: "新竹市",
+      address: "測試路 1 號",
+      items: "測試豆 x1",
+      total: 220,
+      paymentMethod: "linepay",
+      paymentStatus: "pending",
+      paymentUrl: "https://pay.example/linepay/LINEPAY-PENDING-001",
+    });
+
+    expect(item.paymentDisplay).toMatchObject({
+      methodLabel: "LINE Pay",
+      statusLabel: "待付款",
+      canResumePayment: true,
+      resumePaymentLabel: "前往 LINE Pay 付款",
+    });
+    expect(item.paymentDisplay.guideDescription).not.toContain("我的訂單");
+  });
+
   it("shows login prompt when user opens my orders without authentication", async () => {
     const Swal = { fire: vi.fn(async () => ({ isConfirmed: false })) };
     const history = useStorefrontOrderHistory(createOrderHistoryDeps({

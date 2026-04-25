@@ -1,29 +1,16 @@
 import { computed, ref, type ComputedRef, type Ref } from "vue";
-import type { Order, ReceiptInfo, SessionUser } from "../../types/index";
+import type {
+  CustomerPaymentDisplay,
+  Order,
+  ReceiptInfo,
+  SessionUser,
+} from "../../types/index";
 import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
-
-type PaymentTone = "success" | "info" | "warning" | "danger" | "neutral";
-
-interface OrderHistoryPaymentDisplay {
-  paymentMethod: string;
-  paymentStatus: string;
-  methodLabel: string;
-  statusLabel: string;
-  paymentExpiresAtText: string;
-  paymentConfirmedAtText: string;
-  paymentLastCheckedAtText: string;
-  showPaymentDeadline: boolean;
-  badgeClass: string;
-  showBadge: boolean;
-  tone: PaymentTone;
-  guideTitle: string;
-  guideDescription: string;
-  actionLabel: string;
-  actionType: string;
-  paymentUrl: string;
-  canResumePayment: boolean;
-  resumePaymentLabel: string;
-}
+import {
+  formatDateTimeText,
+  getCustomerPaymentDisplay,
+  getPaymentToneClasses,
+} from "./storefrontPaymentDisplay.ts";
 
 export interface OrderHistoryItem {
   orderId: string;
@@ -38,7 +25,7 @@ export interface OrderHistoryItem {
   trackingNumber: string;
   trackingUrl: string;
   hasShippingInfo: boolean;
-  paymentDisplay: OrderHistoryPaymentDisplay & { toneClass: string };
+  paymentDisplay: CustomerPaymentDisplay & { toneClass: string };
   paymentStatus: string;
   paymentLastCheckedAtText: string;
   paymentConfirmedAtText: string;
@@ -71,7 +58,7 @@ interface OrderHistoryDeps {
   getCustomerPaymentDisplay?: (
     order: Order,
     options: { context: "orderHistory" },
-  ) => OrderHistoryPaymentDisplay;
+  ) => CustomerPaymentDisplay;
   formatDateTimeText?: (value: unknown) => string;
 }
 
@@ -151,49 +138,6 @@ function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   return { buyer, taxId, address, needDateStamp };
 }
 
-function getPaymentToneClasses(tone: PaymentTone) {
-  if (tone === "success") return "border-green-200 bg-green-50 text-green-900";
-  if (tone === "info") return "border-sky-200 bg-sky-50 text-sky-900";
-  if (tone === "warning") return "border-amber-200 bg-amber-50 text-amber-900";
-  if (tone === "danger") return "border-rose-200 bg-rose-50 text-rose-900";
-  return "border-slate-200 bg-slate-50 text-slate-900";
-}
-
-function formatDateTimeTextFallback(value: unknown) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toLocaleString("zh-TW");
-}
-
-function getCustomerPaymentDisplayFallback(order: Order): OrderHistoryPaymentDisplay {
-  const paymentMethod = String(order?.paymentMethod || "cod").trim() || "cod";
-  const paymentStatus = String(order?.paymentStatus || "").trim();
-  return {
-    paymentMethod,
-    paymentStatus,
-    methodLabel: paymentMethod,
-    statusLabel: paymentStatus,
-    paymentExpiresAtText: formatDateTimeTextFallback(order?.paymentExpiresAt),
-    paymentConfirmedAtText: formatDateTimeTextFallback(order?.paymentConfirmedAt),
-    paymentLastCheckedAtText: formatDateTimeTextFallback(
-      order?.paymentLastCheckedAt,
-    ),
-    showPaymentDeadline: Boolean(order?.paymentExpiresAt),
-    badgeClass: "",
-    showBadge: paymentMethod !== "cod",
-    tone: "neutral",
-    guideTitle: "付款方式",
-    guideDescription: "",
-    actionLabel: "",
-    actionType: "",
-    paymentUrl: String(order?.paymentUrl || "").trim(),
-    canResumePayment: false,
-    resumePaymentLabel: "",
-  };
-}
-
 export function buildOrderHistoryItem(
   order: Order,
   deps: Pick<
@@ -202,10 +146,10 @@ export function buildOrderHistoryItem(
   > = {},
 ): OrderHistoryItem {
   const paymentStatus = String(order.paymentStatus || "").trim();
-  const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
-    getCustomerPaymentDisplayFallback;
-  const formatDateTimeText = deps.formatDateTimeText || formatDateTimeTextFallback;
-  const paymentDisplay = getCustomerPaymentDisplay(order, {
+  const resolvePaymentDisplay = deps.getCustomerPaymentDisplay ||
+    getCustomerPaymentDisplay;
+  const resolveDateTimeText = deps.formatDateTimeText || formatDateTimeText;
+  const paymentDisplay = resolvePaymentDisplay(order, {
     context: "orderHistory",
   });
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
@@ -247,9 +191,9 @@ export function buildOrderHistoryItem(
       toneClass: getPaymentToneClasses(paymentDisplay.tone),
     },
     paymentStatus,
-    paymentLastCheckedAtText: formatDateTimeText(order.paymentLastCheckedAt),
-    paymentConfirmedAtText: formatDateTimeText(order.paymentConfirmedAt),
-    paymentExpiresAtText: formatDateTimeText(order.paymentExpiresAt),
+    paymentLastCheckedAtText: resolveDateTimeText(order.paymentLastCheckedAt),
+    paymentConfirmedAtText: resolveDateTimeText(order.paymentConfirmedAt),
+    paymentExpiresAtText: resolveDateTimeText(order.paymentExpiresAt),
   };
 }
 
@@ -263,10 +207,9 @@ export function useStorefrontOrderHistory(
   const getCurrentUser = deps.getCurrentUser || (() => null);
   const writeClipboard = deps.writeClipboard || ((text: string) =>
     globalThis.navigator?.clipboard?.writeText?.(text));
-  const getCustomerPaymentDisplay = deps.getCustomerPaymentDisplay ||
-    getCustomerPaymentDisplayFallback;
-  const formatDateTimeText = deps.formatDateTimeText ||
-    formatDateTimeTextFallback;
+  const resolvePaymentDisplay = deps.getCustomerPaymentDisplay ||
+    getCustomerPaymentDisplay;
+  const resolveDateTimeText = deps.formatDateTimeText || formatDateTimeText;
 
   const isOrderHistoryOpen = ref(false);
   const isLoadingOrderHistory = ref(false);
@@ -276,8 +219,8 @@ export function useStorefrontOrderHistory(
   const ordersView = computed(() =>
     rawOrders.value.map((order) =>
       buildOrderHistoryItem(order, {
-        getCustomerPaymentDisplay,
-        formatDateTimeText,
+        getCustomerPaymentDisplay: resolvePaymentDisplay,
+        formatDateTimeText: resolveDateTimeText,
       })
     )
   );
