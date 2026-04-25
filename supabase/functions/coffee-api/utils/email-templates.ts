@@ -2,22 +2,11 @@ import { sanitize } from "./html.ts";
 import { FRONTEND_URL } from "./config.ts";
 import { resolveEmailLogoUrl } from "./email-assets.ts";
 import { buildOrderDeliveryText } from "./order-delivery-display.ts";
+import {
+  getEmailDeliveryMethodLabel,
+  getEmailPaymentMethodLabel,
+} from "./order-labels.ts";
 import { getDefaultTrackingUrl, normalizeTrackingUrl } from "./tracking.ts";
-
-export const METHOD_MAP: Record<string, string> = {
-  delivery: "配送到府",
-  home_delivery: "全台宅配",
-  seven_eleven: "7-11 取貨/取貨付款",
-  family_mart: "全家取貨/取貨付款",
-  in_store: "來店自取",
-};
-
-export const PAYMENT_MAP: Record<string, string> = {
-  cod: "貨到付款",
-  linepay: "LINE Pay",
-  jkopay: "街口支付",
-  transfer: "銀行轉帳",
-};
 
 export interface OrderConfirmationParams {
   orderId: string;
@@ -129,7 +118,7 @@ function buildOrderStatusSummaryHtml(
     sanitize(params.orderId)
   }</p>
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-    METHOD_MAP[params.deliveryMethod] || "一般配送"
+    getEmailDeliveryMethodLabel(params.deliveryMethod)
   }<br><span style="color: #666; font-size: 14px;">${
     sanitize(params.deliveryText)
   }</span></p>
@@ -148,7 +137,7 @@ export function buildOrderConfirmationHtml(
 ): string {
   const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
   const deliveryText = buildOrderDeliveryText(params);
-  const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
+  const paymentText = getEmailPaymentMethodLabel(params.paymentMethod);
 
   let transferHtml = "";
   if (params.paymentMethod === "transfer") {
@@ -188,7 +177,10 @@ export function buildOrderConfirmationHtml(
       ${params.receiptHtml || ""}
       ${phoneHtml}
       <p style="margin: 0 0 10px 0;"><strong>配送方式：</strong> ${
-    sanitize(METHOD_MAP[params.deliveryMethod] || params.deliveryMethod)
+    sanitize(getEmailDeliveryMethodLabel(
+      params.deliveryMethod,
+      params.deliveryMethod,
+    ))
   }<br><span style="color: #666; font-size: 14px;">${
     sanitize(deliveryText)
   }</span></p>
@@ -270,7 +262,7 @@ export function buildShippingNotificationHtml(
   params: ShippingNotificationParams,
 ): string {
   const deliveryText = buildOrderDeliveryText(params);
-  const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
+  const paymentText = getEmailPaymentMethodLabel(params.paymentMethod);
   const paymentStatus = getPaymentStatusPresentation(
     params.paymentMethod,
     params.paymentStatus,
@@ -354,7 +346,7 @@ export function buildProcessingNotificationHtml(
 ): string {
   const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
   const deliveryText = buildOrderDeliveryText(params);
-  const paymentText = PAYMENT_MAP[params.paymentMethod] || params.paymentMethod;
+  const paymentText = getEmailPaymentMethodLabel(params.paymentMethod);
   const paymentStatus = getPaymentStatusPresentation(
     params.paymentMethod,
     params.paymentStatus,

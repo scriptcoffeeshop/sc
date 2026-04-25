@@ -1,4 +1,10 @@
 import { buildOrderDeliveryText } from "./order-delivery-display.ts";
+import {
+  getFlexDeliveryMethodLabel,
+  getFlexPaymentMethodLabel,
+  getOrderPaymentStatusLabel,
+  ORDER_STATUS_LABEL,
+} from "./order-labels.ts";
 import { normalizeTrackingUrl } from "./tracking.ts";
 
 interface ReceiptInfo {
@@ -30,40 +36,6 @@ export interface OrderFlexPayload {
   trackingUrl?: string;
   trackingNumber?: string;
 }
-
-const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending: "待處理",
-  processing: "處理中",
-  shipped: "已出貨",
-  completed: "已完成",
-  failed: "已失敗",
-  cancelled: "已取消",
-};
-
-const ORDER_METHOD_LABEL: Record<string, string> = {
-  delivery: "配送到府",
-  home_delivery: "全台宅配",
-  seven_eleven: "7-11",
-  family_mart: "全家",
-  in_store: "來店取貨",
-};
-
-const ORDER_PAY_METHOD_LABEL: Record<string, string> = {
-  cod: "貨到付款",
-  linepay: "LINE Pay",
-  jkopay: "街口支付",
-  transfer: "轉帳",
-};
-
-const ORDER_PAY_STATUS_LABEL: Record<string, string> = {
-  pending: "待付款",
-  processing: "付款確認中",
-  paid: "已付款",
-  failed: "付款失敗",
-  cancelled: "付款取消",
-  expired: "付款逾期",
-  refunded: "已退款",
-};
 
 const STATUS_COLOR_MAP: Record<string, string> = {
   pending: "#B58900",
@@ -137,13 +109,11 @@ export function buildOrderStatusLineFlexMessage(
   const nextStatus = String(order.status || "pending");
   const statusLabel = ORDER_STATUS_LABEL[nextStatus] || nextStatus;
   const statusColor = STATUS_COLOR_MAP[nextStatus] || "#586E75";
-  const deliveryLabel = ORDER_METHOD_LABEL[order.deliveryMethod] ||
-    order.deliveryMethod || "";
+  const deliveryLabel = getFlexDeliveryMethodLabel(order.deliveryMethod);
   const deliveryAddressText = buildOrderDeliveryText(order);
-  const paymentLabel = ORDER_PAY_METHOD_LABEL[order.paymentMethod || "cod"] ||
-    "貨到付款";
+  const paymentLabel = getFlexPaymentMethodLabel(order.paymentMethod);
   const paymentStatusStr = order.paymentStatus
-    ? ` (${ORDER_PAY_STATUS_LABEL[order.paymentStatus] || order.paymentStatus})`
+    ? ` (${getOrderPaymentStatusLabel(order.paymentStatus)})`
     : "";
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
   const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
