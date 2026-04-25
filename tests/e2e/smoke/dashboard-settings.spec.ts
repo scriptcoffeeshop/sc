@@ -162,6 +162,24 @@ test.describe("smoke / dashboard settings", () => {
     await page.goto("/dashboard.html");
     await page.locator("#tab-settings").click();
 
+    const brandingCard = page.locator("#branding-settings-card");
+    await expect(brandingCard.locator("#s-icon-url-display")).toHaveCount(0);
+    await expect(brandingCard.locator("#s-icon-preview")).toBeVisible();
+    await expect(brandingCard.getByText("點擊上傳新 Logo")).toBeVisible();
+    await expect(brandingCard.getByRole("button", { name: "移除" })).toBeVisible();
+    await expect.poll(async () => {
+      const logoBox = await brandingCard.locator("#s-icon-preview").boundingBox();
+      const uploadBox = await brandingCard.getByText("點擊上傳新 Logo").boundingBox();
+      const removeBox = await brandingCard.getByRole("button", { name: "移除" })
+        .boundingBox();
+      if (!logoBox || !uploadBox || !removeBox) return false;
+      const logoCenter = logoBox.y + logoBox.height / 2;
+      const uploadCenter = uploadBox.y + uploadBox.height / 2;
+      const removeCenter = removeBox.y + removeBox.height / 2;
+      return Math.abs(logoCenter - uploadCenter) <= 8 &&
+        Math.abs(logoCenter - removeCenter) <= 8;
+    }).toBe(true);
+
     await page.locator("#s-site-title").fill("新的品牌名稱");
     await page.locator("#s-site-subtitle").fill("新的副標題");
     await page.locator("#s-ann-enabled").check();
