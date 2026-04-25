@@ -1,15 +1,11 @@
-import { computed, nextTick, ref } from "vue";
+import { computed, createApp, nextTick, ref, type App } from "vue";
 import { asJsonRecord, parseJsonArray } from "../../lib/jsonUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
-import {
-  buildAddFieldModalHtml,
-  buildEditFieldModalHtml,
-  collectAddFieldFormValues,
-  collectEditFieldFormValues,
-  renderDeliveryVisibilityCheckboxes,
+import DashboardFormFieldDialogForm, {
   type DashboardDeliveryOptionLike,
+  type DashboardFormFieldDialogExpose,
   type DashboardFormFieldModalValues,
-} from "./dashboardFormFieldsDialog.ts";
+} from "./DashboardFormFieldDialogForm.vue";
 import {
   buildFormFieldViewModel,
   normalizeDeliveryVisibilityValue,
@@ -239,6 +235,58 @@ function normalizeModalValues(
   };
 }
 
+async function openFormFieldModal(params: {
+  title: string;
+  mode: "add" | "edit";
+  confirmButtonText: string;
+  validationMessage: string;
+  initialField?: DashboardFormField | null;
+}): Promise<DashboardFormFieldModalValues | undefined> {
+  const { Swal } = getServices();
+  const root = document.createElement("div");
+  const deliveryOptions = getDeliveryOptionsFromSettings();
+  let dialogApp: App<Element> | null = null;
+  let dialogRef: DashboardFormFieldDialogExpose | null = null;
+
+  const result = await Swal.fire({
+    title: params.title,
+    html: root,
+    focusConfirm: false,
+    showCancelButton: true,
+    confirmButtonText: params.confirmButtonText,
+    cancelButtonText: "取消",
+    confirmButtonColor: "#268BD2",
+    didOpen: (popup: unknown) => {
+      if (
+        !root.isConnected &&
+        popup &&
+        typeof (popup as { appendChild?: unknown }).appendChild === "function"
+      ) {
+        (popup as { appendChild: (node: Node) => void }).appendChild(root);
+      }
+      dialogApp = createApp(DashboardFormFieldDialogForm, {
+        mode: params.mode,
+        initialField: params.initialField || null,
+        deliveryOptions,
+      });
+      dialogRef = dialogApp.mount(root) as unknown as
+        DashboardFormFieldDialogExpose;
+    },
+    willClose: () => {
+      dialogApp?.unmount();
+      dialogApp = null;
+      dialogRef = null;
+    },
+    preConfirm: () =>
+      buildValidatedModalValues(
+        dialogRef?.getValues() || false,
+        params.validationMessage,
+      ),
+  }) as { value?: DashboardFormFieldModalValues };
+
+  return result?.value;
+}
+
 function showFormFieldsLoadingModal(title: string) {
   const { Swal } = getServices();
   Swal.fire({
@@ -280,29 +328,18 @@ async function runFormFieldMutation(params: {
 }
 
 async function showAddFieldModal() {
-  const { Swal } = getServices();
-  const result = await Swal.fire({
+  const value = await openFormFieldModal({
     title: "新增欄位",
-    html: buildAddFieldModalHtml(),
-    focusConfirm: false,
-    showCancelButton: true,
+    mode: "add",
     confirmButtonText: "新增",
-    cancelButtonText: "取消",
-    confirmButtonColor: "#268BD2",
-    didOpen: () =>
-      renderDeliveryVisibilityCheckboxes(getDeliveryOptionsFromSettings(), null),
-    preConfirm: () =>
-      buildValidatedModalValues(
-        collectAddFieldFormValues(),
-        "識別碼和名稱為必填",
-      ),
-  }) as { value?: DashboardFormFieldModalValues };
+    validationMessage: "識別碼和名稱為必填",
+  });
 
-  if (!result?.value) return;
+  if (!value) return;
 
   await runFormFieldMutation({
     action: "addFormField",
-    payload: normalizeModalValues(result.value),
+    payload: normalizeModalValues(value),
     successTitle: "欄位已新增",
     errorMessage: "欄位新增失敗",
     loadingTitle: "新增中...",
@@ -313,31 +350,21 @@ async function editFormField(id: number) {
   const field = getFormFieldById(id);
   if (!field) return;
 
-  const { Swal } = getServices();
-  const result = await Swal.fire({
+  const value = await openFormFieldModal({
     title: "編輯欄位",
-    html: buildEditFieldModalHtml(field),
-    focusConfirm: false,
-    showCancelButton: true,
+    mode: "edit",
+    initialField: field,
     confirmButtonText: "儲存",
-    cancelButtonText: "取消",
-    confirmButtonColor: "#268BD2",
-    didOpen: () =>
-      renderDeliveryVisibilityCheckboxes(
-        getDeliveryOptionsFromSettings(),
-        field.delivery_visibility || null,
-      ),
-    preConfirm: () =>
-      buildValidatedModalValues(collectEditFieldFormValues(), "名稱為必填"),
-  }) as { value?: DashboardFormFieldModalValues };
+    validationMessage: "名稱為必填",
+  });
 
-  if (!result?.value) return;
+  if (!value) return;
 
   await runFormFieldMutation({
     action: "updateFormField",
     payload: {
       id,
-      ...normalizeModalValues(result.value),
+      ...normalizeModalValues(value),
     },
     successTitle: "已更新",
     errorMessage: "欄位更新失敗",

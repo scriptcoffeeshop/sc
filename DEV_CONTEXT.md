@@ -59,7 +59,8 @@
   - dashboard users composable 已補上 users/blacklist/service 型別與 API normalize，會員列表、黑名單與權限操作不再依賴隱式 services/null 型別。
   - dashboard 訂單通知 controller 已補上 Email/Flex/notification deps 共用型別，Flex 歷史紀錄也改為 typed parse/write，不再吞掉 localStorage/clipboard 錯誤。
   - `frontend/src/**/*.vue` 已全面轉為 `<script setup lang="ts">`；共用 UI primitive、dashboard sections/settings/order/modals、storefront 顯示元件與 pages 都納入 Vue typecheck。
-- `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model、delivery visibility helper、modal HTML/表單值收集已拆到 `dashboardFormFieldsShared.ts` 與 `dashboardFormFieldsDialog.ts`
+- `formfields` 也開始收斂：`useDashboardFormFields.ts` 的 field view model 與資料正規化已拆到 `dashboardFormFieldsShared.ts`。
+- dashboard formfields 新增/編輯彈窗已改由 Vue `DashboardFormFieldDialogForm.vue` 掛載到 SweetAlert；原 `dashboardFormFieldsDialog.ts` HTML/DOM helper 已移除。
 - `products` 模組也開始收斂：`useDashboardProducts.ts` 的規格 clone、商品 view model/grouping、product form reset/fill、save payload 組裝已拆到 `dashboardProductsShared.ts`
   - `DashboardSettingsSection.vue` 已拆成設定頁組裝層，實際 UI 分散到 branding、section titles、storefront status、bank accounts 等卡片元件；取貨方式與付款對應、金流選項顯示已抽到獨立 `付款與取貨` 頁籤 (`DashboardCheckoutSettingsSection.vue`)
   - dashboard bank accounts 新增/編輯彈窗已改由 Vue `DashboardBankAccountForm.vue` 掛載到 SweetAlert；`useDashboardBankAccounts.ts` 不再拼 HTML 表單或透過 `dashboardFormControls` 讀欄位。

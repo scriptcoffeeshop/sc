@@ -11,6 +11,32 @@ async function loadFormFieldsModule() {
   return await import("./useDashboardFormFields.ts");
 }
 
+function mountSwalVueContent(options) {
+  expect(options.html).toBeInstanceOf(HTMLElement);
+  const popup = document.createElement("div");
+  document.body.appendChild(popup);
+  options.didOpen?.(popup);
+  return popup;
+}
+
+function setControlValue(id, value) {
+  const control = document.getElementById(id);
+  expect(control).toBeTruthy();
+  control.value = value;
+  control.dispatchEvent(
+    new Event(control instanceof HTMLSelectElement ? "change" : "input", {
+      bubbles: true,
+    }),
+  );
+}
+
+function setCheckboxChecked(selector, checked) {
+  const checkbox = document.querySelector(selector);
+  expect(checkbox).toBeInstanceOf(HTMLInputElement);
+  checkbox.checked = checked;
+  checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
 describe("useDashboardFormFields", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -122,16 +148,18 @@ describe("useDashboardFormFields", () => {
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "編輯欄位") {
-          return {
-            value: {
-              label: "收據類型",
-              fieldType: "select",
-              placeholder: "請選擇",
-              options: JSON.stringify(["二聯式", "三聯式"]),
-              required: true,
-              deliveryVisibility: JSON.stringify({ delivery: false }),
-            },
-          };
+          const popup = mountSwalVueContent(options);
+          expect(document.getElementById("swal-fl")?.value).toBe("收據");
+          setControlValue("swal-fl", "收據類型");
+          setControlValue("swal-ft", "select");
+          setControlValue("swal-fp", "請選擇");
+          setControlValue("swal-fo", "二聯式,三聯式");
+          setCheckboxChecked("#swal-fr", true);
+          setCheckboxChecked('[data-delivery-id="delivery"]', false);
+          const value = options.preConfirm();
+          options.willClose?.();
+          popup.remove();
+          return { value };
         }
         return {};
       }),
@@ -142,7 +170,11 @@ describe("useDashboardFormFields", () => {
       API_URL: "https://api.example",
       authFetch,
       getAuthUserId: () => "admin-user",
-      getDashboardSettings: () => ({ delivery_options_config: "[]" }),
+      getDashboardSettings: () => ({
+        delivery_options_config: JSON.stringify([
+          { id: "delivery", label: "宅配" },
+        ]),
+      }),
       Sortable: null,
       Swal,
       Toast,
@@ -193,19 +225,17 @@ describe("useDashboardFormFields", () => {
     const Swal = {
       fire: vi.fn(async (options) => {
         if (options?.title === "新增欄位") {
-          document.body.innerHTML = `
-            <input id="swal-fk" value="receipt_title">
-            <input id="swal-fl" value="收據抬頭">
-            <select id="swal-ft">
-              <option value="text" selected>文字</option>
-            </select>
-            <input id="swal-fp" value="請輸入收據抬頭">
-            <input id="swal-fo" value="">
-            <input id="swal-fr" type="checkbox" checked>
-            <div id="swal-dv"></div>
-          `;
-          options.didOpen?.();
-          return { value: options.preConfirm() };
+          const popup = mountSwalVueContent(options);
+          setControlValue("swal-fk", "receipt_title");
+          setControlValue("swal-fl", "收據抬頭");
+          setControlValue("swal-ft", "text");
+          setControlValue("swal-fp", "請輸入收據抬頭");
+          setControlValue("swal-fo", "");
+          setCheckboxChecked("#swal-fr", true);
+          const value = options.preConfirm();
+          options.willClose?.();
+          popup.remove();
+          return { value };
         }
         return {};
       }),
