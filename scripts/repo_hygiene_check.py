@@ -39,10 +39,8 @@ SOURCE_SUFFIXES = (
 )
 
 TEST_SOURCE_SUFFIXES = (
-    ".test.js",
     ".test.ts",
     ".test.tsx",
-    ".spec.js",
     ".spec.ts",
     ".spec.tsx",
 )
@@ -153,23 +151,19 @@ def find_anonymous_catch_violations(path: str) -> list[str]:
     ]
 
 
-def is_frontend_production_js(path: str) -> bool:
-    return (
-        path.startswith("frontend/src/")
-        and path.endswith(".js")
-        and not path.endswith(".test.js")
-    )
+def is_frontend_source_js(path: str) -> bool:
+    return path.startswith("frontend/src/") and path.endswith(".js")
 
 
 def find_frontend_js_violations(path: str) -> list[str]:
-    if not is_frontend_production_js(path):
+    if not is_frontend_source_js(path):
         return []
     if not Path(path).exists():
         return []
     if path in ALLOWED_FRONTEND_SOURCE_JS:
         return []
     return [
-        "禁止新增 frontend/src production JS，請改用 TypeScript；"
+        "禁止新增 frontend/src JS，請改用 TypeScript；"
         f"若是 vendor/data 邊界，需加入 allowlist：{path}"
     ]
 

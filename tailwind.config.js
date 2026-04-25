@@ -1,7 +1,7 @@
 module.exports = {
   content: [
     "./frontend/*.html",
-    "./frontend/src/**/*.{js,ts,vue}",
+    "./frontend/src/**/*.{ts,vue}",
   ],
   theme: {
     extend: {},

@@ -8,7 +8,7 @@
     "hygiene": "python3 scripts/repo_hygiene_check.py",
     "fmt": "cd supabase/functions/coffee-api && deno fmt .",
     "fmt:check": "cd supabase/functions/coffee-api && deno fmt --check .",
-    "lint:frontend": "eslint \"frontend/src/**/*.{js,ts,vue}\"",
+    "lint:frontend": "eslint \"frontend/src/**/*.{ts,vue}\"",
     "lint": "cd supabase/functions/coffee-api && deno lint .",
     "check": "cd supabase/functions/coffee-api && deno check index.ts",
     "test": "cd supabase/functions/coffee-api && JWT_SECRET=mock SUPABASE_URL=https://mock.supabase.co SUPABASE_SERVICE_ROLE_KEY=mock deno test --allow-env --allow-net --allow-read tests/",

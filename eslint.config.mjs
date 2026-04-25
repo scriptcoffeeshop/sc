@@ -12,7 +12,7 @@ export default [
     ],
   },
   {
-    files: ["frontend/src/**/*.{js,ts,vue}"],
+    files: ["frontend/src/**/*.{ts,vue}"],
     languageOptions: {
       parser: vueParser,
       parserOptions: {

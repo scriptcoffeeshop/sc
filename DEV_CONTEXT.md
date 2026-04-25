@@ -148,7 +148,7 @@
 - `repo_hygiene_check.py` 已禁止新增 frontend production JS；目前 `frontend/src/` 已無 production JS allowlist，entry、Swal wrapper、UI helper 與資料邊界皆已轉 TypeScript。
 - `repo_hygiene_check.py` 已禁止 production runtime 直接新增 `JSON.parse` 與匿名 `catch {}`；JSON 解析需集中在 frontend/backend json helper，catch 需具名以便後續補觀測。
 - Playwright `webServer` 已改成 `preview:e2e`，預設先 `npm run build` 再 `vite preview`，也不再自動重用既有 4173 server；若真的要重用既有 server，需顯式帶 `PLAYWRIGHT_REUSE_SERVER=1`。CI test job 會先 build frontend artifact，再以 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物，避免 dev-server only 問題與重複 build。
-- 2026-04-22 補的 `useDashboardOrders.test.js`、`useDashboardFormFields.test.js` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
+- 2026-04-22 補的 `useDashboardOrders.test.ts`、`useDashboardFormFields.test.ts` 需 DOM API，已明確標註 `@vitest-environment jsdom`，並把 `jsdom` 列入 devDependencies，避免 CI 只在 optional 依賴缺席時才炸掉。
 - 後端 routing/payment 測試已覆蓋 `submitOrder` mock DB 整合與回應檢查、錯誤商品不落單、金流偽造回呼不改單，以及非 admin 跨資源 CRUD 權限邊界。
 - `tests/e2e/smoke/` 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆分，並共用 `tests/e2e/support/smoke-fixtures.ts`；目前覆蓋：
   - 前台暖色樣式
@@ -235,8 +235,8 @@
 - `tests/e2e/support/smoke-fixtures.ts` 已改成相容 barrel export，實際實作拆到 `smoke-shared.ts`、`smoke-color.ts`、`smoke-global-stubs.ts`、`smoke-main-routes.ts`、`smoke-dashboard-routes.ts`，降低單檔回歸風險。
 - dashboard smoke route support 已再拆分：`smoke-dashboard-routes.ts` 現在只保留 dispatcher，實際 state/defaults 與 access/catalog/orders/members/settings handlers 分散到 `smoke-dashboard-state.ts`、`smoke-dashboard-access-routes.ts`、`smoke-dashboard-catalog-routes.ts`、`smoke-dashboard-orders-routes.ts`、`smoke-dashboard-members-routes.ts`、`smoke-dashboard-settings-routes.ts`。
 - storefront smoke route support 也已跟上：`smoke-main-routes.ts` 改成 dispatcher，default state/init payload/quote payload 抽到 `smoke-main-state.ts`，前後台 smoke support 結構已趨於一致。
-- storefront cart 熱區也開始收斂：新增 `storefrontCartSummary.ts` 集中 cart/quote 對齊、摘要金額、配送 badge/notice 與 delivery meta helper；`storefrontCartStore.ts` 與 `useStorefrontCart.ts` 已共用同一套摘要/配送判斷，並補 `storefrontCartSummary.test.js` 保護 quote 漂移 fallback、免運 badge 與配送名稱解析。
-- storefront cart DOM renderer 已再拆出 `storefrontCartUi.ts`：購物車品項列、總額 badge、運費提示與優惠明細 UI builder 不再混在 `storefrontCartStore.ts`，並新增 `storefrontCartUi.test.js` 保護 action dataset、文字安全渲染、運費/免運提示與空狀態隱藏。
+- storefront cart 熱區也開始收斂：新增 `storefrontCartSummary.ts` 集中 cart/quote 對齊、摘要金額、配送 badge/notice 與 delivery meta helper；`storefrontCartStore.ts` 與 `useStorefrontCart.ts` 已共用同一套摘要/配送判斷，並補 `storefrontCartSummary.test.ts` 保護 quote 漂移 fallback、免運 badge 與配送名稱解析。
+- storefront cart DOM renderer 已再拆出 `storefrontCartUi.ts`：購物車品項列、總額 badge、運費提示與優惠明細 UI builder 不再混在 `storefrontCartStore.ts`，並新增 `storefrontCartUi.test.ts` 保護 action dataset、文字安全渲染、運費/免運提示與空狀態隱藏。
 - 後台設定資訊架構已調整：取貨方式與付款對應設定、金流選項顯示設定從 `系統設定` 抽到獨立 `付款與取貨` 頁籤，仍共用 `useDashboardSettings.ts` / `saveSettings()`；dashboard settings smoke 已覆蓋新頁籤可載入、增刪取貨方式、儲存 delivery/payment config 與 LINE Pay sandbox。
 - `付款與取貨` 頁籤的取貨方式與付款對應設定已從寬表格改成可排序卡片式清單，付款方式以網格勾選呈現，不再需要左右捲動才能檢視；取貨說明欄改為可換行 textarea，smoke 已在 390px 寬度驗證清單不產生水平捲動並保護多行說明儲存。
 - 後台品牌、取貨方式、付款選項的文字備援圖示欄位已移除；設定 payload 只保留 `*_icon_url` 與預設圖片，並新增 migration 刪除 `site_icon_emoji` 公開設定。取貨方式卡片比例同步調整為左側資料較緊湊、右側付款規則較寬。
@@ -288,7 +288,7 @@
 - 修正前台配送卡片未同步後台設定文案：`storefrontUiSnapshot.ts` 現在改讀 `storefrontRuntime.appSettings/currentDeliveryConfig`，不再依賴已移除的 `window.appSettings/currentDeliveryConfig`；並新增 snapshot unit test 保護後台配送名稱/說明同步。
 - 消費者通知已新增付款中狀態 guard：所有支付只要 `payment_status=processing`，自動付款狀態通知、後台手動 LINE Flex 與後台手動 Email 都會略過，不再把「付款確認中」通知發給消費者；店家 LINE 訂單通知不受影響。
 - P2 legacy JS 殘留續清：`js/icons.js` 已搬到 `frontend/src/lib/icons.ts`，`js/storefront-models.js` 已搬到 `frontend/src/features/storefront/storefrontModels.ts`，後台訂單通知/狀態控制模組已搬到 `frontend/src/features/dashboard/dashboardOrder*.ts`，`settings-shared.js` 已搬到 `dashboardSettingsShared.ts`。
-- `package-lock.json` 已從 `.gitignore` 移除並納入追蹤，Tailwind `content` 掃描也收斂為 `frontend/*.html` 與 `frontend/src/**/*.{js,ts,vue}`，不再掃 legacy `js/` 或根目錄 redirect stub。
+- `package-lock.json` 已從 `.gitignore` 移除並納入追蹤，Tailwind `content` 掃描也收斂為 `frontend/*.html` 與 `frontend/src/**/*.{ts,vue}`，不再掃 legacy `js/` 或根目錄 redirect stub。
 
 ### 2026-04-22
 

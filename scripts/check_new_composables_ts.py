@@ -22,9 +22,6 @@ def main() -> int:
 
     violations: list[str] = []
     for path in sorted(FEATURES_DIR.rglob("use*.js")):
-        if path.name.endswith(".test.js"):
-            continue
-
         relative_path = path.relative_to(ROOT).as_posix()
         if relative_path in LEGACY_JS_COMPOSABLE_ALLOWLIST:
             continue
