@@ -98,10 +98,11 @@
       <div class="mb-6">
         <label class="flex items-start gap-2 cursor-pointer select-none">
           <input
-            v-model="receiptRequested"
             type="checkbox"
             id="receipt-request"
             class="mt-1 w-4 h-4 rounded accent-[#3C2415] shrink-0"
+            :checked="receiptRequested"
+            @change="handleReceiptRequestedInput"
           >
           <span class="text-sm text-gray-700">我要索取免用統一發票收據</span>
         </label>
@@ -120,6 +121,8 @@
               maxlength="8"
               pattern="\d{8}"
               inputmode="numeric"
+              :value="receiptTaxId"
+              @input="handleReceiptTextInput('taxId', $event)"
             >
           </div>
           <div>
@@ -129,6 +132,8 @@
               type="text"
               class="input-field"
               placeholder="請輸入買受人名稱"
+              :value="receiptBuyer"
+              @input="handleReceiptTextInput('buyer', $event)"
             >
           </div>
           <div>
@@ -138,6 +143,8 @@
               type="text"
               class="input-field"
               placeholder="請輸入收據地址"
+              :value="receiptAddress"
+              @input="handleReceiptTextInput('address', $event)"
             >
           </div>
           <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -145,6 +152,8 @@
               id="receipt-date-stamp"
               type="checkbox"
               class="w-4 h-4 rounded accent-[#3C2415] shrink-0"
+              :checked="receiptNeedDateStamp"
+              @change="handleReceiptDateStampInput"
             >
             <span class="text-sm text-gray-700">是否需要壓印日期</span>
           </label>
@@ -417,6 +426,15 @@ const {
 } = useStorefrontOrderFormState();
 const {
   receiptRequested,
+  receiptBuyer,
+  receiptTaxId,
+  receiptAddress,
+  receiptNeedDateStamp,
+  updateReceiptRequested,
+  updateReceiptBuyer,
+  updateReceiptTaxId,
+  updateReceiptAddress,
+  updateReceiptNeedDateStamp,
   handleReceiptRequestUpdated,
 } = useStorefrontReceiptRequest();
 const {
@@ -468,6 +486,31 @@ function handlePolicyHintEvent(event: Event) {
   handlePolicyHintUpdated(event);
   const detail = (event as StorefrontPolicyHintEvent).detail || {};
   if (detail.visible) policyCheckboxEl.value?.focus();
+}
+
+function getInputTargetValue(event: Event) {
+  const target = event.target instanceof HTMLInputElement ? event.target : null;
+  return target?.value || "";
+}
+
+function handleReceiptRequestedInput(event: Event) {
+  const target = event.target instanceof HTMLInputElement ? event.target : null;
+  updateReceiptRequested(Boolean(target?.checked));
+}
+
+function handleReceiptTextInput(
+  field: "buyer" | "taxId" | "address",
+  event: Event,
+) {
+  const value = getInputTargetValue(event);
+  if (field === "buyer") updateReceiptBuyer(value);
+  else if (field === "taxId") updateReceiptTaxId(value);
+  else updateReceiptAddress(value);
+}
+
+function handleReceiptDateStampInput(event: Event) {
+  const target = event.target instanceof HTMLInputElement ? event.target : null;
+  updateReceiptNeedDateStamp(Boolean(target?.checked));
 }
 
 watch(isCartDrawerOpen, (open) => {

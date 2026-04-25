@@ -192,6 +192,7 @@
 - storefront 動態欄位值已改由 Vue 狀態收集：`StorefrontDynamicFields.vue` emit 欄位值、`storefrontDynamicFieldValues.ts` 保存可提交狀態，`storefrontFormRenderer.ts` 不再查詢 `field-*` DOM。
 - storefront 新竹配送地址已改由 Vue 狀態管理：`storefrontDeliveryFormState.ts` 保存縣市/區域/詳細地址，`StorefrontDeliverySection.vue` 依狀態產生區域選項，送單不再讀取 `delivery-city`/`delivery-district` DOM。
 - storefront 全台宅配地址已改由 Vue 狀態管理：使用既有 `taiwanCityData` 產生縣市/區域/郵遞區號，移除前台 `tw-city-selector` 初始化與 `.county/.district/.zipcode` DOM 查詢。
+- storefront 收據表單值已改由 Vue 狀態管理：`storefrontReceiptFormState.ts` 保存索取狀態、統編、買受人、地址與壓印日期，`storefrontOrderReceiptPrefs.ts` 不再讀寫 `receipt-*` DOM。
 
 ### 2026-04-24
 
