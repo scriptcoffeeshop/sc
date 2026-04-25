@@ -1,8 +1,9 @@
+import { createApp, type App } from "vue";
 import { authFetch, loginWithLine } from "../../lib/auth.ts";
 import { API_URL, LINE_REDIRECT } from "../../lib/appConfig.ts";
 import { state } from "../../lib/appState.ts";
 import { parseJsonArray, parseJsonRecord } from "../../lib/jsonUtils.ts";
-import { escapeHtml, isValidEmail, Toast } from "../../lib/sharedUtils.ts";
+import { isValidEmail, Toast } from "../../lib/sharedUtils.ts";
 import type { SessionUser } from "../../types/session";
 import {
   closeDialog,
@@ -19,8 +20,15 @@ import {
   buildInitialDynamicFieldValues,
   emitStorefrontDynamicFieldValuesUpdated,
 } from "./storefrontDynamicFieldValues.ts";
+import StorefrontProfileForm, {
+  type StorefrontProfileFieldView,
+  type StorefrontProfileFormValues,
+} from "./StorefrontProfileForm.vue";
 
 type StringRecord = Record<string, unknown>;
+type StorefrontProfileFormExpose = {
+  getValues: () => StorefrontProfileFormValues;
+};
 
 function parseStringRecord(value: unknown): StringRecord {
   return parseJsonRecord(value);
@@ -31,10 +39,62 @@ function parseStringArray(value: unknown): string[] {
 }
 
 type StorefrontMainAppAuthDeps = {
-  getFormControlValue: (id: string) => string;
   getErrorMessage: (error: unknown, fallback?: string) => string;
   updateFormState: () => void;
 };
+
+export function buildProfileFormFields(
+  fields: Array<Record<string, unknown>>,
+  user: SessionUser,
+): {
+  fields: StorefrontProfileFieldView[];
+  values: StorefrontProfileFormValues;
+} {
+  const customDefaults = parseStringRecord(user.defaultCustomFields);
+  const profileFields: StorefrontProfileFieldView[] = [];
+  const values: StorefrontProfileFormValues = {};
+
+  for (const field of fields) {
+    const key = String(field.field_key || "");
+    if (!key) continue;
+    let currentValue = "";
+    if (key === "phone") currentValue = String(user.phone || "");
+    else if (key === "email") currentValue = String(user.email || "");
+    else currentValue = String(customDefaults[key] || "");
+
+    profileFields.push({
+      key,
+      label: String(field.label || ""),
+      placeholder: String(field.placeholder || ""),
+      type: String(field.field_type || "text"),
+      options: field.field_type === "select"
+        ? parseStringArray(field.options)
+        : [],
+    });
+    values[key] = currentValue;
+  }
+
+  return { fields: profileFields, values };
+}
+
+export function buildProfileUpdatePayload(
+  fields: Array<Record<string, unknown>>,
+  values: StorefrontProfileFormValues,
+): StringRecord {
+  const profileData: StringRecord = {};
+  const customFieldsData: StringRecord = {};
+
+  for (const field of fields) {
+    const key = String(field.field_key || "");
+    if (!key) continue;
+    const value = String(values[key] || "");
+    if (key === "phone") profileData.phone = value;
+    else if (key === "email") profileData.email = value;
+    else if (value) customFieldsData[key] = value;
+  }
+  profileData.defaultCustomFields = JSON.stringify(customFieldsData);
+  return profileData;
+}
 
 export function createStorefrontMainAppAuth(
   deps: StorefrontMainAppAuthDeps,
@@ -126,58 +186,15 @@ export function createStorefrontMainAppAuth(
     const fields = (state.formFields || []).filter((field) =>
       field.enabled && field.field_type !== "section_title"
     );
-
-    const customDefaults = parseStringRecord(user.defaultCustomFields);
-
-    let fieldsHtml = "";
-    for (const field of fields) {
-      const key = field.field_key || "";
-      let currentVal = "";
-      if (key === "phone") currentVal = String(user.phone || "");
-      else if (key === "email") currentVal = String(user.email || "");
-      else currentVal = String(customDefaults[key] || "");
-
-      const escapedVal = escapeHtml(currentVal);
-      const escapedLabel = escapeHtml(field.label || "");
-      const escapedPlaceholder = escapeHtml(field.placeholder || "");
-
-      if (field.field_type === "select") {
-        const options = parseStringArray(field.options);
-        fieldsHtml += `<div style="margin-bottom:12px">
-                <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
-                <select id="profile-${key}" class="swal2-select" style="margin:0;width:100%">
-                    <option value="">-- 請選擇 --</option>
-                    ${
-          options.map((option) =>
-            `<option value="${escapeHtml(option)}" ${
-              option === currentVal ? "selected" : ""
-            }>${escapeHtml(option)}</option>`
-          ).join("")
-        }
-                </select>
-            </div>`;
-      } else if (field.field_type === "textarea") {
-        fieldsHtml += `<div style="margin-bottom:12px">
-                <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
-                <textarea id="profile-${key}" class="swal2-textarea" placeholder="${escapedPlaceholder}" style="margin:0;width:100%;min-height:60px">${escapedVal}</textarea>
-            </div>`;
-      } else {
-        fieldsHtml += `<div style="margin-bottom:12px">
-                <label style="display:block;font-weight:600;margin-bottom:4px;color:#3C2415;font-size:14px">${escapedLabel}</label>
-                <input id="profile-${key}" type="${
-          field.field_type || "text"
-        }" class="swal2-input" value="${escapedVal}" placeholder="${escapedPlaceholder}" style="margin:0;width:100%">
-            </div>`;
-      }
-    }
+    const profileForm = buildProfileFormFields(fields, user);
+    const root = document.createElement("div");
+    let profileFormApp: App<Element> | null = null;
+    let profileFormRef: StorefrontProfileFormExpose | null = null;
+    let latestProfileValues = { ...profileForm.values };
 
     const { value: confirmed } = await showDialog({
       title: "會員資料",
-      html:
-        `<div style="text-align:left;max-height:60vh;overflow-y:auto;padding:4px">
-            <p style="color:#888;font-size:13px;margin-bottom:16px">編輯常用資料，下次登入時將自動帶入表單。</p>
-            ${fieldsHtml}
-        </div>`,
+      html: root,
       showCancelButton: true,
       confirmButtonText: "儲存",
       cancelButtonText: "取消",
@@ -185,8 +202,30 @@ export function createStorefrontMainAppAuth(
       customClass: {
         popup: "storefront-profile-popup",
       },
+      didOpen: (popup: unknown) => {
+        if (
+          !root.isConnected &&
+          popup &&
+          typeof (popup as { appendChild?: unknown }).appendChild === "function"
+        ) {
+          (popup as { appendChild: (node: Node) => void }).appendChild(root);
+        }
+        profileFormApp = createApp(StorefrontProfileForm, {
+          fields: profileForm.fields,
+          initialValues: profileForm.values,
+        });
+        profileFormRef = profileFormApp.mount(root) as unknown as
+          StorefrontProfileFormExpose;
+      },
+      willClose: () => {
+        profileFormApp?.unmount();
+        profileFormApp = null;
+        profileFormRef = null;
+      },
       preConfirm: () => {
-        const email = deps.getFormControlValue("profile-email");
+        const values = profileFormRef?.getValues() || profileForm.values;
+        latestProfileValues = { ...values };
+        const email = String(values.email || "");
         if (email && !isValidEmail(email)) {
           showValidationMessage("請填寫正確的電子郵件格式");
           return false;
@@ -197,16 +236,10 @@ export function createStorefrontMainAppAuth(
 
     if (!confirmed) return;
 
-    const profileData: StringRecord = {};
-    const customFieldsData: StringRecord = {};
-    for (const field of fields) {
-      const key = field.field_key || "";
-      const value = deps.getFormControlValue(`profile-${key}`);
-      if (key === "phone") profileData.phone = value;
-      else if (key === "email") profileData.email = value;
-      else if (value) customFieldsData[key] = value;
-    }
-    profileData.defaultCustomFields = JSON.stringify(customFieldsData);
+    const profileData = buildProfileUpdatePayload(
+      fields,
+      latestProfileValues,
+    );
 
     try {
       showLoading("儲存中...");

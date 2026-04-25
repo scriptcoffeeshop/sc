@@ -89,6 +89,7 @@
 - storefront CustomEvent 名稱與 add/remove listener 已集中到 `storefrontEventBus.ts`；`MainPage.vue` 以 unsubscribe 清單管理事件橋，避免事件名稱散落與 teardown 對照錯誤。
 - storefront 門市搜尋 SweetAlert 已改直接傳入 `HTMLElement` 掛載 Vue picker，不再用字串 HTML + `document.getElementById` 查找掛載點。
 - storefront 品牌 normalization 與 document/localStorage 副作用已拆開；favicon/title/cache 更新集中在 `storefrontBrandingSideEffects.ts` 並有 jsdom 測試。
+- storefront 會員資料彈窗已改由 Vue `StorefrontProfileForm.vue` 掛載到 SweetAlert；`storefrontMainAppAuth.ts` 不再拼接 profile form HTML 或用 `document.getElementById` 讀欄位。
 - storefront 門市搜尋與已選門市 DOM 操作已從 `storefrontDeliveryActions.ts` 拆到 `storefrontStoreSearch.ts`；delivery actions 只保留配送切換、地圖 session、門市 token 回填與偏好載入，原入口以 re-export 維持相容。
 - storefront 送單配送資訊已改讀 Vue 狀態（新竹配送、全台宅配、已選超商門市）；不再透過隱藏 input 讀配送資料。原 `storefrontDeliveryDom.ts` 已拆成純資料 helper `storefrontDeliveryData.ts` 與 SweetAlert 會員資料彈窗邊界 `storefrontModalFormControls.ts`。
 - storefront 錯誤訊息 fallback 已集中到 `storefrontErrors.ts`；主入口、門市搜尋與我的訂單載入不再各自判斷 unknown error。

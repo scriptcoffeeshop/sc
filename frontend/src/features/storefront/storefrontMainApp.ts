@@ -7,9 +7,6 @@ import {
   checkStoreToken,
   loadDeliveryPrefs,
 } from "./storefrontDeliveryActions.ts";
-import {
-  getModalFormControlValue,
-} from "./storefrontModalFormControls.ts";
 import { getStorefrontErrorMessage } from "./storefrontErrors.ts";
 import {
   applySavedOrderFormPrefs,
@@ -24,7 +21,6 @@ import type { StorefrontDeliveryOption } from "./storefrontModels.ts";
 let paymentActions: ReturnType<typeof createStorefrontMainAppPayments>;
 
 const authActions = createStorefrontMainAppAuth({
-  getFormControlValue: getModalFormControlValue,
   getErrorMessage: getStorefrontErrorMessage,
   updateFormState: () => paymentActions.updateFormState(),
 });
