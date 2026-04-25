@@ -1,5 +1,6 @@
 import { parseJsonRecord } from "../../lib/jsonUtils.ts";
 import type { SessionUser } from "../../types/session";
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
 import type { StorefrontDynamicField } from "./useStorefrontDynamicFields";
 
 export type StorefrontDynamicFieldValues = Record<string, string>;
@@ -67,9 +68,6 @@ export function emitStorefrontDynamicFieldValuesUpdated(
   values: StorefrontDynamicFieldValues,
 ) {
   const detail = replaceStorefrontDynamicFieldValues(values);
-  if (typeof window === "undefined") return detail;
-  window.dispatchEvent(
-    new CustomEvent("coffee:dynamic-field-values-updated", { detail }),
-  );
+  emitStorefrontEvent(STOREFRONT_EVENTS.dynamicFieldValuesUpdated, detail);
   return detail;
 }

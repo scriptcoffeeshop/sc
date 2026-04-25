@@ -9,6 +9,7 @@ import {
   calcCartSummaryFromState,
   getDeliveryMeta as getStorefrontDeliveryMeta,
 } from "./storefrontCartSummary.ts";
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 
 /** 購物車陣列 [{productId, productName, specKey, specLabel, qty, unitPrice}] */
@@ -53,11 +54,7 @@ function emitCartUpdated(summary) {
     ...getDeliveryMeta(),
     shippingConfig: getShippingConfig(),
   };
-  window.dispatchEvent(
-    new CustomEvent("coffee:cart-updated", {
-      detail,
-    }),
-  );
+  emitStorefrontEvent(STOREFRONT_EVENTS.cartUpdated, detail);
 }
 
 /** 供 Vue 元件讀取目前購物車快照 */

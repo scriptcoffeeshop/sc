@@ -1,3 +1,5 @@
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
+
 export interface StorefrontSelectedStore {
   storeId: string;
   storeName: string;
@@ -13,11 +15,9 @@ const emptySelectedStore: StorefrontSelectedStore = {
 let selectedStore: StorefrontSelectedStore = { ...emptySelectedStore };
 
 function emitSelectedStoreUpdated() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("coffee:store-selected-updated", {
-      detail: getStorefrontSelectedStore(),
-    }),
+  emitStorefrontEvent(
+    STOREFRONT_EVENTS.selectedStoreUpdated,
+    getStorefrontSelectedStore(),
   );
 }
 

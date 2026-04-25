@@ -1,3 +1,5 @@
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
+
 export interface StorefrontOrderFormState {
   policyAgreed: boolean;
   orderNote: string;
@@ -43,8 +45,5 @@ export function emitStorefrontOrderFormStateUpdated(
   patch: StorefrontOrderFormStatePatch,
 ): void {
   const detail = setStorefrontOrderFormState(patch);
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("coffee:order-form-state-updated", { detail }),
-  );
+  emitStorefrontEvent(STOREFRONT_EVENTS.orderFormStateUpdated, detail);
 }

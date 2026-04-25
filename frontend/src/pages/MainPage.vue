@@ -293,10 +293,15 @@ import {
 import { state } from "../lib/appState.ts";
 import { Toast } from "../lib/sharedUtils.ts";
 import { setStorefrontOrderFormState } from "../features/storefront/storefrontOrderFormState.ts";
+import {
+  onStorefrontEvent,
+  STOREFRONT_EVENTS,
+} from "../features/storefront/storefrontEventBus.ts";
 
 const originalBodyClass = document.body.className;
 const originalBodyOverflow = document.body.style.overflow;
 const policyCheckboxEl = ref<HTMLInputElement | null>(null);
+let unsubscribeStorefrontEvents: Array<() => void> = [];
 const {
   isOrderHistoryOpen,
   orderHistoryError,
@@ -535,36 +540,38 @@ async function handleShowProfile() {
 onMounted(() => {
   document.body.className = "p-4 md:p-6";
 
-  window.addEventListener("coffee:cart-updated", handleCartUpdated);
-  window.addEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
-  window.addEventListener(
-    "coffee:policy-agree-hint-updated",
-    handlePolicyHintEvent,
-  );
-  window.addEventListener(
-    "coffee:receipt-request-updated",
-    handleReceiptRequestUpdated,
-  );
-  window.addEventListener(
-    "coffee:storefront-load-error-updated",
-    handleLoadErrorUpdated,
-  );
-  window.addEventListener(
-    "coffee:order-form-state-updated",
-    handleOrderFormStateUpdated,
-  );
-  window.addEventListener(
-    "coffee:dynamic-field-values-updated",
-    handleDynamicFieldValuesUpdated,
-  );
-  window.addEventListener(
-    "coffee:local-delivery-address-updated",
-    handleLocalDeliveryAddressUpdated,
-  );
-  window.addEventListener(
-    "coffee:home-delivery-address-updated",
-    handleHomeDeliveryAddressUpdated,
-  );
+  unsubscribeStorefrontEvents = [
+    onStorefrontEvent(STOREFRONT_EVENTS.cartUpdated, handleCartUpdated),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.selectedStoreUpdated,
+      handleSelectedStoreUpdated,
+    ),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.policyAgreeHintUpdated,
+      handlePolicyHintEvent,
+    ),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.receiptRequestUpdated,
+      handleReceiptRequestUpdated,
+    ),
+    onStorefrontEvent(STOREFRONT_EVENTS.loadErrorUpdated, handleLoadErrorUpdated),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.orderFormStateUpdated,
+      handleOrderFormStateUpdated,
+    ),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.dynamicFieldValuesUpdated,
+      handleDynamicFieldValuesUpdated,
+    ),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.localDeliveryAddressUpdated,
+      handleLocalDeliveryAddressUpdated,
+    ),
+    onStorefrontEvent(
+      STOREFRONT_EVENTS.homeDeliveryAddressUpdated,
+      handleHomeDeliveryAddressUpdated,
+    ),
+  ];
 
   syncCartSnapshot();
 
@@ -574,36 +581,8 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener("coffee:cart-updated", handleCartUpdated);
-  window.removeEventListener("coffee:store-selected-updated", handleSelectedStoreUpdated);
-  window.removeEventListener(
-    "coffee:policy-agree-hint-updated",
-    handlePolicyHintEvent,
-  );
-  window.removeEventListener(
-    "coffee:receipt-request-updated",
-    handleReceiptRequestUpdated,
-  );
-  window.removeEventListener(
-    "coffee:storefront-load-error-updated",
-    handleLoadErrorUpdated,
-  );
-  window.removeEventListener(
-    "coffee:order-form-state-updated",
-    handleOrderFormStateUpdated,
-  );
-  window.removeEventListener(
-    "coffee:dynamic-field-values-updated",
-    handleDynamicFieldValuesUpdated,
-  );
-  window.removeEventListener(
-    "coffee:local-delivery-address-updated",
-    handleLocalDeliveryAddressUpdated,
-  );
-  window.removeEventListener(
-    "coffee:home-delivery-address-updated",
-    handleHomeDeliveryAddressUpdated,
-  );
+  unsubscribeStorefrontEvents.forEach((unsubscribe) => unsubscribe());
+  unsubscribeStorefrontEvents = [];
   document.body.className = originalBodyClass;
   document.body.style.overflow = originalBodyOverflow;
 });

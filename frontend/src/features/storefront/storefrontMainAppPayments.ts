@@ -6,6 +6,7 @@ import {
   type StorefrontDeliveryOption,
 } from "./storefrontModels.ts";
 import { selectStorefrontBankAccount } from "./storefrontBankAccountsState.ts";
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
 import { createStorefrontQuoteManager } from "./storefrontQuoteManager.ts";
 import {
   setStorefrontAvailablePaymentMethods,
@@ -20,12 +21,7 @@ type StorefrontMainAppPaymentsDeps = {
 };
 
 function dispatchStorefrontLoadError(errorText: string) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("coffee:storefront-load-error-updated", {
-      detail: { errorText },
-    }),
-  );
+  emitStorefrontEvent(STOREFRONT_EVENTS.loadErrorUpdated, { errorText });
 }
 
 export function createStorefrontMainAppPayments(

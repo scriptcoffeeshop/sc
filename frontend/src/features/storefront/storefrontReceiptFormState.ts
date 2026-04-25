@@ -1,3 +1,5 @@
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
+
 export interface StorefrontReceiptFormState {
   requested: boolean;
   buyer: string;
@@ -46,9 +48,6 @@ export function emitStorefrontReceiptFormStateUpdated(
   patch: StorefrontReceiptFormStatePatch,
 ) {
   const detail = setStorefrontReceiptFormState(patch);
-  if (typeof window === "undefined") return detail;
-  window.dispatchEvent(
-    new CustomEvent("coffee:receipt-request-updated", { detail }),
-  );
+  emitStorefrontEvent(STOREFRONT_EVENTS.receiptRequestUpdated, detail);
   return detail;
 }

@@ -1,3 +1,5 @@
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
+
 export interface StorefrontLocalDeliveryAddress {
   city: string;
   district: string;
@@ -58,9 +60,9 @@ export function emitStorefrontLocalDeliveryAddressUpdated(
   patch: StorefrontLocalDeliveryAddressPatch,
 ) {
   const detail = setStorefrontLocalDeliveryAddress(patch);
-  if (typeof window === "undefined") return detail;
-  window.dispatchEvent(
-    new CustomEvent("coffee:local-delivery-address-updated", { detail }),
+  emitStorefrontEvent(
+    STOREFRONT_EVENTS.localDeliveryAddressUpdated,
+    detail,
   );
   return detail;
 }
@@ -91,9 +93,9 @@ export function emitStorefrontHomeDeliveryAddressUpdated(
   patch: StorefrontHomeDeliveryAddressPatch,
 ) {
   const detail = setStorefrontHomeDeliveryAddress(patch);
-  if (typeof window === "undefined") return detail;
-  window.dispatchEvent(
-    new CustomEvent("coffee:home-delivery-address-updated", { detail }),
+  emitStorefrontEvent(
+    STOREFRONT_EVENTS.homeDeliveryAddressUpdated,
+    detail,
   );
   return detail;
 }

@@ -20,6 +20,7 @@ import {
   emitStorefrontOrderFormStateUpdated,
   getStorefrontOrderFormState,
 } from "./storefrontOrderFormState.ts";
+import { emitStorefrontEvent, STOREFRONT_EVENTS } from "./storefrontEventBus.ts";
 import { buildPaymentLaunchDialogOptions } from "./storefrontPaymentDisplay.ts";
 import { storefrontRuntime } from "./storefrontRuntime.ts";
 import {
@@ -137,12 +138,7 @@ function resetOrderDraft() {
 }
 
 function setPolicyAgreeHintVisible(visible: boolean) {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(
-    new CustomEvent("coffee:policy-agree-hint-updated", {
-      detail: { visible },
-    }),
-  );
+  emitStorefrontEvent(STOREFRONT_EVENTS.policyAgreeHintUpdated, { visible });
 }
 
 /** 送出訂單 */
