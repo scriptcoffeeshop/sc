@@ -73,15 +73,21 @@ export async function openStoreSearchModal(): Promise<void> {
   }
 
   let searchPickerApp: App<Element> | null = null;
+  const root = document.createElement("div");
   await Swal.fire({
     title: "搜尋門市",
-    html: '<div id="store-search-vue-root"></div>',
+    html: root,
     showConfirmButton: false,
     showCloseButton: true,
     width: 480,
-    didOpen: () => {
-      const root = document.getElementById("store-search-vue-root");
-      if (!root) return;
+    didOpen: (popup) => {
+      if (
+        !root.isConnected &&
+        popup &&
+        typeof popup.appendChild === "function"
+      ) {
+        popup.appendChild(root);
+      }
       searchPickerApp = createApp(StorefrontStoreSearchPicker, {
         stores: allStores,
         onSelectStore: (store: StoreRecord) => {
