@@ -1,11 +1,12 @@
 import { supabase } from "../utils/supabase.ts";
 import { requireAdmin } from "../utils/auth.ts";
+import type { JsonRecord } from "../utils/json.ts";
 
 export async function getProducts() {
   const { data, error } = await supabase.from("coffee_products").select("*")
     .order("sort_order", { ascending: true });
   if (error) return { success: false, error: error.message };
-  const products = (data || []).map((r: Record<string, unknown>) => ({
+  const products = (data || []).map((r: JsonRecord) => ({
     id: r.id,
     category: r.category,
     name: r.name,
@@ -22,7 +23,7 @@ export async function getProducts() {
   return { success: true, products };
 }
 
-export async function addProduct(data: Record<string, unknown>, req: Request) {
+export async function addProduct(data: JsonRecord, req: Request) {
   await requireAdmin(req);
   const { data: ins, error } = await supabase.from("coffee_products").insert({
     category: data.category,
@@ -41,7 +42,7 @@ export async function addProduct(data: Record<string, unknown>, req: Request) {
 }
 
 export async function updateProduct(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -62,7 +63,7 @@ export async function updateProduct(
 }
 
 export async function deleteProduct(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -75,7 +76,7 @@ export async function deleteProduct(
 }
 
 export async function reorderProduct(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -83,17 +84,17 @@ export async function reorderProduct(
     .select("*").order("sort_order").order("id");
   if (error || !allProds) return { success: false, error: "讀取失敗" };
 
-  const targetProd = allProds.find((p: Record<string, unknown>) =>
+  const targetProd = allProds.find((p: JsonRecord) =>
     String(p.id) === String(data.id)
   );
   if (!targetProd) return { success: false, error: "找不到商品" };
 
   const curCategory = targetProd.category;
-  const catProds = allProds.filter((p: Record<string, unknown>) =>
+  const catProds = allProds.filter((p: JsonRecord) =>
     p.category === curCategory
   );
 
-  const idx = catProds.findIndex((p: Record<string, unknown>) =>
+  const idx = catProds.findIndex((p: JsonRecord) =>
     String(p.id) === String(data.id)
   );
   if (idx === -1) return { success: false, error: "找不到商品" };
@@ -122,7 +123,7 @@ export async function reorderProduct(
 }
 
 export async function reorderProductsBulk(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);

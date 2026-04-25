@@ -21,6 +21,7 @@ import {
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
 import { asJsonRecord } from "../utils/json.ts";
+import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
 
 function resolveOrderEmailMode(
@@ -49,7 +50,7 @@ function resolveOrderEmailMode(
 }
 
 export async function updateOrderStatus(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -62,7 +63,7 @@ export async function updateOrderStatus(
     };
   }
 
-  const updates: Record<string, unknown> = { status: newStatus };
+  const updates: JsonRecord = { status: newStatus };
   const cancelReason = String(data.cancelReason || "").trim();
   if (newStatus === "cancelled" || newStatus === "failed") {
     updates.cancel_reason = cancelReason;
@@ -97,7 +98,7 @@ export async function updateOrderStatus(
 }
 
 export async function sendOrderEmail(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -254,7 +255,7 @@ export async function sendOrderEmail(
   };
 }
 
-export async function deleteOrder(data: Record<string, unknown>, req: Request) {
+export async function deleteOrder(data: JsonRecord, req: Request) {
   await requireAdmin(req);
   const { error } = await supabase.from("coffee_orders").delete().eq(
     "id",
@@ -265,7 +266,7 @@ export async function deleteOrder(data: Record<string, unknown>, req: Request) {
 }
 
 export async function batchUpdateOrderStatus(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
@@ -278,7 +279,7 @@ export async function batchUpdateOrderStatus(
 
   const failedOrderIds: string[] = [];
   const status = String(data.status || "");
-  const payload: Record<string, unknown> = { status };
+  const payload: JsonRecord = { status };
   if (data.paymentStatus !== undefined) {
     payload.paymentStatus = String(data.paymentStatus);
   }
@@ -317,7 +318,7 @@ export async function batchUpdateOrderStatus(
 }
 
 export async function batchDeleteOrders(
-  data: Record<string, unknown>,
+  data: JsonRecord,
   req: Request,
 ) {
   await requireAdmin(req);
