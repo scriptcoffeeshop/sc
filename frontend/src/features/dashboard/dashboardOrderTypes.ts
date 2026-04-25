@@ -1,4 +1,4 @@
-export type DashboardOrderRecord = Record<string, unknown> & {
+export interface DashboardOrderRecord extends Record<string, unknown> {
   orderId: string;
   timestamp: string;
   deliveryMethod?: string;
@@ -29,17 +29,17 @@ export type DashboardOrderRecord = Record<string, unknown> & {
   cancelReason?: string;
   receiptInfo?: unknown;
   total?: number | string;
-};
+}
 
 export type DashboardOrderFilters = Record<string, string>;
 
-export type DashboardApiJson = Record<string, unknown> & {
+export interface DashboardApiJson extends Record<string, unknown> {
   success?: boolean;
   orders?: DashboardOrderRecord[];
   message?: string;
   error?: string;
   updatedCount?: unknown;
-};
+}
 
 export type DashboardAuthFetch = (
   input: string,
