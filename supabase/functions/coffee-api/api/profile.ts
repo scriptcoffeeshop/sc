@@ -50,6 +50,9 @@ export async function updateUserProfile(
 
   const updates: JsonRecord = {};
 
+  if (data.displayName !== undefined) {
+    updates.display_name = String(data.displayName).trim();
+  }
   if (data.phone !== undefined) updates.phone = String(data.phone);
   if (data.email !== undefined) updates.email = String(data.email);
   if (data.defaultCity !== undefined) {

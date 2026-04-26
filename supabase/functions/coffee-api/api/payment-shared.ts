@@ -419,7 +419,7 @@ export async function notifyLinePayPaymentStatusChanged(
 
   try {
     const { data: order, error } = await supabase.from("coffee_orders").select(
-      "id, status, line_user_id, line_name, email, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
+      "id, status, line_user_id, line_name, phone, email, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
     ).eq("id", orderId).maybeSingle();
 
     if (error || !order) {
@@ -448,6 +448,9 @@ export async function notifyLinePayPaymentStatusChanged(
         address: String(order.address || ""),
         storeName: String(order.store_name || ""),
         storeAddress: String(order.store_address || ""),
+        lineName,
+        phone: String(order.phone || ""),
+        email: String(order.email || ""),
         paymentMethod: String(order.payment_method || "linepay"),
         paymentStatus,
         total: Number(order.total) || 0,
@@ -504,7 +507,7 @@ export async function notifyJkoPayPaymentStatusChanged(
 ) {
   try {
     const { data: order, error } = await supabase.from("coffee_orders").select(
-      "id, status, line_user_id, payment_status, line_payment_status_notified, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
+      "id, status, line_user_id, line_name, phone, email, payment_status, line_payment_status_notified, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
     ).eq("id", orderId).maybeSingle();
 
     if (error || !order) {
@@ -551,6 +554,9 @@ export async function notifyJkoPayPaymentStatusChanged(
       address: String(order.address || ""),
       storeName: String(order.store_name || ""),
       storeAddress: String(order.store_address || ""),
+      lineName: String(order.line_name || ""),
+      phone: String(order.phone || ""),
+      email: String(order.email || ""),
       paymentMethod: String(order.payment_method || "jkopay"),
       paymentStatus: normalizedPaymentStatus,
       total: Number(order.total) || 0,

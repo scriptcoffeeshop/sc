@@ -43,6 +43,9 @@ export interface OrderCreatedLineNotifyParams {
   address: string;
   storeName: string;
   storeAddress: string;
+  lineName: string;
+  phone: string;
+  email: string;
   paymentMethod: string;
   paymentStatus: string;
   total: number;
@@ -244,6 +247,9 @@ async function buildOrderCreatedFlexMessage(
     address: params.address,
     storeName: params.storeName,
     storeAddress: params.storeAddress,
+    lineName: params.lineName,
+    phone: params.phone,
+    email: params.email,
     paymentMethod: params.paymentMethod,
     paymentStatus: params.paymentStatus,
     total: params.total,

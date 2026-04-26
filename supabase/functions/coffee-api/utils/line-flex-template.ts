@@ -21,6 +21,9 @@ export interface OrderFlexPayload {
   address?: string;
   storeName?: string;
   storeAddress?: string;
+  lineName?: string;
+  phone?: string;
+  email?: string;
   paymentMethod: string;
   paymentStatus: string;
   total: number;
@@ -106,6 +109,9 @@ export function buildOrderStatusLineFlexMessage(
   );
   const orderNote = String(order.note || "").trim();
   const orderId = String(order.orderId || "").trim();
+  const lineName = String(order.lineName || "").trim();
+  const phone = String(order.phone || "").trim();
+  const email = String(order.email || "").trim();
   const siteTitle = String(order.siteTitle || "Script Coffee").trim() ||
     "Script Coffee";
 
@@ -146,6 +152,28 @@ export function buildOrderStatusLineFlexMessage(
       valueColor: "#DC322F",
     }),
   ];
+
+  if (lineName || phone || email) {
+    bodyContents.push(buildFlexSeparator());
+    if (lineName) {
+      bodyContents.push(buildFlexInfoRow("顧客", lineName, {
+        margin: "md",
+        valueWrap: true,
+      }));
+    }
+    if (phone) {
+      bodyContents.push(buildFlexInfoRow("電話", phone, {
+        margin: lineName ? "sm" : "md",
+        valueWrap: true,
+      }));
+    }
+    if (email) {
+      bodyContents.push(buildFlexInfoRow("Email", email, {
+        margin: lineName || phone ? "sm" : "md",
+        valueWrap: true,
+      }));
+    }
+  }
 
   if (orderNote) {
     bodyContents.push(buildFlexSeparator());

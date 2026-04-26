@@ -348,6 +348,9 @@ Deno.test("Line Flex Template - Include Note", () => {
     city: "新竹市",
     district: "東區",
     address: "測試路3號（公司行號/社區大樓：好日子商辦）",
+    lineName: "訂購人小明",
+    phone: "0912345678",
+    email: "buyer@example.com",
     paymentMethod: "linepay",
     paymentStatus: "paid",
     total: 1200,
@@ -375,6 +378,9 @@ Deno.test("Line Flex Template - Include Note", () => {
     true,
     "Flex should include delivery company/building text",
   );
+  assertEquals(payloadText.includes("訂購人小明"), true);
+  assertEquals(payloadText.includes("0912345678"), true);
+  assertEquals(payloadText.includes("buyer@example.com"), true);
 });
 
 Deno.test("JKO Pay Status Mapping - Match Official Inquiry Codes", () => {

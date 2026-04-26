@@ -98,6 +98,7 @@ function persistOrderDraftPreference(key: string, value: unknown) {
 }
 
 interface UserProfilePreferencePayload {
+  displayName: string;
   phone: string;
   email: string;
   defaultCustomFields: string;
@@ -126,6 +127,7 @@ function syncUserProfileInBackground(payload: UserProfilePreferencePayload) {
 }
 
 interface SubmittedOrderPreferenceInput {
+  displayName: string;
   phone: string;
   email: string;
   customFieldsJson: string;
@@ -134,6 +136,113 @@ interface SubmittedOrderPreferenceInput {
   paymentMethod: PaymentMethod | string;
   transferAccountLast5: string;
   receiptInfo: ReceiptInfo | null;
+}
+
+type ContactFieldKind = "name" | "phone" | "email";
+
+const CONTACT_FIELD_KEYS: Record<ContactFieldKind, Set<string>> = {
+  name: new Set([
+    "name",
+    "nickname",
+    "nickName",
+    "lineName",
+    "line_name",
+    "displayName",
+    "display_name",
+    "customerName",
+    "customer_name",
+    "contactName",
+    "contact_name",
+    "fullName",
+    "full_name",
+  ].map(normalizeContactKey)),
+  phone: new Set([
+    "phone",
+    "tel",
+    "telephone",
+    "mobile",
+    "mobilePhone",
+    "mobile_phone",
+    "phoneNumber",
+    "phone_number",
+    "customerPhone",
+    "customer_phone",
+    "contactPhone",
+    "contact_phone",
+  ].map(normalizeContactKey)),
+  email: new Set([
+    "email",
+    "e-mail",
+    "mail",
+    "customerEmail",
+    "customer_email",
+    "contactEmail",
+    "contact_email",
+  ].map(normalizeContactKey)),
+};
+
+const CONTACT_LABEL_PATTERNS: Record<ContactFieldKind, RegExp[]> = {
+  name: [/姓名/, /名字/, /暱稱/, /稱呼/, /訂購人/, /聯絡人/, /顧客名稱/, /顧客姓名/],
+  phone: [/電話/, /手機/, /聯絡方式/, /連絡方式/],
+  email: [/email/i, /e-mail/i, /mail/i, /信箱/, /電子郵件/],
+};
+
+function normalizeContactKey(value: unknown): string {
+  return String(value || "").trim().replace(/[\s_-]+/g, "").toLowerCase();
+}
+
+function isContactFieldKind(
+  field: { field_key?: unknown; label?: unknown },
+  kind: ContactFieldKind,
+): boolean {
+  const normalizedKey = normalizeContactKey(field.field_key);
+  if (CONTACT_FIELD_KEYS[kind].has(normalizedKey)) return true;
+  const label = String(field.label || "").trim();
+  return CONTACT_LABEL_PATTERNS[kind].some((pattern) => pattern.test(label));
+}
+
+function findContactFieldValue(
+  fields: Array<{ field_key?: unknown; label?: unknown }>,
+  values: Record<string, string>,
+  kind: ContactFieldKind,
+): string {
+  for (const field of fields) {
+    if (!isContactFieldKind(field, kind)) continue;
+    const key = String(field.field_key || "");
+    const value = String(values[key] || "").trim();
+    if (value) return value;
+  }
+  return "";
+}
+
+function isStandardContactField(
+  field: { field_key?: unknown; label?: unknown },
+): boolean {
+  return isContactFieldKind(field, "name") ||
+    isContactFieldKind(field, "phone") ||
+    isContactFieldKind(field, "email");
+}
+
+export function resolveOrderContactFields(args: {
+  fields: Array<{ field_key?: unknown; label?: unknown }>;
+  values: Record<string, string>;
+  user: SessionUser;
+}) {
+  const fields = args.fields || [];
+  const values = args.values || {};
+  const user = args.user;
+  const displayName = findContactFieldValue(fields, values, "name") ||
+    String(user.displayName || user["display_name"] || "").trim();
+  const phone = findContactFieldValue(fields, values, "phone") ||
+    String(user.phone || "").trim();
+  const email = findContactFieldValue(fields, values, "email") ||
+    String(user.email || "").trim();
+
+  return {
+    displayName,
+    phone,
+    email,
+  };
 }
 
 function isDeliveryAddressMethod(deliveryMethod: string): boolean {
@@ -155,6 +264,7 @@ function buildSubmittedOrderPreferencePayload(
   const isStorePickup = isStorePickupMethod(input.deliveryMethod);
 
   return {
+    displayName: input.displayName || "",
     phone: input.phone || "",
     email: input.email || "",
     defaultCustomFields: input.customFieldsJson || "{}",
@@ -242,8 +352,14 @@ export async function submitOrder(): Promise<void> {
 
   // 從動態欄位取值（相容舊的 phone / email）
   const dynamicFieldData = fieldsResult.data;
-  const phone = String(dynamicFieldData["phone"] || "");
-  const email = String(dynamicFieldData["email"] || "");
+  const contactFields = resolveOrderContactFields({
+    fields: state.formFields,
+    values: dynamicFieldData,
+    user: u,
+  });
+  const displayName = contactFields.displayName;
+  const phone = contactFields.phone;
+  const email = contactFields.email;
 
   if (!state.selectedDelivery) {
     showError("錯誤", "請選擇配送方式");
@@ -345,12 +461,13 @@ export async function submitOrder(): Promise<void> {
     }
   }
 
-  // 組合自訂欄位（排除 phone / email，轉為 JSON）
+  // 組合自訂欄位（排除標準聯絡欄位，轉為 JSON）
   const customFieldsData: Record<string, string> = {};
-  for (const [k, v] of Object.entries(dynamicFieldData)) {
-    if (k !== "phone" && k !== "email") {
-      customFieldsData[k] = v;
-    }
+  for (const field of state.formFields) {
+    const fieldKey = String(field.field_key || "");
+    if (!fieldKey || isStandardContactField(field)) continue;
+    const value = String(dynamicFieldData[fieldKey] || "").trim();
+    if (value) customFieldsData[fieldKey] = value;
   }
   const customFieldsJson = Object.keys(customFieldsData).length > 0
     ? JSON.stringify(customFieldsData)
@@ -385,7 +502,7 @@ export async function submitOrder(): Promise<void> {
       deliveryInfo,
     );
     const orderDraftSignature = stableJson({
-      lineName: u.displayName || u["display_name"],
+      lineName: displayName,
       phone,
       email,
       items: payloadItems,
@@ -403,7 +520,7 @@ export async function submitOrder(): Promise<void> {
     const res = await authFetch(`${API_URL}?action=submitOrder`, {
       method: "POST",
       body: JSON.stringify({
-        lineName: u.displayName || u["display_name"],
+        lineName: displayName,
         phone,
         email,
         items: payloadItems,
@@ -422,6 +539,7 @@ export async function submitOrder(): Promise<void> {
     if (result.success) {
       clearOrderIdempotencyKey(orderDraftSignature);
       persistSubmittedOrderPreferences(u, {
+        displayName,
         phone,
         email,
         customFieldsJson,

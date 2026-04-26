@@ -31,6 +31,48 @@ function appendOrderNoteSection(bodyContents: FlexContent[], orderNote: string) 
   );
 }
 
+function appendCustomerContactSection(
+  bodyContents: FlexContent[],
+  order: DashboardOrderRecord,
+) {
+  const lineName = String(order.lineName || "").trim();
+  const phone = String(order.phone || "").trim();
+  const email = String(order.email || "").trim();
+  if (!lineName && !phone && !email) return;
+
+  bodyContents.push(createFlexSeparator("md"));
+  if (lineName) {
+    bodyContents.push(
+      createFlexInfoRow({
+        label: "顧客",
+        text: lineName,
+        margin: "md",
+        wrap: true,
+      }),
+    );
+  }
+  if (phone) {
+    bodyContents.push(
+      createFlexInfoRow({
+        label: "電話",
+        text: phone,
+        margin: lineName ? "sm" : "md",
+        wrap: true,
+      }),
+    );
+  }
+  if (email) {
+    bodyContents.push(
+      createFlexInfoRow({
+        label: "Email",
+        text: email,
+        margin: lineName || phone ? "sm" : "md",
+        wrap: true,
+      }),
+    );
+  }
+}
+
 function appendReceiptSection(
   bodyContents: FlexContent[],
   receiptInfo: ReceiptInfo | null,
@@ -250,6 +292,7 @@ export function buildOrderFlexBodyPayload({
     }),
   );
 
+  appendCustomerContactSection(bodyContents, order);
   appendOrderNoteSection(bodyContents, orderNote);
   appendReceiptSection(bodyContents, receiptInfo);
   appendTrackingSection(bodyContents, order);
