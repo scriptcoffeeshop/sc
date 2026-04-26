@@ -49,139 +49,20 @@
       </div>
     </div>
 
-    <div
-      id="delivery-address-section"
-      class="fade-in p-4 rounded-xl ui-card-section"
-      :class="{ hidden: selectedDelivery !== 'delivery' }"
-    >
-      <h3 class="font-semibold mb-3" style="color: var(--primary)">
-        <span class="tab-with-icon"><img src="../../../../icons/location-pin.png" alt="" class="ui-icon-inline">配送地址 (限新竹市/竹北市)</span>
-      </h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">縣市 <span class="text-red-500">*</span></label>
-          <select
-            id="delivery-city"
-            class="input-field"
-            :value="localDeliveryAddress.city"
-            @change="handleLocalAddressInput('city', $event)"
-          >
-            <option value="">請選擇</option>
-            <option value="新竹市">新竹市</option>
-            <option value="竹北市">竹北市</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">區域 <span class="text-red-500">*</span></label>
-          <select
-            id="delivery-district"
-            class="input-field"
-            :value="localDeliveryAddress.district"
-            @change="handleLocalAddressInput('district', $event)"
-          >
-            <option value="">{{ localDistrictOptions.length ? "請選擇" : "請先選擇縣市" }}</option>
-            <option
-              v-for="district in localDistrictOptions"
-              :key="district"
-              :value="district"
-            >
-              {{ district }}
-            </option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">詳細地址 <span class="text-red-500">*</span></label>
-        <input
-          id="delivery-detail-address"
-          type="text"
-          class="input-field"
-          placeholder="路/街、巷、弄、號、樓"
-          :value="localDeliveryAddress.address"
-          @input="handleLocalAddressInput('address', $event)"
-        >
-      </div>
-      <div class="mt-3">
-        <label class="block text-sm text-gray-600 mb-1">公司行號/社區大樓名稱（選填）</label>
-        <input
-          id="delivery-company-or-building"
-          type="text"
-          class="input-field"
-          placeholder="例如：好日子商辦、幸福社區 A 棟"
-          :value="localDeliveryAddress.companyOrBuilding"
-          @input="handleLocalAddressInput('companyOrBuilding', $event)"
-        >
-      </div>
-    </div>
+    <StorefrontLocalDeliveryAddressForm
+      :selected-delivery="selectedDelivery"
+      :local-delivery-address="localDeliveryAddress"
+      :local-district-options="localDistrictOptions"
+      @update-local-delivery-address="forwardLocalDeliveryAddressUpdate"
+    />
 
-    <div
-      id="home-delivery-section"
-      class="fade-in p-4 rounded-xl ui-card-section"
-      :class="{ hidden: selectedDelivery !== 'home_delivery' }"
-    >
-      <h3 class="font-semibold mb-3" style="color: var(--primary)">
-        <span class="tab-with-icon"><img src="../../../../icons/shipping-box.png" alt="" class="ui-icon-inline">全台宅配地址</span>
-      </h3>
-      <div
-        class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3"
-      >
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">縣市 <span class="text-red-500">*</span></label>
-          <select
-            class="county input-field"
-            :value="homeDeliveryAddress.city"
-            @change="handleHomeAddressInput('city', $event)"
-          >
-            <option value="">選擇縣市</option>
-            <option
-              v-for="county in homeCountyOptions"
-              :key="county"
-              :value="county"
-            >
-              {{ county }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">區域 <span class="text-red-500">*</span></label>
-          <select
-            class="district input-field"
-            :value="homeDeliveryAddress.district"
-            @change="handleHomeAddressInput('district', $event)"
-          >
-            <option value="">選擇區域</option>
-            <option
-              v-for="district in homeDistrictOptions"
-              :key="district.name"
-              :value="district.name"
-            >
-              {{ district.name }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-600 mb-1">郵遞區號</label>
-          <input
-            class="zipcode input-field bg-gray-100"
-            type="text"
-            readonly
-            placeholder="自動帶入"
-            :value="homeDeliveryAddress.zipcode"
-          >
-        </div>
-      </div>
-      <div>
-        <label class="block text-sm text-gray-600 mb-1">詳細地址 <span class="text-red-500">*</span></label>
-        <input
-          id="home-delivery-detail"
-          type="text"
-          class="input-field"
-          placeholder="路/街、巷、弄、號、樓"
-          :value="homeDeliveryAddress.address"
-          @input="handleHomeAddressInput('address', $event)"
-        >
-      </div>
-    </div>
+    <StorefrontHomeDeliveryAddressForm
+      :selected-delivery="selectedDelivery"
+      :home-delivery-address="homeDeliveryAddress"
+      :home-county-options="homeCountyOptions"
+      :home-district-options="homeDistrictOptions"
+      @update-home-delivery-address="forwardHomeDeliveryAddressUpdate"
+    />
 
     <div
       id="store-pickup-section"
@@ -271,6 +152,8 @@
 import { computed } from "vue";
 import { MapPinned, Store } from "lucide-vue-next";
 import UiButton from "../../components/ui/button/Button.vue";
+import StorefrontHomeDeliveryAddressForm from "./StorefrontHomeDeliveryAddressForm.vue";
+import StorefrontLocalDeliveryAddressForm from "./StorefrontLocalDeliveryAddressForm.vue";
 import type {
   StorefrontDeliveryOption,
   StorefrontHomeDistrictOption,
@@ -343,41 +226,25 @@ const emit = defineEmits<{
   ];
 }>();
 
-function handleLocalAddressInput(
-  field: keyof StorefrontLocalDeliveryAddress,
-  event: Event,
-) {
-  const target = event.target;
-  if (
-    !(target instanceof HTMLInputElement) &&
-    !(target instanceof HTMLSelectElement)
-  ) {
-    emit("update-local-delivery-address", field, "");
-    return;
-  }
-  emit("update-local-delivery-address", field, target?.value || "");
-}
-
-function handleHomeAddressInput(
-  field: keyof StorefrontHomeDeliveryAddress,
-  event: Event,
-) {
-  const target = event.target;
-  if (
-    !(target instanceof HTMLInputElement) &&
-    !(target instanceof HTMLSelectElement)
-  ) {
-    emit("update-home-delivery-address", field, "");
-    return;
-  }
-  emit("update-home-delivery-address", field, target.value || "");
-}
-
 function getDeliveryIcon(option: StorefrontDeliveryOption) {
   const resolvedIcon = props.resolveDeliveryIcon?.(option) || {};
   return {
     url: String(resolvedIcon.url || "").trim(),
   };
+}
+
+function forwardLocalDeliveryAddressUpdate(
+  field: keyof StorefrontLocalDeliveryAddress,
+  value: string,
+) {
+  emit("update-local-delivery-address", field, value);
+}
+
+function forwardHomeDeliveryAddressUpdate(
+  field: keyof StorefrontHomeDeliveryAddress,
+  value: string,
+) {
+  emit("update-home-delivery-address", field, value);
 }
 
 const isStorePickupDelivery = computed(() =>
