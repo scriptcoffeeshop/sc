@@ -44,6 +44,7 @@ test.describe("smoke / storefront online payments", () => {
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
+    await page.selectOption("#delivery-district", "東區");
     await page.fill("#delivery-detail-address", "測試路 3 號");
     await page.locator("#products-container .spec-btn-add").first().click();
     await expectCartHasItems(page);
@@ -96,6 +97,7 @@ test.describe("smoke / storefront online payments", () => {
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
+    await page.selectOption("#delivery-district", "東區");
     await page.fill("#delivery-detail-address", "測試路 8 號");
     await page.locator("#products-container .spec-btn-add").first().click();
     await page.locator("#jkopay-option").click();
