@@ -24,6 +24,7 @@
     "./src/**/*.d.ts",
     "./src/**/*.vue",
     "./vite.config.ts",
+    "./vite.shared.ts",
     "./vite.analyze.config.mts"
   ]
 }

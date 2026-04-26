@@ -1,12 +1,12 @@
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { mergeConfig, type PluginOption } from "vite";
+import { defineConfig, mergeConfig, type PluginOption } from "vite";
 import { visualizer } from "rollup-plugin-visualizer";
-import baseConfig from "./vite.config.ts";
+import { appViteConfig } from "./vite.shared.ts";
 
 const root = dirname(fileURLToPath(import.meta.url));
 
-export default mergeConfig(baseConfig, {
+export default defineConfig(mergeConfig(appViteConfig, {
   plugins: [
     visualizer({
       filename: resolve(root, "dist", "bundle-stats.html"),
@@ -15,4 +15,4 @@ export default mergeConfig(baseConfig, {
       brotliSize: true,
     }) as PluginOption,
   ],
-});
+}));
