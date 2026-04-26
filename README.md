@@ -17,7 +17,7 @@
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
   - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
-  - 若需要手動重跑正式部署，可直接在 `.github/workflows/ci.yml` 的 `workflow_dispatch` 執行；預設 `deploy=true`，在 `main/master` 會連同前端與 Supabase deploy jobs 一起跑。
+  - 若需要手動重跑正式部署，可直接在 `.github/workflows/ci.yml` 的 `workflow_dispatch` 執行；預設 `deploy=true`，在 `main/master` 會連同前端與 Supabase deploy jobs 一起跑。若要在 CI 內跑 Supabase local golden path，手動觸發時將 `run_integration=true`。
 - **檔案版號與快取**：**不可輕忽的手機 Cache**。正式站入口應為根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物；若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy`，應先檢查 repo 的 GitHub Pages 設定。Vite 產出的 JS/CSS 檔名需保留 content hash；部署腳本只為非 hash asset 參照補 commit SHA 或 `.frontend-version`，降低 push 後 HTML 與 asset 快取短暫失配造成的按鈕失效。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 
@@ -35,9 +35,10 @@
   - `.env`、`.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；`.env.*.example` / `.env.*.sample` / `.env.*.template` 範本可入版控。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
   - 需要本機完整健康檢查時使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `lint:frontend`、`test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。
-  - 需要真實 Supabase local stack 整合測試時使用 `npm run test:integration:supabase`；此指令會啟動 Supabase local、重置本機 DB、載入 golden path seed、啟動 `coffee-api`，再跑「下單 → 後台確認付款 → 我的訂單查詢」流程。這是本機破壞性測試，不會併入預設 CI。
+  - 需要真實 Supabase local stack 整合測試時使用 `npm run test:integration:supabase`；此指令會啟動 Supabase local、重置本機 DB、載入 golden path seed、啟動 `coffee-api`，再跑「下單 → 後台確認付款 → 我的訂單查詢」流程。這是破壞性測試，不會併入預設 push CI，但可用 GitHub Actions `workflow_dispatch` 的 `run_integration=true` 手動跑。
+  - 需要檢查前端 bundle 組成時使用 `npm run build:analyze`，報表會輸出到 `frontend/dist/bundle-stats.html`；優先留意 `sweetalert2` 與 dashboard chunks 是否持續膨脹。
   - `npm run guardrails` 目前也會執行 `scripts/check_dev_context_sync.py`，確認 `DEV_CONTEXT.md` 的「最後更新」與前端版號沒有和實際狀態漂移。
-  - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`；`tests/e2e/support/smoke-fixtures.ts` 保留相容 barrel export，實際共用路由、global stub、顏色比對 helper 請分別維護在 `smoke-main-routes.ts`、`smoke-dashboard-routes.ts`、`smoke-global-stubs.ts`、`smoke-color.ts`。
+  - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`；共用資料放在 `tests/fixtures/smoke-fixtures.json`，`tests/e2e/support/smoke-fixtures.ts` 保留相容 barrel export，MSW 共用 handler 放在 `tests/support/api-mock/`，實際共用路由、global stub、顏色比對 helper 請分別維護在 `smoke-main-routes.ts`、`smoke-dashboard-routes.ts`、`smoke-global-stubs.ts`、`smoke-color.ts`。
   - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
 
 ## 3. 後端與資料庫規範 (Deno & Supabase)
@@ -48,7 +49,8 @@
   - 所有寫入操作 (Mutation) 必須透過 **Zod Schema** 進行驗證。
   - API 必須支援分頁 (`limit`/`offset`) 與搜尋下推至資料庫層級。
 - **可觀測性最低配置**：
-  - Supabase 專案需在 Dashboard 內設定 Log Drain，將 Edge Function logs 匯出到團隊使用的 log sink；若目前方案尚未開通 Log Drains，至少保留 Log Explorer 查詢與 GitHub Actions 部署紀錄。
+  - Supabase 專案需在 Dashboard 內設定 Log Drain，將 Edge Function `function_logs` 匯出到 Logflare 或 Datadog；repo 內維護的 runbook 見 [docs/observability.md](docs/observability.md)。
+  - `coffee-api` 會為每個 action 寫出 `scope=action-audit` 結構化 log，包含 `details.action`、`details.status`、`details.durationMs`、`details.success` 與 `details.error`，用於 API latency、error rate 與 5xx 告警。
   - 管理員 LINE 告警使用 `LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN` 與 `LINE_ORDER_NOTIFY_TO`；`LINE_ORDER_NOTIFY_TO` 可用逗號或換行設定多個 user/group id。
   - 線上金流付款請求、確認或回呼轉為 `failed` / `expired` 時，後端會透過同一個管理員 LINE 告警入口通知。
 - **Migration 命名**：

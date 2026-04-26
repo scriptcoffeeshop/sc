@@ -2,7 +2,7 @@ import type {
   Request as PlaywrightRequest,
   Route,
 } from "@playwright/test";
-import smokeFixtures from "./fixtures/smoke-fixtures.json";
+import smokeFixtures from "../../fixtures/smoke-fixtures.json";
 import type {
   FixtureBankAccount,
   FixtureBlacklistEntry,

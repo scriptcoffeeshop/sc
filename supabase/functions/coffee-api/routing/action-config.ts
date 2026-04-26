@@ -26,7 +26,6 @@ export interface ActionConfig {
   access: AccessLevel;
   methods?: readonly HttpMethod[];
   rateLimit?: RateLimitConfig;
-  audit?: boolean;
   permission?: AdminPermissionKey | readonly AdminPermissionKey[];
 }
 export type ActionOptions = Omit<ActionConfig, "handler" | "access">;
@@ -124,12 +123,6 @@ export function adminPost<T extends z.ZodTypeAny>(
   options: ActionOptions = {},
 ): ActionConfig {
   return adminAction(validatedAction(schema, handler), withPostMethod(options));
-}
-
-export function shouldAuditAction(actionConfig: ActionConfig): boolean {
-  if (typeof actionConfig.audit === "boolean") return actionConfig.audit;
-  return actionConfig.access !== "public" ||
-    Boolean(actionConfig.methods?.includes("POST"));
 }
 
 export function resolveActionName(data: JsonRecord): string {

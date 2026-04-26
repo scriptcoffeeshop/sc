@@ -21,7 +21,6 @@ import {
   enforceActionMethod,
   resolveActionAuth,
   resolveActionName,
-  shouldAuditAction,
   type WrappedActionContext,
 } from "./routing/action-map.ts";
 import {
@@ -206,18 +205,16 @@ function wrapHandler(
 
       const result = await handler(data, req, { action, actionConfig, auth });
       const status = result instanceof Response ? result.status : 200;
-      if (shouldAuditAction(actionConfig)) {
-        logActionAudit({
-          action,
-          actionConfig,
-          req,
-          auth,
-          status,
-          durationMs: Date.now() - startedAt,
-          success: isAuditSuccess(result, status),
-          error: extractAuditError(result),
-        });
-      }
+      logActionAudit({
+        action,
+        actionConfig,
+        req,
+        auth,
+        status,
+        durationMs: Date.now() - startedAt,
+        success: isAuditSuccess(result, status),
+        error: extractAuditError(result),
+      });
       if (result instanceof Response) return result;
       return c.json(result);
     } catch (error) {
@@ -240,18 +237,16 @@ function wrapHandler(
         c.header(name, value);
       }
 
-      if (!actionConfig || shouldAuditAction(actionConfig)) {
-        logActionAudit({
-          action,
-          actionConfig,
-          req,
-          auth,
-          status,
-          durationMs: Date.now() - startedAt,
-          success: false,
-          error: message,
-        });
-      }
+      logActionAudit({
+        action,
+        actionConfig,
+        req,
+        auth,
+        status,
+        durationMs: Date.now() - startedAt,
+        success: false,
+        error: message,
+      });
 
       return c.json({ success: false, error: message }, status);
     }

@@ -12,6 +12,11 @@ on:
         required: false
         type: boolean
         default: true
+      run_integration:
+        description: "執行 Supabase local golden path 整合測試"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: backend-ci-${{ github.ref }}
@@ -185,3 +190,29 @@ jobs:
       - name: Deploy Edge Function
         if: steps.deploy_secrets.outputs.ready == 'true'
         run: bash scripts/supabase_deploy.sh
+
+  integration_supabase:
+    name: Supabase Integration
+    if: github.event_name == 'workflow_dispatch' && inputs.run_integration
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@main
+        with:
+          deno-version: v2.x
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v2
+        with:
+          version: latest
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run Supabase golden path integration test
+        run: npm run test:integration:supabase

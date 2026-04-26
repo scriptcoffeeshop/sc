@@ -1,13 +1,26 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const root = resolve(__dirname);
+const plugins: PluginOption[] = [vue()];
+
+if (process.env["ANALYZE_BUNDLE"] === "true") {
+  plugins.push(
+    visualizer({
+      filename: resolve(root, "dist", "bundle-stats.html"),
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+    }) as PluginOption,
+  );
+}
 
 export default defineConfig({
   root,
   base: "./",
-  plugins: [vue()],
+  plugins,
   server: {
     fs: {
       allow: [resolve(root, "..")],

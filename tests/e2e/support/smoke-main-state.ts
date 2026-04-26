@@ -1,5 +1,5 @@
 import type { Request as PlaywrightRequest } from "@playwright/test";
-import smokeFixtures from "./fixtures/smoke-fixtures.json";
+import smokeFixtures from "../../fixtures/smoke-fixtures.json";
 import type {
   FixtureDeliveryOption,
   FixtureFormField,

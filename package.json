@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "vite --config frontend/vite.config.ts",
     "build": "vite build --config frontend/vite.config.ts && bash scripts/prepare_static_deploy.sh",
+    "build:analyze": "ANALYZE_BUNDLE=true vite build --config frontend/vite.config.ts",
     "preview": "vite preview --config frontend/vite.config.ts",
     "preview:e2e": "bash scripts/serve_e2e_preview.sh",
     "hygiene": "python3 scripts/repo_hygiene_check.py",
@@ -50,7 +51,9 @@
     "eslint-plugin-vue": "^10.5.1",
     "globals": "^16.4.0",
     "jsdom": "^29.0.2",
+    "msw": "^2.13.6",
     "postcss": "^8.5.10",
+    "rollup-plugin-visualizer": "^7.0.1",
     "tailwindcss": "^4.2.4",
     "typescript-eslint": "^8.44.1",
     "vite": "^8.0.10",

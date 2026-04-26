@@ -55,11 +55,12 @@
 ### 測試與守門
 
 - 日常 CI 包含 frontend unit、frontend lint、frontend build、Playwright E2E、Deno fmt/lint/check/test。
+- GitHub Actions `workflow_dispatch` 可用 `run_integration=true` 額外執行 Supabase local golden path 整合測試；push CI 預設不跑破壞性 local stack。
 - `ci-local` 串入 `guardrails`、`typecheck`、`lint:frontend`、`test:unit`、Deno fmt/lint/check/test。
 - Playwright `webServer` 走 `preview:e2e`，CI 會先 build，再用 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物。
-- Vue mount/component tests 已開始覆蓋前台高互動元件；E2E 預設 mock 資料改由 JSON fixture 維護。
-- 可觀測性 MVP 已加入付款失敗管理員 LINE 告警；正式環境仍需在 Supabase Dashboard 設定 Log Drain 將 Edge Function logs 匯出到團隊 log sink。
-- 真實 Supabase local stack golden path 測試以 `npm run test:integration:supabase` 手動執行；此指令會重置本機 Supabase DB，不併入預設 CI。
+- Vue mount/component tests 已覆蓋前台高互動元件與後台 `OrderCard`、`PromotionModal`、`FormFieldDialogForm`；E2E 預設 mock 資料改由 `tests/fixtures/smoke-fixtures.json` 維護，並以 `tests/support/api-mock/` 提供 MSW handler 給 unit/E2E 共用。
+- 可觀測性已包含每個 `coffee-api` action 的 `scope=action-audit` 結構化 log、付款失敗管理員 LINE 告警，以及 [docs/observability.md](docs/observability.md) 的 Supabase Log Drain 到 Logflare/Datadog runbook；正式環境仍需在 Supabase/Logflare/Datadog Dashboard 建立外部 drain 與 monitors。
+- 真實 Supabase local stack golden path 測試以 `npm run test:integration:supabase` 手動執行；此指令會重置本機 Supabase DB。
 
 ---
 
@@ -83,6 +84,7 @@
 - 新增 `docs/key-rotation-runbook.md`；`DashboardDeliveryPaymentSettingsCard.vue` 拆出單一取貨方式卡片，`DashboardPromotionModal.vue` 拆出目標商品 picker。
 - `routing/action-map.ts` 拆為 config 與公開/登入/admin action 模組；`MainPage.vue` 事件橋抽到 storefront composable；Vite JS/CSS 改 content hash；env ignore 改為精準規則並追蹤安全範本。
 - 前台配送地址表單拆為配送到府/全台宅配子元件；新增 Vue mount tests、UI primitives、E2E JSON fixture、taiwanCityData JSON 化與付款失敗管理員 LINE 告警。
+- 進階健康改善落地：所有 `coffee-api` action 寫出 queryable audit log；新增 Log Drain runbook、Dashboard mount tests、MSW 共用 API mock、可手動觸發的 Supabase integration CI job，以及 `npm run build:analyze` bundle visualizer。
 
 ### 2026-04-25
 
@@ -123,7 +125,7 @@
 
 ## 6) 常用命令
 
-`rtk npm run hygiene`、`rtk npm run guardrails`、`rtk npm run typecheck`、`rtk npm run test:unit`、`rtk npm run test:integration:supabase`、`rtk npm run ci-local`、`rtk npm run build`、`rtk npm run e2e`
+`rtk npm run hygiene`、`rtk npm run guardrails`、`rtk npm run typecheck`、`rtk npm run test:unit`、`rtk npm run test:integration:supabase`、`rtk npm run ci-local`、`rtk npm run build`、`rtk npm run build:analyze`、`rtk npm run e2e`
 
 ---
 
@@ -133,6 +135,7 @@
 - `docs/changelog.md`：較長的歷史變更摘要
 - `docs/frontend-vue-migration-plan.md`：前端 Vue 遷移決策與分階段策略
 - `docs/repo-hygiene.md`：敏感檔、金鑰外洩背景與 git 歷史清理流程
+- `docs/observability.md`：Supabase Log Drain、Edge Function log schema 與告警建議
 - `docs/key-rotation-runbook.md`：LINE Pay / 街口 / JWT / SMTP / Supabase / GitHub secrets 輪替 SOP
 - `tests/e2e/smoke/`：主要 smoke regression 保護網
 - `tests/e2e/support/`：E2E route/stub fixture
