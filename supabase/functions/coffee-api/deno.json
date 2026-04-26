@@ -4,7 +4,6 @@
     "@supabase/supabase-js": "npm:@supabase/supabase-js@^2.98.0",
     "zod": "npm:zod@4.3.6",
     "@std/assert": "jsr:@std/assert@^1.0.19",
-    "supabase-js": "npm:@supabase/supabase-js@2",
     "nodemailer": "npm:nodemailer@6.9.11",
     "@types/nodemailer": "npm:@types/nodemailer@6.4.15",
     "hono": "npm:hono@4.12.14",

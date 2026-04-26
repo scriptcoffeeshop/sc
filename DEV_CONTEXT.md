@@ -15,7 +15,7 @@
 5. Deno 依賴統一放在 `deno.json` 的 `imports`，程式碼直接使用別名。
 6. E2E 若攔截 CDN 腳本，需留意 `integrity/crossorigin` 的 SRI 驗證衝突。
 7. `google6cb7aa3783369937.html` 為受保護檔案，不可刪除或修改。
-8. `.env*` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；只有 `.example` / `.sample` / `.template` 類範本可入版控。
+8. `.env`、`.env.staging`、`.env.supabase.local` 與 `supabase/.temp/` 屬本機敏感/暫存資料，不能追蹤進 git；`.env.*.example` / `.sample` / `.template` 範本可入版控。
 9. 金流正式金鑰只放在 Supabase / GitHub secrets，不寫入 repo、文件或測試 fixture。
 
 ---
@@ -26,7 +26,7 @@
 - 主要分支：`main`
 - 前端：`Vite + Vue 3`，正式站入口為根目錄 `/`、`/main.html`、`/dashboard.html`
 - 後端：`Supabase Edge Functions`（Deno / Hono）
-- 前端快取版號來源：`.frontend-version`
+- 前端 JS/CSS 產物使用 content hash；`.frontend-version` 仍作為非 hash asset 參照的 fallback 版號來源。
 - 目前前端版號：`131`
 - GitHub Pages source 必須維持 `workflow`；若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，先檢查 Pages 設定是否漂回 legacy source。
 - GitHub Actions 在 `main/master` push 或 `workflow_dispatch deploy=true` 後會部署前端，並在 `SUPABASE_ACCESS_TOKEN` / `SUPABASE_DB_PASSWORD` 存在時執行 Supabase `db push` 與 `coffee-api` deploy。
@@ -46,7 +46,7 @@
 
 ### 後端
 
-- Hono routing + action map 已落地，公開/登入/admin POST schema 驗證樣板集中於 routing helper。
+- Hono routing + action map 已落地，公開/登入/admin action 定義已依 domain 拆到 `routing/actions/`，POST schema 驗證樣板集中於 routing helper。
 - `orders.ts`、`payments.ts`、settings、quote、stores、payment expiry/JKO sync 等核心流程已拆分；`order-submit.ts` 與 `quote.ts` 仍偏大。
 - JSON 解析集中於 `utils/json.ts`，訂單/付款/配送 label、Email asset、tracking URL、Email/Flex 文案 helper 已共用。
 - LINE Pay 與街口支付固定走正式環境；線上付款逾期會轉 `status=failed`、`payment_status=expired`。
@@ -79,6 +79,7 @@
 - LINE Pay Sandbox 模式移除：前端不再顯示或儲存 sandbox toggle，後端固定使用正式 API base URL，設定 API 會忽略並隱藏棄用 key。
 - DEV_CONTEXT 瘦身為交接快照，歷史變更移到 `docs/changelog.md`；CI 補前端 typecheck 並重用 `frontend-dist` artifact；ESLint explicit any 改為 warning，空 block 回到預設檢查。
 - 新增 `docs/key-rotation-runbook.md`；`DashboardDeliveryPaymentSettingsCard.vue` 拆出單一取貨方式卡片，`DashboardPromotionModal.vue` 拆出目標商品 picker。
+- `routing/action-map.ts` 拆為 config 與公開/登入/admin action 模組；`MainPage.vue` 事件橋抽到 storefront composable；Vite JS/CSS 改 content hash；env ignore 改為精準規則並追蹤安全範本。
 
 ### 2026-04-25
 

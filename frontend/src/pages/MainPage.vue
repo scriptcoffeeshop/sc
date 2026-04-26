@@ -236,7 +236,7 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { ref } from "vue";
 import UiCard from "../components/ui/card/Card.vue";
 import UiTextarea from "../components/ui/textarea/Textarea.vue";
 import StorefrontBottomBar from "../features/storefront/StorefrontBottomBar.vue";
@@ -248,10 +248,7 @@ import StorefrontOrderHistoryModal from "../features/storefront/StorefrontOrderH
 import StorefrontPaymentSection from "../features/storefront/StorefrontPaymentSection.vue";
 import StorefrontProductGrid from "../features/storefront/StorefrontProductGrid.vue";
 import { getStorefrontUiSnapshot } from "../features/storefront/storefrontUiSnapshot.ts";
-import {
-  useStorefrontCart,
-  type StorefrontCartUpdatedEvent,
-} from "../features/storefront/useStorefrontCart.ts";
+import { useStorefrontCart } from "../features/storefront/useStorefrontCart.ts";
 import { useStorefrontDelivery } from "../features/storefront/useStorefrontDelivery.ts";
 import { useStorefrontDynamicFields } from "../features/storefront/useStorefrontDynamicFields.ts";
 import { useStorefrontAuth } from "../features/storefront/useStorefrontAuth.ts";
@@ -259,10 +256,7 @@ import { useStorefrontAnnouncement } from "../features/storefront/useStorefrontA
 import { useStorefrontBranding } from "../features/storefront/useStorefrontBranding.ts";
 import { useStorefrontOrderHistory } from "../features/storefront/useStorefrontOrderHistory.ts";
 import { useStorefrontPayment } from "../features/storefront/useStorefrontPayment.ts";
-import {
-  useStorefrontPolicyAgreement,
-  type StorefrontPolicyHintEvent,
-} from "../features/storefront/useStorefrontPolicyAgreement.ts";
+import { useStorefrontPolicyAgreement } from "../features/storefront/useStorefrontPolicyAgreement.ts";
 import { useStorefrontProducts } from "../features/storefront/useStorefrontProducts.ts";
 import { useStorefrontReceiptRequest } from "../features/storefront/useStorefrontReceiptRequest.ts";
 import { useStorefrontLoadState } from "../features/storefront/useStorefrontLoadState.ts";
@@ -292,19 +286,9 @@ import {
 import { submitOrder } from "../features/storefront/storefrontOrderSubmit.ts";
 import { state } from "../lib/appState.ts";
 import { Toast } from "../lib/sharedUtils.ts";
-import { setStorefrontOrderFormState } from "../features/storefront/storefrontOrderFormState.ts";
-import {
-  onStorefrontEvent,
-  STOREFRONT_EVENTS,
-} from "../features/storefront/storefrontEventBus.ts";
-import {
-  createStorefrontBodyController,
-  type StorefrontBodyController,
-} from "../features/storefront/storefrontBodySideEffects.ts";
+import { useStorefrontPageBridge } from "../features/storefront/useStorefrontPageBridge.ts";
 
 const policyCheckboxEl = ref<HTMLInputElement | null>(null);
-let unsubscribeStorefrontEvents: Array<() => void> = [];
-let storefrontBodyController: StorefrontBodyController | null = null;
 const {
   isOrderHistoryOpen,
   orderHistoryError,
@@ -470,31 +454,32 @@ const {
   closeOrderHistory,
 });
 
-function syncStorefrontUiState() {
-  refreshAuthState();
-  refreshAnnouncementState();
-  refreshBrandingState();
-  refreshCartSubmitState();
-  refreshProductsState();
-  refreshDeliveryState();
-  syncPaymentState();
-  refreshDynamicFieldsState();
-}
-
-function handleCartUpdated(event: Event) {
-  syncCartFromEvent(event as StorefrontCartUpdatedEvent);
-  syncStorefrontUiState();
-}
-
-function handleSelectedStoreUpdated() {
-  refreshDeliveryState();
-}
-
-function handlePolicyHintEvent(event: Event) {
-  handlePolicyHintUpdated(event);
-  const detail = (event as StorefrontPolicyHintEvent).detail || {};
-  if (detail.visible) policyCheckboxEl.value?.focus();
-}
+const { syncStorefrontUiState } = useStorefrontPageBridge({
+  isCartDrawerOpen,
+  policyAgreed,
+  policyCheckboxEl,
+  syncCartSnapshot,
+  syncCartFromEvent,
+  refreshUiStateHandlers: [
+    refreshAuthState,
+    refreshAnnouncementState,
+    refreshBrandingState,
+    refreshCartSubmitState,
+    refreshProductsState,
+    refreshDeliveryState,
+    syncPaymentState,
+    refreshDynamicFieldsState,
+  ],
+  handlePolicyHintUpdated,
+  handleReceiptRequestUpdated,
+  handleLoadErrorUpdated,
+  handleOrderFormStateUpdated,
+  handleDynamicFieldValuesUpdated,
+  handleSelectedStoreUpdated: refreshDeliveryState,
+  handleLocalDeliveryAddressUpdated,
+  handleHomeDeliveryAddressUpdated,
+  initMainApp,
+});
 
 function getInputTargetValue(event: Event) {
   const target = event.target instanceof HTMLInputElement ? event.target : null;
@@ -521,15 +506,6 @@ function handleReceiptDateStampInput(event: Event) {
   updateReceiptNeedDateStamp(Boolean(target?.checked));
 }
 
-watch(isCartDrawerOpen, (open) => {
-  storefrontBodyController?.setCartDrawerOpen(open);
-});
-watch(
-  policyAgreed,
-  (value) => setStorefrontOrderFormState({ policyAgreed: value }),
-  { flush: "sync", immediate: true },
-);
-
 function handleStorefrontLogout() {
   logoutFromShell();
   syncStorefrontUiState();
@@ -539,56 +515,4 @@ async function handleShowProfile() {
   await showProfileFromShell();
   syncStorefrontUiState();
 }
-
-onMounted(() => {
-  storefrontBodyController = createStorefrontBodyController();
-  storefrontBodyController.applyPageClass();
-  storefrontBodyController.setCartDrawerOpen(isCartDrawerOpen.value);
-
-  unsubscribeStorefrontEvents = [
-    onStorefrontEvent(STOREFRONT_EVENTS.cartUpdated, handleCartUpdated),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.selectedStoreUpdated,
-      handleSelectedStoreUpdated,
-    ),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.policyAgreeHintUpdated,
-      handlePolicyHintEvent,
-    ),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.receiptRequestUpdated,
-      handleReceiptRequestUpdated,
-    ),
-    onStorefrontEvent(STOREFRONT_EVENTS.loadErrorUpdated, handleLoadErrorUpdated),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.orderFormStateUpdated,
-      handleOrderFormStateUpdated,
-    ),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.dynamicFieldValuesUpdated,
-      handleDynamicFieldValuesUpdated,
-    ),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.localDeliveryAddressUpdated,
-      handleLocalDeliveryAddressUpdated,
-    ),
-    onStorefrontEvent(
-      STOREFRONT_EVENTS.homeDeliveryAddressUpdated,
-      handleHomeDeliveryAddressUpdated,
-    ),
-  ];
-
-  syncCartSnapshot();
-
-  void initMainApp().then(() => {
-    syncStorefrontUiState();
-  });
-});
-
-onBeforeUnmount(() => {
-  unsubscribeStorefrontEvents.forEach((unsubscribe) => unsubscribe());
-  unsubscribeStorefrontEvents = [];
-  storefrontBodyController?.restore();
-  storefrontBodyController = null;
-});
 </script>

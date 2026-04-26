@@ -61,8 +61,8 @@ html_files = sorted(dist_dir.glob("*.html"))
 asset_ref_pattern = re.compile(
     r"""(\./assets/[^"'?#]+\.(?:js|css))(?:\?v=[A-Za-z0-9._-]+)?"""
 )
-hashed_ref_pattern = re.compile(
-    r"""\./assets/[^"'?#]*-[A-Za-z0-9_]{6,}\.(?:js|css)(?:\?v=[A-Za-z0-9._-]+)?"""
+hashed_asset_ref_pattern = re.compile(
+    r"""\./assets/[^"'?#]*-[A-Za-z0-9_-]{6,}\.(?:js|css)"""
 )
 
 if not html_files:
@@ -71,13 +71,11 @@ if not html_files:
 for path in html_files:
     text = path.read_text(encoding="utf-8")
     updated_text, _ = asset_ref_pattern.subn(
-        lambda match: f"{match.group(1)}?v={version}",
+        lambda match: match.group(1)
+        if hashed_asset_ref_pattern.fullmatch(match.group(1))
+        else f"{match.group(1)}?v={version}",
         text,
     )
-    if hashed_ref_pattern.search(updated_text):
-        raise SystemExit(
-            f"{path.name}: 仍存在 hashed asset 參照，部署後可能出現 HTML/asset 不一致。"
-        )
     path.write_text(updated_text, encoding="utf-8")
 PY
 }

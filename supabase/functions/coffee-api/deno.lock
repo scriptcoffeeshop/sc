@@ -3,7 +3,6 @@
   "specifiers": {
     "jsr:@std/assert@^1.0.19": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.12",
-    "npm:@supabase/supabase-js@2": "2.98.0",
     "npm:@supabase/supabase-js@^2.98.0": "2.98.0",
     "npm:@types/nodemailer@*": "6.4.15",
     "npm:@types/nodemailer@6.4.15": "6.4.15",
@@ -182,7 +181,6 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@^1.0.19",
-      "npm:@supabase/supabase-js@2",
       "npm:@supabase/supabase-js@^2.98.0",
       "npm:@types/nodemailer@6.4.15",
       "npm:hono@4.12.14",

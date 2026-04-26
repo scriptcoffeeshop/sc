@@ -18,7 +18,7 @@
     - `SUPABASE_DB_PASSWORD`
   - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
   - 若需要手動重跑正式部署，可直接在 `.github/workflows/ci.yml` 的 `workflow_dispatch` 執行；預設 `deploy=true`，在 `main/master` 會連同前端與 Supabase deploy jobs 一起跑。
-- **檔案版號與快取**：**不可輕忽的手機 Cache**。正式站入口應為根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物；若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy`，應先檢查 repo 的 GitHub Pages 設定。GitHub Pages 會直接部署 CI build 產物，部署 artifact 以 commit SHA 或 `.frontend-version` 產生，降低 push 後 HTML 與 asset 快取短暫失配造成的按鈕失效。
+- **檔案版號與快取**：**不可輕忽的手機 Cache**。正式站入口應為根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物；若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy`，應先檢查 repo 的 GitHub Pages 設定。Vite 產出的 JS/CSS 檔名需保留 content hash；部署腳本只為非 hash asset 參照補 commit SHA 或 `.frontend-version`，降低 push 後 HTML 與 asset 快取短暫失配造成的按鈕失效。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。
 
 ## 2. 前端開發規範 (MPA & Vue 3)
@@ -32,7 +32,7 @@
 - **Vite 整合**：打包與啟動流程由 Vite 接管。請透過 `npm run dev` 或 `npm run build` 進行開發與建構；`npm run e2e` 會走 production build + `vite preview`，避免只在 dev server 才通過。
 - **Repo 衛生規則**：
   - `supabase/.temp/` 屬於 Supabase CLI 本機暫存資料，現在由 `.gitignore` 忽略，不應提交。
-  - `.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；請使用 `.env.staging.example`、`.env.supabase.local.example` 作為範本。
+  - `.env`、`.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；`.env.*.example` / `.env.*.sample` / `.env.*.template` 範本可入版控。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
   - 需要本機完整健康檢查時使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `lint:frontend`、`test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。
   - `npm run guardrails` 目前也會執行 `scripts/check_dev_context_sync.py`，確認 `DEV_CONTEXT.md` 的「最後更新」與前端版號沒有和實際狀態漂移。
@@ -72,4 +72,4 @@
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
     - `SUPABASE_PROFILE`（預設可用 `supabase`）
-  - `.env.supabase.local` 屬於本機敏感檔案，不應提交到 git（目前由 `.env.*` 規則自動忽略）。
+  - `.env.supabase.local` 屬於本機敏感檔案，不應提交到 git；`.gitignore` 只精準忽略本機敏感 env，範本檔需保留在版控以利重建環境。

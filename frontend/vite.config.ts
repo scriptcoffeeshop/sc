@@ -23,15 +23,15 @@ export default defineConfig({
         policy: resolve(root, "policy.html"),
       },
       output: {
-        entryFileNames: "assets/[name].js",
+        entryFileNames: "assets/[name]-[hash].js",
         chunkFileNames: (chunkInfo) =>
           chunkInfo.name === "_plugin-vue_export-helper"
-            ? "assets/sharedUtils.js"
-            : "assets/[name].js",
+            ? "assets/sharedUtils-[hash].js"
+            : "assets/[name]-[hash].js",
         assetFileNames: (assetInfo) =>
           assetInfo.name === "_plugin-vue_export-helper.css"
-            ? "assets/sharedUtils.css"
-            : "assets/[name][extname]",
+            ? "assets/sharedUtils-[hash][extname]"
+            : "assets/[name]-[hash][extname]",
       },
     },
   },
