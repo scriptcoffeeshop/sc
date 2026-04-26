@@ -110,7 +110,9 @@ const defaultCartApi: StorefrontCartApi = {
 };
 
 const defaultOrderApi: StorefrontOrderApi = {
-  submitOrder: () => {},
+  submitOrder: () => {
+    // The real submit action is injected by the page boundary.
+  },
 };
 
 export function useStorefrontCart(deps: StorefrontCartDeps = {}) {

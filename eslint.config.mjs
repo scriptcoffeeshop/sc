@@ -34,10 +34,9 @@ export default [
       ...js.configs.recommended.rules,
       ...tseslint.configs.recommended[0].rules,
       ...vue.configs["flat/recommended"][1].rules,
-      "no-empty": "off",
       "no-undef": "off",
       "no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "error",
         {

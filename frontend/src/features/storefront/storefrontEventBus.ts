@@ -25,7 +25,11 @@ export function onStorefrontEvent(
   eventName: StorefrontEventName,
   listener: EventListener,
 ): () => void {
-  if (typeof window === "undefined") return () => {};
+  if (typeof window === "undefined") {
+    return () => {
+      // SSR/test fallback unsubscribe has nothing to detach.
+    };
+  }
   window.addEventListener(eventName, listener);
   return () => window.removeEventListener(eventName, listener);
 }

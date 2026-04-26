@@ -12,7 +12,9 @@ describe("submitExternalPostForm", () => {
   it("creates and submits a POST form with hidden fields", () => {
     const submitSpy = vi
       .spyOn(HTMLFormElement.prototype, "submit")
-      .mockImplementation(() => {});
+      .mockImplementation(() => {
+        // jsdom cannot perform native form submission.
+      });
 
     const form = submitExternalPostForm({
       action: "https://emap.presco.com.tw/c2cemap.ashx",

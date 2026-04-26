@@ -64,8 +64,18 @@ jobs:
       - name: Lint frontend source
         run: npm run lint:frontend
 
+      - name: Typecheck frontend source
+        run: npm run typecheck
+
       - name: Build frontend artifact
         run: FRONTEND_ASSET_VERSION="${GITHUB_SHA::12}" npm run build
+
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: error
 
       - name: Run E2E tests
         run: SKIP_E2E_BUILD=1 npm run e2e -- --reporter=line
@@ -103,16 +113,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
+      - name: Download frontend build artifact
+        uses: actions/download-artifact@v5
         with:
-          node-version: "20"
-
-      - name: Install frontend dependencies
-        run: npm install
-
-      - name: Build frontend artifact
-        run: FRONTEND_ASSET_VERSION="${GITHUB_SHA::12}" npm run build
+          name: frontend-dist
+          path: frontend/dist
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6

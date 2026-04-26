@@ -96,7 +96,9 @@ interface UsersTabLoadersDeps {
 }
 
 let dashboardTabLoaders: DashboardTabLoaderMap = {};
-let loadInitialDashboardData: () => Promise<void> = async () => {};
+let loadInitialDashboardData: () => Promise<void> = async () => {
+  // Bootstrap replaces this after services are wired.
+};
 
 export const DASHBOARD_PUBLIC_BRANDING_CACHE_KEY = "coffee_dashboard_public_branding";
 const dashboardTabs = [

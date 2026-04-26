@@ -35,6 +35,20 @@ export type DashboardProductSpec = {
   price?: number | string;
 };
 
+export type PromotionProductOption = {
+  productId: number;
+  specKey: string;
+  label: string;
+  price: number;
+};
+
+export type PromotionProductGroup = {
+  productId: number;
+  category: string;
+  name: string;
+  options: PromotionProductOption[];
+};
+
 export type PromotionFormState = {
   id: string;
   name: string;
@@ -108,7 +122,7 @@ export function parseProductSpecs(
 }
 
 export function buildPromotionProductGroups(products: DashboardProductRecord[]) {
-  return products.map((product) => {
+  return products.map((product): PromotionProductGroup => {
     const specs = parseProductSpecs(product);
     if (!specs.length) {
       return {
