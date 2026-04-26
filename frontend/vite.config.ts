@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import type { PreRenderedAsset, PreRenderedChunk } from "rollup";
 import { defineConfig, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
 
@@ -50,11 +51,11 @@ export default defineConfig(async () => ({
       },
       output: {
         entryFileNames: "assets/[name]-[hash].js",
-        chunkFileNames: (chunkInfo) =>
+        chunkFileNames: (chunkInfo: PreRenderedChunk) =>
           chunkInfo.name === "_plugin-vue_export-helper"
             ? "assets/sharedUtils-[hash].js"
             : "assets/[name]-[hash].js",
-        assetFileNames: (assetInfo) =>
+        assetFileNames: (assetInfo: PreRenderedAsset) =>
           assetInfo.name === "_plugin-vue_export-helper.css"
             ? "assets/sharedUtils-[hash][extname]"
             : "assets/[name]-[hash][extname]",
