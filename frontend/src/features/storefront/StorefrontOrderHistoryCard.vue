@@ -19,6 +19,35 @@
       </UiStatusBadge>
     </div>
 
+    <div class="mb-2 grid grid-cols-1 gap-x-4 gap-y-1 rounded-lg bg-slate-50 p-3 text-xs leading-6 text-slate-700 sm:grid-cols-2">
+      <div v-if="order.timestampText">
+        <span class="text-slate-500">下單時間：</span>{{ order.timestampText }}
+      </div>
+      <div>
+        <span class="text-slate-500">付款方式：</span>{{ order.paymentDisplay.methodLabel || "未提供" }}
+      </div>
+      <div v-if="order.paymentDisplay.statusLabel">
+        <span class="text-slate-500">付款狀態：</span>{{ order.paymentDisplay.statusLabel }}
+      </div>
+      <div class="break-words">
+        <span class="text-slate-500">姓名：</span>{{ order.lineName || "未提供" }}
+      </div>
+      <div class="break-words">
+        <span class="text-slate-500">電話：</span>{{ order.phone || "未提供" }}
+      </div>
+      <div class="break-words sm:col-span-2">
+        <span class="text-slate-500">信箱：</span>
+        <a
+          v-if="order.email"
+          :href="`mailto:${order.email}`"
+          class="text-blue-700 hover:underline"
+        >
+          {{ order.email }}
+        </a>
+        <span v-else>未提供</span>
+      </div>
+    </div>
+
     <div
       v-if="order.hasShippingInfo"
       class="text-xs text-gray-600 bg-blue-50 p-2 rounded mb-2"
@@ -97,6 +126,13 @@
 
     <div class="text-sm text-gray-600 whitespace-pre-line bg-gray-50 p-3 rounded mb-2">
       {{ order.itemsText }}
+    </div>
+
+    <div
+      v-if="order.showOrderNote"
+      class="mb-2 rounded bg-amber-50 p-2 text-sm text-amber-800 whitespace-pre-line"
+    >
+      <span class="text-gray-500">訂單備註：</span>{{ order.orderNote }}
     </div>
 
     <div

@@ -136,10 +136,16 @@ describe("storefront Vue component mount coverage", () => {
   it("mounts order history card and emits tracking copy action", async () => {
     const order: OrderHistoryItem = {
       orderId: "ORD001",
+      timestampText: "2026-04-26 12:30",
       statusLabel: "已出貨",
       deliveryMethodLabel: "全台宅配",
       locationText: "台北市中正區 忠孝西路 1 號",
+      lineName: "測試顧客",
+      phone: "0912345678",
+      email: "buyer@example.com",
       itemsText: "測試豆 x1",
+      orderNote: "請下午配送",
+      showOrderNote: true,
       totalText: "$220",
       receiptInfo: null,
       showReceiptInfo: false,
@@ -178,6 +184,11 @@ describe("storefront Vue component mount coverage", () => {
     });
 
     expect(wrapper.text()).toContain("LINE Pay 已付款");
+    expect(wrapper.text()).toContain("付款方式：LINE Pay");
+    expect(wrapper.text()).toContain("姓名：測試顧客");
+    expect(wrapper.text()).toContain("0912345678");
+    expect(wrapper.text()).toContain("buyer@example.com");
+    expect(wrapper.text()).toContain("訂單備註：請下午配送");
     await wrapper.find("[data-copy-tracking-number='true']").trigger("click");
 
     expect(wrapper.emitted("copy-tracking-number")?.[0]).toEqual([

@@ -104,12 +104,17 @@ describe("useStorefrontOrderHistory", () => {
           orders: [
             {
               orderId: "LINEPAY-001",
+              timestamp: "2026-04-26T02:10:00.000Z",
+              lineName: "小明",
+              phone: "0912345678",
+              email: "buyer@example.com",
               deliveryMethod: "delivery",
               status: "pending",
               city: "新竹市",
               district: "東區",
               address: "測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
               items: "測試豆 x1",
+              note: "不要塑膠袋",
               total: 220,
               paymentMethod: "linepay",
               paymentStatus: "pending",
@@ -149,8 +154,14 @@ describe("useStorefrontOrderHistory", () => {
     expect(history.ordersView.value).toHaveLength(2);
     expect(history.ordersView.value[0]).toMatchObject({
       orderId: "LINEPAY-001",
+      timestampText: "2026-04-26T02:10:00.000Z",
+      lineName: "小明",
+      phone: "0912345678",
+      email: "buyer@example.com",
       deliveryMethodLabel: "宅配",
       locationText: "新竹市東區 測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
+      orderNote: "不要塑膠袋",
+      showOrderNote: true,
     });
     expect(history.ordersView.value[0]!.paymentDisplay).toMatchObject({
       canResumePayment: true,

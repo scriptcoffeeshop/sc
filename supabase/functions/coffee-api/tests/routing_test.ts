@@ -662,6 +662,9 @@ Deno.test({
         {
           id: "LINEPAY-ORDER-1",
           line_user_id: "user-online-pay-link",
+          line_name: "線上付款顧客",
+          phone: "0912345678",
+          email: "buyer@example.com",
           created_at: "2026-04-21T03:00:00.000Z",
           items: "LINE Pay 測試豆 x1",
           items_json: [],
@@ -673,6 +676,7 @@ Deno.test({
           payment_method: "linepay",
           payment_status: "pending",
           payment_redirect_url: "https://pay.example/linepay/LINEPAY-ORDER-1",
+          note: "請保留明細",
         },
         {
           id: "JKO-ORDER-1",
@@ -708,6 +712,10 @@ Deno.test({
         payload.orders[0].paymentUrl,
         "https://pay.example/linepay/LINEPAY-ORDER-1",
       );
+      assertEquals(payload.orders[0].lineName, "線上付款顧客");
+      assertEquals(payload.orders[0].phone, "0912345678");
+      assertEquals(payload.orders[0].email, "buyer@example.com");
+      assertEquals(payload.orders[0].note, "請保留明細");
       assertEquals(
         payload.orders[1].paymentUrl,
         "https://pay.example/jko/JKO-ORDER-1",

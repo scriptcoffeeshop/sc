@@ -19,10 +19,16 @@ import {
 
 export interface OrderHistoryItem {
   orderId: string;
+  timestampText: string;
   statusLabel: string;
   deliveryMethodLabel: string;
   locationText: string;
+  lineName: string;
+  phone: string;
+  email: string;
   itemsText: string;
+  orderNote: string;
+  showOrderNote: boolean;
   totalText: string;
   receiptInfo: ReceiptInfo | null;
   showReceiptInfo: boolean;
@@ -161,15 +167,25 @@ export function buildOrderHistoryItem(
     : "";
   const trackingUrl = customTrackingUrl || defaultTrackingUrl;
   const locationText = buildOrderHistoryLocationText(order);
+  const lineName = String(order.lineName || "").trim();
+  const phone = String(order.phone || "").trim();
+  const email = String(order.email || "").trim();
+  const orderNote = String(order.note || "").trim();
 
   return {
     orderId: String(order.orderId || ""),
+    timestampText: resolveDateTimeText(order.timestamp),
     statusLabel: ORDER_STATUS_TEXT[order.status as string] ||
       String(order.status || ""),
     deliveryMethodLabel: DELIVERY_METHOD_TEXT[order.deliveryMethod as string] ||
       String(order.deliveryMethod || ""),
     locationText,
+    lineName,
+    phone,
+    email,
     itemsText: String(order.items || ""),
+    orderNote,
+    showOrderNote: Boolean(orderNote),
     totalText: `$${String(order.total ?? 0)}`,
     receiptInfo,
     showReceiptInfo: Boolean(receiptInfo),

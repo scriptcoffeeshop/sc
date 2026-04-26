@@ -78,6 +78,7 @@ export interface OrderItem {
 
 export interface Order {
   orderId: string;
+  timestamp?: string;
   status?: OrderStatus | string;
   deliveryMethod?: DeliveryMethod | string;
   city?: string;
@@ -85,9 +86,14 @@ export interface Order {
   address?: string;
   storeName?: string;
   storeId?: string;
+  lineName?: string;
+  phone?: string;
+  email?: string;
   items?: string;
   itemsJson?: OrderItem[];
   total?: number;
+  note?: string;
+  cancelReason?: string;
   paymentMethod?: PaymentMethod | string;
   paymentStatus?: PaymentStatus | string;
   paymentUrl?: string;
