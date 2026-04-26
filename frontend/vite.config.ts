@@ -1,12 +1,14 @@
 import { resolve } from "node:path";
 import { defineConfig, type PluginOption } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { visualizer } from "rollup-plugin-visualizer";
 
 const root = resolve(__dirname);
-const plugins: PluginOption[] = [vue()];
 
-if (process.env["ANALYZE_BUNDLE"] === "true") {
+async function resolvePlugins(): Promise<PluginOption[]> {
+  const plugins: PluginOption[] = [vue()];
+  if (process.env["ANALYZE_BUNDLE"] !== "true") return plugins;
+
+  const { visualizer } = await import("rollup-plugin-visualizer");
   plugins.push(
     visualizer({
       filename: resolve(root, "dist", "bundle-stats.html"),
@@ -15,12 +17,23 @@ if (process.env["ANALYZE_BUNDLE"] === "true") {
       brotliSize: true,
     }) as PluginOption,
   );
+  return plugins;
 }
 
-export default defineConfig({
+export default defineConfig(async () => ({
   root,
   base: "./",
-  plugins,
+  plugins: await resolvePlugins(),
+  resolve: {
+    alias: [{
+      find: /^vue$/,
+      replacement: resolve(
+        root,
+        "../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      ),
+    }],
+    dedupe: ["vue"],
+  },
   server: {
     fs: {
       allow: [resolve(root, "..")],
@@ -48,4 +61,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
