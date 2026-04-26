@@ -32,5 +32,6 @@ export function applyStorefrontBrandingSideEffects(
       }),
     );
   } catch (_error) {
+    // localStorage may be unavailable in private mode or strict test sandboxes.
   }
 }

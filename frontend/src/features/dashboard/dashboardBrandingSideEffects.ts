@@ -17,6 +17,7 @@ function cacheDashboardPublicBranding(view: DashboardBrandingSideEffectView): vo
       }),
     );
   } catch (_error) {
+    // localStorage may be unavailable in private mode or strict test sandboxes.
   }
 }
 
