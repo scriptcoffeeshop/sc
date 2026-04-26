@@ -77,4 +77,26 @@ describe("dashboardOrderEmailController", () => {
       title: "已發送",
     });
   });
+
+  it("blocks invalid order email before sending the API request", async () => {
+    const deps = createDeps({
+      getOrders: () => [
+        {
+          orderId: "O-EMAIL-1",
+          timestamp: "2026-04-25T00:00:00.000Z",
+          email: "not-an-email",
+          status: "processing",
+        },
+      ],
+    });
+
+    await createOrderEmailController(deps).sendOrderEmailByOrderId("O-EMAIL-1");
+
+    expect(deps.Swal.fire).toHaveBeenCalledWith(
+      "提醒",
+      "此訂單 Email 格式不正確，無法發送信件",
+      "warning",
+    );
+    expect(deps.authFetch).not.toHaveBeenCalled();
+  });
 });

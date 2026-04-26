@@ -11,6 +11,7 @@ import {
 } from "./customer-notification-policy.ts";
 import { requireAdmin } from "../utils/auth.ts";
 import { VALID_ORDER_STATUSES } from "../utils/config.ts";
+import { isValidEmail } from "../utils/email-validation.ts";
 import { sendEmail } from "../utils/email.ts";
 import {
   buildCancelledNotificationHtml,
@@ -117,6 +118,9 @@ export async function sendOrderEmail(
 
   const to = String(orderData.email || "").trim();
   if (!to) return { success: false, error: "此訂單未填寫 Email，無法發送" };
+  if (!isValidEmail(to)) {
+    return { success: false, error: "此訂單 Email 格式不正確，無法發送" };
+  }
   if (
     shouldSkipCustomerNotificationForPaymentStatus(orderData.payment_status)
   ) {

@@ -1,5 +1,6 @@
 import { supabase } from "../utils/supabase.ts";
 import { extractAuth } from "../utils/auth.ts";
+import { normalizeEmail } from "../utils/email-validation.ts";
 import type { JsonRecord } from "../utils/json.ts";
 
 export async function getUserProfile(
@@ -51,7 +52,7 @@ export async function updateUserProfile(
   const updates: JsonRecord = {};
 
   if (data.phone !== undefined) updates.phone = String(data.phone);
-  if (data.email !== undefined) updates.email = String(data.email);
+  if (data.email !== undefined) updates.email = normalizeEmail(data.email);
   if (data.defaultCity !== undefined) {
     updates.default_city = String(data.defaultCity);
   }

@@ -1,6 +1,12 @@
 // 前後台共用工具。UI class helper 仍保留在 `frontend/src/lib/utils.ts`。
 
 import Swal from "./swal.ts";
+export {
+  EMAIL_FORMAT_ERROR,
+  isBlankOrValidEmail,
+  isValidEmail,
+  normalizeEmail,
+} from "./emailValidation.ts";
 
 /** HTML 特殊字元跳脫 */
 export function escapeHtml(s: unknown): string {
@@ -9,13 +15,6 @@ export function escapeHtml(s: unknown): string {
     />/g,
     "&gt;",
   ).replace(/"/g, "&quot;");
-}
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/** Email 格式驗證 */
-export function isValidEmail(email: unknown): boolean {
-  return EMAIL_REGEX.test(String(email || "").trim());
 }
 
 /** 簡寫別名 (dashboard 使用) */

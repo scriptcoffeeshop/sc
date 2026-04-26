@@ -1,4 +1,5 @@
 import type { DashboardOrderNotificationDeps } from "./dashboardOrderNotificationTypes";
+import { isValidEmail } from "../../lib/sharedUtils.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { openDashboardOrderEmailConfirmDialog } from "./dashboardOrderConfirmDialogs.ts";
 
@@ -18,6 +19,10 @@ export function createOrderEmailController(
     const targetEmail = String(targetOrder.email || "").trim();
     if (!targetEmail) {
       deps.Swal.fire("提醒", "此訂單沒有 Email，無法發送信件", "warning");
+      return;
+    }
+    if (!isValidEmail(targetEmail)) {
+      deps.Swal.fire("提醒", "此訂單 Email 格式不正確，無法發送信件", "warning");
       return;
     }
 

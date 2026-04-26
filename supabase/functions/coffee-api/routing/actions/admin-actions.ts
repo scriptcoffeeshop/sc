@@ -82,6 +82,7 @@ import {
   updateUserPermissionsSchema,
   updateUserRoleSchema,
 } from "../../schemas/users.ts";
+import { testEmailSchema } from "../../schemas/misc.ts";
 import { PAYMENT_ACTION_RATE_LIMIT } from "../../utils/rate-limit-config.ts";
 import {
   type ActionConfig,
@@ -206,8 +207,7 @@ export const adminActions: Record<string, ActionConfig> = {
     removeFromBlacklist,
     { permission: "blacklist" },
   ),
-  testEmail: adminAction(async (data, req) => await testEmail(data, req), {
-    methods: POST_ONLY,
+  testEmail: adminPost(testEmailSchema, testEmail, {
     permission: "settings",
   }),
   sendLineFlexMessage: adminPost(
