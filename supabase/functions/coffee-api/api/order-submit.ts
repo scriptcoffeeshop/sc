@@ -21,6 +21,7 @@ import {
 } from "./order-shared.ts";
 import { requireAuth } from "../utils/auth.ts";
 import { FRONTEND_URL } from "../utils/config.ts";
+import { normalizeEmail } from "../utils/email-validation.ts";
 import { sendEmail } from "../utils/email.ts";
 import { buildOrderConfirmationHtml } from "../utils/email-templates.ts";
 import { requestJkoPayEntry } from "../utils/jkopay.ts";
@@ -198,6 +199,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
   if (phone && !/^(09\d{8}|0[2-8]\d{7,8})$/.test(phone)) {
     return { success: false, error: "電話格式不正確" };
   }
+  const email = normalizeEmail(data.email);
   const receiptInfo = normalizeReceiptInfo(data.receiptInfo);
   const customFields = normalizeCustomFields(data.customFields);
 
@@ -237,7 +239,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
     line_user_id: lineUserId,
     line_name: String(data.lineName).trim(),
     phone,
-    email: String(data.email || "").trim(),
+    email,
     items: ordersText,
     items_json: quote.items,
     total,
@@ -285,7 +287,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
         displayName: String(data.lineName),
         pictureUrl: "",
         phone,
-        email: String(data.email || "").trim(),
+        email,
         deliveryMethod,
         city: String(data.city || ""),
         district: String(data.district || ""),
@@ -305,7 +307,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
     }
   }
 
-  const customerEmail = String(data.email || "").trim();
+  const customerEmail = email;
   const autoSendConfirmationEmail = await isOrderConfirmationAutoEmailEnabled();
   const shouldSendCustomerNotifications =
     !shouldSkipCustomerNotificationForPaymentStatus(

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalEmailSchema } from "./email.ts";
 
 export const orderItemSchema = z.object({
   productId: z.number(),
@@ -46,7 +47,7 @@ const paymentStatusSchema = z.union([
 export const submitOrderSchema = z.object({
   lineName: z.string().min(1, "姓名不能為空"),
   phone: z.string().optional().or(z.literal("")),
-  email: z.string().email("Email 格式不正確").optional().or(z.literal("")),
+  email: optionalEmailSchema,
   items: z.array(orderItemSchema).min(1, "購物車是空的"),
   deliveryMethod: z.enum([
     "delivery",

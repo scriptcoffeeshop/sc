@@ -1,6 +1,11 @@
 // @deno-types="npm:@types/nodemailer"
 import nodemailer from "nodemailer";
 import { SMTP_PASS, SMTP_USER } from "./config.ts";
+import {
+  EMAIL_FORMAT_ERROR,
+  isValidEmail,
+  normalizeEmail,
+} from "./email-validation.ts";
 import { createLogger } from "./logger.ts";
 
 const logger = createLogger("email");
@@ -10,8 +15,12 @@ export async function sendEmail(
   subject: string,
   htmlContent: string,
 ) {
-  if (!SMTP_USER || !SMTP_PASS || !to) {
+  const recipient = normalizeEmail(to);
+  if (!SMTP_USER || !SMTP_PASS || !recipient) {
     return { success: false, error: "SMTP or recipient config missing" };
+  }
+  if (!isValidEmail(recipient)) {
+    return { success: false, error: EMAIL_FORMAT_ERROR };
   }
   try {
     const transporter = nodemailer.createTransport({
@@ -25,7 +34,7 @@ export async function sendEmail(
     });
     await transporter.sendMail({
       from: `"Script Coffee" <${SMTP_USER}>`,
-      to,
+      to: recipient,
       subject,
       html: htmlContent,
     });

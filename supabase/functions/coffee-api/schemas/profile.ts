@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalEmailSchema } from "./email.ts";
 
 const optionalTrimmed = z.string().optional().transform((v: unknown) =>
   typeof v === "string" ? v.trim() : v
@@ -6,8 +7,7 @@ const optionalTrimmed = z.string().optional().transform((v: unknown) =>
 
 export const updateUserProfileSchema = z.object({
   phone: optionalTrimmed,
-  email: z.union([z.string().email("Email 格式不正確"), z.literal("")])
-    .optional(),
+  email: optionalEmailSchema,
   defaultCity: optionalTrimmed,
   defaultDistrict: optionalTrimmed,
   defaultAddress: optionalTrimmed,

@@ -1,4 +1,9 @@
 import { supabase } from "./supabase.ts";
+import {
+  EMAIL_FORMAT_ERROR,
+  isBlankOrValidEmail,
+  normalizeEmail,
+} from "./email-validation.ts";
 import { asJsonRecord } from "./json.ts";
 import type { JsonRecord } from "./json.ts";
 import { stringifyReceiptInfo } from "./receipt-info.ts";
@@ -62,7 +67,7 @@ export async function registerOrUpdateUser(data: JsonRecord) {
   const displayName = toTrimmedString(data.displayName);
   const pictureUrl = toTrimmedString(data.pictureUrl);
   const phone = toTrimmedString(data.phone);
-  const email = toTrimmedString(data.email);
+  const email = normalizeEmail(data.email);
   const deliveryMethod = toTrimmedString(data.deliveryMethod);
   const city = toTrimmedString(data.city);
   const district = toTrimmedString(data.district);
@@ -76,6 +81,10 @@ export async function registerOrUpdateUser(data: JsonRecord) {
   const paymentMethod = toTrimmedString(data.paymentMethod);
   const transferAccountLast5 = toTrimmedString(data.transferAccountLast5);
   const defaultReceiptInfo = stringifyReceiptInfo(data.receiptInfo);
+
+  if (hasKey(data, "email") && !isBlankOrValidEmail(email)) {
+    throw new Error(EMAIL_FORMAT_ERROR);
+  }
 
   if (existing) {
     const updates: JsonRecord = {
