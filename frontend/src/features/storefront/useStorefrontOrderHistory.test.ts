@@ -107,7 +107,8 @@ describe("useStorefrontOrderHistory", () => {
               deliveryMethod: "delivery",
               status: "pending",
               city: "新竹市",
-              address: "測試路 1 號",
+              district: "東區",
+              address: "測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
               items: "測試豆 x1",
               total: 220,
               paymentMethod: "linepay",
@@ -149,7 +150,7 @@ describe("useStorefrontOrderHistory", () => {
     expect(history.ordersView.value[0]).toMatchObject({
       orderId: "LINEPAY-001",
       deliveryMethodLabel: "宅配",
-      locationText: "新竹市測試路 1 號",
+      locationText: "新竹市東區 測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
     });
     expect(history.ordersView.value[0]!.paymentDisplay).toMatchObject({
       canResumePayment: true,

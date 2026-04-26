@@ -113,6 +113,7 @@ export async function getMyOrders(req: Request) {
       storeName: r.store_name,
       storeAddress: r.store_address,
       city: r.city,
+      district: r.district,
       address: r.address,
       paymentMethod: r.payment_method || "cod",
       paymentStatus: r.payment_status || "",

@@ -3,7 +3,10 @@ import {
   setStorefrontHomeDeliveryAddress,
   setStorefrontLocalDeliveryAddress,
 } from "./storefrontDeliveryFormState.ts";
-import { collectSubmitDeliveryInfo } from "./storefrontOrderDeliveryInfo.ts";
+import {
+  buildSubmitDeliveryInfo,
+  collectSubmitDeliveryInfo,
+} from "./storefrontOrderDeliveryInfo.ts";
 import {
   clearStorefrontSelectedStore,
   setStorefrontSelectedStore,
@@ -30,6 +33,20 @@ describe("collectSubmitDeliveryInfo", () => {
         companyOrBuilding: "",
       },
       error: "",
+    });
+  });
+
+  it("appends local delivery company or building text before submit", () => {
+    expect(buildSubmitDeliveryInfo("delivery", {
+      city: "新竹市",
+      district: "東區",
+      address: "測試路 1 號",
+      companyOrBuilding: "幸福社區 A 棟",
+    })).toEqual({
+      city: "新竹市",
+      district: "東區",
+      address: "測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
+      companyOrBuilding: "幸福社區 A 棟",
     });
   });
 

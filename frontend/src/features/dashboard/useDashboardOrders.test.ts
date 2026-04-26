@@ -62,7 +62,7 @@ describe("useDashboardOrders", () => {
             total: 220,
             city: "新竹市",
             district: "東區",
-            address: "測試路 1 號",
+            address: "測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
           },
           {
             orderId: "O-1002",
@@ -94,6 +94,7 @@ describe("useDashboardOrders", () => {
       statusLabel: "待處理",
       paymentMethodLabel: "街口支付",
       showPaymentDeadline: true,
+      addressInfo: "新竹市東區 測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
     });
 
     dashboard.filters.status = "pending";

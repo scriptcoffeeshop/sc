@@ -129,6 +129,14 @@ function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
   return { buyer, taxId, address, needDateStamp };
 }
 
+function buildOrderHistoryLocationText(order: Order) {
+  if (order.storeName) return String(order.storeName);
+  if (!order.city && !order.address) return "";
+  return `${String(order.city || "")}${String(order.district || "")} ${
+    String(order.address || "")
+  }`.trim();
+}
+
 export function buildOrderHistoryItem(
   order: Order,
   deps: Pick<
@@ -152,11 +160,7 @@ export function buildOrderHistoryItem(
     ? getDefaultTrackingUrl(order.deliveryMethod)
     : "";
   const trackingUrl = customTrackingUrl || defaultTrackingUrl;
-  const locationText = order.storeName
-    ? String(order.storeName)
-    : order.city
-    ? `${String(order.city)}${String(order.address || "")}`
-    : "";
+  const locationText = buildOrderHistoryLocationText(order);
 
   return {
     orderId: String(order.orderId || ""),

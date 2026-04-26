@@ -101,6 +101,17 @@
           @input="handleLocalAddressInput('address', $event)"
         >
       </div>
+      <div class="mt-3">
+        <label class="block text-sm text-gray-600 mb-1">公司行號/社區大樓名稱（選填）</label>
+        <input
+          id="delivery-company-or-building"
+          type="text"
+          class="input-field"
+          placeholder="例如：好日子商辦、幸福社區 A 棟"
+          :value="localDeliveryAddress.companyOrBuilding"
+          @input="handleLocalAddressInput('companyOrBuilding', $event)"
+        >
+      </div>
     </div>
 
     <div
