@@ -4,20 +4,19 @@
       <span class="text-sm font-bold" style="color: var(--primary)">
         #{{ order.orderId }}
       </span>
-      <span class="text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-700">
+      <UiStatusBadge tone="warning">
         {{ order.statusLabel }}
-      </span>
+      </UiStatusBadge>
     </div>
 
     <div class="text-xs text-gray-500 mb-2 flex flex-wrap gap-1 items-center">
       <span>{{ order.deliveryMethodLabel }}<template v-if="order.locationText"> ・{{ order.locationText }}</template></span>
-      <span
+      <UiStatusBadge
         v-if="order.paymentDisplay.showBadge"
-        class="text-xs px-2 py-0.5 rounded-full"
         :class="order.paymentDisplay.badgeClass"
       >
         {{ `${order.paymentDisplay.methodLabel} ${order.paymentDisplay.statusLabel}`.trim() }}
-      </span>
+      </UiStatusBadge>
     </div>
 
     <div
@@ -57,12 +56,12 @@
     >
       <div class="flex flex-wrap items-start justify-between gap-2">
         <div class="font-semibold">付款方式：{{ order.paymentDisplay.methodLabel }}</div>
-        <span
+        <UiStatusBadge
           class="text-xs px-2 py-0.5 rounded-full"
           :class="order.paymentDisplay.badgeClass"
         >
           {{ order.paymentDisplay.statusLabel }}
-        </span>
+        </UiStatusBadge>
       </div>
 
       <p class="mt-2 text-sm leading-6">{{ order.paymentDisplay.guideDescription }}</p>
@@ -117,6 +116,7 @@
 </template>
 
 <script setup lang="ts">
+import UiStatusBadge from "../../components/ui/status-badge/StatusBadge.vue";
 import type { OrderHistoryItem } from "./useStorefrontOrderHistory";
 
 defineProps<{

@@ -1,0 +1,159 @@
+{
+  "main": {
+    "products": [
+      {
+        "id": 101,
+        "category": "測試分類",
+        "name": "測試豆",
+        "description": "E2E smoke",
+        "price": 220,
+        "roastLevel": "中焙",
+        "specs": "[{\"key\":\"quarter\",\"label\":\"1/4磅\",\"price\":220,\"enabled\":true}]",
+        "enabled": true
+      }
+    ],
+    "categories": [{ "id": 1, "name": "測試分類" }],
+    "bankAccounts": [
+      {
+        "id": "ba-1",
+        "bankCode": "013",
+        "bankName": "國泰世華",
+        "accountNumber": "111122223333",
+        "accountName": "A戶"
+      },
+      {
+        "id": "ba-2",
+        "bankCode": "011",
+        "bankName": "台北富邦",
+        "accountNumber": "444455556666",
+        "accountName": "B戶"
+      }
+    ],
+    "deliveryOptions": [
+      {
+        "id": "delivery",
+        "name": "配送到府",
+        "description": "新竹配送",
+        "enabled": true
+      }
+    ],
+    "paymentOptions": {
+      "cod": { "icon_url": "", "name": "貨到付款", "description": "到付" },
+      "linepay": {
+        "icon_url": "",
+        "name": "LINE Pay",
+        "description": "線上安全付款"
+      },
+      "jkopay": {
+        "icon_url": "",
+        "name": "街口支付",
+        "description": "街口支付線上付款"
+      },
+      "transfer": {
+        "icon_url": "",
+        "name": "線上轉帳",
+        "description": "ATM / 網銀"
+      }
+    }
+  },
+  "dashboard": {
+    "categories": [{ "id": 1, "name": "測試分類" }],
+    "products": [
+      {
+        "id": 201,
+        "category": "測試分類",
+        "name": "後台測試商品",
+        "description": "admin smoke",
+        "price": 180,
+        "roastLevel": "中焙",
+        "specs": "[{\"key\":\"single\",\"label\":\"單包\",\"price\":180,\"enabled\":true}]",
+        "enabled": true
+      }
+    ],
+    "promotions": [
+      {
+        "id": 301,
+        "name": "任選 2 件 9 折",
+        "type": "bundle",
+        "targetProductIds": [],
+        "targetItems": [{ "productId": 201, "specKey": "single" }],
+        "minQuantity": 2,
+        "discountType": "percent",
+        "discountValue": 90,
+        "enabled": true,
+        "startTime": null,
+        "endTime": null,
+        "sortOrder": 0
+      }
+    ],
+    "orders": [
+      {
+        "orderId": "ORD001",
+        "timestamp": "2026-03-02T00:00:00.000Z",
+        "deliveryMethod": "in_store",
+        "status": "pending",
+        "lineUserId": "customer-line-1",
+        "lineName": "測試客戶",
+        "phone": "0900000000",
+        "email": "customer@example.com",
+        "items": "後台測試商品 x1",
+        "total": 180,
+        "paymentMethod": "cod",
+        "paymentStatus": ""
+      }
+    ],
+    "users": [
+      {
+        "userId": "user-001",
+        "displayName": "測試會員",
+        "pictureUrl": "",
+        "email": "user@example.com",
+        "phone": "0912000000",
+        "defaultDeliveryMethod": "delivery",
+        "defaultCity": "新竹市",
+        "defaultDistrict": "東區",
+        "defaultAddress": "測試路 1 號",
+        "lastLogin": "2026-04-20T10:00:00.000Z",
+        "role": "USER",
+        "status": "ACTIVE",
+        "adminNote": "偏好週末取貨"
+      },
+      {
+        "userId": "admin-002",
+        "displayName": "管理測試員",
+        "pictureUrl": "",
+        "email": "admin@example.com",
+        "phone": "",
+        "defaultDeliveryMethod": "in_store",
+        "defaultStoreName": "",
+        "defaultStoreId": "",
+        "lastLogin": "2026-04-19T09:30:00.000Z",
+        "role": "ADMIN",
+        "status": "BLACKLISTED",
+        "adminNote": "只開放訂單頁",
+        "adminPermissions": { "orders": true }
+      }
+    ],
+    "blacklist": [
+      {
+        "lineUserId": "admin-002",
+        "displayName": "管理測試員",
+        "blockedAt": "2026-04-20T08:00:00.000Z",
+        "reason": "惡意測試"
+      }
+    ],
+    "formFields": [
+      {
+        "id": 401,
+        "field_key": "receipt_type",
+        "label": "收據類型",
+        "field_type": "select",
+        "placeholder": "請選擇",
+        "options": "[\"二聯式\",\"三聯式\"]",
+        "required": true,
+        "enabled": true,
+        "delivery_visibility": "{\"delivery\":true}"
+      }
+    ]
+  }
+}

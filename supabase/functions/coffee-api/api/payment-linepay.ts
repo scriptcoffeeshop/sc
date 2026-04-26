@@ -2,6 +2,7 @@ import {
   buildExpiredOnlinePaymentUpdates,
   expireOnlinePaymentOrderIfNeeded,
   hasValidLinePayCallbackSignature,
+  notifyAdminPaymentFailure,
   notifyLinePayPaymentStatusChanged,
 } from "./payment-shared.ts";
 import { extractAuth, requireAdmin } from "../utils/auth.ts";
@@ -92,6 +93,13 @@ export async function linePayConfirm(data: JsonRecord) {
           payment_last_checked_at: new Date().toISOString(),
         };
       await supabase.from("coffee_orders").update(updates).eq("id", orderId);
+      await notifyAdminPaymentFailure({
+        orderId,
+        paymentMethod: "linepay",
+        phase: "confirm",
+        reason: "LINE Pay 付款期限已過",
+        providerStatusCode: "1180",
+      });
       return {
         success: false,
         error: "付款期限已過，訂單已自動設為失敗",
@@ -99,16 +107,24 @@ export async function linePayConfirm(data: JsonRecord) {
       };
     }
 
+    const failureReason = `付款確認失敗: ${
+      confirmRes.returnMessage || confirmRes.returnCode
+    }`;
     await supabase.from("coffee_orders").update({
       payment_status: "failed",
       payment_last_checked_at: new Date().toISOString(),
     })
       .eq("id", orderId);
+    await notifyAdminPaymentFailure({
+      orderId,
+      paymentMethod: "linepay",
+      phase: "confirm",
+      reason: failureReason,
+      providerStatusCode: String(confirmRes.returnCode || "").trim(),
+    });
     return {
       success: false,
-      error: `付款確認失敗: ${
-        confirmRes.returnMessage || confirmRes.returnCode
-      }`,
+      error: failureReason,
       orderId,
     };
   } catch (e) {

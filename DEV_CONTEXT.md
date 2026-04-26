@@ -57,7 +57,9 @@
 - 日常 CI 包含 frontend unit、frontend lint、frontend build、Playwright E2E、Deno fmt/lint/check/test。
 - `ci-local` 串入 `guardrails`、`typecheck`、`lint:frontend`、`test:unit`、Deno fmt/lint/check/test。
 - Playwright `webServer` 走 `preview:e2e`，CI 會先 build，再用 `SKIP_E2E_BUILD=1 npm run e2e` 重用產物。
-- 欠缺項：真實 Supabase local stack 整合測試、Vue mount/component tests 與正式可觀測性。
+- Vue mount/component tests 已開始覆蓋前台高互動元件；E2E 預設 mock 資料改由 JSON fixture 維護。
+- 可觀測性 MVP 已加入付款失敗管理員 LINE 告警；正式環境仍需在 Supabase Dashboard 設定 Log Drain 將 Edge Function logs 匯出到團隊 log sink。
+- 真實 Supabase local stack golden path 測試以 `npm run test:integration:supabase` 手動執行；此指令會重置本機 Supabase DB，不併入預設 CI。
 
 ---
 
@@ -80,6 +82,7 @@
 - DEV_CONTEXT 瘦身為交接快照，歷史變更移到 `docs/changelog.md`；CI 補前端 typecheck 並重用 `frontend-dist` artifact；ESLint explicit any 改為 warning，空 block 回到預設檢查。
 - 新增 `docs/key-rotation-runbook.md`；`DashboardDeliveryPaymentSettingsCard.vue` 拆出單一取貨方式卡片，`DashboardPromotionModal.vue` 拆出目標商品 picker。
 - `routing/action-map.ts` 拆為 config 與公開/登入/admin action 模組；`MainPage.vue` 事件橋抽到 storefront composable；Vite JS/CSS 改 content hash；env ignore 改為精準規則並追蹤安全範本。
+- 前台配送地址表單拆為配送到府/全台宅配子元件；新增 Vue mount tests、UI primitives、E2E JSON fixture、taiwanCityData JSON 化與付款失敗管理員 LINE 告警。
 
 ### 2026-04-25
 
@@ -120,7 +123,7 @@
 
 ## 6) 常用命令
 
-`rtk npm run hygiene`、`rtk npm run guardrails`、`rtk npm run typecheck`、`rtk npm run test:unit`、`rtk npm run ci-local`、`rtk npm run build`、`rtk npm run e2e`
+`rtk npm run hygiene`、`rtk npm run guardrails`、`rtk npm run typecheck`、`rtk npm run test:unit`、`rtk npm run test:integration:supabase`、`rtk npm run ci-local`、`rtk npm run build`、`rtk npm run e2e`
 
 ---
 

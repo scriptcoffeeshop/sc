@@ -14,16 +14,15 @@
         <span class="delivery-tag" :class="`delivery-${order.deliveryMethod}`">
           {{ order.deliveryLabel }}
         </span>
-        <span class="status-badge" :class="`status-${order.status}`">
+        <UiStatusBadge class="status-badge" :class="`status-${order.status}`">
           {{ order.statusLabel }}
-        </span>
-        <span
+        </UiStatusBadge>
+        <UiStatusBadge
           v-if="order.paymentMethod !== 'cod'"
-          class="text-xs px-2 py-0.5 rounded-full"
           :class="order.payBadgeClass"
         >
           {{ order.paymentMethodLabel }} {{ order.paymentStatusLabel }}
-        </span>
+        </UiStatusBadge>
       </div>
       <span class="text-xs ui-text-subtle">{{ order.timestampText }}</span>
     </div>
@@ -199,6 +198,7 @@ import {
   dashboardOrdersActions,
   useDashboardOrders,
 } from "./useDashboardOrders.ts";
+import UiStatusBadge from "../../components/ui/status-badge/StatusBadge.vue";
 import type { DashboardOrderViewModel } from "./dashboardOrdersView.ts";
 
 defineProps<{

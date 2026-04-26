@@ -9,6 +9,10 @@ import { createLogger } from "../utils/logger.ts";
 import { parseReceiptInfoRecord } from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
+import {
+  LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN,
+  LINE_ORDER_NOTIFY_TO,
+} from "../utils/config.ts";
 import { supabase } from "../utils/supabase.ts";
 import { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
 
@@ -28,6 +32,14 @@ export type LinePayStatus = "paid" | "cancelled";
 
 interface JkoLineNotifyOptions {
   force?: boolean;
+}
+
+export interface AdminPaymentFailureNotificationParams {
+  orderId: string;
+  paymentMethod: string;
+  phase: string;
+  reason: string;
+  providerStatusCode?: string;
 }
 
 const logger = createLogger("payment-shared");
@@ -132,6 +144,162 @@ function getDeliveryAddressText(order: JsonRecord): string {
 
 function getLinePayStatusLabel(status: LinePayStatus): string {
   return status === "paid" ? "已付款" : "已取消";
+}
+
+function parseNotifyTargets(raw: string): string[] {
+  return [
+    ...new Set(
+      String(raw || "")
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
+function getPaymentMethodLabel(paymentMethod: string): string {
+  if (paymentMethod === "linepay") return "LINE Pay";
+  if (paymentMethod === "jkopay") return "街口支付";
+  if (paymentMethod === "transfer") return "線上轉帳";
+  if (paymentMethod === "cod") return "貨到付款";
+  return paymentMethod || "未知付款方式";
+}
+
+function getPaymentFailurePhaseLabel(phase: string): string {
+  if (phase === "request") return "建立付款請求";
+  if (phase === "confirm") return "付款確認";
+  if (phase === "inquiry") return "付款查詢";
+  if (phase === "callback") return "付款回呼";
+  return phase || "付款流程";
+}
+
+export function buildAdminPaymentFailureFlexMessage(
+  params: AdminPaymentFailureNotificationParams & {
+    siteTitle: string;
+    lineName?: string;
+    total?: number;
+  },
+): JsonRecord {
+  const paymentMethodLabel = getPaymentMethodLabel(params.paymentMethod);
+  const phaseLabel = getPaymentFailurePhaseLabel(params.phase);
+  const detailLines = [
+    { label: "訂單編號", value: params.orderId },
+    { label: "付款方式", value: paymentMethodLabel },
+    { label: "失敗階段", value: phaseLabel },
+    { label: "顧客", value: params.lineName || "未提供" },
+    { label: "金額", value: `$${Number(params.total) || 0}` },
+  ];
+  if (params.providerStatusCode) {
+    detailLines.push({ label: "狀態碼", value: params.providerStatusCode });
+  }
+  detailLines.push({ label: "原因", value: params.reason });
+
+  return {
+    type: "flex",
+    altText: `${paymentMethodLabel} 付款失敗：${params.orderId}`,
+    contents: {
+      type: "bubble",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#B42318",
+        contents: [{
+          type: "text",
+          text: "付款失敗告警",
+          color: "#FFFFFF",
+          weight: "bold",
+          size: "lg",
+        }],
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "text",
+            text: params.siteTitle || "Script Coffee",
+            weight: "bold",
+            color: "#3C2415",
+            wrap: true,
+          },
+          ...detailLines.map((line) => ({
+            type: "box",
+            layout: "baseline",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: line.label,
+                color: "#6B7280",
+                size: "xs",
+                flex: 2,
+              },
+              {
+                type: "text",
+                text: String(line.value || "未提供").slice(0, 220),
+                color: "#111827",
+                size: "sm",
+                wrap: true,
+                flex: 5,
+              },
+            ],
+          })),
+        ],
+      },
+    },
+  };
+}
+
+export async function notifyAdminPaymentFailure(
+  params: AdminPaymentFailureNotificationParams,
+) {
+  try {
+    const notifyTargets = parseNotifyTargets(
+      String(LINE_ORDER_NOTIFY_TO || ""),
+    );
+    const notifyToken = String(LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN || "")
+      .trim();
+    if (!notifyTargets.length || !notifyToken) {
+      logger.warn("Skip payment failure admin LINE notification", {
+        orderId: params.orderId,
+        hasTarget: notifyTargets.length > 0,
+        hasToken: Boolean(notifyToken),
+      });
+      return;
+    }
+
+    const { siteTitle } = await getEmailBranding();
+    const { data: order } = await supabase.from("coffee_orders").select(
+      "line_name, total",
+    ).eq("id", params.orderId).maybeSingle();
+    const flexMessage = buildAdminPaymentFailureFlexMessage({
+      ...params,
+      siteTitle,
+      lineName: String(order?.line_name || ""),
+      total: Number(order?.total) || 0,
+    });
+
+    for (const target of notifyTargets) {
+      const result = await pushLineFlexMessage(
+        target,
+        flexMessage,
+        notifyToken,
+      );
+      if (!result.success) {
+        logger.error("Failed to send payment failure admin LINE notification", {
+          orderId: params.orderId,
+          target,
+          error: result.error,
+        });
+      }
+    }
+  } catch (error) {
+    logger.error("Unexpected payment failure admin notification error", {
+      orderId: params.orderId,
+      error,
+    });
+  }
 }
 
 async function updateJkoLineNotifyState(

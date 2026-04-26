@@ -1,5 +1,6 @@
 import { buildOrderQuote } from "./quote.ts";
 import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notification-policy.ts";
+import { notifyAdminPaymentFailure } from "./payment-shared.ts";
 import {
   buildCustomFieldsHtml,
   buildReceiptHtml,
@@ -139,12 +140,26 @@ function resolveStoreType(deliveryMethod: string): string {
 async function markPaymentRequestFailed(
   orderId: string,
   fields: JsonRecord = {},
+  notification?: {
+    paymentMethod: string;
+    reason: string;
+    providerStatusCode?: string;
+  },
 ) {
   await supabase.from("coffee_orders").update({
     payment_status: "failed",
     payment_last_checked_at: new Date().toISOString(),
     ...fields,
   }).eq("id", orderId);
+  if (notification) {
+    await notifyAdminPaymentFailure({
+      orderId,
+      paymentMethod: notification.paymentMethod,
+      phase: "request",
+      reason: notification.reason,
+      providerStatusCode: notification.providerStatusCode,
+    });
+  }
 }
 
 export async function submitOrder(data: JsonRecord, req: Request) {
@@ -475,17 +490,27 @@ export async function submitOrder(data: JsonRecord, req: Request) {
         };
       }
 
-      await markPaymentRequestFailed(orderId);
+      const failureReason = `LINE Pay 請求失敗: ${
+        lpRes.returnMessage || lpRes.returnCode
+      }`;
+      await markPaymentRequestFailed(orderId, {}, {
+        paymentMethod: "linepay",
+        reason: failureReason,
+      });
       return {
         success: false,
-        error: `LINE Pay 請求失敗: ${lpRes.returnMessage || lpRes.returnCode}`,
+        error: failureReason,
         orderId,
       };
     } catch (e) {
-      await markPaymentRequestFailed(orderId);
+      const failureReason = "LINE Pay 付款請求失敗: " + String(e);
+      await markPaymentRequestFailed(orderId, {}, {
+        paymentMethod: "linepay",
+        reason: failureReason,
+      });
       return {
         success: false,
-        error: "LINE Pay 付款請求失敗: " + String(e),
+        error: failureReason,
         orderId,
       };
     }
@@ -554,9 +579,7 @@ export async function submitOrder(data: JsonRecord, req: Request) {
         };
       }
 
-      await markPaymentRequestFailed(orderId, {
-        payment_provider_status_code: resultCode || "",
-      });
+      const providerStatusCode = resultCode || "";
       const resultObjectSummary = Object.keys(resultObject).length > 0
         ? (() => {
           try {
@@ -573,6 +596,14 @@ export async function submitOrder(data: JsonRecord, req: Request) {
       if (resultObjectSummary) {
         failureParts.push(`detail=${resultObjectSummary}`);
       }
+      const failureReason = `街口支付建單失敗: ${failureParts.join(" | ")}`;
+      await markPaymentRequestFailed(orderId, {
+        payment_provider_status_code: providerStatusCode,
+      }, {
+        paymentMethod: "jkopay",
+        reason: failureReason,
+        providerStatusCode,
+      });
       logger.error("JKO Pay entry failed", {
         orderId,
         resultCode,
@@ -583,14 +614,18 @@ export async function submitOrder(data: JsonRecord, req: Request) {
       });
       return {
         success: false,
-        error: `街口支付建單失敗: ${failureParts.join(" | ")}`,
+        error: failureReason,
         orderId,
       };
     } catch (e) {
-      await markPaymentRequestFailed(orderId);
+      const failureReason = "街口支付建單失敗: " + String(e);
+      await markPaymentRequestFailed(orderId, {}, {
+        paymentMethod: "jkopay",
+        reason: failureReason,
+      });
       return {
         success: false,
-        error: "街口支付建單失敗: " + String(e),
+        error: failureReason,
         orderId,
       };
     }

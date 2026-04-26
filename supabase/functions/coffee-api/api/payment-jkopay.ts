@@ -5,9 +5,13 @@ import {
   getJkoTradeNoFromPayload,
   hasValidJkoPayCallbackSignature,
   isTerminalJkoPaymentStatus,
+  notifyAdminPaymentFailure,
   notifyJkoPayPaymentStatusChanged,
 } from "./payment-shared.ts";
-import { syncJkoPayOrderStatus } from "./payment-jkopay-sync.ts";
+import {
+  type JkoPayOrderSyncResult,
+  syncJkoPayOrderStatus,
+} from "./payment-jkopay-sync.ts";
 import { extractAuth, requireAdmin, requireAuth } from "../utils/auth.ts";
 import {
   parseJkoStatusCode,
@@ -57,6 +61,26 @@ function generateRefundOrderId(orderId: string): string {
   const randomSuffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12)
     .toUpperCase();
   return `R${base}${randomSuffix}`.slice(0, 60);
+}
+
+async function notifyJkoPaymentFailureIfNeeded(
+  syncResult: JkoPayOrderSyncResult,
+  phase: "callback" | "inquiry",
+) {
+  if (!syncResult.success || !syncResult.statusChanged) return;
+  if (!["failed", "expired"].includes(syncResult.paymentStatus)) return;
+
+  const providerStatusCode = syncResult.statusCode === null
+    ? ""
+    : String(syncResult.statusCode);
+  await notifyAdminPaymentFailure({
+    orderId: syncResult.orderId,
+    paymentMethod: "jkopay",
+    phase,
+    reason: syncResult.error ||
+      `街口支付狀態轉為 ${syncResult.paymentStatus}`,
+    providerStatusCode,
+  });
 }
 
 export async function jkoPayResult(
@@ -109,6 +133,7 @@ export async function jkoPayResult(
           syncResult.paymentStatus,
         );
       }
+      await notifyJkoPaymentFailureIfNeeded(syncResult, "callback");
     }
     return {
       valid: syncResult.success,
@@ -136,6 +161,7 @@ export async function jkoPayResult(
     } else if (isTerminalJkoPaymentStatus(syncResult.paymentStatus)) {
       await notifyJkoPayPaymentStatusChanged(orderId, syncResult.paymentStatus);
     }
+    await notifyJkoPaymentFailureIfNeeded(syncResult, "callback");
   }
   return {
     valid: syncResult.success,
@@ -214,6 +240,7 @@ export async function jkoPayInquiry(
             syncResult.paymentStatus,
           );
         }
+        await notifyJkoPaymentFailureIfNeeded(syncResult, "inquiry");
       }
       return {
         success: syncResult.success,
@@ -269,6 +296,7 @@ export async function jkoPayInquiry(
           syncResult.paymentStatus,
         );
       }
+      await notifyJkoPaymentFailureIfNeeded(syncResult, "inquiry");
     }
 
     return {

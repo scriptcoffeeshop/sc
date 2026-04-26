@@ -35,6 +35,7 @@
   - `.env`、`.env.staging`、`.env.supabase.local` 等敏感檔只保留在本機；`.env.*.example` / `.env.*.sample` / `.env.*.template` 範本可入版控。
   - 可透過 `npm run hygiene` 或 `npm run guardrails` 檢查目前 tracked file 是否誤含敏感檔。
   - 需要本機完整健康檢查時使用 `npm run health`；若只需快速確認後端與守門規則，可用 `npm run ci-local`（含 `lint:frontend`、`test:unit`）；E2E 快篩可用 `npm run e2e:smoke`。
+  - 需要真實 Supabase local stack 整合測試時使用 `npm run test:integration:supabase`；此指令會啟動 Supabase local、重置本機 DB、載入 golden path seed、啟動 `coffee-api`，再跑「下單 → 後台確認付款 → 我的訂單查詢」流程。這是本機破壞性測試，不會併入預設 CI。
   - `npm run guardrails` 目前也會執行 `scripts/check_dev_context_sync.py`，確認 `DEV_CONTEXT.md` 的「最後更新」與前端版號沒有和實際狀態漂移。
   - Smoke E2E 已依前台、結帳、後台核心、後台設定、後台控制項、bridge removal 拆到 `tests/e2e/smoke/`；`tests/e2e/support/smoke-fixtures.ts` 保留相容 barrel export，實際共用路由、global stub、顏色比對 helper 請分別維護在 `smoke-main-routes.ts`、`smoke-dashboard-routes.ts`、`smoke-global-stubs.ts`、`smoke-color.ts`。
   - 已知歷史風險與清理步驟記錄於 [docs/repo-hygiene.md](docs/repo-hygiene.md)。
@@ -46,6 +47,10 @@
   - 業務邏輯放入 `api/`，工具函數放入 `utils/`，並在 `index.ts` 集中分派。
   - 所有寫入操作 (Mutation) 必須透過 **Zod Schema** 進行驗證。
   - API 必須支援分頁 (`limit`/`offset`) 與搜尋下推至資料庫層級。
+- **可觀測性最低配置**：
+  - Supabase 專案需在 Dashboard 內設定 Log Drain，將 Edge Function logs 匯出到團隊使用的 log sink；若目前方案尚未開通 Log Drains，至少保留 Log Explorer 查詢與 GitHub Actions 部署紀錄。
+  - 管理員 LINE 告警使用 `LINE_ORDER_NOTIFY_CHANNEL_ACCESS_TOKEN` 與 `LINE_ORDER_NOTIFY_TO`；`LINE_ORDER_NOTIFY_TO` 可用逗號或換行設定多個 user/group id。
+  - 線上金流付款請求、確認或回呼轉為 `failed` / `expired` 時，後端會透過同一個管理員 LINE 告警入口通知。
 - **Migration 命名**：
   - 新增 `supabase/migrations/*.sql` 時，檔名統一使用 `YYYYMMDDHHmm_slug.sql`。
   - 已上線或已套用的歷史 migration **不可為了統一命名而回改檔名**。

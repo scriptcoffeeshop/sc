@@ -2,6 +2,7 @@ import type {
   Request as PlaywrightRequest,
   Route,
 } from "@playwright/test";
+import smokeFixtures from "./fixtures/smoke-fixtures.json";
 import type {
   FixtureBankAccount,
   FixtureBlacklistEntry,
@@ -80,6 +81,8 @@ export interface DashboardJsonRecord {
   [key: string]: unknown;
 }
 
+const dashboardFixtures = smokeFixtures.dashboard;
+
 function cloneArrayItems<T extends object>(items: T[]): T[] {
   return items.map((item) => ({ ...item }));
 }
@@ -90,123 +93,29 @@ export function createDashboardRouteState(
   return {
     categories: Array.isArray(options.categories)
       ? cloneArrayItems(options.categories)
-      : [{ id: 1, name: "測試分類" }],
+      : cloneArrayItems(dashboardFixtures.categories),
     products: Array.isArray(options.products)
       ? cloneArrayItems(options.products)
-      : [
-        {
-          id: 201,
-          category: "測試分類",
-          name: "後台測試商品",
-          description: "admin smoke",
-          price: 180,
-          roastLevel: "中焙",
-          specs: JSON.stringify([{
-            key: "single",
-            label: "單包",
-            price: 180,
-            enabled: true,
-          }]),
-          enabled: true,
-        },
-      ],
+      : cloneArrayItems(dashboardFixtures.products),
     promotions: Array.isArray(options.promotions)
       ? cloneArrayItems(options.promotions)
-      : [
-        {
-          id: 301,
-          name: "任選 2 件 9 折",
-          type: "bundle",
-          targetProductIds: [],
-          targetItems: [{ productId: 201, specKey: "single" }],
-          minQuantity: 2,
-          discountType: "percent",
-          discountValue: 90,
-          enabled: true,
-          startTime: null,
-          endTime: null,
-          sortOrder: 0,
-        },
-      ],
+      : cloneArrayItems(dashboardFixtures.promotions),
     orders: Array.isArray(options.orders)
       ? cloneArrayItems(options.orders)
-      : [
-        {
-          orderId: "ORD001",
-          timestamp: "2026-03-02T00:00:00.000Z",
-          deliveryMethod: "in_store",
-          status: "pending",
-          lineUserId: "customer-line-1",
-          lineName: "測試客戶",
-          phone: "0900000000",
-          email: "customer@example.com",
-          items: "後台測試商品 x1",
-          total: 180,
-          paymentMethod: "cod",
-          paymentStatus: "",
-        },
-      ],
+      : cloneArrayItems(dashboardFixtures.orders),
     users: Array.isArray(options.users)
       ? cloneArrayItems(options.users)
-      : [
-        {
-          userId: "user-001",
-          displayName: "測試會員",
-          pictureUrl: "",
-          email: "user@example.com",
-          phone: "0912000000",
-          defaultDeliveryMethod: "delivery",
-          defaultCity: "新竹市",
-          defaultDistrict: "東區",
-          defaultAddress: "測試路 1 號",
-          lastLogin: "2026-04-20T10:00:00.000Z",
-          role: "USER",
-          status: "ACTIVE",
-          adminNote: "偏好週末取貨",
-        },
-        {
-          userId: "admin-002",
-          displayName: "管理測試員",
-          pictureUrl: "",
-          email: "admin@example.com",
-          phone: "",
-          defaultDeliveryMethod: "in_store",
-          defaultStoreName: "",
-          defaultStoreId: "",
-          lastLogin: "2026-04-19T09:30:00.000Z",
-          role: "ADMIN",
-          status: "BLACKLISTED",
-          adminNote: "只開放訂單頁",
-          adminPermissions: { orders: true },
-        },
-      ],
+      : cloneArrayItems(dashboardFixtures.users),
     blacklist: Array.isArray(options.blacklist)
       ? cloneArrayItems(options.blacklist)
-      : [
-        {
-          lineUserId: "admin-002",
-          displayName: "管理測試員",
-          blockedAt: "2026-04-20T08:00:00.000Z",
-          reason: "惡意測試",
-        },
-      ],
+      : cloneArrayItems(dashboardFixtures.blacklist),
     bankAccounts: Array.isArray(options.bankAccounts)
       ? cloneArrayItems(options.bankAccounts)
       : [],
     settings: { ...(options.settings || {}) },
     formFields: Array.isArray(options.formFields)
       ? cloneArrayItems(options.formFields)
-      : [{
-        id: 401,
-        field_key: "receipt_type",
-        label: "收據類型",
-        field_type: "select",
-        placeholder: "請選擇",
-        options: JSON.stringify(["二聯式", "三聯式"]),
-        required: true,
-        enabled: true,
-        delivery_visibility: JSON.stringify({ delivery: true }),
-      }],
+      : cloneArrayItems(dashboardFixtures.formFields),
   };
 }
 

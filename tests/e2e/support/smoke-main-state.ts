@@ -1,4 +1,5 @@
 import type { Request as PlaywrightRequest } from "@playwright/test";
+import smokeFixtures from "./fixtures/smoke-fixtures.json";
 import type {
   FixtureDeliveryOption,
   FixtureFormField,
@@ -40,6 +41,7 @@ export interface MainRouteState {
 }
 
 type QuoteRequestItem = FixtureQuoteRequestItem;
+const mainFixtures = smokeFixtures.main;
 
 export function createMainRouteState(options: MainRouteOptions): MainRouteState {
   const paymentSource = options.payment ??
@@ -55,15 +57,8 @@ export function createMainRouteState(options: MainRouteOptions): MainRouteState 
 
   return {
     payment,
-    deliveryOptions: options.deliveryOptions ?? [
-      {
-        id: "delivery",
-        name: "配送到府",
-        description: "新竹配送",
-        enabled: true,
-        payment,
-      },
-    ],
+    deliveryOptions: options.deliveryOptions ??
+      mainFixtures.deliveryOptions.map((option) => ({ ...option, payment })),
     formFields: Array.isArray(options.formFields)
       ? options.formFields.map((field, index) => ({
         id: Number(field.id) || index + 1,
@@ -84,60 +79,15 @@ export function createMainRouteState(options: MainRouteOptions): MainRouteState 
 export function buildMainInitDataPayload(state: MainRouteState) {
   return {
     success: true,
-    products: [
-      {
-        id: 101,
-        category: "測試分類",
-        name: "測試豆",
-        description: "E2E smoke",
-        price: 220,
-        roastLevel: "中焙",
-        specs: JSON.stringify([
-          { key: "quarter", label: "1/4磅", price: 220, enabled: true },
-        ]),
-        enabled: true,
-      },
-    ],
-    categories: [{ id: 1, name: "測試分類" }],
+    products: mainFixtures.products,
+    categories: mainFixtures.categories,
     formFields: state.formFields,
-    bankAccounts: [
-      {
-        id: "ba-1",
-        bankCode: "013",
-        bankName: "國泰世華",
-        accountNumber: "111122223333",
-        accountName: "A戶",
-      },
-      {
-        id: "ba-2",
-        bankCode: "011",
-        bankName: "台北富邦",
-        accountNumber: "444455556666",
-        accountName: "B戶",
-      },
-    ],
+    bankAccounts: mainFixtures.bankAccounts,
     promotions: [],
     settings: {
       is_open: "true",
       delivery_options_config: JSON.stringify(state.deliveryOptions),
-      payment_options_config: JSON.stringify({
-        cod: { icon_url: "", name: "貨到付款", description: "到付" },
-        linepay: {
-          icon_url: "",
-          name: "LINE Pay",
-          description: "線上安全付款",
-        },
-        jkopay: {
-          icon_url: "",
-          name: "街口支付",
-          description: "街口支付線上付款",
-        },
-        transfer: {
-          icon_url: "",
-          name: "線上轉帳",
-          description: "ATM / 網銀",
-        },
-      }),
+      payment_options_config: JSON.stringify(mainFixtures.paymentOptions),
       ...state.settings,
     },
   };
