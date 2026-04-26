@@ -353,7 +353,7 @@ async function deleteUserFromDialog(user: DashboardUserRecord) {
     showCancelButton: true,
     confirmButtonText: "刪除",
     cancelButtonText: "取消",
-    confirmButtonColor: "#b91c1c",
+    confirmButtonColor: "#DC322F",
   });
   if (!confirmation.isConfirmed) return;
 

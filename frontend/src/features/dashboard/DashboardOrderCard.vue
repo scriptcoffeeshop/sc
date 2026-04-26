@@ -179,7 +179,6 @@
           type="button"
           @click="handleConfirmOrderStatus(order.orderId)"
           class="confirm-status-btn dashboard-action dashboard-action--primary"
-          style="background:#6F4E37; color:#fff;"
         >
           確認
         </button>
