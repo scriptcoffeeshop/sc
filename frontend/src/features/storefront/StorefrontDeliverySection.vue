@@ -59,7 +59,7 @@
       </h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
         <div>
-          <label class="block text-sm text-gray-600 mb-1">縣市</label>
+          <label class="block text-sm text-gray-600 mb-1">縣市 <span class="text-red-500">*</span></label>
           <select
             id="delivery-city"
             class="input-field"
@@ -72,7 +72,7 @@
           </select>
         </div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">區域</label>
+          <label class="block text-sm text-gray-600 mb-1">區域 <span class="text-red-500">*</span></label>
           <select
             id="delivery-district"
             class="input-field"
@@ -91,7 +91,7 @@
         </div>
       </div>
       <div>
-        <label class="block text-sm text-gray-600 mb-1">詳細地址</label>
+        <label class="block text-sm text-gray-600 mb-1">詳細地址 <span class="text-red-500">*</span></label>
         <input
           id="delivery-detail-address"
           type="text"

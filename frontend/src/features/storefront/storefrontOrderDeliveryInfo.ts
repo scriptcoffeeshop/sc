@@ -31,6 +31,7 @@ export function collectSubmitDeliveryInfo(
     const addr = localAddress.address.trim();
     const companyOrBuilding = localAddress.companyOrBuilding.trim();
     if (!city) return { deliveryInfo: null, error: "請選擇縣市" };
+    if (!district) return { deliveryInfo: null, error: "請選擇區域" };
     if (!addr) return { deliveryInfo: null, error: "請填寫詳細地址" };
     return {
       deliveryInfo: { city, district, address: addr, companyOrBuilding },

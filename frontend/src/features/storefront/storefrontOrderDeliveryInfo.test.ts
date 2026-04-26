@@ -64,6 +64,20 @@ describe("collectSubmitDeliveryInfo", () => {
     });
   });
 
+  it("validates missing local delivery district from Vue state", () => {
+    setStorefrontLocalDeliveryAddress({
+      city: "新竹市",
+      district: "",
+      address: "測試路 1 號",
+      companyOrBuilding: "",
+    });
+
+    expect(collectSubmitDeliveryInfo("delivery")).toEqual({
+      deliveryInfo: null,
+      error: "請選擇區域",
+    });
+  });
+
   it("collects home delivery address from Vue state", () => {
     setStorefrontHomeDeliveryAddress({
       city: "台北市",

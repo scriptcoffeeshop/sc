@@ -16,6 +16,7 @@ type SubmitOrderBody = {
   city?: string;
   companyOrBuilding?: string;
   deliveryMethod?: string;
+  district?: string;
   items?: unknown[];
   paymentMethod?: string;
   transferAccountLast5?: string;
@@ -66,6 +67,7 @@ test.describe("smoke / storefront checkout", () => {
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
+    await page.selectOption("#delivery-district", "東區");
     await page.fill("#delivery-detail-address", "測試路 1 號");
     await expect(page.locator("#delivery-company-or-building")).toBeVisible();
     await page.fill("#delivery-company-or-building", "幸福社區 A 棟");
@@ -82,6 +84,7 @@ test.describe("smoke / storefront checkout", () => {
     expect(submitBody).toBeTruthy();
     expect(submitBody?.deliveryMethod).toBe("delivery");
     expect(submitBody?.city).toBe("新竹市");
+    expect(submitBody?.district).toBe("東區");
     expect(submitBody?.address).toBe(
       "測試路 1 號（公司行號/社區大樓：幸福社區 A 棟）",
     );
@@ -122,6 +125,7 @@ test.describe("smoke / storefront checkout", () => {
 
     await page.locator('.delivery-option[data-id="delivery"]').click();
     await page.selectOption("#delivery-city", "新竹市");
+    await page.selectOption("#delivery-district", "東區");
     await page.fill("#delivery-detail-address", "測試路 2 號");
 
     await page.locator("#products-container .spec-btn-add").first().click();
