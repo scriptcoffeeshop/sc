@@ -3,7 +3,7 @@
   "scripts": {
     "dev": "vite --config frontend/vite.config.ts",
     "build": "vite build --config frontend/vite.config.ts && bash scripts/prepare_static_deploy.sh",
-    "build:analyze": "ANALYZE_BUNDLE=true vite build --config frontend/vite.config.ts",
+    "build:analyze": "vite build --config frontend/vite.analyze.config.mts",
     "preview": "vite preview --config frontend/vite.config.ts",
     "preview:e2e": "bash scripts/serve_e2e_preview.sh",
     "hygiene": "python3 scripts/repo_hygiene_check.py",

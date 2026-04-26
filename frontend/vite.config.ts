@@ -1,30 +1,14 @@
 import { resolve } from "node:path";
-import type { PreRenderedAsset, PreRenderedChunk } from "rollup";
-import { defineConfig, type PluginOption } from "vite";
+import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 
 const root = resolve(__dirname);
+type OutputNameInfo = { name: string | undefined };
 
-async function resolvePlugins(): Promise<PluginOption[]> {
-  const plugins: PluginOption[] = [vue()];
-  if (process.env["ANALYZE_BUNDLE"] !== "true") return plugins;
-
-  const { visualizer } = await import("rollup-plugin-visualizer");
-  plugins.push(
-    visualizer({
-      filename: resolve(root, "dist", "bundle-stats.html"),
-      template: "treemap",
-      gzipSize: true,
-      brotliSize: true,
-    }) as PluginOption,
-  );
-  return plugins;
-}
-
-export default defineConfig(async () => ({
+export default defineConfig({
   root,
   base: "./",
-  plugins: await resolvePlugins(),
+  plugins: [vue()],
   resolve: {
     alias: [{
       find: /^vue$/,
@@ -51,15 +35,15 @@ export default defineConfig(async () => ({
       },
       output: {
         entryFileNames: "assets/[name]-[hash].js",
-        chunkFileNames: (chunkInfo: PreRenderedChunk) =>
+        chunkFileNames: (chunkInfo: OutputNameInfo) =>
           chunkInfo.name === "_plugin-vue_export-helper"
             ? "assets/sharedUtils-[hash].js"
             : "assets/[name]-[hash].js",
-        assetFileNames: (assetInfo: PreRenderedAsset) =>
+        assetFileNames: (assetInfo: OutputNameInfo) =>
           assetInfo.name === "_plugin-vue_export-helper.css"
             ? "assets/sharedUtils-[hash][extname]"
             : "assets/[name]-[hash][extname]",
       },
     },
   },
-}));
+});
