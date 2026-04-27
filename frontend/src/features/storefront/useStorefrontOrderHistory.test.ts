@@ -185,7 +185,7 @@ describe("useStorefrontOrderHistory", () => {
     expect(Swal.fire).not.toHaveBeenCalled();
   });
 
-  it("hides宅配 tracking links before shipment is confirmed", () => {
+  it("hides tracking links before shipment is confirmed", () => {
     const pendingHomeDelivery = buildOrderHistoryItem({
       orderId: "HOME-PENDING-001",
       deliveryMethod: "home_delivery",
@@ -195,6 +195,17 @@ describe("useStorefrontOrderHistory", () => {
       items: "測試豆 x1",
       total: 220,
       paymentMethod: "transfer",
+      paymentStatus: "pending",
+    }, createOrderHistoryDeps());
+
+    const pendingFamilyMart = buildOrderHistoryItem({
+      orderId: "FAMILY-PENDING-001",
+      deliveryMethod: "family_mart",
+      status: "pending",
+      storeName: "全家台東龍泉店",
+      items: "測試豆 x1",
+      total: 255,
+      paymentMethod: "cod",
       paymentStatus: "pending",
     }, createOrderHistoryDeps());
 
@@ -224,6 +235,8 @@ describe("useStorefrontOrderHistory", () => {
 
     expect(pendingHomeDelivery.trackingUrl).toBe("");
     expect(pendingHomeDelivery.hasShippingInfo).toBe(false);
+    expect(pendingFamilyMart.trackingUrl).toBe("");
+    expect(pendingFamilyMart.hasShippingInfo).toBe(false);
     expect(shippedHomeDelivery.trackingUrl).toContain("postserv.post.gov.tw");
     expect(shippedHomeDelivery.hasShippingInfo).toBe(true);
     expect(deliveredHomeDelivery.statusLabel).toBe("已配達");

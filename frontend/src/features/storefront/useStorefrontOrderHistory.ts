@@ -114,12 +114,7 @@ const DELIVERY_METHOD_TEXT: Record<string, string> = {
   in_store: "來店取貨",
 };
 
-function canShowTrackingUrl(order: Pick<Order, "deliveryMethod" | "status">) {
-  const deliveryMethod = String(order.deliveryMethod || "").trim();
-  if (deliveryMethod !== "delivery" && deliveryMethod !== "home_delivery") {
-    return true;
-  }
-
+function canShowTrackingUrl(order: Pick<Order, "status">) {
   const status = String(order.status || "").trim().toLowerCase();
   return status === "shipped" || status === "delivered" ||
     status === "completed";
