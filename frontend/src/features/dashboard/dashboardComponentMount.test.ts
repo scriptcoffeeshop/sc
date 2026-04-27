@@ -159,7 +159,7 @@ describe("dashboard Vue component mount coverage", () => {
 
     expect(exposed.getValues()).toEqual({
       trackingNumber: "JP-7001",
-      shippingProvider: "7-11貨態查詢",
+      shippingProvider: "7-11",
       trackingUrl: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
     });
     expect(
@@ -176,6 +176,29 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "JP-7001",
       shippingProvider: "黑貓宅急便",
       trackingUrl: "https://tracking.example/JP-7001",
+    });
+  });
+
+  it("mounts DashboardShippingInfoForm with legacy preset provider labels", () => {
+    const wrapper = mount(DashboardShippingInfoForm, {
+      props: {
+        initialValues: {
+          trackingNumber: "FM-7001",
+          shippingProvider: "全家貨態查詢",
+          trackingUrl: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+        },
+      },
+    });
+    const exposed = wrapper.vm as unknown as DashboardShippingInfoFormExpose;
+
+    expect(
+      wrapper.find<HTMLSelectElement>("#swal-shipping-provider-preset").element
+        .value,
+    ).toBe("family_mart");
+    expect(exposed.getValues()).toEqual({
+      trackingNumber: "FM-7001",
+      shippingProvider: "全家",
+      trackingUrl: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
     });
   });
 });

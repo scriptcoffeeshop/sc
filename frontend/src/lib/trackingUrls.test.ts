@@ -31,17 +31,17 @@ describe("trackingUrls", () => {
     expect(TRACKING_PROVIDER_PRESETS).toEqual([
       {
         id: "seven_eleven",
-        label: "7-11貨態查詢",
+        label: "7-11",
         url: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
       },
       {
         id: "family_mart",
-        label: "全家貨態查詢",
+        label: "全家",
         url: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
       },
       {
         id: "post",
-        label: "中華郵政貨態查詢",
+        label: "中華郵政",
         url: "https://postserv.post.gov.tw/pstmail/main_mail.html",
       },
     ]);

@@ -99,8 +99,25 @@ const props = withDefaults(
 );
 
 const CUSTOM_PROVIDER_VALUE = "other";
-const POST_PROVIDER_ALIASES = new Set(["中華郵政查詢", "中華郵政貨態查詢"]);
+const TRACKING_PROVIDER_LABEL_ALIASES: Partial<
+  Record<TrackingProviderPresetId, readonly string[]>
+> = {
+  seven_eleven: ["7-11貨態查詢"],
+  family_mart: ["全家貨態查詢"],
+  post: ["中華郵政查詢", "中華郵政貨態查詢"],
+};
 const trackingProviderPresets = TRACKING_PROVIDER_PRESETS;
+
+function matchesProviderPresetLabel(
+  presetId: TrackingProviderPresetId,
+  presetLabel: string,
+  shippingProvider: string,
+): boolean {
+  return presetLabel === shippingProvider ||
+    (TRACKING_PROVIDER_LABEL_ALIASES[presetId] || []).includes(
+      shippingProvider,
+    );
+}
 
 function resolveInitialProviderPreset(
   initialValues: DashboardShippingInfoValues,
@@ -108,8 +125,7 @@ function resolveInitialProviderPreset(
   const shippingProvider = String(initialValues.shippingProvider || "").trim();
   const trackingUrl = normalizeTrackingUrl(initialValues.trackingUrl || "");
   const providerMatchedPreset = trackingProviderPresets.find((preset) =>
-    preset.label === shippingProvider ||
-    (preset.id === "post" && POST_PROVIDER_ALIASES.has(shippingProvider))
+    matchesProviderPresetLabel(preset.id, preset.label, shippingProvider)
   );
   if (providerMatchedPreset) return providerMatchedPreset.id;
   if (shippingProvider) return CUSTOM_PROVIDER_VALUE;
