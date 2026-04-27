@@ -4,6 +4,7 @@ export interface PublicBrandingCacheSnapshot {
   siteTitle: string;
   siteSubtitle: string;
   resolvedLogoUrl: string;
+  dashboardTitle: string;
 }
 
 function getDefaultStorage(): Storage | null {
@@ -27,6 +28,7 @@ export function readPublicBrandingCache(
     siteTitle: "",
     siteSubtitle: "",
     resolvedLogoUrl: "",
+    dashboardTitle: "",
   };
 
   if (!cacheKey || !storage) return emptySnapshot;
@@ -39,6 +41,7 @@ export function readPublicBrandingCache(
       siteTitle: normalizeCachedString(record["site_title"]),
       siteSubtitle: normalizeCachedString(record["site_subtitle"]),
       resolvedLogoUrl: normalizeCachedString(record["resolved_logo_url"]),
+      dashboardTitle: normalizeCachedString(record["dashboard_title"]),
     };
   } catch (_error) {
     return emptySnapshot;

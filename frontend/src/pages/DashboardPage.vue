@@ -230,10 +230,8 @@ function buildDashboardBodyClass() {
 onMounted(async () => {
   document.body.className = buildDashboardBodyClass();
   dashboardShellActions.applyCachedPublicBranding();
-  await Promise.all([
-    dashboardShellActions.loadPublicBranding(),
-    dashboardSessionActions.bootstrapFromWindow(),
-  ]);
+  await dashboardShellActions.loadPublicBranding();
+  await dashboardSessionActions.bootstrapFromWindow();
 });
 
 onBeforeUnmount(() => {

@@ -16,6 +16,7 @@ interface DashboardBrandingDeps {
   API_URL: string;
   cacheKey: string;
   fetch?: typeof fetch;
+  applyDashboardTitle?: (title: string) => void;
   getDefaultIconUrl: (kind: string) => string;
   resolveAssetUrl: (url: string) => string;
 }
@@ -27,6 +28,7 @@ interface DashboardSettings {
 export function readDashboardPublicBrandingCache(cacheKey: string) {
   const cachedBranding = readPublicBrandingCache(cacheKey);
   return {
+    dashboardTitle: cachedBranding.dashboardTitle,
     siteTitle: cachedBranding.siteTitle,
     logoUrl: cachedBranding.resolvedLogoUrl,
   };
@@ -41,8 +43,11 @@ export function createDashboardBrandingController(
       ? deps.resolveAssetUrl(siteIconUrl)
       : deps.getDefaultIconUrl("brand");
     const siteTitle = String(settings["site_title"] || "").trim();
+    const dashboardTitle = String(settings["dashboard_title"] || "").trim();
+    deps.applyDashboardTitle?.(dashboardTitle);
     applyDashboardBrandingSideEffects({
       cacheKey: deps.cacheKey,
+      dashboardTitle,
       documentTitle: siteTitle
         ? `管理後台 | ${siteTitle}`
         : "管理後台 | Script Coffee",
@@ -53,10 +58,16 @@ export function createDashboardBrandingController(
 
   function applyCachedDashboardBranding(): void {
     const cachedBranding = readDashboardPublicBrandingCache(deps.cacheKey);
-    if (!cachedBranding.siteTitle && !cachedBranding.logoUrl) return;
+    if (
+      !cachedBranding.siteTitle &&
+      !cachedBranding.logoUrl &&
+      !cachedBranding.dashboardTitle
+    ) return;
     const siteTitle = cachedBranding.siteTitle.trim();
+    deps.applyDashboardTitle?.(cachedBranding.dashboardTitle);
     applyDashboardBrandingSideEffects({
       cacheKey: deps.cacheKey,
+      dashboardTitle: cachedBranding.dashboardTitle,
       documentTitle: siteTitle
         ? `管理後台 | ${siteTitle}`
         : "管理後台 | Script Coffee",

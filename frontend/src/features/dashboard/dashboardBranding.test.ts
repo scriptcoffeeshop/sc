@@ -43,11 +43,13 @@ describe("dashboardBranding", () => {
       cacheKey,
       JSON.stringify({
         site_title: "快取後台",
+        dashboard_title: "訂購後台",
         resolved_logo_url: "/icons/cached-dashboard.png",
       }),
     );
 
     expect(readDashboardPublicBrandingCache(cacheKey)).toEqual({
+      dashboardTitle: "訂購後台",
       siteTitle: "快取後台",
       logoUrl: "/icons/cached-dashboard.png",
     });
@@ -58,12 +60,15 @@ describe("dashboardBranding", () => {
       cacheKey,
       JSON.stringify({
         site_title: "快取後台",
+        dashboard_title: "訂購後台",
         resolved_logo_url: "/icons/cached-dashboard.png",
       }),
     );
+    const applyDashboardTitle = vi.fn();
     const controller = createDashboardBrandingController({
       API_URL: "/api",
       cacheKey,
+      applyDashboardTitle,
       getDefaultIconUrl: () => "/icons/default-brand.png",
       resolveAssetUrl: (url) => url,
     });
@@ -75,5 +80,35 @@ describe("dashboardBranding", () => {
       .toBe("/icons/cached-dashboard.png");
     expect(document.getElementById("dashboard-header-logo")?.getAttribute("src"))
       .toBe("/icons/cached-dashboard.png");
+    expect(applyDashboardTitle).toHaveBeenCalledWith("訂購後台");
+  });
+
+  it("applies dashboard title from public settings before admin bootstrap", async () => {
+    const applyDashboardTitle = vi.fn();
+    const controller = createDashboardBrandingController({
+      API_URL: "/api",
+      cacheKey,
+      applyDashboardTitle,
+      fetch: vi.fn(async () => ({
+        ok: true,
+        json: vi.fn(async () => ({
+          success: true,
+          settings: {
+            site_title: "新品牌",
+            dashboard_title: "訂購後台",
+            site_icon_url: "/icons/new-brand.png",
+          },
+        })),
+      } as Response)),
+      getDefaultIconUrl: () => "/icons/default-brand.png",
+      resolveAssetUrl: (url) => url,
+    });
+
+    await controller.loadPublicDashboardBranding();
+
+    expect(applyDashboardTitle).toHaveBeenCalledWith("訂購後台");
+    expect(JSON.parse(localStorage.getItem(cacheKey) || "{}")).toMatchObject({
+      dashboard_title: "訂購後台",
+    });
   });
 });

@@ -33,6 +33,7 @@ describe("applyDashboardBrandingSideEffects", () => {
   it("updates dashboard brand DOM and public branding cache", () => {
     applyDashboardBrandingSideEffects({
       cacheKey: "coffee_dashboard_public_branding",
+      dashboardTitle: "訂購後台",
       documentTitle: "管理後台 | 新品牌",
       logoUrl: "/icons/custom-brand.png",
       siteTitle: "新品牌",
@@ -55,6 +56,7 @@ describe("applyDashboardBrandingSideEffects", () => {
       localStorage.getItem("coffee_dashboard_public_branding") || "{}",
     )).toEqual({
       site_title: "新品牌",
+      dashboard_title: "訂購後台",
       resolved_logo_url: "/icons/custom-brand.png",
     });
   });

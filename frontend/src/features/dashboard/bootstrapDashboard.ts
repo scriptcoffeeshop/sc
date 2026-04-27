@@ -150,6 +150,7 @@ function createUsersTabLoaders(deps: UsersTabLoadersDeps): DashboardTabLoaderMap
 const brandingController = createDashboardBrandingController({
   API_URL,
   cacheKey: DASHBOARD_PUBLIC_BRANDING_CACHE_KEY,
+  applyDashboardTitle: dashboardSettingsActions.setDashboardTitle,
   getDefaultIconUrl,
   resolveAssetUrl,
   fetch: globalThis.fetch?.bind(globalThis),

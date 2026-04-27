@@ -1,5 +1,6 @@
 export type DashboardBrandingSideEffectView = {
   cacheKey: string;
+  dashboardTitle?: string;
   documentTitle: string;
   logoUrl: string;
   siteTitle: string;
@@ -13,6 +14,7 @@ function cacheDashboardPublicBranding(view: DashboardBrandingSideEffectView): vo
       view.cacheKey,
       JSON.stringify({
         site_title: view.siteTitle,
+        dashboard_title: view.dashboardTitle || "",
         resolved_logo_url: view.logoUrl,
       }),
     );
