@@ -685,10 +685,11 @@ Deno.test({
           items: "街口測試豆 x1",
           items_json: [],
           total: 220,
-          delivery_method: "delivery",
+          delivery_method: "family_mart",
           status: "pending",
-          city: "新竹市",
-          address: "測試路 1 號",
+          store_id: "029860",
+          store_name: "全家台東龍泉店",
+          store_address: "台東縣台東市測試路 1 號",
           payment_method: "jkopay",
           payment_status: "pending",
           payment_expires_at: "2026-04-21T12:34:00.000Z",
@@ -720,6 +721,8 @@ Deno.test({
         payload.orders[1].paymentUrl,
         "https://pay.example/jko/JKO-ORDER-1",
       );
+      assertEquals(payload.orders[1].storeId, "029860");
+      assertEquals(payload.orders[1].storeName, "全家台東龍泉店");
     });
   },
 });

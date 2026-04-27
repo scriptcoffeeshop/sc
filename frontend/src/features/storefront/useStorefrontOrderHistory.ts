@@ -133,7 +133,11 @@ function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {
 }
 
 function buildOrderHistoryLocationText(order: Order) {
-  if (order.storeName) return String(order.storeName);
+  const storeName = String(order.storeName || "").trim();
+  if (storeName) {
+    const storeId = String(order.storeId || "").trim();
+    return `${storeName}${storeId ? ` [店號：${storeId}]` : ""}`;
+  }
   if (!order.city && !order.address) return "";
   return `${String(order.city || "")}${String(order.district || "")} ${
     String(order.address || "")

@@ -87,6 +87,7 @@ export interface Order {
   address?: string;
   storeName?: string;
   storeId?: string;
+  storeAddress?: string;
   lineName?: string;
   phone?: string;
   email?: string;

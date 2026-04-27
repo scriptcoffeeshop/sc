@@ -114,6 +114,7 @@ export async function getMyOrders(req: Request) {
       status: r.status,
       cancelReason: r.cancel_reason || "",
       note: r.note || "",
+      storeId: r.store_id,
       storeName: r.store_name,
       storeAddress: r.store_address,
       city: r.city,

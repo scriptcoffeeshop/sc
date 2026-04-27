@@ -244,6 +244,37 @@ describe("useStorefrontOrderHistory", () => {
     expect(deliveredHomeDelivery.hasShippingInfo).toBe(true);
   });
 
+  it("shows store pickup id with FamilyMart and 7-11 store names", () => {
+    const familyMartOrder = buildOrderHistoryItem({
+      orderId: "FAMILY-PICKUP-001",
+      deliveryMethod: "family_mart",
+      status: "pending",
+      storeName: "全家台東龍泉店",
+      storeId: "029860",
+      items: "測試豆 x1",
+      total: 255,
+      paymentMethod: "cod",
+      paymentStatus: "pending",
+    }, createOrderHistoryDeps());
+
+    const sevenElevenOrder = buildOrderHistoryItem({
+      orderId: "711-PICKUP-001",
+      deliveryMethod: "seven_eleven",
+      status: "pending",
+      storeName: "7-11 統智門市",
+      storeId: "123456",
+      items: "測試豆 x1",
+      total: 255,
+      paymentMethod: "cod",
+      paymentStatus: "pending",
+    }, createOrderHistoryDeps());
+
+    expect(familyMartOrder.locationText).toBe(
+      "全家台東龍泉店 [店號：029860]",
+    );
+    expect(sevenElevenOrder.locationText).toBe("7-11 統智門市 [店號：123456]");
+  });
+
   it("uses the shared customer payment display by default", () => {
     const item = buildOrderHistoryItem({
       orderId: "LINEPAY-PENDING-001",
