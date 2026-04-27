@@ -11,6 +11,16 @@ from pathlib import Path, PurePosixPath
 
 BLOCKED_PREFIXES = (
     "supabase/.temp/",
+    "scratch/",
+)
+
+BLOCKED_PATH_PARTS = (
+    "__pycache__/",
+)
+
+BLOCKED_SUFFIXES = (
+    ".pyc",
+    ".pyo",
 )
 
 BLOCKED_LEGACY_JS_PREFIXES = (
@@ -267,7 +277,13 @@ def main() -> int:
         path = PurePosixPath(raw_path).as_posix()
 
         if path.startswith(BLOCKED_PREFIXES):
-            violations.append(f"禁止追蹤 Supabase CLI 暫存檔：{path}")
+            violations.append(f"禁止追蹤暫存或一次性工作檔：{path}")
+            continue
+
+        if any(part in path for part in BLOCKED_PATH_PARTS) or path.endswith(
+            BLOCKED_SUFFIXES
+        ):
+            violations.append(f"禁止追蹤 Python 快取產物：{path}")
             continue
 
         if path.startswith(BLOCKED_LEGACY_JS_PREFIXES):

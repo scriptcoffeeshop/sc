@@ -5,7 +5,10 @@
 !.env.*.sample
 !.env.*.template
 node_modules/
+__pycache__/
+*.py[cod]
 test-results/
 .DS_Store
 frontend/dist/
 supabase/.temp/
+scratch/

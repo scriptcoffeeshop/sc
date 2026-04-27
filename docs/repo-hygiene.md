@@ -4,6 +4,8 @@
 
 - `.env*` 一律視為本機敏感檔，只有 `.example` / `.sample` / `.template` 類範本可進 git。
 - `supabase/.temp/` 視為 Supabase CLI 產生的本機暫存資料，不應追蹤。
+- `__pycache__/`、`*.pyc`、`*.pyo` 視為 Python 快取產物，不應追蹤。
+- `scratch/` 視為一次性分析工作區，不應追蹤；需要保留的工具請移到 `scripts/` 並納入正式維護。
 - 可執行 `python3 scripts/repo_hygiene_check.py` 檢查目前 tracked file 是否違規。
 
 ## 本專案已知風險
