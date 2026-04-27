@@ -2,6 +2,7 @@ import { assertEquals } from "@std/assert";
 import {
   buildCancelledNotificationHtml,
   buildFailedNotificationHtml,
+  buildDeliveredNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
   buildShippingNotificationHtml,
@@ -339,6 +340,37 @@ Deno.test("Email Templates - Failed Notification", () => {
   );
 });
 
+Deno.test("Email Templates - Delivered Notification", () => {
+  const html = buildDeliveredNotificationHtml({
+    orderId: "C20261231-DELIVERED01",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-delivered.png",
+    lineName: "配達客人",
+    note: "若有問題請聯繫客服",
+  });
+
+  assertEquals(
+    html.includes("✅ 訂單已配達通知"),
+    true,
+    "Missing delivered email title",
+  );
+  assertEquals(
+    html.includes("您的訂單已配達"),
+    true,
+    "Missing delivered status content",
+  );
+  assertEquals(
+    html.includes("若有問題請聯繫客服"),
+    true,
+    "Delivered email should include note content",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-delivered.png"),
+    true,
+    "Delivered email should use provided custom logo URL",
+  );
+});
+
 Deno.test("Line Flex Template - Include Note", () => {
   const flex = buildOrderStatusLineFlexMessage({
     orderId: "C20261231-AABBCCDD",
@@ -381,6 +413,34 @@ Deno.test("Line Flex Template - Include Note", () => {
   assertEquals(payloadText.includes("訂購人小明"), true);
   assertEquals(payloadText.includes("0912345678"), true);
   assertEquals(payloadText.includes("buyer@example.com"), true);
+});
+
+Deno.test("Line Flex Template - Delivered Status Label", () => {
+  const flex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-DELIVERED",
+    siteTitle: "Script Coffee",
+    status: "delivered",
+    deliveryMethod: "delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路 8 號",
+    paymentMethod: "cod",
+    paymentStatus: "paid",
+    total: 300,
+    items: "測試商品 x 1",
+  });
+  const payloadText = JSON.stringify(flex);
+
+  assertEquals(
+    payloadText.includes("已配達"),
+    true,
+    "Flex should include delivered status label",
+  );
+  assertEquals(
+    payloadText.includes("#C20261231-DELIVERED"),
+    true,
+    "Flex should keep delivered order id",
+  );
 });
 
 Deno.test("Line Flex Template - Includes tracking CTA when only URL is set", () => {

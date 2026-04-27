@@ -15,6 +15,7 @@ import { sendEmail } from "../utils/email.ts";
 import {
   buildCancelledNotificationHtml,
   buildCompletedNotificationHtml,
+  buildDeliveredNotificationHtml,
   buildFailedNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
@@ -32,18 +33,21 @@ function resolveOrderEmailMode(
   | "confirmation"
   | "processing"
   | "shipping"
+  | "delivered"
   | "completed"
   | "cancelled"
   | "failed" {
   const mode = String(modeInput || "").trim();
   if (
     mode === "confirmation" || mode === "processing" || mode === "shipping" ||
+    mode === "delivered" ||
     mode === "completed" || mode === "cancelled" || mode === "failed"
   ) {
     return mode;
   }
   if (orderStatus === "processing") return "processing";
   if (orderStatus === "shipped") return "shipping";
+  if (orderStatus === "delivered") return "delivered";
   if (orderStatus === "completed") return "completed";
   if (orderStatus === "cancelled") return "cancelled";
   if (orderStatus === "failed") return "failed";
@@ -181,6 +185,15 @@ export async function sendOrderEmail(
       note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
+  } else if (mode === "delivered") {
+    htmlContent = buildDeliveredNotificationHtml({
+      orderId,
+      siteTitle,
+      logoUrl: siteLogoUrl,
+      lineName,
+      note: String(orderData.note || ""),
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 已配達通知`;
   } else if (mode === "cancelled") {
     htmlContent = buildCancelledNotificationHtml({
       orderId,
@@ -239,6 +252,8 @@ export async function sendOrderEmail(
     ? "出貨通知"
     : mode === "processing"
     ? "處理中通知"
+    : mode === "delivered"
+    ? "配達通知"
     : mode === "completed"
     ? "完成通知"
     : mode === "failed"

@@ -9,7 +9,7 @@ const deps: DashboardOrderNotificationDeps = {
   Toast: { fire: () => undefined },
   Swal: { fire: async () => ({}) },
   esc: (value) => String(value || ""),
-  orderStatusLabel: { pending: "待處理" },
+  orderStatusLabel: { delivered: "已配達", pending: "待處理" },
   orderMethodLabel: { delivery: "配送到府" },
   orderPayMethodLabel: { cod: "貨到付款" },
   orderPayStatusLabel: {},
@@ -92,5 +92,27 @@ describe("buildOrderFlexBodyPayload", () => {
       "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
     );
     expect(body.hasTrackingLinkCta).toBe(true);
+  });
+
+  it("uses the delivered status label in dashboard LINE Flex body", () => {
+    const body = buildOrderFlexBodyPayload({
+      deps,
+      newStatus: "delivered",
+      order: {
+        orderId: "O-DELIVERED-1",
+        timestamp: "2026-04-27T08:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "delivered",
+        paymentMethod: "cod",
+        city: "新竹市",
+        district: "東區",
+        address: "測試路 1 號",
+        items: "測試豆 x1",
+        total: 220,
+      },
+    });
+
+    expect(JSON.stringify(body.bodyContents)).toContain("已配達");
+    expect(body.statusLabel).toBe("已配達");
   });
 });

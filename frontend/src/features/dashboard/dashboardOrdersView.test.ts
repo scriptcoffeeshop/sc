@@ -4,6 +4,7 @@ import {
   buildOrderViewModel,
   formatOrderSummaryAmount,
 } from "./dashboardOrdersView.ts";
+import { orderStatusOptions } from "./orderShared.ts";
 import type { DashboardOrderRecord } from "./dashboardOrderTypes.ts";
 
 function orderWithTotal(total: number): DashboardOrderRecord {
@@ -35,5 +36,27 @@ describe("dashboardOrdersView", () => {
       "",
       false,
     ).timestampText).toBe("");
+  });
+
+  it("shows delivered orders as a selectable dashboard status", () => {
+    const view = buildOrderViewModel(
+      {
+        orderId: "O-DELIVERED-1",
+        status: "delivered",
+        timestamp: "2026-04-27T08:00:00.000Z",
+        deliveryMethod: "home_delivery",
+        paymentMethod: "cod",
+        trackingNumber: "JP-DELIVERED-1",
+      },
+      "",
+      false,
+    );
+
+    expect(orderStatusOptions).toContain("delivered");
+    expect(view).toMatchObject({
+      status: "delivered",
+      statusLabel: "已配達",
+      trackingLinkLabel: "中華郵政貨態查詢",
+    });
   });
 });

@@ -25,6 +25,8 @@ export function createOrderEmailController(
     const statusLabel = deps.orderStatusLabel[status] || status;
     const emailTypeLabel = status === "shipped"
       ? "出貨通知"
+      : status === "delivered"
+      ? "配達通知"
       : status === "processing"
       ? "處理中通知"
       : status === "completed"

@@ -2,6 +2,7 @@ export const ORDER_STATUS_LABEL: Record<string, string> = {
   pending: "待處理",
   processing: "處理中",
   shipped: "已出貨",
+  delivered: "已配達",
   completed: "已完成",
   failed: "已失敗",
   cancelled: "已取消",

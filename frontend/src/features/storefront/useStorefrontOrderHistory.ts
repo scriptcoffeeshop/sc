@@ -100,6 +100,7 @@ const ORDER_STATUS_TEXT: Record<string, string> = {
   pending: "待處理",
   processing: "處理中",
   shipped: "已出貨",
+  delivered: "已配達",
   completed: "已完成",
   failed: "已失敗",
   cancelled: "已取消",
@@ -120,7 +121,8 @@ function canShowTrackingUrl(order: Pick<Order, "deliveryMethod" | "status">) {
   }
 
   const status = String(order.status || "").trim().toLowerCase();
-  return status === "shipped" || status === "completed";
+  return status === "shipped" || status === "delivered" ||
+    status === "completed";
 }
 
 function normalizeReceiptInfo(raw: unknown): ReceiptInfo | null {

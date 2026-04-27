@@ -39,6 +39,7 @@ const STATUS_COLOR_MAP: Record<string, string> = {
   pending: "#B58900",
   processing: "#268BD2",
   shipped: "#859900",
+  delivered: "#2AA198",
   completed: "#586E75",
   failed: "#DC322F",
   cancelled: "#DC322F",

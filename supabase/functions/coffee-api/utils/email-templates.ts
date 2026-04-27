@@ -397,6 +397,14 @@ export interface CompletedNotificationParams {
   note?: string;
 }
 
+export interface DeliveredNotificationParams {
+  orderId: string;
+  siteTitle: string;
+  logoUrl?: string;
+  lineName: string;
+  note?: string;
+}
+
 export interface CancelledNotificationParams {
   orderId: string;
   siteTitle: string;
@@ -444,6 +452,43 @@ export function buildCompletedNotificationHtml(
       ${buildOrderNoteHtml(String(params.note || ""), "0")}
     </div>
     <p>非常感謝您的購買與支持，期待您再次光臨！如果有任何問題，歡迎隨時與我們聯絡。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+        `;
+}
+
+export function buildDeliveredNotificationHtml(
+  params: DeliveredNotificationParams,
+): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#2AA198",
+      title: "✅ 訂單已配達通知",
+      subtitle: displaySiteTitle,
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #2AA198; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單已配達！</h2>
+    <p>這封信是要通知您，訂單 <strong>${
+    sanitize(params.orderId)
+  }</strong> 已由物流端配達。</p>
+    <div style="background-color: #f0fdfa; border-left: 4px solid #2AA198; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+      <p style="margin: 0 0 8px 0;"><strong>訂單編號：</strong> ${
+    sanitize(params.orderId)
+  }</p>
+      ${buildOrderNoteHtml(String(params.note || ""), "0")}
+    </div>
+    <p>如商品或配送狀態有任何問題，歡迎直接聯繫我們協助確認。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>

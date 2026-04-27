@@ -69,6 +69,7 @@ export const VALID_ORDER_STATUSES = [
   "pending",
   "processing",
   "shipped",
+  "delivered",
   "completed",
   "failed",
   "cancelled",

@@ -210,10 +210,25 @@ describe("useStorefrontOrderHistory", () => {
       paymentStatus: "paid",
     }, createOrderHistoryDeps());
 
+    const deliveredHomeDelivery = buildOrderHistoryItem({
+      orderId: "HOME-DELIVERED-001",
+      deliveryMethod: "home_delivery",
+      status: "delivered",
+      city: "基隆市",
+      address: "123",
+      items: "測試豆 x1",
+      total: 220,
+      paymentMethod: "transfer",
+      paymentStatus: "paid",
+    }, createOrderHistoryDeps());
+
     expect(pendingHomeDelivery.trackingUrl).toBe("");
     expect(pendingHomeDelivery.hasShippingInfo).toBe(false);
     expect(shippedHomeDelivery.trackingUrl).toContain("postserv.post.gov.tw");
     expect(shippedHomeDelivery.hasShippingInfo).toBe(true);
+    expect(deliveredHomeDelivery.statusLabel).toBe("已配達");
+    expect(deliveredHomeDelivery.trackingUrl).toContain("postserv.post.gov.tw");
+    expect(deliveredHomeDelivery.hasShippingInfo).toBe(true);
   });
 
   it("uses the shared customer payment display by default", () => {

@@ -77,4 +77,35 @@ describe("dashboardOrderEmailController", () => {
       title: "已發送",
     });
   });
+
+  it("uses delivered notification wording for delivered orders", async () => {
+    const deps = createDeps({
+      getOrders: () => [
+        {
+          orderId: "O-EMAIL-2",
+          timestamp: "2026-04-27T08:00:00.000Z",
+          email: "buyer@example.com",
+          status: "delivered",
+        },
+      ],
+      orderStatusLabel: { delivered: "已配達" },
+      Swal: {
+        fire: vi.fn(async (options) => {
+          expect(options.html).toBeInstanceOf(HTMLElement);
+          const popup = document.createElement("div");
+          document.body.appendChild(popup);
+          options.didOpen?.(popup);
+          expect(popup.textContent).toContain("配達通知");
+          expect(popup.textContent).toContain("目前狀態：已配達");
+          options.willClose?.();
+          popup.remove();
+          return { isConfirmed: false };
+        }),
+      },
+    });
+
+    await createOrderEmailController(deps).sendOrderEmailByOrderId("O-EMAIL-2");
+
+    expect(deps.authFetch).not.toHaveBeenCalled();
+  });
 });

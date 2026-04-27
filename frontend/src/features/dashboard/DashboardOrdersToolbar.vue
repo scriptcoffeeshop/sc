@@ -41,6 +41,7 @@
         <option value="pending">訂單狀態：待處理</option>
         <option value="processing">訂單狀態：處理中</option>
         <option value="shipped">訂單狀態：已出貨</option>
+        <option value="delivered">訂單狀態：已配達</option>
         <option value="completed">訂單狀態：已完成</option>
         <option value="failed">訂單狀態：已失敗</option>
         <option value="cancelled">訂單狀態：已取消</option>
@@ -138,6 +139,7 @@
         <option value="pending">待處理</option>
         <option value="processing">處理中</option>
         <option value="shipped">已出貨</option>
+        <option value="delivered">已配達</option>
         <option value="completed">已完成</option>
         <option value="failed">已失敗</option>
         <option value="cancelled">已取消</option>

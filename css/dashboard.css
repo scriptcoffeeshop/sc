@@ -797,6 +797,11 @@
   color: #859900;              /* Solarized Green */
 }
 
+.dashboard-enterprise .status-delivered {
+  background: rgba(42, 161, 152, 0.14);
+  color: #2AA198;              /* Solarized Cyan */
+}
+
 .dashboard-enterprise .status-completed {
   background: #EEE8D5;
   color: #586E75;              /* Base01 */
