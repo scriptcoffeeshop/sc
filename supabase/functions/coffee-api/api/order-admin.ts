@@ -23,6 +23,7 @@ import {
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
 import { supabase } from "../utils/supabase.ts";
+import { normalizeTrackingUrl } from "../utils/tracking.ts";
 
 function resolveOrderEmailMode(
   modeInput: unknown,
@@ -85,7 +86,7 @@ export async function updateOrderStatus(
     updates.shipping_provider = String(data.shippingProvider);
   }
   if (data.trackingUrl !== undefined) {
-    updates.tracking_url = String(data.trackingUrl);
+    updates.tracking_url = normalizeTrackingUrl(data.trackingUrl);
   }
 
   const { error } = await supabase.from("coffee_orders").update(updates).eq(

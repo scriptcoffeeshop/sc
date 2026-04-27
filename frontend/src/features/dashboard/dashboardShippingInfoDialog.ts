@@ -1,4 +1,5 @@
 import { createApp, type App } from "vue";
+import { normalizeTrackingUrl } from "../../lib/trackingUrls.ts";
 import type { DashboardSwal, DashboardSwalResult } from "./dashboardOrderTypes.ts";
 import DashboardShippingInfoForm, {
   type DashboardShippingInfoFormExpose,
@@ -57,14 +58,14 @@ export async function openDashboardShippingInfoDialog(
     },
     preConfirm: () => {
       const values = formRef?.getValues() || {};
-      const trackingUrl = String(values.trackingUrl || "");
-      if (trackingUrl && !/^https?:\/\//i.test(trackingUrl)) {
+      const trackingUrl = String(values.trackingUrl || "").trim();
+      if (trackingUrl && !normalizeTrackingUrl(trackingUrl)) {
         options.Swal.showValidationMessage?.(
           "物流追蹤網址需以 http:// 或 https:// 開頭",
         );
         return false;
       }
-      return values;
+      return { ...values, trackingUrl };
     },
   }) as DashboardShippingInfoDialogResult;
 }

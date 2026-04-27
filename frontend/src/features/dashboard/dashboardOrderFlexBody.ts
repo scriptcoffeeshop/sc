@@ -10,6 +10,7 @@ import type {
   DashboardOrderFlexBodyPayload,
   DashboardOrderNotificationDeps,
 } from "./dashboardOrderNotificationTypes";
+import { getDefaultTrackingUrl } from "../../lib/trackingUrls.ts";
 import type { ReceiptInfo } from "../../types";
 
 type BuildOrderFlexBodyPayloadArgs = {
@@ -227,10 +228,13 @@ export function buildOrderFlexBodyPayload({
   const receiptInfo = deps.normalizeReceiptInfo(order.receiptInfo);
   const orderNote = String(order.note || "").trim();
   const cancelReason = String(order.cancelReason || "").trim();
+  const trackingNumber = String(order.trackingNumber || "").trim();
   const customTrackingUrl = deps.normalizeTrackingUrl(order.trackingUrl || "");
-  const hasTrackingLinkCta = Boolean(
-    order.shippingProvider && customTrackingUrl,
-  );
+  const defaultTrackingUrl = trackingNumber
+    ? getDefaultTrackingUrl(deliveryMethod)
+    : "";
+  const trackingLinkUrl = customTrackingUrl || defaultTrackingUrl;
+  const hasTrackingLinkCta = Boolean(trackingLinkUrl);
 
   const bodyContents: FlexContent[] = [
     createFlexInfoRow({
@@ -302,7 +306,7 @@ export function buildOrderFlexBodyPayload({
   return {
     bodyContents,
     statusLabel,
-    customTrackingUrl,
+    trackingLinkUrl,
     hasTrackingLinkCta,
   };
 }

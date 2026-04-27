@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getDefaultTrackingUrl, normalizeTrackingUrl } from "./trackingUrls.ts";
+import {
+  getDefaultTrackingUrl,
+  normalizeTrackingUrl,
+  TRACKING_PROVIDER_PRESETS,
+} from "./trackingUrls.ts";
 
 describe("trackingUrls", () => {
   it("normalizes only http and https tracking URLs", () => {
@@ -11,9 +15,35 @@ describe("trackingUrls", () => {
   });
 
   it("resolves default tracking URLs by delivery method", () => {
-    expect(getDefaultTrackingUrl("seven_eleven")).toContain("e-tracking");
-    expect(getDefaultTrackingUrl("family_mart")).toContain("famiport");
-    expect(getDefaultTrackingUrl("home_delivery")).toContain("postserv");
+    expect(getDefaultTrackingUrl("seven_eleven")).toBe(
+      "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+    );
+    expect(getDefaultTrackingUrl("family_mart")).toBe(
+      "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+    );
+    expect(getDefaultTrackingUrl("home_delivery")).toBe(
+      "https://postserv.post.gov.tw/pstmail/main_mail.html",
+    );
     expect(getDefaultTrackingUrl("in_store")).toBe("");
+  });
+
+  it("exposes selectable dashboard tracking provider presets", () => {
+    expect(TRACKING_PROVIDER_PRESETS).toEqual([
+      {
+        id: "seven_eleven",
+        label: "7-11貨態查詢",
+        url: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+      },
+      {
+        id: "family_mart",
+        label: "全家貨態查詢",
+        url: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+      },
+      {
+        id: "post",
+        label: "中華郵政貨態查詢",
+        url: "https://postserv.post.gov.tw/pstmail/main_mail.html",
+      },
+    ]);
   });
 });

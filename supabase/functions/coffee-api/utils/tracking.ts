@@ -6,7 +6,7 @@ export function getDefaultTrackingUrl(deliveryMethod: unknown): string {
     return "https://fmec.famiport.com.tw/FP_Entrance/QueryBox";
   }
   if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
-    return "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100";
+    return "https://postserv.post.gov.tw/pstmail/main_mail.html";
   }
   return "";
 }

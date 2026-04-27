@@ -16,8 +16,8 @@ import type {
 const TRACKING_LINK_LABEL: Record<string, string> = {
   seven_eleven: "7-11貨態查詢",
   family_mart: "全家貨態查詢",
-  delivery: "中華郵政查詢",
-  home_delivery: "中華郵政查詢",
+  delivery: "中華郵政貨態查詢",
+  home_delivery: "中華郵政貨態查詢",
 };
 
 function parseDateBound(dateStr: string, isEnd = false) {

@@ -7,7 +7,7 @@ type BuildOrderFlexMessageBubbleArgs = {
   orderId: string;
   statusLabel: string;
   bodyContents: FlexContent[];
-  customTrackingUrl: string;
+  trackingLinkUrl: string;
   hasTrackingLinkCta: boolean;
 };
 
@@ -16,7 +16,7 @@ export function buildOrderFlexMessageBubble({
   orderId,
   statusLabel,
   bodyContents,
-  customTrackingUrl,
+  trackingLinkUrl,
   hasTrackingLinkCta,
 }: BuildOrderFlexMessageBubbleArgs): DashboardLineFlexMessage {
   const footerContents: FlexContent[] = [];
@@ -30,7 +30,7 @@ export function buildOrderFlexMessageBubble({
       action: {
         type: "uri",
         label: "追蹤貨態",
-        uri: customTrackingUrl,
+        uri: trackingLinkUrl,
       },
     });
     footerContents.push({

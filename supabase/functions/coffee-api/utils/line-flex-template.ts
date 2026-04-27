@@ -6,7 +6,7 @@ import {
   ORDER_STATUS_LABEL,
 } from "./order-labels.ts";
 import { normalizeReceiptInfo } from "./receipt-info.ts";
-import { normalizeTrackingUrl } from "./tracking.ts";
+import { getDefaultTrackingUrl, normalizeTrackingUrl } from "./tracking.ts";
 import type { JsonRecord } from "./json.ts";
 
 type LineFlexContent = JsonRecord;
@@ -103,10 +103,13 @@ export function buildOrderStatusLineFlexMessage(
     ? ` (${getOrderPaymentStatusLabel(order.paymentStatus)})`
     : "";
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
+  const trackingNumber = String(order.trackingNumber || "").trim();
   const customTrackingUrl = normalizeTrackingUrl(order.trackingUrl || "");
-  const hasTrackingLinkCta = Boolean(
-    order.shippingProvider && customTrackingUrl,
-  );
+  const defaultTrackingUrl = trackingNumber
+    ? getDefaultTrackingUrl(order.deliveryMethod)
+    : "";
+  const trackingLinkUrl = customTrackingUrl || defaultTrackingUrl;
+  const hasTrackingLinkCta = Boolean(trackingLinkUrl);
   const orderNote = String(order.note || "").trim();
   const orderId = String(order.orderId || "").trim();
   const lineName = String(order.lineName || "").trim();
@@ -271,7 +274,7 @@ export function buildOrderStatusLineFlexMessage(
       action: {
         type: "uri",
         label: "追蹤貨態",
-        uri: customTrackingUrl,
+        uri: trackingLinkUrl,
       },
     });
     footerContents.push({

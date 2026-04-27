@@ -45,4 +45,52 @@ describe("buildOrderFlexBodyPayload", () => {
     expect(payloadText).toContain("0912345678");
     expect(payloadText).toContain("buyer@example.com");
   });
+
+  it("keeps the tracking CTA when a shipped order has a tracking URL only", () => {
+    const body = buildOrderFlexBodyPayload({
+      deps,
+      newStatus: "shipped",
+      order: {
+        orderId: "O-SHIPPED-1",
+        timestamp: "2026-04-26T00:00:00.000Z",
+        deliveryMethod: "delivery",
+        status: "shipped",
+        paymentMethod: "cod",
+        city: "新竹市",
+        district: "東區",
+        address: "測試路 1 號",
+        items: "測試豆 x1",
+        total: 220,
+        trackingUrl: "https://postserv.post.gov.tw/pstmail/main_mail.html",
+      },
+    });
+
+    expect(body.trackingLinkUrl).toBe(
+      "https://postserv.post.gov.tw/pstmail/main_mail.html",
+    );
+    expect(body.hasTrackingLinkCta).toBe(true);
+  });
+
+  it("uses the delivery-method default tracking URL for shipped orders with a tracking number", () => {
+    const body = buildOrderFlexBodyPayload({
+      deps,
+      newStatus: "shipped",
+      order: {
+        orderId: "O-SHIPPED-2",
+        timestamp: "2026-04-26T00:00:00.000Z",
+        deliveryMethod: "family_mart",
+        status: "shipped",
+        paymentMethod: "cod",
+        storeName: "全家測試店",
+        items: "測試豆 x1",
+        total: 220,
+        trackingNumber: "FM-123",
+      },
+    });
+
+    expect(body.trackingLinkUrl).toBe(
+      "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+    );
+    expect(body.hasTrackingLinkCta).toBe(true);
+  });
 });

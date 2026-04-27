@@ -20,7 +20,7 @@ Deno.test("Tracking URL helpers - resolve delivery defaults", () => {
   );
   assertEquals(
     getDefaultTrackingUrl("home_delivery"),
-    "https://postserv.post.gov.tw/pstmail/main_mail.html?targetTxn=EB500100",
+    "https://postserv.post.gov.tw/pstmail/main_mail.html",
   );
   assertEquals(getDefaultTrackingUrl("in_store"), "");
 });

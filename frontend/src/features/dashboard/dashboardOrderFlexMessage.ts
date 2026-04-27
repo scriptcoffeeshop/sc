@@ -25,7 +25,7 @@ export function createOrderFlexMessageBuilder(
     const {
       bodyContents,
       statusLabel,
-      customTrackingUrl,
+      trackingLinkUrl,
       hasTrackingLinkCta,
     } = buildOrderFlexBodyPayload({
       deps,
@@ -38,7 +38,7 @@ export function createOrderFlexMessageBuilder(
       orderId: String(order?.orderId || ""),
       statusLabel,
       bodyContents,
-      customTrackingUrl,
+      trackingLinkUrl,
       hasTrackingLinkCta,
     });
   }

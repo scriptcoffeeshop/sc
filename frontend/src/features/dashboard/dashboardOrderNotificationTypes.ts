@@ -36,7 +36,7 @@ export type DashboardOrderNotificationDeps = {
 export type DashboardOrderFlexBodyPayload = {
   bodyContents: FlexContent[];
   statusLabel: string;
-  customTrackingUrl: string;
+  trackingLinkUrl: string;
   hasTrackingLinkCta: boolean;
 };
 

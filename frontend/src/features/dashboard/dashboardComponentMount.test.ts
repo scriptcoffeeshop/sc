@@ -7,6 +7,9 @@ import DashboardFormFieldDialogForm, {
 } from "./DashboardFormFieldDialogForm.vue";
 import DashboardOrderCard from "./DashboardOrderCard.vue";
 import DashboardPromotionModal from "./DashboardPromotionModal.vue";
+import DashboardShippingInfoForm, {
+  type DashboardShippingInfoFormExpose,
+} from "./DashboardShippingInfoForm.vue";
 import { buildOrderViewModel } from "./dashboardOrdersView.ts";
 import { dashboardOrdersActions } from "./useDashboardOrders.ts";
 import {
@@ -137,6 +140,42 @@ describe("dashboard Vue component mount coverage", () => {
         delivery: true,
         in_store: false,
       }),
+    });
+  });
+
+  it("mounts DashboardShippingInfoForm with preset and custom tracking providers", async () => {
+    const wrapper = mount(DashboardShippingInfoForm, {
+      props: {
+        initialValues: {
+          trackingNumber: "JP-7001",
+        },
+      },
+    });
+    const exposed = wrapper.vm as unknown as DashboardShippingInfoFormExpose;
+
+    await wrapper.find("#swal-shipping-provider-preset").setValue(
+      "seven_eleven",
+    );
+
+    expect(exposed.getValues()).toEqual({
+      trackingNumber: "JP-7001",
+      shippingProvider: "7-11貨態查詢",
+      trackingUrl: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+    });
+    expect(
+      wrapper.find<HTMLInputElement>("#swal-tracking-url").element.disabled,
+    ).toBe(true);
+
+    await wrapper.find("#swal-shipping-provider-preset").setValue("other");
+    await wrapper.find("#swal-shipping-provider").setValue("黑貓宅急便");
+    await wrapper.find("#swal-tracking-url").setValue(
+      "https://tracking.example/JP-7001",
+    );
+
+    expect(exposed.getValues()).toEqual({
+      trackingNumber: "JP-7001",
+      shippingProvider: "黑貓宅急便",
+      trackingUrl: "https://tracking.example/JP-7001",
     });
   });
 });

@@ -383,6 +383,56 @@ Deno.test("Line Flex Template - Include Note", () => {
   assertEquals(payloadText.includes("buyer@example.com"), true);
 });
 
+Deno.test("Line Flex Template - Includes tracking CTA when only URL is set", () => {
+  const flex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-SHIPCTA",
+    siteTitle: "Script Coffee",
+    status: "shipped",
+    deliveryMethod: "delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "測試路 6 號",
+    paymentMethod: "cod",
+    paymentStatus: "paid",
+    total: 300,
+    items: "測試商品 x 1",
+    trackingUrl: "https://postserv.post.gov.tw/pstmail/main_mail.html",
+  });
+  const payloadText = JSON.stringify(flex);
+
+  assertEquals(
+    payloadText.includes("追蹤貨態"),
+    true,
+    "Flex should include tracking CTA when a valid tracking URL is set",
+  );
+  assertEquals(
+    payloadText.includes("https://postserv.post.gov.tw/pstmail/main_mail.html"),
+    true,
+    "Flex tracking CTA should point to the custom tracking URL",
+  );
+
+  const defaultFlex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-SHIPDEF",
+    siteTitle: "Script Coffee",
+    status: "shipped",
+    deliveryMethod: "seven_eleven",
+    storeName: "7-11測試門市",
+    paymentMethod: "cod",
+    paymentStatus: "paid",
+    total: 300,
+    items: "測試商品 x 1",
+    trackingNumber: "711-123",
+  });
+  const defaultPayloadText = JSON.stringify(defaultFlex);
+  assertEquals(
+    defaultPayloadText.includes(
+      "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+    ),
+    true,
+    "Flex should fall back to the delivery-method tracking URL",
+  );
+});
+
 Deno.test("JKO Pay Status Mapping - Match Official Inquiry Codes", () => {
   assertEquals(mapJkoStatusCodeToPaymentStatus(0), "paid");
   assertEquals(mapJkoStatusCodeToPaymentStatus(100), "failed");
