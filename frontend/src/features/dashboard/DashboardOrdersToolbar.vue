@@ -13,7 +13,7 @@
         <button
           type="button"
           @click="handleShowFlexHistory"
-          class="text-sm px-3 py-1 rounded-lg border"
+          class="dashboard-orders-toolbar__action dashboard-orders-toolbar__action--bordered text-sm"
           title="LINE Flex Message 歷史紀錄"
         >
           <span class="tab-with-icon">
@@ -24,7 +24,8 @@
         <button
           type="button"
           @click="handleReloadOrders"
-          class="text-sm ui-text-highlight"
+          class="dashboard-orders-toolbar__action dashboard-orders-toolbar__action--plain text-sm"
+          title="重新載入訂單列表"
         >
           <span class="tab-with-icon"><img src="../../../../icons/refresh-sync.png" alt="" class="ui-icon-inline">重整</span>
         </button>
@@ -246,3 +247,74 @@ function handleExportSelectedOrdersCsv() {
   dashboardOrdersActions.exportSelectedOrdersCsv();
 }
 </script>
+
+<style scoped>
+.dashboard-orders-toolbar__action {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--ui-primary);
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.85rem;
+  touch-action: manipulation;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 80ms ease;
+}
+
+.dashboard-orders-toolbar__action--bordered {
+  background: var(--ui-card-strong);
+  border-color: var(--ui-border);
+}
+
+.dashboard-orders-toolbar__action--plain {
+  padding-inline: 0.75rem;
+}
+
+.dashboard-orders-toolbar__action svg,
+.dashboard-orders-toolbar__action .ui-icon-inline {
+  opacity: 0.72;
+  transition: opacity 160ms ease;
+}
+
+.dashboard-orders-toolbar__action:hover {
+  background: var(--ui-primary-soft);
+  border-color: var(--ui-border-strong);
+  box-shadow: 0 8px 18px -16px rgba(7, 54, 66, 0.56);
+  color: #073642;
+}
+
+.dashboard-orders-toolbar__action:hover svg,
+.dashboard-orders-toolbar__action:hover .ui-icon-inline {
+  opacity: 1;
+}
+
+.dashboard-orders-toolbar__action:active {
+  background: rgba(38, 139, 210, 0.18);
+  border-color: var(--ui-focus);
+  box-shadow: inset 0 2px 5px rgba(7, 54, 66, 0.16);
+  transform: translateY(1px) scale(0.98);
+}
+
+.dashboard-orders-toolbar__action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(38, 139, 210, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-orders-toolbar__action {
+    transition: none;
+  }
+
+  .dashboard-orders-toolbar__action:active {
+    transform: none;
+  }
+}
+</style>
