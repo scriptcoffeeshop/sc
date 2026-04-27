@@ -346,7 +346,7 @@ Deno.test({
       const updatedUser = tables.coffee_users.find((row) =>
         row.line_user_id === "user-submit-order"
       );
-      assertEquals(updatedUser?.display_name, "測試顧客");
+      assertEquals(updatedUser?.display_name, "原始名稱");
       assertEquals(updatedUser?.phone, "0912345678");
       assertEquals(updatedUser?.default_payment_method, "cod");
       assertEquals(updatedUser?.default_delivery_method, "in_store");

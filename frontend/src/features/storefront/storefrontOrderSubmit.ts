@@ -98,7 +98,6 @@ function persistOrderDraftPreference(key: string, value: unknown) {
 }
 
 interface UserProfilePreferencePayload {
-  displayName: string;
   phone: string;
   email: string;
   defaultCustomFields: string;
@@ -131,6 +130,7 @@ interface SubmittedOrderPreferenceInput {
   phone: string;
   email: string;
   customFieldsJson: string;
+  profileCustomFieldsJson: string;
   deliveryMethod: string;
   deliveryInfo: SubmitDeliveryInfo;
   paymentMethod: PaymentMethod | string;
@@ -255,7 +255,7 @@ function isStorePickupMethod(deliveryMethod: string): boolean {
     deliveryMethod === "in_store";
 }
 
-function buildSubmittedOrderPreferencePayload(
+export function buildSubmittedOrderPreferencePayload(
   input: SubmittedOrderPreferenceInput,
   options: { serializeReceiptInfo: boolean },
 ): UserProfilePreferencePayload {
@@ -264,10 +264,9 @@ function buildSubmittedOrderPreferencePayload(
   const isStorePickup = isStorePickupMethod(input.deliveryMethod);
 
   return {
-    displayName: input.displayName || "",
     phone: input.phone || "",
     email: input.email || "",
-    defaultCustomFields: input.customFieldsJson || "{}",
+    defaultCustomFields: input.profileCustomFieldsJson || "{}",
     defaultDeliveryMethod: input.deliveryMethod || "",
     defaultCity: isDeliveryAddress ? String(deliveryInfo.city || "") : "",
     defaultDistrict: isDeliveryAddress
@@ -461,17 +460,29 @@ export async function submitOrder(): Promise<void> {
     }
   }
 
-  // 組合自訂欄位（排除標準聯絡欄位，轉為 JSON）
+  // 組合自訂欄位：訂單資料排除聯絡欄位；會員預設保留收件人姓名/暱稱。
   const customFieldsData: Record<string, string> = {};
+  const profileCustomFieldsData: Record<string, string> = {};
   for (const field of state.formFields) {
     const fieldKey = String(field.field_key || "");
-    if (!fieldKey || isStandardContactField(field)) continue;
+    if (!fieldKey) continue;
     const value = String(dynamicFieldData[fieldKey] || "").trim();
-    if (value) customFieldsData[fieldKey] = value;
+    if (!value) continue;
+    if (
+      !isContactFieldKind(field, "phone") &&
+      !isContactFieldKind(field, "email")
+    ) {
+      profileCustomFieldsData[fieldKey] = value;
+    }
+    if (!isStandardContactField(field)) customFieldsData[fieldKey] = value;
   }
   const customFieldsJson = Object.keys(customFieldsData).length > 0
     ? JSON.stringify(customFieldsData)
     : "";
+  const profileCustomFieldsJson =
+    Object.keys(profileCustomFieldsData).length > 0
+      ? JSON.stringify(profileCustomFieldsData)
+      : "";
 
   const addrText = getDeliveryAddressText(deliveryMethod, deliveryInfo);
   const confirmResult = await confirmOrderSubmission({
@@ -543,6 +554,7 @@ export async function submitOrder(): Promise<void> {
         phone,
         email,
         customFieldsJson,
+        profileCustomFieldsJson,
         deliveryMethod,
         deliveryInfo,
         paymentMethod,

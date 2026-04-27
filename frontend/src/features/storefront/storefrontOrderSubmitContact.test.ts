@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveOrderContactFields } from "./storefrontOrderSubmit.ts";
+import {
+  buildSubmittedOrderPreferencePayload,
+  resolveOrderContactFields,
+} from "./storefrontOrderSubmit.ts";
 
 describe("resolveOrderContactFields", () => {
   it("uses customer-entered contact fields before LINE profile values", () => {
@@ -29,5 +32,33 @@ describe("resolveOrderContactFields", () => {
       phone: "0912345678",
       email: "buyer@example.com",
     });
+  });
+
+  it("saves recipient name to profile defaults without overwriting LINE display name", () => {
+    const payload = buildSubmittedOrderPreferencePayload({
+      displayName: "收件人小明",
+      phone: "0912345678",
+      email: "buyer@example.com",
+      customFieldsJson: JSON.stringify({ grind: "手沖" }),
+      profileCustomFieldsJson: JSON.stringify({
+        nickname: "收件人小明",
+        grind: "手沖",
+      }),
+      deliveryMethod: "family_mart",
+      deliveryInfo: {
+        storeId: "029860",
+        storeName: "全家台東龍泉店",
+        storeAddress: "台東縣台東市測試路 1 號",
+      },
+      paymentMethod: "cod",
+      transferAccountLast5: "",
+      receiptInfo: null,
+    }, { serializeReceiptInfo: true });
+
+    expect("displayName" in payload).toBe(false);
+    expect(payload.defaultCustomFields).toBe(JSON.stringify({
+      nickname: "收件人小明",
+      grind: "手沖",
+    }));
   });
 });

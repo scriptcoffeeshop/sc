@@ -79,9 +79,9 @@ export async function registerOrUpdateUser(data: JsonRecord) {
 
   if (existing) {
     const updates: JsonRecord = {
-      display_name: displayName,
       last_login: new Date().toISOString(),
     };
+    if (hasKey(data, "displayName")) updates.display_name = displayName;
     if (pictureUrl) updates.picture_url = pictureUrl;
     if (hasKey(data, "phone")) updates.phone = phone;
     if (hasKey(data, "email")) updates.email = email;

@@ -297,7 +297,6 @@ export async function submitOrder(data: JsonRecord, req: Request) {
     try {
       await registerOrUpdateUser({
         userId: lineUserId,
-        displayName: String(data.lineName),
         pictureUrl: "",
         phone,
         email: String(data.email || "").trim(),
