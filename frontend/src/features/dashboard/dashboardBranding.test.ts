@@ -99,7 +99,7 @@ describe("dashboardBranding", () => {
             site_icon_url: "/icons/new-brand.png",
           },
         })),
-      } as Response)),
+      } as unknown as Response)),
       getDefaultIconUrl: () => "/icons/default-brand.png",
       resolveAssetUrl: (url) => url,
     });
