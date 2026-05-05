@@ -240,6 +240,8 @@ export interface ProcessingNotificationParams {
   note?: string;
 }
 
+export type ReadyNotificationParams = ProcessingNotificationParams;
+
 function buildTrackingCopyUrl(trackingNumber: string): string {
   const rawTrackingNumber = String(trackingNumber || "").trim();
   if (!rawTrackingNumber) return "";
@@ -381,6 +383,54 @@ export function buildProcessingNotificationHtml(
   }
 
     <p style="margin-top: 30px; color: #555;">感謝您的耐心等候，我們會盡快完成處理並寄出商品。</p>
+  </div>
+  <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
+    <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>
+  </div>
+</div>
+        `;
+}
+
+export function buildReadyNotificationHtml(
+  params: ReadyNotificationParams,
+): string {
+  const displaySiteTitle = normalizeEmailSiteTitle(params.siteTitle);
+  const deliveryText = buildOrderDeliveryText(params);
+  const paymentText = getEmailPaymentMethodLabel(params.paymentMethod);
+  const paymentStatus = getPaymentStatusPresentation(
+    params.paymentMethod,
+    params.paymentStatus,
+  );
+
+  return `
+<div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #e5ddd5;">
+  ${
+    buildEmailHeaderHtml({
+      backgroundColor: "#6C71C4",
+      title: "✅ 訂單已備妥通知",
+      subtitle: displaySiteTitle,
+      logoAlt: `${displaySiteTitle} Logo`,
+      logoUrl: params.logoUrl,
+    })
+  }
+  <div style="padding: 30px; color: #333333; line-height: 1.6;">
+    <h2 style="font-size: 18px; color: #6C71C4; margin-top: 0;">親愛的 ${
+    sanitize(params.lineName)
+  }，您的訂單已備妥！</h2>
+    <p>這封信是要通知您，您所訂購的商品已準備完成，將依配送方式安排後續出貨或取件。</p>
+
+    ${
+    buildOrderStatusSummaryHtml({
+      orderId: params.orderId,
+      deliveryMethod: params.deliveryMethod,
+      deliveryText,
+      paymentText,
+      paymentStatus,
+      note: params.note,
+    })
+  }
+
+    <p style="margin-top: 30px; color: #555;">若是來店或超商取貨，請依後續通知或店家說明前往取件；如有疑問，歡迎直接聯繫我們。</p>
   </div>
   <div style="background-color: #f5f5f5; color: #888888; text-align: center; padding: 15px; font-size: 12px; border-top: 1px solid #eeeeee;">
     <p style="margin: 0;">此為系統自動發送的信件，請勿直接回覆。</p>

@@ -108,4 +108,35 @@ describe("dashboardOrderEmailController", () => {
 
     expect(deps.authFetch).not.toHaveBeenCalled();
   });
+
+  it("uses ready notification wording for ready orders", async () => {
+    const deps = createDeps({
+      getOrders: () => [
+        {
+          orderId: "O-EMAIL-3",
+          timestamp: "2026-05-05T08:00:00.000Z",
+          email: "buyer@example.com",
+          status: "ready",
+        },
+      ],
+      orderStatusLabel: { ready: "已備妥" },
+      Swal: {
+        fire: vi.fn(async (options) => {
+          expect(options.html).toBeInstanceOf(HTMLElement);
+          const popup = document.createElement("div");
+          document.body.appendChild(popup);
+          options.didOpen?.(popup);
+          expect(popup.textContent).toContain("備妥通知");
+          expect(popup.textContent).toContain("目前狀態：已備妥");
+          options.willClose?.();
+          popup.remove();
+          return { isConfirmed: false };
+        }),
+      },
+    });
+
+    await createOrderEmailController(deps).sendOrderEmailByOrderId("O-EMAIL-3");
+
+    expect(deps.authFetch).not.toHaveBeenCalled();
+  });
 });

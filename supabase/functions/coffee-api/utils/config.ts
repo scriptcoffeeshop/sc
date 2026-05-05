@@ -68,6 +68,7 @@ export const ALLOWED_REDIRECT_ORIGINS = [
 export const VALID_ORDER_STATUSES = [
   "pending",
   "processing",
+  "ready",
   "shipped",
   "delivered",
   "completed",

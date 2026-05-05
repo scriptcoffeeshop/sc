@@ -76,6 +76,10 @@
 
 ## 5) 最近有效變更
 
+### 2026-05-05
+
+- 訂單狀態新增 `ready`（已備妥），同步後台狀態篩選/批次/逐筆選項、前台我的訂單顯示、Email/LINE Flex 通知、後端 schema 與資料庫 CHECK migration。
+
 ### 2026-04-27
 
 - 訂單狀態新增 `delivered`（已配達），同步後台狀態選項、前台我的訂單顯示、Email/LINE Flex 通知、後端 schema 與資料庫 CHECK migration。

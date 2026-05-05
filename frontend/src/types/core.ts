@@ -10,6 +10,7 @@ export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
 export type OrderStatus =
   | "pending"
   | "processing"
+  | "ready"
   | "shipped"
   | "delivered"
   | "completed"

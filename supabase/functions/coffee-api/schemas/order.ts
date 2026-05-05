@@ -90,6 +90,7 @@ export const updateOrderStatusSchema = z.object({
   status: z.enum([
     "pending",
     "processing",
+    "ready",
     "shipped",
     "delivered",
     "completed",
@@ -116,6 +117,7 @@ export const batchUpdateOrderStatusSchema = z.object({
   status: z.enum([
     "pending",
     "processing",
+    "ready",
     "shipped",
     "delivered",
     "completed",
@@ -148,6 +150,7 @@ export const sendOrderEmailSchema = z.object({
   mode: z.enum([
     "confirmation",
     "processing",
+    "ready",
     "shipping",
     "delivered",
     "completed",

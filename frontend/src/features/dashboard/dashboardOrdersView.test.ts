@@ -59,4 +59,25 @@ describe("dashboardOrdersView", () => {
       trackingLinkLabel: "中華郵政貨態查詢",
     });
   });
+
+  it("shows ready orders as a selectable dashboard status", () => {
+    const view = buildOrderViewModel(
+      {
+        orderId: "O-READY-1",
+        status: "ready",
+        timestamp: "2026-05-05T08:00:00.000Z",
+        deliveryMethod: "in_store",
+        paymentMethod: "cod",
+      },
+      "",
+      false,
+    );
+
+    expect(orderStatusOptions).toContain("ready");
+    expect(view).toMatchObject({
+      status: "ready",
+      statusLabel: "已備妥",
+      trackingLinkUrl: "",
+    });
+  });
 });

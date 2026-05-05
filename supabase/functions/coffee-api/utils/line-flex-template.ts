@@ -38,6 +38,7 @@ export interface OrderFlexPayload {
 const STATUS_COLOR_MAP: Record<string, string> = {
   pending: "#B58900",
   processing: "#268BD2",
+  ready: "#6C71C4",
   shipped: "#859900",
   delivered: "#2AA198",
   completed: "#586E75",

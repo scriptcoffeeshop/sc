@@ -233,6 +233,18 @@ describe("useStorefrontOrderHistory", () => {
       paymentStatus: "paid",
     }, createOrderHistoryDeps());
 
+    const readyHomeDelivery = buildOrderHistoryItem({
+      orderId: "HOME-READY-001",
+      deliveryMethod: "home_delivery",
+      status: "ready",
+      city: "基隆市",
+      address: "123",
+      items: "測試豆 x1",
+      total: 220,
+      paymentMethod: "transfer",
+      paymentStatus: "paid",
+    }, createOrderHistoryDeps());
+
     expect(pendingHomeDelivery.trackingUrl).toBe("");
     expect(pendingHomeDelivery.hasShippingInfo).toBe(false);
     expect(pendingFamilyMart.trackingUrl).toBe("");
@@ -242,6 +254,9 @@ describe("useStorefrontOrderHistory", () => {
     expect(deliveredHomeDelivery.statusLabel).toBe("已配達");
     expect(deliveredHomeDelivery.trackingUrl).toContain("postserv.post.gov.tw");
     expect(deliveredHomeDelivery.hasShippingInfo).toBe(true);
+    expect(readyHomeDelivery.statusLabel).toBe("已備妥");
+    expect(readyHomeDelivery.trackingUrl).toBe("");
+    expect(readyHomeDelivery.hasShippingInfo).toBe(false);
   });
 
   it("shows store pickup id with FamilyMart and 7-11 store names", () => {

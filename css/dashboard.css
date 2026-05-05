@@ -792,6 +792,11 @@
   color: #268BD2;              /* Solarized Blue */
 }
 
+.dashboard-enterprise .status-ready {
+  background: rgba(108, 113, 196, 0.15);
+  color: #6C71C4;              /* Solarized Violet */
+}
+
 .dashboard-enterprise .status-shipped {
   background: rgba(133, 153, 0, 0.14);
   color: #859900;              /* Solarized Green */

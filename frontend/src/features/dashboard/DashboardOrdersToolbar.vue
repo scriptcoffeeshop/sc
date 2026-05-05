@@ -41,6 +41,7 @@
         <option value="all">訂單狀態：全部</option>
         <option value="pending">訂單狀態：待處理</option>
         <option value="processing">訂單狀態：處理中</option>
+        <option value="ready">訂單狀態：已備妥</option>
         <option value="shipped">訂單狀態：已出貨</option>
         <option value="delivered">訂單狀態：已配達</option>
         <option value="completed">訂單狀態：已完成</option>
@@ -139,6 +140,7 @@
         <option value="">批次狀態</option>
         <option value="pending">待處理</option>
         <option value="processing">處理中</option>
+        <option value="ready">已備妥</option>
         <option value="shipped">已出貨</option>
         <option value="delivered">已配達</option>
         <option value="completed">已完成</option>

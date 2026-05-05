@@ -19,6 +19,7 @@ import {
   buildFailedNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
+  buildReadyNotificationHtml,
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
 import { asJsonRecord } from "../utils/json.ts";
@@ -32,6 +33,7 @@ function resolveOrderEmailMode(
 ):
   | "confirmation"
   | "processing"
+  | "ready"
   | "shipping"
   | "delivered"
   | "completed"
@@ -40,12 +42,14 @@ function resolveOrderEmailMode(
   const mode = String(modeInput || "").trim();
   if (
     mode === "confirmation" || mode === "processing" || mode === "shipping" ||
+    mode === "ready" ||
     mode === "delivered" ||
     mode === "completed" || mode === "cancelled" || mode === "failed"
   ) {
     return mode;
   }
   if (orderStatus === "processing") return "processing";
+  if (orderStatus === "ready") return "ready";
   if (orderStatus === "shipped") return "shipping";
   if (orderStatus === "delivered") return "delivered";
   if (orderStatus === "completed") return "completed";
@@ -176,6 +180,23 @@ export async function sendOrderEmail(
       note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 處理中通知`;
+  } else if (mode === "ready") {
+    htmlContent = buildReadyNotificationHtml({
+      orderId,
+      siteTitle,
+      logoUrl: siteLogoUrl,
+      lineName,
+      deliveryMethod: String(orderData.delivery_method || ""),
+      city: String(orderData.city || ""),
+      district: String(orderData.district || ""),
+      address: String(orderData.address || ""),
+      storeName: String(orderData.store_name || ""),
+      storeAddress: String(orderData.store_address || ""),
+      paymentMethod: String(orderData.payment_method || "cod"),
+      paymentStatus: String(orderData.payment_status || ""),
+      note: String(orderData.note || ""),
+    });
+    subject = `[${siteTitle}] 訂單編號 ${orderId} 已備妥通知`;
   } else if (mode === "completed") {
     htmlContent = buildCompletedNotificationHtml({
       orderId,
@@ -252,6 +273,8 @@ export async function sendOrderEmail(
     ? "出貨通知"
     : mode === "processing"
     ? "處理中通知"
+    : mode === "ready"
+    ? "備妥通知"
     : mode === "delivered"
     ? "配達通知"
     : mode === "completed"

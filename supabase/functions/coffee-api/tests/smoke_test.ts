@@ -5,6 +5,7 @@ import {
   buildFailedNotificationHtml,
   buildOrderConfirmationHtml,
   buildProcessingNotificationHtml,
+  buildReadyNotificationHtml,
   buildShippingNotificationHtml,
 } from "../utils/email-templates.ts";
 import { mapJkoStatusCodeToPaymentStatus } from "../utils/jkopay.ts";
@@ -237,6 +238,45 @@ Deno.test("Email Templates - Processing Notification", () => {
   );
 });
 
+Deno.test("Email Templates - Ready Notification", () => {
+  const html = buildReadyNotificationHtml({
+    orderId: "C20261231-READY01",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-ready.png",
+    lineName: "備妥客人",
+    deliveryMethod: "in_store",
+    city: "",
+    district: "",
+    address: "",
+    storeName: "",
+    storeAddress: "",
+    paymentMethod: "cod",
+    paymentStatus: "",
+    note: "可於營業時間取貨",
+  });
+
+  assertEquals(
+    html.includes("✅ 訂單已備妥通知"),
+    true,
+    "Missing ready email title",
+  );
+  assertEquals(
+    html.includes("您的訂單已備妥"),
+    true,
+    "Missing ready status content",
+  );
+  assertEquals(
+    html.includes("可於營業時間取貨"),
+    true,
+    "Ready email should include note content",
+  );
+  assertEquals(
+    html.includes("https://cdn.example.com/logo-ready.png"),
+    true,
+    "Ready email should use provided custom logo URL",
+  );
+});
+
 Deno.test("Email Templates - Escape Dynamic Summary Fields", () => {
   const html = buildProcessingNotificationHtml({
     orderId: '<img src=x onerror="alert(1)">',
@@ -440,6 +480,31 @@ Deno.test("Line Flex Template - Delivered Status Label", () => {
     payloadText.includes("#C20261231-DELIVERED"),
     true,
     "Flex should keep delivered order id",
+  );
+});
+
+Deno.test("Line Flex Template - Ready Status Label", () => {
+  const flex = buildOrderStatusLineFlexMessage({
+    orderId: "C20261231-READY",
+    siteTitle: "Script Coffee",
+    status: "ready",
+    deliveryMethod: "in_store",
+    paymentMethod: "cod",
+    paymentStatus: "paid",
+    total: 300,
+    items: "測試商品 x 1",
+  });
+  const payloadText = JSON.stringify(flex);
+
+  assertEquals(
+    payloadText.includes("已備妥"),
+    true,
+    "Flex should include ready status label",
+  );
+  assertEquals(
+    payloadText.includes("#C20261231-READY"),
+    true,
+    "Flex should keep ready order id",
   );
 });
 
