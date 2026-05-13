@@ -161,6 +161,7 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "JP-7001",
       shippingProvider: "7-11",
       trackingUrl: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+      statusNote: "",
     });
     expect(
       wrapper.find<HTMLInputElement>("#swal-tracking-url").element.disabled,
@@ -176,6 +177,7 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "JP-7001",
       shippingProvider: "黑貓宅急便",
       trackingUrl: "https://tracking.example/JP-7001",
+      statusNote: "",
     });
   });
 
@@ -199,6 +201,7 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "FM-7001",
       shippingProvider: "全家",
       trackingUrl: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+      statusNote: "",
     });
   });
 });

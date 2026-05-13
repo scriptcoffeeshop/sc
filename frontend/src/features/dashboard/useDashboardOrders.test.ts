@@ -233,7 +233,12 @@ describe("useDashboardOrders", () => {
       API_URL: "https://api.example",
       authFetch,
       getAuthUserId: () => "admin-user",
-      Swal: { fire: vi.fn() },
+      Swal: {
+        fire: vi.fn(async (options) => {
+          expect(options?.title).toBe("批次通知備註");
+          return { isConfirmed: true, value: "批次狀態備註" };
+        }),
+      },
       Toast: { fire: vi.fn() },
     });
 
@@ -251,6 +256,7 @@ describe("useDashboardOrders", () => {
       orderIds: ["O-2001", "O-2002"],
       status: "processing",
       paymentStatus: "paid",
+      statusNote: "批次狀態備註",
     });
   });
 
@@ -346,6 +352,7 @@ describe("useDashboardOrders", () => {
             "swal-batch-tracking-url",
             "https://tracking.example/JP-5001",
           );
+          setControlValue("swal-batch-status-note", "批次配送備註");
           const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
@@ -378,6 +385,7 @@ describe("useDashboardOrders", () => {
       trackingNumber: "JP-5001",
       shippingProvider: "黑貓宅急便",
       trackingUrl: "https://tracking.example/JP-5001",
+      statusNote: "批次配送備註",
     });
     expect(batchPayload).not.toHaveProperty("paymentStatus");
   });

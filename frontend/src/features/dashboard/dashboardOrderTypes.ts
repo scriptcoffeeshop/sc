@@ -29,6 +29,7 @@ export interface DashboardOrderRecord {
   trackingUrl?: string;
   items?: string;
   note?: string;
+  statusNote?: string;
   cancelReason?: string;
   receiptInfo?: unknown;
   total?: number | string;

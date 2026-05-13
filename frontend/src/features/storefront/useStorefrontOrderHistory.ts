@@ -29,6 +29,8 @@ export interface OrderHistoryItem {
   itemsText: string;
   orderNote: string;
   showOrderNote: boolean;
+  statusNote: string;
+  showStatusNote: boolean;
   totalText: string;
   receiptInfo: ReceiptInfo | null;
   showReceiptInfo: boolean;
@@ -173,6 +175,7 @@ export function buildOrderHistoryItem(
   const phone = String(order.phone || "").trim();
   const email = String(order.email || "").trim();
   const orderNote = String(order.note || "").trim();
+  const statusNote = String(order.statusNote || "").trim();
 
   return {
     orderId: String(order.orderId || ""),
@@ -188,6 +191,8 @@ export function buildOrderHistoryItem(
     itemsText: String(order.items || ""),
     orderNote,
     showOrderNote: Boolean(orderNote),
+    statusNote,
+    showStatusNote: Boolean(statusNote),
     totalText: `$${String(order.total ?? 0)}`,
     receiptInfo,
     showReceiptInfo: Boolean(receiptInfo),

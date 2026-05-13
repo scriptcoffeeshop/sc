@@ -119,6 +119,12 @@
       {{ order.note }}
     </div>
     <div
+      v-if="order.statusNote"
+      class="text-sm text-blue-700 bg-blue-50 p-2 rounded mb-2 border border-blue-100"
+    >
+      <span class="ui-text-subtle">狀態備註：</span>{{ order.statusNote }}
+    </div>
+    <div
       v-if="order.showCancellationReason"
       class="text-sm text-red-700 bg-red-50 p-2 rounded mb-2 border border-red-100"
     >

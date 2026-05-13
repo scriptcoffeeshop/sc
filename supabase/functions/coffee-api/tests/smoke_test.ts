@@ -4,6 +4,7 @@ import {
   buildDeliveredNotificationHtml,
   buildFailedNotificationHtml,
   buildOrderConfirmationHtml,
+  buildPaymentStatusNotificationHtml,
   buildProcessingNotificationHtml,
   buildReadyNotificationHtml,
   buildShippingNotificationHtml,
@@ -88,9 +89,16 @@ Deno.test({
       "Logo layout should not rely on flex in email header",
     );
     assertEquals(
-      html.includes("height: 18px; width: auto; max-width: 108px;"),
+      html.includes(
+        "width: 64px; height: auto; max-width: 64px; max-height: 64px;",
+      ),
       true,
-      "Logo should use compact ratio-preserving size in header",
+      "Logo should use fixed cross-client width in header",
+    );
+    assertEquals(
+      html.includes('width="64"'),
+      true,
+      "Logo should include a fixed HTML width attribute for email clients",
     );
     assertEquals(
       html.includes("background-color: rgba(255,255,255,0.96);"),
@@ -135,6 +143,9 @@ Deno.test("Email Templates - Shipping Notification", () => {
     shippingProvider: "黑貓宅急便",
     trackingUrl: "https://example.com/track/700123456",
     note: "請放管理室",
+    phone: "0911222333",
+    ordersText: "衣索比亞 西達瑪 x 1\n🚚 運費: $60",
+    total: 1200,
   });
 
   assertEquals(html.includes("7-11 取貨"), true, "Missing delivery method");
@@ -162,9 +173,11 @@ Deno.test("Email Templates - Shipping Notification", () => {
     "Shipping email logo layout should not rely on flex",
   );
   assertEquals(
-    html.includes("height: 18px; width: auto; max-width: 108px;"),
+    html.includes(
+      "width: 64px; height: auto; max-width: 64px; max-height: 64px;",
+    ),
     true,
-    "Shipping email logo should use compact ratio-preserving size",
+    "Shipping email logo should use fixed cross-client width",
   );
   assertEquals(
     html.includes("background-color: rgba(255,255,255,0.96);"),
@@ -187,6 +200,14 @@ Deno.test("Email Templates - Shipping Notification", () => {
     true,
     "Shipping email should include note content",
   );
+  assertEquals(html.includes("0911222333"), true, "Missing phone number");
+  assertEquals(html.includes("訂單明細"), true, "Missing order detail heading");
+  assertEquals(
+    html.includes("衣索比亞 西達瑪 x 1"),
+    true,
+    "Missing order item content",
+  );
+  assertEquals(html.includes("$1,200"), true, "Missing formatted total");
 });
 
 Deno.test("Email Templates - Processing Notification", () => {
@@ -204,10 +225,12 @@ Deno.test("Email Templates - Processing Notification", () => {
     paymentMethod: "linepay",
     paymentStatus: "pending",
     note: "請中午前送達",
+    ordersText: "肯亞 AA x 2\n🎁 優惠折抵: -$100",
+    total: 780,
   });
 
   assertEquals(
-    html.includes("⏳ 訂單處理中通知"),
+    html.includes("訂單處理中通知"),
     true,
     "Missing processing email title",
   );
@@ -217,9 +240,11 @@ Deno.test("Email Templates - Processing Notification", () => {
     "Missing processing status content",
   );
   assertEquals(
-    html.includes("height: 18px; width: auto; max-width: 108px;"),
+    html.includes(
+      "width: 64px; height: auto; max-width: 64px; max-height: 64px;",
+    ),
     true,
-    "Processing email logo should use compact ratio-preserving size",
+    "Processing email logo should use fixed cross-client width",
   );
   assertEquals(
     html.includes("https://cdn.example.com/logo-processing.png"),
@@ -236,6 +261,8 @@ Deno.test("Email Templates - Processing Notification", () => {
     true,
     "Processing email should include delivery company/building text",
   );
+  assertEquals(html.includes("肯亞 AA x 2"), true, "Missing order items");
+  assertEquals(html.includes("$780"), true, "Missing total");
 });
 
 Deno.test("Email Templates - Ready Notification", () => {
@@ -253,10 +280,12 @@ Deno.test("Email Templates - Ready Notification", () => {
     paymentMethod: "cod",
     paymentStatus: "",
     note: "可於營業時間取貨",
+    ordersText: "瓜地馬拉 花神 x 1",
+    total: 460,
   });
 
   assertEquals(
-    html.includes("✅ 訂單已備妥通知"),
+    html.includes("訂單已備妥通知"),
     true,
     "Missing ready email title",
   );
@@ -275,6 +304,42 @@ Deno.test("Email Templates - Ready Notification", () => {
     true,
     "Ready email should use provided custom logo URL",
   );
+  assertEquals(html.includes("瓜地馬拉 花神 x 1"), true, "Missing order items");
+  assertEquals(html.includes("$460"), true, "Missing total");
+});
+
+Deno.test("Email Templates - Payment Status Notification", () => {
+  const html = buildPaymentStatusNotificationHtml({
+    orderId: "C20261231-LINEPAY01",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-linepay.png",
+    lineName: "付款客人",
+    phone: "0912000111",
+    deliveryMethod: "seven_eleven",
+    storeName: "建中門市",
+    storeAddress: "新竹市東區建中路101號1樓",
+    paymentMethod: "linepay",
+    paymentStatus: "paid",
+    notificationTitle: "LINE Pay 付款狀態通知",
+    summaryText: "您的 LINE Pay 付款已成功完成。",
+    statusLabel: "已付款",
+    statusColor: "#2E7D32",
+    note: "付款通知測試",
+    ordersText: "巴西 米納斯 x 1",
+    total: 620,
+  });
+
+  assertEquals(
+    html.includes("LINE Pay 付款狀態通知"),
+    true,
+    "Missing payment status email title",
+  );
+  assertEquals(html.includes("0912000111"), true, "Missing phone number");
+  assertEquals(html.includes("建中門市"), true, "Missing delivery store");
+  assertEquals(html.includes("LINE Pay"), true, "Missing payment method");
+  assertEquals(html.includes("已付款"), true, "Missing payment status");
+  assertEquals(html.includes("巴西 米納斯 x 1"), true, "Missing order items");
+  assertEquals(html.includes("$620"), true, "Missing total");
 });
 
 Deno.test("Email Templates - Escape Dynamic Summary Fields", () => {
@@ -292,6 +357,8 @@ Deno.test("Email Templates - Escape Dynamic Summary Fields", () => {
     paymentMethod: "<script>alert(2)</script>",
     paymentStatus: "pending",
     note: "<b>請中午前送達</b>",
+    ordersText: "<b>測試商品 x 1</b>",
+    total: 300,
   });
 
   assertEquals(
@@ -324,10 +391,12 @@ Deno.test("Email Templates - Cancelled Notification", () => {
     lineName: "User",
     cancelReason: "付款逾時未完成",
     note: "若可改時間請來電",
+    ordersText: "哥倫比亞 薇拉 x 1",
+    total: 520,
   });
 
   assertEquals(
-    html.includes("⚠️ 訂單已取消通知"),
+    html.includes("訂單已取消通知"),
     true,
     "Missing cancelled email title",
   );
@@ -337,9 +406,11 @@ Deno.test("Email Templates - Cancelled Notification", () => {
     "Missing cancelled reason content",
   );
   assertEquals(
-    html.includes("height: 18px; width: auto; max-width: 108px;"),
+    html.includes(
+      "width: 64px; height: auto; max-width: 64px; max-height: 64px;",
+    ),
     true,
-    "Cancelled email logo should use compact ratio-preserving size",
+    "Cancelled email logo should use fixed cross-client width",
   );
   assertEquals(
     html.includes("https://cdn.example.com/logo-cancelled.png"),
@@ -351,6 +422,8 @@ Deno.test("Email Templates - Cancelled Notification", () => {
     true,
     "Cancelled email should include note content",
   );
+  assertEquals(html.includes("哥倫比亞 薇拉 x 1"), true, "Missing order items");
+  assertEquals(html.includes("$520"), true, "Missing total");
 });
 
 Deno.test("Email Templates - Failed Notification", () => {
@@ -361,10 +434,12 @@ Deno.test("Email Templates - Failed Notification", () => {
     lineName: "失敗客人",
     failureReason: "付款期限已過，自動設為失敗訂單",
     note: "測試失敗通知",
+    ordersText: "巴拿馬 波奎特 x 1",
+    total: 680,
   });
 
   assertEquals(
-    html.includes("⚠️ 訂單已失敗通知"),
+    html.includes("訂單已失敗通知"),
     true,
     "Missing failed email title",
   );
@@ -378,6 +453,36 @@ Deno.test("Email Templates - Failed Notification", () => {
     true,
     "Failed email should use provided custom logo URL",
   );
+  assertEquals(html.includes("巴拿馬 波奎特 x 1"), true, "Missing order items");
+  assertEquals(html.includes("$680"), true, "Missing total");
+});
+
+Deno.test("Email Templates - Completed Notification", () => {
+  const html = buildCompletedNotificationHtml({
+    orderId: "C20261231-COMPLETE01",
+    siteTitle: "Script Coffee",
+    logoUrl: "https://cdn.example.com/logo-completed.png",
+    lineName: "完成客人",
+    deliveryMethod: "home_delivery",
+    city: "新竹市",
+    district: "東區",
+    address: "咖啡路100號",
+    paymentMethod: "jkopay",
+    paymentStatus: "paid",
+    note: "已完成測試訂單",
+    ordersText: "衣索比亞 谷吉 x 1",
+    total: 540,
+  });
+
+  assertEquals(
+    html.includes("訂單已完成"),
+    true,
+    "Missing completed email title",
+  );
+  assertEquals(html.includes("全台宅配"), true, "Missing delivery method");
+  assertEquals(html.includes("已付款"), true, "Missing payment status");
+  assertEquals(html.includes("衣索比亞 谷吉 x 1"), true, "Missing order items");
+  assertEquals(html.includes("$540"), true, "Missing total");
 });
 
 Deno.test("Email Templates - Delivered Notification", () => {
@@ -387,10 +492,13 @@ Deno.test("Email Templates - Delivered Notification", () => {
     logoUrl: "https://cdn.example.com/logo-delivered.png",
     lineName: "配達客人",
     note: "若有問題請聯繫客服",
+    statusNote: "已放在管理室冰箱裡",
+    ordersText: "宏都拉斯 聖文森 x 2",
+    total: 960,
   });
 
   assertEquals(
-    html.includes("✅ 訂單已配達通知"),
+    html.includes("訂單已配達通知"),
     true,
     "Missing delivered email title",
   );
@@ -405,10 +513,21 @@ Deno.test("Email Templates - Delivered Notification", () => {
     "Delivered email should include note content",
   );
   assertEquals(
+    html.includes("已放在管理室冰箱裡"),
+    true,
+    "Delivered email should include status note content",
+  );
+  assertEquals(
     html.includes("https://cdn.example.com/logo-delivered.png"),
     true,
     "Delivered email should use provided custom logo URL",
   );
+  assertEquals(
+    html.includes("宏都拉斯 聖文森 x 2"),
+    true,
+    "Missing order items",
+  );
+  assertEquals(html.includes("$960"), true, "Missing total");
 });
 
 Deno.test("Line Flex Template - Include Note", () => {
@@ -428,6 +547,7 @@ Deno.test("Line Flex Template - Include Note", () => {
     total: 1200,
     items: "衣索比亞 x 2",
     note: "請先電話聯繫",
+    statusNote: "已放在管理室冰箱裡",
   });
   const payloadText = JSON.stringify(flex);
   assertEquals(
@@ -439,6 +559,16 @@ Deno.test("Line Flex Template - Include Note", () => {
     payloadText.includes("請先電話聯繫"),
     true,
     "Flex should include note content",
+  );
+  assertEquals(
+    payloadText.includes("狀態備註"),
+    true,
+    "Flex should include status note label",
+  );
+  assertEquals(
+    payloadText.includes("已放在管理室冰箱裡"),
+    true,
+    "Flex should include status note content",
   );
   assertEquals(
     payloadText.includes("配送地址"),

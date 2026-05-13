@@ -45,8 +45,9 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   store_id TEXT DEFAULT '',
   store_name TEXT DEFAULT '',
   store_address TEXT DEFAULT '',
-  -- 訂單狀態 (白名單: pending/processing/shipped/delivered/completed/failed/cancelled)
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'shipped', 'delivered', 'completed', 'failed', 'cancelled')),
+  -- 訂單狀態 (白名單: pending/processing/ready/shipped/delivered/completed/failed/cancelled)
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'ready', 'shipped', 'delivered', 'completed', 'failed', 'cancelled')),
+  status_note TEXT DEFAULT '',
   note TEXT DEFAULT '',
   cancel_reason TEXT DEFAULT '',
   email TEXT DEFAULT '',

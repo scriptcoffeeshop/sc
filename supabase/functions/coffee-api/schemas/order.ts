@@ -102,6 +102,7 @@ export const updateOrderStatusSchema = z.object({
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
   trackingUrl: z.string().optional(),
+  statusNote: z.string().trim().max(500, "狀態備註最多 500 字").optional(),
 });
 
 export const deleteOrderSchema = z.object({
@@ -128,6 +129,7 @@ export const batchUpdateOrderStatusSchema = z.object({
   trackingNumber: z.string().optional(),
   shippingProvider: z.string().optional(),
   trackingUrl: z.string().optional(),
+  statusNote: z.string().trim().max(500, "狀態備註最多 500 字").optional(),
 });
 
 export const batchDeleteOrdersSchema = z.object({

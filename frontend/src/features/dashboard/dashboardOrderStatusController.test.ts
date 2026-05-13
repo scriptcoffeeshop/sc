@@ -34,6 +34,14 @@ function createDeps(overrides: JsonRecord = {}) {
   };
 }
 
+function setStatusNote(value: string) {
+  const textarea = document.getElementById("swal-status-note");
+  expect(textarea).toBeInstanceOf(HTMLTextAreaElement);
+  const statusNoteInput = textarea as HTMLTextAreaElement;
+  statusNoteInput.value = value;
+  statusNoteInput.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 describe("dashboardOrderStatusController", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -51,9 +59,12 @@ describe("dashboardOrderStatusController", () => {
           expect(popup.textContent).toContain("#O-STATUS-1");
           expect(popup.textContent).toContain("待處理");
           expect(popup.textContent).toContain("處理中");
+          expect(popup.textContent).toContain("給消費者的狀態備註");
+          setStatusNote("  已放在管理室冰箱裡  ");
+          const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
-          return { isConfirmed: true };
+          return { isConfirmed: true, value };
         }),
       },
     });
@@ -71,6 +82,7 @@ describe("dashboardOrderStatusController", () => {
           userId: "admin-user",
           orderId: "O-STATUS-1",
           status: "processing",
+          statusNote: "已放在管理室冰箱裡",
           cancelReason: "",
         }),
       }),
@@ -84,6 +96,7 @@ describe("dashboardOrderStatusController", () => {
       expect.objectContaining({
         orderId: "O-STATUS-1",
         status: "processing",
+        statusNote: "已放在管理室冰箱裡",
       }),
       "processing",
     );

@@ -212,6 +212,7 @@ export function buildOrderViewModel(
     ),
     items: order.items || "",
     note: order.note || "",
+    statusNote: String(order.statusNote || "").trim(),
     cancelReason: String(order.cancelReason || "").trim(),
     statusReasonLabel: String(order.status || "") === "failed"
       ? "失敗原因"

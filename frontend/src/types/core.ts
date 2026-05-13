@@ -96,6 +96,7 @@ export interface Order {
   itemsJson?: OrderItem[];
   total?: number;
   note?: string;
+  statusNote?: string;
   cancelReason?: string;
   paymentMethod?: PaymentMethod | string;
   paymentStatus?: PaymentStatus | string;

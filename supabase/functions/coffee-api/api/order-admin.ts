@@ -72,7 +72,10 @@ export async function updateOrderStatus(
     };
   }
 
-  const updates: JsonRecord = { status: newStatus };
+  const updates: JsonRecord = {
+    status: newStatus,
+    status_note: String(data.statusNote || "").trim(),
+  };
   const cancelReason = String(data.cancelReason || "").trim();
   if (newStatus === "cancelled" || newStatus === "failed") {
     updates.cancel_reason = cancelReason;
@@ -117,7 +120,7 @@ export async function sendOrderEmail(
 
   const { data: orderData, error } = await supabase.from("coffee_orders")
     .select(
-      "id, status, line_name, phone, email, items, total, delivery_method, city, district, address, store_name, store_address, note, cancel_reason, custom_fields, receipt_info, payment_method, payment_status, payment_id, transfer_account_last5, shipping_provider, tracking_url, tracking_number",
+      "id, status, status_note, line_name, phone, email, items, total, delivery_method, city, district, address, store_name, store_address, note, cancel_reason, custom_fields, receipt_info, payment_method, payment_status, payment_id, transfer_account_last5, shipping_provider, tracking_url, tracking_number",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -139,127 +142,81 @@ export async function sendOrderEmail(
   const orderStatus = String(orderData.status || "pending");
   const mode = resolveOrderEmailMode(data.mode, orderStatus);
   const lineName = String(orderData.line_name || "").trim() || "顧客";
+  const receiptInfo = parseReceiptInfo(orderData.receipt_info);
+  const customFieldsHtml = await buildCustomFieldsHtml(
+    orderData.custom_fields,
+  );
+  const receiptHtml = buildReceiptHtml(receiptInfo);
+  const commonOrderEmailDetails = {
+    orderId,
+    siteTitle,
+    logoUrl: siteLogoUrl,
+    lineName,
+    phone: String(orderData.phone || ""),
+    deliveryMethod: String(orderData.delivery_method || ""),
+    city: String(orderData.city || ""),
+    district: String(orderData.district || ""),
+    address: String(orderData.address || ""),
+    storeName: String(orderData.store_name || ""),
+    storeAddress: String(orderData.store_address || ""),
+    paymentMethod: String(orderData.payment_method || "cod"),
+    paymentStatus: String(orderData.payment_status || ""),
+    note: String(orderData.note || ""),
+    statusNote: String(orderData.status_note || ""),
+    ordersText: stripLegacyReceiptBlock(orderData.items, receiptInfo),
+    total: Number(orderData.total) || 0,
+    customFieldsHtml,
+    receiptHtml,
+  };
 
   let subject = "";
   let htmlContent = "";
 
   if (mode === "shipping") {
     htmlContent = buildShippingNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
-      deliveryMethod: String(orderData.delivery_method || ""),
-      city: String(orderData.city || ""),
-      district: String(orderData.district || ""),
-      address: String(orderData.address || ""),
-      storeName: String(orderData.store_name || ""),
-      storeAddress: String(orderData.store_address || ""),
-      paymentMethod: String(orderData.payment_method || "cod"),
-      paymentStatus: String(orderData.payment_status || ""),
+      ...commonOrderEmailDetails,
       trackingNumber: String(orderData.tracking_number || ""),
       shippingProvider: String(orderData.shipping_provider || ""),
       trackingUrl: String(orderData.tracking_url || ""),
-      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已出貨通知`;
   } else if (mode === "processing") {
     htmlContent = buildProcessingNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
-      deliveryMethod: String(orderData.delivery_method || ""),
-      city: String(orderData.city || ""),
-      district: String(orderData.district || ""),
-      address: String(orderData.address || ""),
-      storeName: String(orderData.store_name || ""),
-      storeAddress: String(orderData.store_address || ""),
-      paymentMethod: String(orderData.payment_method || "cod"),
-      paymentStatus: String(orderData.payment_status || ""),
-      note: String(orderData.note || ""),
+      ...commonOrderEmailDetails,
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 處理中通知`;
   } else if (mode === "ready") {
     htmlContent = buildReadyNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
-      deliveryMethod: String(orderData.delivery_method || ""),
-      city: String(orderData.city || ""),
-      district: String(orderData.district || ""),
-      address: String(orderData.address || ""),
-      storeName: String(orderData.store_name || ""),
-      storeAddress: String(orderData.store_address || ""),
-      paymentMethod: String(orderData.payment_method || "cod"),
-      paymentStatus: String(orderData.payment_status || ""),
-      note: String(orderData.note || ""),
+      ...commonOrderEmailDetails,
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已備妥通知`;
   } else if (mode === "completed") {
     htmlContent = buildCompletedNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
-      note: String(orderData.note || ""),
+      ...commonOrderEmailDetails,
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已完成通知`;
   } else if (mode === "delivered") {
     htmlContent = buildDeliveredNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
-      note: String(orderData.note || ""),
+      ...commonOrderEmailDetails,
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已配達通知`;
   } else if (mode === "cancelled") {
     htmlContent = buildCancelledNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
+      ...commonOrderEmailDetails,
       cancelReason: String(orderData.cancel_reason || ""),
-      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已取消通知`;
   } else if (mode === "failed") {
     htmlContent = buildFailedNotificationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
+      ...commonOrderEmailDetails,
       failureReason: String(orderData.cancel_reason || ""),
-      note: String(orderData.note || ""),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 已失敗通知`;
   } else {
-    const receiptInfo = parseReceiptInfo(orderData.receipt_info);
-    const customFieldsHtml = await buildCustomFieldsHtml(
-      orderData.custom_fields,
-    );
     htmlContent = buildOrderConfirmationHtml({
-      orderId,
-      siteTitle,
-      logoUrl: siteLogoUrl,
-      lineName,
-      phone: String(orderData.phone || ""),
-      deliveryMethod: String(orderData.delivery_method || ""),
-      city: String(orderData.city || ""),
-      district: String(orderData.district || ""),
-      address: String(orderData.address || ""),
-      storeName: String(orderData.store_name || ""),
-      storeAddress: String(orderData.store_address || ""),
-      paymentMethod: String(orderData.payment_method || "cod"),
+      ...commonOrderEmailDetails,
       transferTargetAccount: String(orderData.payment_id || ""),
       transferAccountLast5: String(orderData.transfer_account_last5 || ""),
-      note: String(orderData.note || ""),
-      ordersText: stripLegacyReceiptBlock(orderData.items, receiptInfo),
-      total: Number(orderData.total) || 0,
-      customFieldsHtml,
-      receiptHtml: buildReceiptHtml(receiptInfo),
     });
     subject = `[${siteTitle}] 訂單編號 ${orderId} 成立確認信`;
   }
@@ -330,6 +287,9 @@ export async function batchUpdateOrderStatus(
   }
   if (data.trackingUrl !== undefined) {
     payload.trackingUrl = String(data.trackingUrl);
+  }
+  if (data.statusNote !== undefined) {
+    payload.statusNote = String(data.statusNote);
   }
 
   for (const orderId of orderIds) {

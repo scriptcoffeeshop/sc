@@ -2,7 +2,7 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。更早的變更摘要移到 `docs/changelog.md`；完整紀錄以 git history 為準。
 
-最後更新：2026-04-27
+最後更新：2026-05-14
 
 ---
 
@@ -49,6 +49,7 @@
 - Hono routing + action map 已落地，公開/登入/admin action 定義已依 domain 拆到 `routing/actions/`，POST schema 驗證樣板集中於 routing helper。
 - `orders.ts`、`payments.ts`、settings、quote、stores、payment expiry/JKO sync 等核心流程已拆分；`order-submit.ts` 與 `quote.ts` 仍偏大。
 - JSON 解析集中於 `utils/json.ts`，訂單/付款/配送 label、Email asset、tracking URL、Email/Flex 文案 helper 已共用。
+- 訂單狀態變更可寫入 `coffee_orders.status_note` 作為最新狀態通知備註；後台狀態對話框、Email 通知、LINE Flex 通知與前台我的訂單會顯示同一份內容。
 - LINE Pay 與街口支付固定走正式環境；線上付款逾期會轉 `status=failed`、`payment_status=expired`。
 - Rate limiter 預設使用記憶體 store；若設定 Upstash Redis REST env，可切換為分散式配額儲存。
 
@@ -75,6 +76,10 @@
 ---
 
 ## 5) 最近有效變更
+
+### 2026-05-14
+
+- 訂單狀態變更新增「給消費者的狀態備註」欄位，逐筆/批次更新會保存到 `status_note`，Email 與 LINE Flex 狀態通知同步顯示，前台我的訂單也會顯示最新狀態備註。
 
 ### 2026-05-05
 

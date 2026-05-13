@@ -29,6 +29,7 @@ export interface OrderFlexPayload {
   total: number;
   items: string;
   note?: string;
+  statusNote?: string;
   receiptInfo?: unknown;
   shippingProvider?: string;
   trackingUrl?: string;
@@ -113,6 +114,7 @@ export function buildOrderStatusLineFlexMessage(
   const trackingLinkUrl = customTrackingUrl || defaultTrackingUrl;
   const hasTrackingLinkCta = Boolean(trackingLinkUrl);
   const orderNote = String(order.note || "").trim();
+  const statusNote = String(order.statusNote || "").trim();
   const orderId = String(order.orderId || "").trim();
   const lineName = String(order.lineName || "").trim();
   const phone = String(order.phone || "").trim();
@@ -183,6 +185,14 @@ export function buildOrderStatusLineFlexMessage(
   if (orderNote) {
     bodyContents.push(buildFlexSeparator());
     bodyContents.push(buildFlexInfoRow("訂單備註", orderNote, {
+      margin: "md",
+      valueWrap: true,
+    }));
+  }
+
+  if (statusNote) {
+    bodyContents.push(buildFlexSeparator());
+    bodyContents.push(buildFlexInfoRow("狀態備註", statusNote, {
       margin: "md",
       valueWrap: true,
     }));

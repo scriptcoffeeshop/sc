@@ -1,6 +1,9 @@
 import { createApp, type App } from "vue";
 import DashboardOrderEmailConfirm from "./DashboardOrderEmailConfirm.vue";
-import DashboardOrderStatusChangeConfirm from "./DashboardOrderStatusChangeConfirm.vue";
+import DashboardOrderStatusChangeConfirm, {
+  type DashboardOrderStatusChangeConfirmExpose,
+  type DashboardOrderStatusChangeValues,
+} from "./DashboardOrderStatusChangeConfirm.vue";
 import type { DashboardSwal, DashboardSwalResult } from "./dashboardOrderTypes.ts";
 
 type PopupWithAppend = {
@@ -55,9 +58,11 @@ export async function openDashboardOrderStatusChangeConfirmDialog(options: {
   orderId: string;
   currentStatusLabel: string;
   newStatusLabel: string;
-}): Promise<DashboardSwalResult> {
+  initialStatusNote?: string;
+}): Promise<DashboardSwalResult & { value?: DashboardOrderStatusChangeValues }> {
   const root = document.createElement("div");
   let app: App<Element> | null = null;
+  let formRef: DashboardOrderStatusChangeConfirmExpose | null = null;
 
   return await options.Swal.fire({
     title: "確認變更訂單狀態",
@@ -73,12 +78,15 @@ export async function openDashboardOrderStatusChangeConfirmDialog(options: {
         orderId: options.orderId,
         currentStatusLabel: options.currentStatusLabel,
         newStatusLabel: options.newStatusLabel,
+        initialStatusNote: options.initialStatusNote || "",
       });
-      app.mount(root);
+      formRef = app.mount(root) as unknown as DashboardOrderStatusChangeConfirmExpose;
     },
     willClose: () => {
       app?.unmount();
       app = null;
+      formRef = null;
     },
-  }) as DashboardSwalResult;
+    preConfirm: () => formRef?.getValues() || { statusNote: "" },
+  }) as DashboardSwalResult & { value?: DashboardOrderStatusChangeValues };
 }
