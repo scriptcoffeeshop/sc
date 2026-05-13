@@ -1,8 +1,7 @@
 import { hmacSign } from "../utils/auth.ts";
 import { shouldSkipCustomerNotificationForPaymentStatus } from "./customer-notification-policy.ts";
-import { resolveEmailLogoUrl } from "../utils/email-assets.ts";
+import { buildPaymentStatusNotificationHtml } from "../utils/email-templates.ts";
 import { sendEmail } from "../utils/email.ts";
-import { sanitize } from "../utils/html.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
 import { createLogger } from "../utils/logger.ts";
@@ -14,7 +13,13 @@ import {
   LINE_ORDER_NOTIFY_TO,
 } from "../utils/config.ts";
 import { supabase } from "../utils/supabase.ts";
-import { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
+import {
+  buildCustomFieldsHtml,
+  buildReceiptHtml,
+  getEmailBranding,
+  stripLegacyReceiptBlock,
+  trimLineNotifyError,
+} from "./order-shared.ts";
 
 export { getEmailBranding, trimLineNotifyError } from "./order-shared.ts";
 export { parseReceiptInfoRecord as parseReceiptInfo } from "../utils/receipt-info.ts";
@@ -126,20 +131,6 @@ function parseJkoStatusCode(value: unknown): number | null {
   if (!normalized) return null;
   const parsed = Number.parseInt(normalized, 10);
   return Number.isFinite(parsed) ? parsed : null;
-}
-
-function getDeliveryAddressText(order: JsonRecord): string {
-  const deliveryMethod = String(order.delivery_method || "");
-  if (deliveryMethod === "delivery" || deliveryMethod === "home_delivery") {
-    return `${String(order.city || "")}${String(order.district || "")} ${
-      String(order.address || "")
-    }`.trim();
-  }
-  return `${String(order.store_name || "")}${
-    String(order.store_address || "").trim()
-      ? ` (${String(order.store_address || "").trim()})`
-      : ""
-  }`.trim();
 }
 
 function getLinePayStatusLabel(status: LinePayStatus): string {
@@ -355,60 +346,6 @@ async function persistJkoLineNotifySuccess(
   );
 }
 
-function buildLinePayStatusEmailHtml(params: {
-  orderId: string;
-  siteTitle: string;
-  logoUrl: string;
-  lineName: string;
-  paymentStatus: LinePayStatus;
-  total: number;
-  deliveryText: string;
-  note: string;
-}) {
-  const statusLabel = getLinePayStatusLabel(params.paymentStatus);
-  const statusColor = params.paymentStatus === "paid" ? "#2e7d32" : "#d32f2f";
-  const summaryText = params.paymentStatus === "paid"
-    ? "您的 LINE Pay 付款已成功完成。"
-    : "您的 LINE Pay 付款已取消，若需下單請重新送出。";
-
-  return `
-<div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e5ddd5;box-shadow:0 4px 10px rgba(0,0,0,0.08);">
-  <div style="background:#6F4E37;color:#fff;padding:22px 20px 20px;text-align:center;">
-    <img src="${sanitize(resolveEmailLogoUrl(params.logoUrl))}" alt="${
-    sanitize(params.siteTitle)
-  } Logo" style="display:block;height:18px;width:auto;max-width:108px;margin:0 auto 10px auto;border:0;outline:none;text-decoration:none;">
-    <h1 style="margin:0;font-size:22px;line-height:1.32;font-weight:700;letter-spacing:0.2px;">${
-    sanitize(params.siteTitle)
-  }</h1>
-    <p style="margin:8px 0 0 0;font-size:13px;line-height:1.4;color:#F2EAE4;">LINE Pay 付款狀態通知</p>
-  </div>
-  <div style="padding:28px 30px;color:#333;line-height:1.65;">
-    <h2 style="font-size:18px;color:#6F4E37;margin-top:0;">親愛的 ${
-    sanitize(params.lineName)
-  }，您好</h2>
-    <p style="margin:0 0 14px 0;">${sanitize(summaryText)}</p>
-    <div style="background:#f9f6f0;border-left:4px solid #6F4E37;padding:14px 15px;margin:16px 0;border-radius:0 4px 4px 0;">
-      <p style="margin:0 0 10px 0;"><strong>訂單編號：</strong> ${
-    sanitize(params.orderId)
-  }</p>
-      <p style="margin:0 0 10px 0;"><strong>付款狀態：</strong> <span style="font-weight:700;color:${statusColor};">${statusLabel}</span></p>
-      <p style="margin:0 0 10px 0;"><strong>訂單金額：</strong> $${
-    Number(params.total) || 0
-  }</p>
-      <p style="margin:0 0 10px 0;"><strong>配送資訊：</strong> ${
-    sanitize(params.deliveryText || "未提供")
-  }</p>
-      <p style="margin:0;"><strong>訂單備註：</strong> ${
-    sanitize(params.note || "無")
-  }</p>
-    </div>
-  </div>
-  <div style="background:#f5f5f5;color:#888;text-align:center;padding:14px 15px;font-size:12px;border-top:1px solid #eee;">
-    <p style="margin:0;">此為系統自動發送的信件，請勿直接回覆。</p>
-  </div>
-</div>`;
-}
-
 export async function notifyLinePayPaymentStatusChanged(
   orderId: string,
   paymentStatus: LinePayStatus,
@@ -419,7 +356,7 @@ export async function notifyLinePayPaymentStatusChanged(
 
   try {
     const { data: order, error } = await supabase.from("coffee_orders").select(
-      "id, status, line_user_id, line_name, phone, email, total, items, delivery_method, city, district, address, store_name, store_address, note, receipt_info, payment_method",
+      "id, status, line_user_id, line_name, phone, email, total, items, delivery_method, city, district, address, store_name, store_address, note, custom_fields, receipt_info, payment_method",
     ).eq("id", orderId).maybeSingle();
 
     if (error || !order) {
@@ -431,10 +368,8 @@ export async function notifyLinePayPaymentStatusChanged(
     }
 
     const { siteTitle, siteLogoUrl } = await getEmailBranding();
-    const deliveryText = getDeliveryAddressText(
-      asJsonRecord(order),
-    );
     const lineName = String(order.line_name || "").trim() || "顧客";
+    const receiptInfo = parseReceiptInfoRecord(order.receipt_info);
 
     const lineUserId = String(order.line_user_id || "").trim();
     if (lineUserId) {
@@ -456,7 +391,7 @@ export async function notifyLinePayPaymentStatusChanged(
         total: Number(order.total) || 0,
         items: String(order.items || ""),
         note: String(order.note || ""),
-        receiptInfo: parseReceiptInfoRecord(order.receipt_info),
+        receiptInfo,
       });
       const flexResult = await pushLineFlexMessage(lineUserId, flexMessage);
       if (!flexResult.success) {
@@ -473,15 +408,34 @@ export async function notifyLinePayPaymentStatusChanged(
       const statusSummary = paymentStatus === "paid" ? "付款成功" : "付款取消";
       const subject =
         `[${siteTitle}] 訂單編號 ${orderId} LINE Pay ${statusSummary}通知`;
-      const html = buildLinePayStatusEmailHtml({
+      const customFieldsHtml = await buildCustomFieldsHtml(
+        order.custom_fields,
+      );
+      const html = buildPaymentStatusNotificationHtml({
         orderId,
         siteTitle,
         logoUrl: siteLogoUrl,
         lineName,
+        phone: String(order.phone || ""),
+        deliveryMethod: String(order.delivery_method || ""),
+        city: String(order.city || ""),
+        district: String(order.district || ""),
+        address: String(order.address || ""),
+        storeName: String(order.store_name || ""),
+        storeAddress: String(order.store_address || ""),
+        paymentMethod: String(order.payment_method || "linepay"),
         paymentStatus,
+        notificationTitle: "LINE Pay 付款狀態通知",
+        summaryText: paymentStatus === "paid"
+          ? "您的 LINE Pay 付款已成功完成。"
+          : "您的 LINE Pay 付款已取消，若需下單請重新送出。",
+        statusLabel: getLinePayStatusLabel(paymentStatus),
+        statusColor: paymentStatus === "paid" ? "#2E7D32" : "#B42318",
         total: Number(order.total) || 0,
-        deliveryText,
+        ordersText: stripLegacyReceiptBlock(order.items, receiptInfo),
         note: String(order.note || ""),
+        customFieldsHtml,
+        receiptHtml: buildReceiptHtml(receiptInfo),
       });
       const emailResult = await sendEmail(customerEmail, subject, html);
       if (!emailResult.success) {
