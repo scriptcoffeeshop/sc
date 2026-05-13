@@ -10,6 +10,7 @@ import {
 import {
   getSelectedOrderIds,
   setPendingOrderStatus,
+  setPendingOrderStatusNote,
   syncPendingStatuses,
   syncSelectedOrderIds,
   toggleOrderSelection,
@@ -31,6 +32,7 @@ const logger = createLogger("dashboard-orders");
 const orders = ref<DashboardOrderRecord[]>([]);
 const selectedOrderIds = ref<Set<string>>(new Set());
 const pendingStatusByOrderId = ref<Record<string, string>>({});
+const pendingStatusNoteByOrderId = ref<Record<string, string>>({});
 
 const filters = reactive({
   status: "all",
@@ -46,6 +48,7 @@ const filters = reactive({
 const batchForm = reactive({
   status: "",
   paymentStatus: "__keep__",
+  statusNote: "",
 });
 
 let services: DashboardOrderServices | null = null;
@@ -91,6 +94,7 @@ const ordersView = computed(() =>
     buildOrderViewModel(
       order,
       pendingStatusByOrderId.value[order.orderId] || "",
+      pendingStatusNoteByOrderId.value[order.orderId] || "",
       selectedOrderIds.value.has(order.orderId),
     )
   )
@@ -110,7 +114,11 @@ async function loadOrders() {
     if (!data.success) return;
     orders.value = Array.isArray(data.orders) ? data.orders : [];
     syncSelectedOrderIds(orders, selectedOrderIds);
-    syncPendingStatuses(orders, pendingStatusByOrderId);
+    syncPendingStatuses(
+      orders,
+      pendingStatusByOrderId,
+      pendingStatusNoteByOrderId,
+    );
   } catch (error) {
     logger.error("載入訂單失敗", error);
   }
@@ -150,7 +158,8 @@ async function confirmOrderStatus(orderId: string) {
   const { changeOrderStatus } = getServices();
   const nextStatus = pendingStatusByOrderId.value[orderId];
   if (!nextStatus || !changeOrderStatus) return;
-  await changeOrderStatus(orderId, nextStatus);
+  const statusNote = pendingStatusNoteByOrderId.value[orderId] || "";
+  await changeOrderStatus(orderId, nextStatus, statusNote);
 }
 
 const { batchUpdateOrders, batchDeleteOrders } = createDashboardOrdersBulkActions({
@@ -268,7 +277,15 @@ export const dashboardOrdersActions = {
   exportFilteredOrdersCsv,
   exportSelectedOrdersCsv,
   setPendingOrderStatus: (orderId: string, status: string) =>
-    setPendingOrderStatus(orders, pendingStatusByOrderId, orderId, status),
+    setPendingOrderStatus(
+      orders,
+      pendingStatusByOrderId,
+      pendingStatusNoteByOrderId,
+      orderId,
+      status,
+    ),
+  setPendingOrderStatusNote: (orderId: string, statusNote: string) =>
+    setPendingOrderStatusNote(pendingStatusNoteByOrderId, orderId, statusNote),
   confirmOrderStatus,
   copyTrackingNumber,
   showFlexHistory,

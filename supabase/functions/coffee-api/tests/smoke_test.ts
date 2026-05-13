@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert";
 import {
   buildCancelledNotificationHtml,
+  buildCompletedNotificationHtml,
   buildDeliveredNotificationHtml,
   buildFailedNotificationHtml,
   buildOrderConfirmationHtml,

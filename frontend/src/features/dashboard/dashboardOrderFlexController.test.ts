@@ -71,47 +71,50 @@ describe("dashboardOrderFlexController", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders Flex preview through Vue and copies JSON from the deny action", async () => {
-    const writeText = vi.fn(async () => undefined);
-    installClipboard(writeText);
-
+  it("sends Flex directly without opening the preview popup", async () => {
+    const flexMessage = {
+      type: "flex" as const,
+      altText: "訂單通知",
+      contents: { type: "bubble" as const },
+    };
     const deps = createBaseDeps({
+      getOrders: () => [
+        {
+          orderId: "O-1001",
+          timestamp: "2026-04-25T00:00:00.000Z",
+          lineUserId: "line-user-1",
+          status: "shipped",
+        },
+      ],
+      buildLineFlexMessage: vi.fn(() => flexMessage),
       Swal: {
-        fire: vi.fn(async (options) => {
-          if (options?.title === "LINE Flex Message") {
-            expect(options.html).toBeInstanceOf(HTMLElement);
-            const popup = document.createElement("div");
-            document.body.appendChild(popup);
-            options.didOpen?.(popup);
-            expect(popup.textContent).toContain("#O-1001");
-            expect(popup.textContent).toContain("已出貨");
-            expect(popup.textContent).toContain("line-user-1");
-            options.willClose?.();
-            popup.remove();
-            return { isDenied: true };
-          }
-          return {};
-        }),
+        fire: vi.fn(async () => ({})),
       },
     });
     const controller = createOrderFlexController(deps);
 
-    await controller.previewOrderStatusNotification(
-      {
-        orderId: "O-1001",
-        timestamp: "2026-04-25T00:00:00.000Z",
-        lineUserId: "line-user-1",
-      },
+    await controller.sendOrderFlexByOrderId("O-1001");
+
+    expect(deps.buildLineFlexMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: "O-1001" }),
       "shipped",
     );
-
-    expect(writeText).toHaveBeenCalledWith(
-      expect.stringContaining('"type": "flex"'),
+    expect(deps.authFetch).toHaveBeenCalledWith(
+      "https://api.example?action=sendLineFlexMessage",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          orderId: "O-1001",
+          to: "line-user-1",
+          flexMessage,
+        }),
+      }),
     );
     expect(deps.Toast.fire).toHaveBeenCalledWith({
       icon: "success",
-      title: "Flex Message 已複製",
+      title: "LINE 訊息已發送",
     });
+    expect(deps.Swal.fire).not.toHaveBeenCalled();
     const history = localStorage.getItem("coffee_flex_message_history");
     expect(JSON.parse(history || "[]")[0])
       .toMatchObject({

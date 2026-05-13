@@ -22,7 +22,6 @@ function createDeps(overrides: JsonRecord = {}) {
       },
     ],
     loadOrders: vi.fn(async () => undefined),
-    previewOrderStatusNotification: vi.fn(async () => undefined),
     Toast: { fire: vi.fn() },
     Swal: { fire: vi.fn(async () => ({ isConfirmed: true })) },
     esc: (value: unknown) => String(value || ""),
@@ -48,7 +47,7 @@ describe("dashboardOrderStatusController", () => {
     document.body.innerHTML = "";
   });
 
-  it("renders the status-change confirmation with Vue and preserves the update flow", async () => {
+  it("renders the status-change confirmation with Vue and updates without opening LINE Flex preview", async () => {
     const deps = createDeps({
       Swal: {
         fire: vi.fn(async (options) => {
@@ -92,13 +91,8 @@ describe("dashboardOrderStatusController", () => {
       title: "狀態已更新",
     });
     expect(deps.loadOrders).toHaveBeenCalled();
-    expect(deps.previewOrderStatusNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderId: "O-STATUS-1",
-        status: "processing",
-        statusNote: "已放在管理室冰箱裡",
-      }),
-      "processing",
+    expect(deps.Swal.fire).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: "LINE Flex Message" }),
     );
   });
 });

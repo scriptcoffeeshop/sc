@@ -106,8 +106,14 @@ describe("useDashboardOrders", () => {
     expect(dashboard.ordersView.value).toHaveLength(1);
 
     module.dashboardOrdersActions.setPendingOrderStatus("O-1001", "shipped");
+    module.dashboardOrdersActions.setPendingOrderStatusNote(
+      "O-1001",
+      "已放在管理室冰箱裡",
+    );
     expect(dashboard.ordersView.value[0]).toMatchObject({
       selectedStatus: "shipped",
+      pendingStatusNote: "已放在管理室冰箱裡",
+      showPendingStatusNoteInput: true,
       showConfirmStatusButton: true,
     });
   });
@@ -237,12 +243,7 @@ describe("useDashboardOrders", () => {
       API_URL: "https://api.example",
       authFetch,
       getAuthUserId: () => "admin-user",
-      Swal: {
-        fire: vi.fn(async (options) => {
-          expect(options?.title).toBe("批次通知備註");
-          return { isConfirmed: true, value: "批次狀態備註" };
-        }),
-      },
+      Swal: { fire: vi.fn() },
       Toast: { fire: vi.fn() },
     });
 
@@ -252,6 +253,7 @@ describe("useDashboardOrders", () => {
     module.dashboardOrdersActions.toggleOrderSelection("O-2002", true);
     dashboard.batchForm.status = "processing";
     dashboard.batchForm.paymentStatus = "paid";
+    dashboard.batchForm.statusNote = "批次狀態備註";
 
     await module.dashboardOrdersActions.batchUpdateOrders();
 

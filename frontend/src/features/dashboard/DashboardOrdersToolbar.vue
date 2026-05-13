@@ -14,7 +14,7 @@
           type="button"
           @click="handleShowFlexHistory"
           class="dashboard-orders-toolbar__action dashboard-orders-toolbar__action--bordered text-sm"
-          title="LINE Flex Message 歷史紀錄"
+          title="LINE Flex 歷史紀錄"
         >
           <span class="tab-with-icon">
             <svg viewBox="0 0 24 24" aria-hidden="true" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h10" /><path d="M9 12h10" /><path d="M9 19h10" /><path d="M4 6h.01" /><path d="M4 12h.01" /><path d="M4 18h.01" /></svg>
@@ -163,6 +163,20 @@
         <option value="refunded">已退款</option>
         <option value="">清空付款狀態</option>
       </select>
+      <label
+        class="dashboard-orders-toolbar__status-note"
+        :class="{ 'dashboard-orders-toolbar__status-note--disabled': !batchForm.status }"
+      >
+        <span>給消費者的狀態備註</span>
+        <textarea
+          id="batch-status-note"
+          v-model.trim="batchForm.statusNote"
+          class="input-field text-sm py-1"
+          maxlength="500"
+          :disabled="!batchForm.status"
+          :placeholder="batchForm.status ? '例如：已放在管理室冰箱裡' : '先選擇批次狀態後填寫'"
+        />
+      </label>
       <button
         type="button"
         @click="handleBatchUpdateOrders"
@@ -296,6 +310,30 @@ function handleExportSelectedOrdersCsv() {
 .dashboard-orders-toolbar__action:hover svg,
 .dashboard-orders-toolbar__action:hover .ui-icon-inline {
   opacity: 1;
+}
+
+.dashboard-orders-toolbar__status-note {
+  color: #586e75;
+  display: grid;
+  flex: 1 1 240px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 4px;
+  min-width: 240px;
+}
+
+.dashboard-orders-toolbar__status-note textarea {
+  min-height: 58px;
+  resize: vertical;
+}
+
+.dashboard-orders-toolbar__status-note--disabled {
+  opacity: 0.62;
+}
+
+.dashboard-orders-toolbar__status-note textarea:disabled {
+  background: #f5f0e6;
+  cursor: not-allowed;
 }
 
 .dashboard-orders-toolbar__action:active {

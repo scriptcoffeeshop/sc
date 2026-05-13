@@ -1,12 +1,12 @@
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import { openDashboardShippingInfoDialog } from "./dashboardShippingInfoDialog.ts";
 import type { DashboardOrderServices } from "./dashboardOrderTypes.ts";
-import { orderStatusLabel } from "./orderShared.ts";
 
 type CreateDashboardOrdersBulkActionsOptions = {
   batchForm: {
     status: string;
     paymentStatus: string;
+    statusNote: string;
   };
   getSelectedOrderIds: () => string[];
   getServices: () => DashboardOrderServices;
@@ -23,27 +23,6 @@ interface BatchUpdateOrderPayload {
   shippingProvider?: string;
   trackingUrl?: string;
   statusNote?: string;
-}
-
-async function promptBatchStatusNote(
-  Swal: DashboardOrderServices["Swal"],
-  statusLabel: string,
-) {
-  const result = await Swal.fire({
-    title: "批次通知備註",
-    text: `這段內容會隨「${statusLabel}」狀態通知顯示在 Email 與 LINE。`,
-    input: "textarea",
-    inputPlaceholder: "例如：已放在管理室冰箱裡",
-    inputAttributes: {
-      maxlength: "500",
-    },
-    showCancelButton: true,
-    confirmButtonText: "繼續批次更新",
-    cancelButtonText: "取消",
-    confirmButtonColor: "#268BD2",
-  });
-  if (!result.isConfirmed) return null;
-  return String(result.value || "").trim();
 }
 
 export function createDashboardOrdersBulkActions(
@@ -66,13 +45,14 @@ export function createDashboardOrdersBulkActions(
     let trackingNumber = "";
     let shippingProvider = "";
     let trackingUrl = "";
-    let statusNote = "";
+    let statusNote = String(options.batchForm.statusNote || "").trim();
     if (options.batchForm.status === "shipped") {
       const { value, isConfirmed } = await openDashboardShippingInfoDialog({
         Swal,
         title: "批次出貨設定",
         confirmButtonText: "確定",
         idPrefix: "swal-batch",
+        initialValues: { statusNote },
         shared: true,
       });
       if (!isConfirmed) return;
@@ -80,13 +60,7 @@ export function createDashboardOrdersBulkActions(
       trackingNumber = String(shippingInfo.trackingNumber || "");
       shippingProvider = String(shippingInfo.shippingProvider || "");
       trackingUrl = String(shippingInfo.trackingUrl || "");
-      statusNote = String(shippingInfo.statusNote || "").trim();
-    } else {
-      const statusLabel = orderStatusLabel[options.batchForm.status] ||
-        options.batchForm.status;
-      const promptedStatusNote = await promptBatchStatusNote(Swal, statusLabel);
-      if (promptedStatusNote === null) return;
-      statusNote = promptedStatusNote;
+      statusNote = String(shippingInfo.statusNote ?? statusNote).trim();
     }
 
     const payload: BatchUpdateOrderPayload = {

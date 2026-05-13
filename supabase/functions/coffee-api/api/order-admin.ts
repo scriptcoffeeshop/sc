@@ -4,6 +4,7 @@ import {
   getEmailBranding,
   parseReceiptInfo,
   stripLegacyReceiptBlock,
+  trimLineNotifyError,
 } from "./order-shared.ts";
 import {
   PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE,
@@ -24,8 +25,80 @@ import {
 } from "../utils/email-templates.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
+import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
+import { pushLineFlexMessage } from "../utils/line-messaging.ts";
+import { createLogger } from "../utils/logger.ts";
 import { supabase } from "../utils/supabase.ts";
 import { normalizeTrackingUrl } from "../utils/tracking.ts";
+
+const logger = createLogger("order-admin");
+const ORDER_STATUS_NOTIFICATION_SELECT =
+  "id, status, status_note, line_user_id, line_name, phone, email, items, total, delivery_method, city, district, address, store_name, store_address, note, cancel_reason, custom_fields, receipt_info, payment_method, payment_status, payment_id, transfer_account_last5, shipping_provider, tracking_url, tracking_number";
+
+type CustomerNotificationResult = {
+  attempted: boolean;
+  success: boolean;
+  skipped: boolean;
+  target: string;
+  error: string;
+};
+
+type CustomerNotificationResults = {
+  email: CustomerNotificationResult;
+  line: CustomerNotificationResult;
+};
+
+function skippedNotification(reason: string): CustomerNotificationResult {
+  return {
+    attempted: false,
+    success: false,
+    skipped: true,
+    target: "",
+    error: reason,
+  };
+}
+
+function sentNotification(target: string): CustomerNotificationResult {
+  return {
+    attempted: true,
+    success: true,
+    skipped: false,
+    target,
+    error: "",
+  };
+}
+
+function failedNotification(
+  target: string,
+  error: unknown,
+): CustomerNotificationResult {
+  return {
+    attempted: true,
+    success: false,
+    skipped: false,
+    target,
+    error: trimLineNotifyError(error),
+  };
+}
+
+function summarizeCustomerNotifications(
+  notifications: CustomerNotificationResults,
+) {
+  const results = [notifications.email, notifications.line];
+  const attempts = results.filter((result) => result.attempted);
+  const successes = attempts.filter((result) => result.success);
+  const failures = attempts.filter((result) => !result.success);
+  if (!attempts.length) {
+    return "訂單狀態已更新（未發送通知：此訂單沒有可通知的 Email 或 LINE）";
+  }
+  if (failures.length) {
+    return `訂單狀態已更新，通知部分失敗（成功 ${successes.length} / ${attempts.length}）`;
+  }
+  if (successes.length >= 2) return "訂單狀態已更新，Email 與 LINE 通知已發送";
+  if (notifications.email.success) return "訂單狀態已更新，Email 通知已發送";
+  if (notifications.line.success) return "訂單狀態已更新，LINE 通知已發送";
+  return "訂單狀態已更新";
+}
 
 function resolveOrderEmailMode(
   modeInput: unknown,
@@ -56,6 +129,117 @@ function resolveOrderEmailMode(
   if (orderStatus === "cancelled") return "cancelled";
   if (orderStatus === "failed") return "failed";
   return "confirmation";
+}
+
+async function loadOrderStatusNotificationData(orderId: string) {
+  const { data: orderData, error } = await supabase.from("coffee_orders")
+    .select(ORDER_STATUS_NOTIFICATION_SELECT)
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) {
+    logger.error("Failed to load order for status notification", {
+      orderId,
+      error: error.message,
+    });
+    return { orderData: null, error: error.message };
+  }
+  if (!orderData) {
+    return { orderData: null, error: "找不到訂單" };
+  }
+  return { orderData: asJsonRecord(orderData), error: "" };
+}
+
+async function sendOrderStatusEmailNotification(
+  orderId: string,
+  req: Request,
+): Promise<CustomerNotificationResult> {
+  const result = asJsonRecord(await sendOrderEmail({ orderId }, req));
+  if (result.success) {
+    return sentNotification(String(result.to || ""));
+  }
+
+  const error = String(result.error || "Email 通知失敗");
+  const skipped = error.includes("未填寫 Email") ||
+    error.includes(PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE);
+  if (skipped) return skippedNotification(error);
+
+  logger.error("Failed to send order status email notification", {
+    orderId,
+    error,
+  });
+  return failedNotification("", error);
+}
+
+async function sendOrderStatusLineNotification(
+  orderData: JsonRecord,
+): Promise<CustomerNotificationResult> {
+  if (
+    shouldSkipCustomerNotificationForPaymentStatus(orderData.payment_status)
+  ) {
+    return skippedNotification(
+      `${PROCESSING_PAYMENT_CUSTOMER_NOTIFICATION_MESSAGE}（LINE Flex）`,
+    );
+  }
+
+  const orderId = String(orderData.id || "").trim();
+  const lineUserId = String(orderData.line_user_id || "").trim();
+  if (!lineUserId) {
+    return skippedNotification("此訂單缺少 LINE 使用者 ID，無法發送訊息");
+  }
+
+  const receiptInfo = parseReceiptInfo(orderData.receipt_info);
+  const { siteTitle } = await getEmailBranding();
+  const flexMessage = buildOrderStatusLineFlexMessage({
+    orderId,
+    siteTitle,
+    status: String(orderData.status || "pending"),
+    deliveryMethod: String(orderData.delivery_method || ""),
+    city: String(orderData.city || ""),
+    district: String(orderData.district || ""),
+    address: String(orderData.address || ""),
+    storeName: String(orderData.store_name || ""),
+    storeAddress: String(orderData.store_address || ""),
+    lineName: String(orderData.line_name || ""),
+    phone: String(orderData.phone || ""),
+    email: String(orderData.email || ""),
+    paymentMethod: String(orderData.payment_method || "cod"),
+    paymentStatus: String(orderData.payment_status || ""),
+    total: Number(orderData.total) || 0,
+    items: stripLegacyReceiptBlock(orderData.items, receiptInfo),
+    note: String(orderData.note || ""),
+    statusNote: String(orderData.status_note || ""),
+    receiptInfo,
+    shippingProvider: String(orderData.shipping_provider || ""),
+    trackingUrl: String(orderData.tracking_url || ""),
+    trackingNumber: String(orderData.tracking_number || ""),
+  });
+
+  const result = await pushLineFlexMessage(lineUserId, flexMessage);
+  if (result.success) return sentNotification(lineUserId);
+
+  logger.error("Failed to send order status LINE notification", {
+    orderId,
+    target: lineUserId,
+    error: result.error,
+  });
+  return failedNotification(lineUserId, result.error);
+}
+
+async function sendOrderStatusCustomerNotifications(
+  orderId: string,
+  req: Request,
+): Promise<CustomerNotificationResults> {
+  const { orderData, error } = await loadOrderStatusNotificationData(orderId);
+  if (!orderData) {
+    const skipped = skippedNotification(error || "找不到訂單");
+    return { email: skipped, line: skipped };
+  }
+
+  const [email, line] = await Promise.all([
+    sendOrderStatusEmailNotification(orderId, req),
+    sendOrderStatusLineNotification(orderData),
+  ]);
+  return { email, line };
 }
 
 export async function updateOrderStatus(
@@ -106,7 +290,17 @@ export async function updateOrderStatus(
   );
   if (error) return { success: false, error: error.message };
 
-  return { success: true, message: "訂單狀態已更新" };
+  const orderId = String(data.orderId || "").trim();
+  const customerNotifications = await sendOrderStatusCustomerNotifications(
+    orderId,
+    req,
+  );
+
+  return {
+    success: true,
+    message: summarizeCustomerNotifications(customerNotifications),
+    customerNotifications,
+  };
 }
 
 export async function sendOrderEmail(

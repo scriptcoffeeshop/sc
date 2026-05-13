@@ -226,8 +226,6 @@ const orderStatusController = createOrderStatusController({
   getAuthUserId: dashboardSessionActions.getAuthUserId,
   getOrders: getDashboardOrders,
   loadOrders: dashboardOrdersActions.loadOrders,
-  previewOrderStatusNotification:
-    orderNotificationsController.previewOrderStatusNotification,
   Toast,
   Swal,
   esc,

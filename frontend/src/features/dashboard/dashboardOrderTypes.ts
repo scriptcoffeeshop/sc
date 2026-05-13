@@ -93,7 +93,11 @@ export type DashboardOrderServices = {
   getAuthUserId: () => string;
   Swal: DashboardSwal;
   Toast: DashboardToast;
-  changeOrderStatus?: (orderId: string, status: string) => Promise<unknown>;
+  changeOrderStatus?: (
+    orderId: string,
+    status: string,
+    statusNote?: string,
+  ) => Promise<unknown>;
   showFlexHistory?: () => unknown;
   sendOrderFlexByOrderId?: (orderId: string) => unknown;
   sendOrderEmailByOrderId?: (orderId: string) => unknown;

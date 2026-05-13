@@ -34,6 +34,7 @@ describe("dashboardOrdersView", () => {
         paymentMethod: "cod",
       },
       "",
+      "",
       false,
     ).timestampText).toBe("");
   });
@@ -48,6 +49,7 @@ describe("dashboardOrdersView", () => {
         paymentMethod: "cod",
         trackingNumber: "JP-DELIVERED-1",
       },
+      "",
       "",
       false,
     );
@@ -69,6 +71,7 @@ describe("dashboardOrdersView", () => {
         deliveryMethod: "in_store",
         paymentMethod: "cod",
       },
+      "",
       "",
       false,
     );

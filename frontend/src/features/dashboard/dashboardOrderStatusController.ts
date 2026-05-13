@@ -15,10 +15,6 @@ type OrderStatusControllerDeps = {
   getAuthUserId: () => string;
   getOrders: () => DashboardOrderRecord[];
   loadOrders: () => Promise<unknown> | unknown;
-  previewOrderStatusNotification?: (
-    order: DashboardOrderRecord,
-    status: string,
-  ) => Promise<unknown> | unknown;
   Toast: DashboardToast;
   Swal: DashboardSwal;
   esc: (value: unknown) => string;
@@ -41,7 +37,11 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
     return Array.isArray(deps.getOrders?.()) ? deps.getOrders() : [];
   }
 
-  async function changeOrderStatus(orderId: string, status: string) {
+  async function changeOrderStatus(
+    orderId: string,
+    status: string,
+    statusNoteInput = "",
+  ) {
     try {
       const targetOrder = getOrders().find((order) => order.orderId === orderId) ||
         ({ orderId, timestamp: "" } as DashboardOrderRecord);
@@ -52,7 +52,9 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
       let shippingProvider = "";
       let trackingUrl = "";
       let cancelReason = "";
-      let statusNote = "";
+      let statusNote = String(statusNoteInput || "").trim();
+      const initialStatusNote = statusNote ||
+        String(targetOrder.statusNote || "").trim();
       if (status === "shipped") {
         const { value: shippingInfo, isConfirmed } = await openDashboardShippingInfoDialog({
           Swal: deps.Swal,
@@ -62,7 +64,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
             trackingNumber: String(targetOrder.trackingNumber || ""),
             shippingProvider: String(targetOrder.shippingProvider || ""),
             trackingUrl: String(targetOrder.trackingUrl || ""),
-            statusNote: String(targetOrder.statusNote || ""),
+            statusNote: initialStatusNote,
           },
         });
         if (!isConfirmed) {
@@ -75,7 +77,7 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
         trackingNumber = String(shippingInfoRecord.trackingNumber || "");
         shippingProvider = String(shippingInfoRecord.shippingProvider || "");
         trackingUrl = String(shippingInfoRecord.trackingUrl || "");
-        statusNote = String(shippingInfoRecord.statusNote || "").trim();
+        statusNote = String(shippingInfoRecord.statusNote ?? statusNote).trim();
       } else if (status === "cancelled" || status === "failed") {
         const reasonLabel = status === "failed" ? "失敗原因" : "取消原因";
         const title = status === "failed" ? "設定失敗訂單" : "設定已取消";
@@ -90,27 +92,27 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
           placeholder,
           confirmButtonText,
           initialReason: String(targetOrder.cancelReason || "").trim(),
-          initialStatusNote: String(targetOrder.statusNote || "").trim(),
+          initialStatusNote,
         });
         if (!isConfirmed) {
           deps.loadOrders();
           return;
         }
         cancelReason = String(cancelInfo?.cancelReason || "").trim();
-        statusNote = String(cancelInfo?.statusNote || "").trim();
+        statusNote = String(cancelInfo?.statusNote ?? statusNote).trim();
       } else {
         const confirmation = await openDashboardOrderStatusChangeConfirmDialog({
           Swal: deps.Swal,
           orderId,
           currentStatusLabel: deps.orderStatusLabel[currentStatus] || currentStatus,
           newStatusLabel,
-          initialStatusNote: String(targetOrder.statusNote || "").trim(),
+          initialStatusNote,
         });
         if (!confirmation.isConfirmed) {
           deps.loadOrders();
           return;
         }
-        statusNote = String(confirmation.value?.statusNote || "").trim();
+        statusNote = String(confirmation.value?.statusNote ?? statusNote).trim();
       }
 
       const payload: OrderStatusUpdatePayload = {
@@ -137,29 +139,12 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
       const result = await response.json();
       if (!result.success) throw new Error(result.error || "更新訂單狀態失敗");
 
-      deps.Toast.fire({ icon: "success", title: "狀態已更新" });
-
-      const flexOrder: DashboardOrderRecord = {
-        ...targetOrder,
-        orderId,
-        timestamp: targetOrder.timestamp || "",
-        status,
-        statusNote,
-      };
-      if (status === "shipped") {
-        flexOrder.trackingNumber = trackingNumber || "";
-        flexOrder.shippingProvider = shippingProvider || "";
-        flexOrder.trackingUrl = trackingUrl || "";
-      } else if (status === "cancelled" || status === "failed") {
-        flexOrder.cancelReason = cancelReason;
-      } else {
-        flexOrder.cancelReason = "";
-      }
+      deps.Toast.fire({
+        icon: "success",
+        title: String(result.message || "狀態已更新"),
+      });
 
       await deps.loadOrders();
-      if (deps.previewOrderStatusNotification) {
-        await deps.previewOrderStatusNotification(flexOrder, status);
-      }
     } catch (error) {
       deps.Swal.fire("錯誤", getDashboardErrorMessage(error, "更新訂單狀態失敗"), "error");
     }

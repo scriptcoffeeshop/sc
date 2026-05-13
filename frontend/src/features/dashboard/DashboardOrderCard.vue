@@ -179,6 +179,20 @@
             {{ orderStatusText(status) }}
           </option>
         </select>
+        <label
+          class="order-card__status-note-wrap"
+          :class="{ 'order-card__status-note-wrap--disabled': !order.showPendingStatusNoteInput }"
+        >
+          <span>給消費者的狀態備註</span>
+          <textarea
+            class="order-card__status-note"
+            :value="order.pendingStatusNote"
+            maxlength="500"
+            :disabled="!order.showPendingStatusNoteInput"
+            :placeholder="order.showPendingStatusNoteInput ? '例如：已放在管理室冰箱裡' : '先選擇新狀態後填寫'"
+            @input="handleStatusNoteInput(order.orderId, $event)"
+          />
+        </label>
         <button
           v-if="order.showConfirmStatusButton"
           type="button"
@@ -247,6 +261,13 @@ function handleOrderStatusChange(orderId: string, event: Event) {
   dashboardOrdersActions.setPendingOrderStatus(orderId, target?.value || "");
 }
 
+function handleStatusNoteInput(orderId: string, event: Event) {
+  const target = event.target instanceof HTMLTextAreaElement
+    ? event.target
+    : null;
+  dashboardOrdersActions.setPendingOrderStatusNote(orderId, target?.value || "");
+}
+
 function handleConfirmOrderStatus(orderId: string) {
   dashboardOrdersActions.confirmOrderStatus(orderId);
 }
@@ -308,6 +329,39 @@ function handleDeleteOrder(orderId: string) {
   padding: 0.35rem 0.55rem;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.order-card__status-note-wrap {
+  color: #586e75;
+  display: grid;
+  flex: 1 1 220px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.order-card__status-note {
+  background: #fffdf7;
+  border: 1px solid #d8cfb8;
+  border-radius: 8px;
+  color: #073642;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  min-height: 58px;
+  padding: 0.45rem 0.55rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.order-card__status-note-wrap--disabled {
+  opacity: 0.62;
+}
+
+.order-card__status-note:disabled {
+  background: #f5f0e6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 639px) {
