@@ -173,6 +173,7 @@ interface OrderStatusSummaryHtmlParams extends OrderEmailDetailFields {
   paymentText?: string;
   paymentStatus?: { text: string; color: string };
   note?: string;
+  statusNote?: string;
   extraHtml?: string;
   accentColor?: string;
   backgroundColor?: string;
@@ -265,6 +266,7 @@ function buildNotificationSummaryHtml(
     paymentText,
     paymentStatus,
     note: params.note,
+    statusNote: params.statusNote,
     extraHtml: params.extraHtml,
     accentColor: params.accentColor,
     backgroundColor: params.backgroundColor,

@@ -5,7 +5,10 @@ import { sendEmail } from "../utils/email.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
 import { createLogger } from "../utils/logger.ts";
-import { parseReceiptInfoRecord } from "../utils/receipt-info.ts";
+import {
+  normalizeReceiptInfo,
+  parseReceiptInfoRecord,
+} from "../utils/receipt-info.ts";
 import { buildOrderStatusLineFlexMessage } from "../utils/line-flex-template.ts";
 import { pushLineFlexMessage } from "../utils/line-messaging.ts";
 import {
@@ -370,6 +373,7 @@ export async function notifyLinePayPaymentStatusChanged(
     const { siteTitle, siteLogoUrl } = await getEmailBranding();
     const lineName = String(order.line_name || "").trim() || "顧客";
     const receiptInfo = parseReceiptInfoRecord(order.receipt_info);
+    const normalizedReceiptInfo = normalizeReceiptInfo(receiptInfo);
 
     const lineUserId = String(order.line_user_id || "").trim();
     if (lineUserId) {
@@ -432,10 +436,10 @@ export async function notifyLinePayPaymentStatusChanged(
         statusLabel: getLinePayStatusLabel(paymentStatus),
         statusColor: paymentStatus === "paid" ? "#2E7D32" : "#B42318",
         total: Number(order.total) || 0,
-        ordersText: stripLegacyReceiptBlock(order.items, receiptInfo),
+        ordersText: stripLegacyReceiptBlock(order.items, normalizedReceiptInfo),
         note: String(order.note || ""),
         customFieldsHtml,
-        receiptHtml: buildReceiptHtml(receiptInfo),
+        receiptHtml: buildReceiptHtml(normalizedReceiptInfo),
       });
       const emailResult = await sendEmail(customerEmail, subject, html);
       if (!emailResult.success) {
