@@ -32,8 +32,12 @@ function mountSwalVueContent(options: SwalVueOptions) {
 
 function setControlValue(id: string, value: string) {
   const control = document.getElementById(id);
-  expect(control).toBeInstanceOf(HTMLInputElement);
-  const input = control as HTMLInputElement;
+  expect(
+    control instanceof HTMLInputElement ||
+      control instanceof HTMLTextAreaElement ||
+      control instanceof HTMLSelectElement,
+  ).toBe(true);
+  const input = control as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
