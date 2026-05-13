@@ -100,7 +100,10 @@ function buildOrderNoteHtml(note: string, margin = "0"): string {
   return `<p style="margin: ${margin};"><strong>訂單備註：</strong> ${safeNote}</p>`;
 }
 
-function buildStatusNoteHtml(statusNote: unknown, margin = "0 0 10px 0"): string {
+function buildStatusNoteHtml(
+  statusNote: unknown,
+  margin = "0 0 10px 0",
+): string {
   const note = String(statusNote || "").trim();
   if (!note) return "";
   return `<p style="margin: ${margin};"><strong>狀態備註：</strong> ${
