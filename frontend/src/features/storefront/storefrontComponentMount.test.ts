@@ -146,6 +146,8 @@ describe("storefront Vue component mount coverage", () => {
       itemsText: "測試豆 x1",
       orderNote: "請下午配送",
       showOrderNote: true,
+      statusNote: "",
+      showStatusNote: false,
       totalText: "$220",
       receiptInfo: null,
       showReceiptInfo: false,
