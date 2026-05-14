@@ -32,6 +32,19 @@ function appendOrderNoteSection(bodyContents: FlexContent[], orderNote: string) 
   );
 }
 
+function appendStatusNoteSection(bodyContents: FlexContent[], statusNote: string) {
+  if (!statusNote) return;
+  bodyContents.push(createFlexSeparator("md"));
+  bodyContents.push(
+    createFlexInfoRow({
+      label: "狀態備註",
+      text: statusNote,
+      margin: "md",
+      wrap: true,
+    }),
+  );
+}
+
 function appendCustomerContactSection(
   bodyContents: FlexContent[],
   order: DashboardOrderRecord,
@@ -227,6 +240,7 @@ export function buildOrderFlexBodyPayload({
     : "";
   const receiptInfo = deps.normalizeReceiptInfo(order.receiptInfo);
   const orderNote = String(order.note || "").trim();
+  const statusNote = String(order.statusNote || "").trim();
   const cancelReason = String(order.cancelReason || "").trim();
   const trackingNumber = String(order.trackingNumber || "").trim();
   const customTrackingUrl = deps.normalizeTrackingUrl(order.trackingUrl || "");
@@ -298,6 +312,7 @@ export function buildOrderFlexBodyPayload({
 
   appendCustomerContactSection(bodyContents, order);
   appendOrderNoteSection(bodyContents, orderNote);
+  appendStatusNoteSection(bodyContents, statusNote);
   appendReceiptSection(bodyContents, receiptInfo);
   appendTrackingSection(bodyContents, order);
   appendCancelReasonSection(bodyContents, newStatus, cancelReason);

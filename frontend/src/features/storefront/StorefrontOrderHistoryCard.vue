@@ -136,6 +136,13 @@
     </div>
 
     <div
+      v-if="order.showStatusNote"
+      class="mb-2 rounded bg-blue-50 p-2 text-sm text-blue-800 whitespace-pre-line"
+    >
+      <span class="text-gray-500">狀態備註：</span>{{ order.statusNote }}
+    </div>
+
+    <div
       v-if="order.showReceiptInfo && order.receiptInfo"
       class="text-sm text-amber-800 bg-amber-50 p-2 rounded mb-2"
     >

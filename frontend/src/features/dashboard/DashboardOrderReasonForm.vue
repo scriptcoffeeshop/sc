@@ -9,6 +9,16 @@
       class="swal2-textarea dashboard-order-reason-form__control"
       :placeholder="placeholder"
     />
+    <label class="dashboard-order-reason-form__label" for="swal-status-note">
+      給消費者的狀態備註（選填）
+    </label>
+    <textarea
+      id="swal-status-note"
+      v-model.trim="statusNote"
+      class="swal2-textarea dashboard-order-reason-form__control"
+      maxlength="500"
+      placeholder="例如：已放在管理室冰箱裡"
+    />
   </div>
 </template>
 
@@ -17,6 +27,7 @@ import { ref } from "vue";
 
 export interface DashboardOrderReasonValues {
   cancelReason: string;
+  statusNote: string;
 }
 
 export interface DashboardOrderReasonFormExpose {
@@ -28,17 +39,21 @@ const props = withDefaults(
     label: string;
     placeholder: string;
     initialReason?: string;
+    initialStatusNote?: string;
   }>(),
   {
     initialReason: "",
+    initialStatusNote: "",
   },
 );
 
 const reason = ref(String(props.initialReason || ""));
+const statusNote = ref(String(props.initialStatusNote || ""));
 
 defineExpose<DashboardOrderReasonFormExpose>({
   getValues: () => ({
     cancelReason: reason.value,
+    statusNote: statusNote.value,
   }),
 });
 </script>

@@ -63,6 +63,17 @@
       :value="selectedPreset?.url || ''"
       disabled
     >
+
+    <label class="dashboard-shipping-info-form__label" :for="statusNoteId">
+      給消費者的狀態備註（選填）
+    </label>
+    <textarea
+      :id="statusNoteId"
+      v-model.trim="formValues.statusNote"
+      class="swal2-textarea dashboard-shipping-info-form__control dashboard-shipping-info-form__textarea"
+      maxlength="500"
+      placeholder="例如：已放在管理室冰箱裡"
+    />
   </div>
 </template>
 
@@ -79,6 +90,7 @@ export interface DashboardShippingInfoValues {
   trackingNumber?: string;
   shippingProvider?: string;
   trackingUrl?: string;
+  statusNote?: string;
 }
 
 export interface DashboardShippingInfoFormExpose {
@@ -150,6 +162,7 @@ const formValues = reactive({
   trackingUrl: hasInitialPreset
     ? ""
     : String(props.initialValues.trackingUrl || ""),
+  statusNote: String(props.initialValues.statusNote || ""),
 });
 
 const sharedLabelPrefix = computed(() => props.shared ? "共用" : "");
@@ -159,6 +172,7 @@ const shippingProviderPresetId = computed(() =>
   `${props.idPrefix}-shipping-provider-preset`
 );
 const trackingUrlId = computed(() => `${props.idPrefix}-tracking-url`);
+const statusNoteId = computed(() => `${props.idPrefix}-status-note`);
 const selectedPreset = computed(() =>
   getTrackingProviderPreset(formValues.providerPreset)
 );
@@ -173,6 +187,7 @@ defineExpose<DashboardShippingInfoFormExpose>({
     shippingProvider: selectedPreset.value?.label ||
       formValues.shippingProvider,
     trackingUrl: selectedPreset.value?.url || formValues.trackingUrl,
+    statusNote: formValues.statusNote,
   }),
 });
 </script>
@@ -205,5 +220,9 @@ defineExpose<DashboardShippingInfoFormExpose>({
   background: #f8f5ea;
   color: #586e75;
   opacity: 1;
+}
+
+.dashboard-shipping-info-form__textarea {
+  min-height: 96px;
 }
 </style>

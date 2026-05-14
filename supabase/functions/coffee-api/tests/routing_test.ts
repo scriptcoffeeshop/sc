@@ -198,6 +198,52 @@ Deno.test({
 });
 
 Deno.test({
+  name:
+    "Order Admin - status update saves status note without auto notifications",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await withMockedSupabaseTables({
+      coffee_users: [{
+        line_user_id: "orders-admin",
+        role: "ADMIN",
+        status: "ACTIVE",
+        admin_permissions: { orders: true },
+      }],
+      coffee_orders: [{
+        id: "ORDER-STATUS-NOTE",
+        status: "pending",
+        status_note: "",
+        line_user_id: "customer-line",
+        email: "customer@example.com",
+        payment_status: "paid",
+      }],
+    }, async (tables) => {
+      const token = await signJwt({ userId: "orders-admin" });
+      const response = await app.fetch(
+        buildActionRequest("updateOrderStatus", {
+          method: "POST",
+          headers: { authorization: `Bearer ${token}` },
+          body: {
+            orderId: "ORDER-STATUS-NOTE",
+            status: "delivered",
+            statusNote: "已放在管理室冰箱裡",
+          },
+        }),
+      );
+      const payload = await response.json();
+
+      assertEquals(response.status, 200);
+      assertEquals(payload.success, true);
+      assertEquals(payload.message, "訂單狀態已更新");
+      assertEquals("customerNotifications" in payload, false);
+      assertEquals(tables.coffee_orders[0].status, "delivered");
+      assertEquals(tables.coffee_orders[0].status_note, "已放在管理室冰箱裡");
+    });
+  },
+});
+
+Deno.test({
   name: "Routing Guards - scoped admins can only use permitted admin pages",
   sanitizeOps: false,
   sanitizeResources: false,

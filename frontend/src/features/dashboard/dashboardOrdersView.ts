@@ -139,6 +139,7 @@ export function buildOrdersSummaryText(
 export function buildOrderViewModel(
   order: DashboardOrderRecord,
   pendingStatus: string,
+  pendingStatusNote: string,
   isSelected: boolean,
 ) {
   const paymentMethod = order.paymentMethod || "cod";
@@ -161,6 +162,8 @@ export function buildOrderViewModel(
   const receiptInfo = normalizeReceiptInfo(order.receiptInfo);
   const addressInfo = buildOrderAddressInfo(order);
   const selectedStatus = pendingStatus || order.status || "";
+  const hasPendingStatusChange = Boolean(selectedStatus) &&
+    selectedStatus !== order.status;
 
   return {
     orderId: String(order.orderId || ""),
@@ -172,7 +175,9 @@ export function buildOrderViewModel(
     status: order.status || "",
     statusLabel: orderStatusLabel[order.status || ""] || order.status || "",
     selectedStatus,
-    showConfirmStatusButton: Boolean(selectedStatus) && selectedStatus !== order.status,
+    pendingStatusNote,
+    showPendingStatusNoteInput: hasPendingStatusChange,
+    showConfirmStatusButton: hasPendingStatusChange,
     paymentMethod,
     paymentStatus,
     paymentMethodLabel: orderPayMethodLabel[paymentMethod] || paymentMethod,
@@ -212,6 +217,7 @@ export function buildOrderViewModel(
     ),
     items: order.items || "",
     note: order.note || "",
+    statusNote: String(order.statusNote || "").trim(),
     cancelReason: String(order.cancelReason || "").trim(),
     statusReasonLabel: String(order.status || "") === "failed"
       ? "失敗原因"

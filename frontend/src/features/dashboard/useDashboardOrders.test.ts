@@ -32,8 +32,12 @@ function mountSwalVueContent(options: SwalVueOptions) {
 
 function setControlValue(id: string, value: string) {
   const control = document.getElementById(id);
-  expect(control).toBeInstanceOf(HTMLInputElement);
-  const input = control as HTMLInputElement;
+  expect(
+    control instanceof HTMLInputElement ||
+      control instanceof HTMLTextAreaElement ||
+      control instanceof HTMLSelectElement,
+  ).toBe(true);
+  const input = control as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
   input.value = value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
@@ -102,8 +106,14 @@ describe("useDashboardOrders", () => {
     expect(dashboard.ordersView.value).toHaveLength(1);
 
     module.dashboardOrdersActions.setPendingOrderStatus("O-1001", "shipped");
+    module.dashboardOrdersActions.setPendingOrderStatusNote(
+      "O-1001",
+      "已放在管理室冰箱裡",
+    );
     expect(dashboard.ordersView.value[0]).toMatchObject({
       selectedStatus: "shipped",
+      pendingStatusNote: "已放在管理室冰箱裡",
+      showPendingStatusNoteInput: true,
       showConfirmStatusButton: true,
     });
   });
@@ -243,6 +253,7 @@ describe("useDashboardOrders", () => {
     module.dashboardOrdersActions.toggleOrderSelection("O-2002", true);
     dashboard.batchForm.status = "processing";
     dashboard.batchForm.paymentStatus = "paid";
+    dashboard.batchForm.statusNote = "批次狀態備註";
 
     await module.dashboardOrdersActions.batchUpdateOrders();
 
@@ -251,6 +262,7 @@ describe("useDashboardOrders", () => {
       orderIds: ["O-2001", "O-2002"],
       status: "processing",
       paymentStatus: "paid",
+      statusNote: "批次狀態備註",
     });
   });
 
@@ -346,6 +358,7 @@ describe("useDashboardOrders", () => {
             "swal-batch-tracking-url",
             "https://tracking.example/JP-5001",
           );
+          setControlValue("swal-batch-status-note", "批次配送備註");
           const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
@@ -378,6 +391,7 @@ describe("useDashboardOrders", () => {
       trackingNumber: "JP-5001",
       shippingProvider: "黑貓宅急便",
       trackingUrl: "https://tracking.example/JP-5001",
+      statusNote: "批次配送備註",
     });
     expect(batchPayload).not.toHaveProperty("paymentStatus");
   });

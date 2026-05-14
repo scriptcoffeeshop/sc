@@ -15,15 +15,52 @@
         {{ newStatusLabel }}
       </span>
     </div>
+    <label
+      class="dashboard-order-status-change-confirm__note-label"
+      for="swal-status-note"
+    >
+      給消費者的狀態備註（選填）
+    </label>
+    <textarea
+      id="swal-status-note"
+      v-model.trim="statusNote"
+      class="swal2-textarea dashboard-order-status-change-confirm__note-control"
+      maxlength="500"
+      placeholder="例如：已放在管理室冰箱裡"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  orderId: string;
-  currentStatusLabel: string;
-  newStatusLabel: string;
-}>();
+import { ref } from "vue";
+
+export interface DashboardOrderStatusChangeValues {
+  statusNote: string;
+}
+
+export interface DashboardOrderStatusChangeConfirmExpose {
+  getValues: () => DashboardOrderStatusChangeValues;
+}
+
+const props = withDefaults(
+  defineProps<{
+    orderId: string;
+    currentStatusLabel: string;
+    newStatusLabel: string;
+    initialStatusNote?: string;
+  }>(),
+  {
+    initialStatusNote: "",
+  },
+);
+
+const statusNote = ref(String(props.initialStatusNote || ""));
+
+defineExpose<DashboardOrderStatusChangeConfirmExpose>({
+  getValues: () => ({
+    statusNote: statusNote.value,
+  }),
+});
 </script>
 
 <style scoped>
@@ -61,5 +98,19 @@ defineProps<{
 .dashboard-order-status-change-confirm__status-new {
   color: #b58900;
   font-weight: 700;
+}
+
+.dashboard-order-status-change-confirm__note-label {
+  color: #586e75;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-align: left;
+}
+
+.dashboard-order-status-change-confirm__note-control {
+  margin: 0;
+  min-height: 96px;
+  width: 100%;
 }
 </style>

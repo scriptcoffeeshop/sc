@@ -83,6 +83,60 @@ test.describe("smoke / dashboard core", () => {
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
   });
 
+  test("dashboard status change and manual LINE notification do not open LINE Flex preview", async ({ page }) => {
+    let updateStatusCalls = 0;
+    let lineFlexCalls = 0;
+    page.on("request", (request) => {
+      const url = request.url();
+      if (url.includes("action=updateOrderStatus")) updateStatusCalls += 1;
+    });
+    await installDashboardRoutes(page, {
+      onSendLineFlexMessage: () => {
+        lineFlexCalls += 1;
+      },
+    });
+
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "coffee_admin",
+        JSON.stringify({
+          userId: "admin-1",
+          displayName: "測試管理員",
+          role: "SUPER_ADMIN",
+        }),
+      );
+      localStorage.setItem("coffee_jwt", "mock-token");
+    });
+
+    await page.goto("/dashboard.html");
+
+    await expect(page.locator("#admin-page")).toBeVisible();
+    const orderRow = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD001" });
+    await expect(orderRow.locator(".order-card__status-note")).toBeVisible();
+    await expect(orderRow.locator(".order-card__status-note")).toBeDisabled();
+    await expect(page.locator("#batch-status-note")).toBeVisible();
+    await expect(page.locator("#batch-status-note")).toBeDisabled();
+    await orderRow.locator("select").selectOption("delivered");
+    await expect(orderRow.locator(".order-card__status-note")).toBeEnabled();
+    await orderRow.locator(".order-card__status-note").fill("已放在管理室冰箱裡");
+    await orderRow.getByRole("button", { name: "確認" }).click();
+
+    const popupTitle = page.locator(".swal2-title");
+    await expect(popupTitle).toHaveText("確認變更訂單狀態");
+    await expect(popupTitle).not.toHaveText("LINE Flex Message");
+    await page.locator(".swal2-confirm").click();
+
+    await expect.poll(() => updateStatusCalls).toBe(1);
+    await page.waitForTimeout(300);
+    await expect(page.locator(".swal2-title", { hasText: "LINE Flex Message" })).toHaveCount(0);
+    expect(lineFlexCalls).toBe(0);
+
+    await orderRow.getByRole("button", { name: "LINE通知" }).click();
+    await expect.poll(() => lineFlexCalls).toBe(1);
+    await page.waitForTimeout(300);
+    await expect(page.locator(".swal2-title", { hasText: "LINE Flex Message" })).toHaveCount(0);
+  });
+
   test("dashboard order notification actions still work after controller split", async ({ page }) => {
     await installGlobalStubs(page);
 

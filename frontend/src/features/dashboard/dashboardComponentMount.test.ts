@@ -32,6 +32,10 @@ describe("dashboard Vue component mount coverage", () => {
       dashboardOrdersActions,
       "setPendingOrderStatus",
     );
+    const setPendingStatusNote = vi.spyOn(
+      dashboardOrdersActions,
+      "setPendingOrderStatusNote",
+    );
     const confirmStatus = vi.spyOn(dashboardOrdersActions, "confirmOrderStatus")
       .mockResolvedValue(undefined);
     const order = buildOrderViewModel({
@@ -52,19 +56,27 @@ describe("dashboard Vue component mount coverage", () => {
       paymentId: "013-111122223333",
       items: "測試豆 x1",
       total: 220,
-    }, "processing", false);
+    }, "processing", "初始狀態備註", false);
 
     const wrapper = mount(DashboardOrderCard, {
       props: { order },
     });
 
     expect(wrapper.text()).toContain("#ORD-DASH-1");
+    expect(wrapper.find(".order-card__status-note").exists()).toBe(true);
+    expect(wrapper.find(".order-card__status-note").attributes("disabled"))
+      .toBeUndefined();
     await wrapper.find("input[type='checkbox']").setValue(true);
     await wrapper.find(".order-card__status-select").setValue("processing");
+    await wrapper.find(".order-card__status-note").setValue("已放在管理室冰箱裡");
     await wrapper.find(".confirm-status-btn").trigger("click");
 
     expect(toggleSelection).toHaveBeenCalledWith("ORD-DASH-1", true);
     expect(setPendingStatus).toHaveBeenCalledWith("ORD-DASH-1", "processing");
+    expect(setPendingStatusNote).toHaveBeenCalledWith(
+      "ORD-DASH-1",
+      "已放在管理室冰箱裡",
+    );
     expect(confirmStatus).toHaveBeenCalledWith("ORD-DASH-1");
   });
 
@@ -161,6 +173,7 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "JP-7001",
       shippingProvider: "7-11",
       trackingUrl: "https://eservice.7-11.com.tw/e-tracking/search.aspx",
+      statusNote: "",
     });
     expect(
       wrapper.find<HTMLInputElement>("#swal-tracking-url").element.disabled,
@@ -176,6 +189,7 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "JP-7001",
       shippingProvider: "黑貓宅急便",
       trackingUrl: "https://tracking.example/JP-7001",
+      statusNote: "",
     });
   });
 
@@ -199,6 +213,7 @@ describe("dashboard Vue component mount coverage", () => {
       trackingNumber: "FM-7001",
       shippingProvider: "全家",
       trackingUrl: "https://fmec.famiport.com.tw/FP_Entrance/QueryBox",
+      statusNote: "",
     });
   });
 });

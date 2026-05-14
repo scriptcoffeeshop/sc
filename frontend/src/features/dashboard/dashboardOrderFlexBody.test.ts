@@ -112,11 +112,14 @@ describe("buildOrderFlexBodyPayload", () => {
         district: "東區",
         address: "測試路 1 號",
         items: "測試豆 x1",
+        statusNote: "已放在管理室冰箱裡",
         total: 220,
       },
     });
 
     expect(JSON.stringify(body.bodyContents)).toContain("已配達");
+    expect(JSON.stringify(body.bodyContents)).toContain("狀態備註");
+    expect(JSON.stringify(body.bodyContents)).toContain("已放在管理室冰箱裡");
     expect(body.statusLabel).toBe("已配達");
   });
 

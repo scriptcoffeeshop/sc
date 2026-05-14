@@ -6,6 +6,7 @@ type CreateDashboardOrdersBulkActionsOptions = {
   batchForm: {
     status: string;
     paymentStatus: string;
+    statusNote: string;
   };
   getSelectedOrderIds: () => string[];
   getServices: () => DashboardOrderServices;
@@ -21,6 +22,7 @@ interface BatchUpdateOrderPayload {
   trackingNumber?: string;
   shippingProvider?: string;
   trackingUrl?: string;
+  statusNote?: string;
 }
 
 export function createDashboardOrdersBulkActions(
@@ -43,12 +45,14 @@ export function createDashboardOrdersBulkActions(
     let trackingNumber = "";
     let shippingProvider = "";
     let trackingUrl = "";
+    let statusNote = String(options.batchForm.statusNote || "").trim();
     if (options.batchForm.status === "shipped") {
       const { value, isConfirmed } = await openDashboardShippingInfoDialog({
         Swal,
         title: "批次出貨設定",
         confirmButtonText: "確定",
         idPrefix: "swal-batch",
+        initialValues: { statusNote },
         shared: true,
       });
       if (!isConfirmed) return;
@@ -56,12 +60,14 @@ export function createDashboardOrdersBulkActions(
       trackingNumber = String(shippingInfo.trackingNumber || "");
       shippingProvider = String(shippingInfo.shippingProvider || "");
       trackingUrl = String(shippingInfo.trackingUrl || "");
+      statusNote = String(shippingInfo.statusNote ?? statusNote).trim();
     }
 
     const payload: BatchUpdateOrderPayload = {
       userId: getAuthUserId(),
       orderIds,
       status: options.batchForm.status,
+      statusNote,
     };
     if (options.batchForm.paymentStatus !== "__keep__") {
       payload.paymentStatus = options.batchForm.paymentStatus;

@@ -11,6 +11,14 @@ function setReason(value: string) {
   reasonInput.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+function setStatusNote(value: string) {
+  const textarea = document.getElementById("swal-status-note");
+  expect(textarea).toBeInstanceOf(HTMLTextAreaElement);
+  const statusNoteInput = textarea as HTMLTextAreaElement;
+  statusNoteInput.value = value;
+  statusNoteInput.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 describe("dashboardOrderReasonDialog", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -28,6 +36,7 @@ describe("dashboardOrderReasonDialog", () => {
         ) as HTMLTextAreaElement | null;
         expect(textarea?.value).toBe("原原因");
         setReason("  付款逾時  ");
+        setStatusNote("  已放在管理室冰箱裡  ");
         const value = options.preConfirm();
         options.willClose?.();
         popup.remove();
@@ -44,6 +53,9 @@ describe("dashboardOrderReasonDialog", () => {
       initialReason: "原原因",
     });
 
-    expect(result.value).toEqual({ cancelReason: "付款逾時" });
+    expect(result.value).toEqual({
+      cancelReason: "付款逾時",
+      statusNote: "已放在管理室冰箱裡",
+    });
   });
 });

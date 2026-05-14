@@ -12,6 +12,7 @@ interface DashboardOrderReasonDialogOptions {
   placeholder: string;
   confirmButtonText: string;
   initialReason?: string;
+  initialStatusNote?: string;
 }
 
 export type DashboardOrderReasonDialogResult = DashboardSwalResult & {
@@ -45,6 +46,7 @@ export async function openDashboardOrderReasonDialog(
         label: options.label,
         placeholder: options.placeholder,
         initialReason: options.initialReason || "",
+        initialStatusNote: options.initialStatusNote || "",
       });
       formRef = formApp.mount(root) as unknown as DashboardOrderReasonFormExpose;
     },
@@ -53,6 +55,6 @@ export async function openDashboardOrderReasonDialog(
       formApp = null;
       formRef = null;
     },
-    preConfirm: () => formRef?.getValues() || { cancelReason: "" },
+    preConfirm: () => formRef?.getValues() || { cancelReason: "", statusNote: "" },
   }) as DashboardOrderReasonDialogResult;
 }

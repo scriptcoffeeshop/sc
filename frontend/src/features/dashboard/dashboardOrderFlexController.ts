@@ -8,7 +8,6 @@ import type {
   DashboardLineFlexMessage,
   DashboardOrderFlexControllerDeps,
 } from "./dashboardOrderNotificationTypes";
-import DashboardFlexMessagePreview from "./DashboardFlexMessagePreview.vue";
 import DashboardFlexHistoryList, {
   type DashboardFlexHistoryViewItem,
 } from "./DashboardFlexHistoryList.vue";
@@ -116,80 +115,6 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
     }
   }
 
-  async function showFlexMessagePopup(
-    flexMsg: DashboardLineFlexMessage,
-    order: DashboardOrderRecord,
-    statusLabel: string,
-  ) {
-    const orderId = String(order?.orderId || "");
-    const lineUserId = deps.resolveOrderLineUserId(order);
-    const canSendLine = Boolean(lineUserId);
-    const jsonStr = JSON.stringify(flexMsg, null, 2);
-    const root = document.createElement("div");
-    let previewApp: App<Element> | null = null;
-    const result = await deps.Swal.fire({
-      title: "LINE Flex Message",
-      html: root,
-      showCancelButton: true,
-      showConfirmButton: canSendLine,
-      confirmButtonText: "一鍵發送 LINE",
-      showDenyButton: true,
-      denyButtonText: "複製 JSON",
-      cancelButtonText: "關閉",
-      confirmButtonColor: "#859900",
-      denyButtonColor: "#268BD2",
-      width: 600,
-      customClass: {
-        popup: "flex-message-popup",
-      },
-      didOpen: (popup: unknown) => {
-        if (
-          !root.isConnected &&
-          popup &&
-          typeof (popup as { appendChild?: unknown }).appendChild === "function"
-        ) {
-          (popup as { appendChild: (node: Node) => void }).appendChild(root);
-        }
-        previewApp = createApp(DashboardFlexMessagePreview, {
-          orderId,
-          statusLabel,
-          lineUserId,
-          canSendLine,
-          flexJson: jsonStr,
-        });
-        previewApp.mount(root);
-      },
-      willClose: () => {
-        previewApp?.unmount();
-        previewApp = null;
-      },
-    });
-    if (result.isConfirmed) {
-      await sendFlexMessageToLine(order, flexMsg);
-      return;
-    }
-    if (result.isDenied) {
-      try {
-        await navigator.clipboard.writeText(jsonStr);
-        deps.Toast.fire({ icon: "success", title: "Flex Message 已複製" });
-      } catch (error) {
-        logger.warn("無法自動複製 Flex Message", error);
-        deps.Swal.fire("提醒", "自動複製失敗，請手動選取後 Ctrl+C 複製", "info");
-      }
-    }
-  }
-
-  async function previewOrderStatusNotification(
-    order: DashboardOrderRecord,
-    newStatus: string,
-  ) {
-    const statusLabel = deps.orderStatusLabel[newStatus] || newStatus;
-    const orderId = String(order?.orderId || "");
-    const flexMsg = deps.buildLineFlexMessage(order, newStatus);
-    saveFlexToHistory(flexMsg, orderId, statusLabel);
-    await showFlexMessagePopup(flexMsg, order, statusLabel);
-  }
-
   function showFlexHistory() {
     const history = readFlexHistory();
     if (!history.length) {
@@ -258,11 +183,13 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
     }
 
     const nextStatus = targetOrder.status || "pending";
-    await previewOrderStatusNotification(targetOrder, nextStatus);
+    const statusLabel = deps.orderStatusLabel[nextStatus] || nextStatus;
+    const flexMsg = deps.buildLineFlexMessage(targetOrder, nextStatus);
+    saveFlexToHistory(flexMsg, orderId, statusLabel);
+    await sendFlexMessageToLine(targetOrder, flexMsg);
   }
 
   return {
-    previewOrderStatusNotification,
     showFlexHistory,
     sendOrderFlexByOrderId,
   };

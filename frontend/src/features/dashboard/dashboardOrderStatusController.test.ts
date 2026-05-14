@@ -22,7 +22,6 @@ function createDeps(overrides: JsonRecord = {}) {
       },
     ],
     loadOrders: vi.fn(async () => undefined),
-    previewOrderStatusNotification: vi.fn(async () => undefined),
     Toast: { fire: vi.fn() },
     Swal: { fire: vi.fn(async () => ({ isConfirmed: true })) },
     esc: (value: unknown) => String(value || ""),
@@ -34,13 +33,21 @@ function createDeps(overrides: JsonRecord = {}) {
   };
 }
 
+function setStatusNote(value: string) {
+  const textarea = document.getElementById("swal-status-note");
+  expect(textarea).toBeInstanceOf(HTMLTextAreaElement);
+  const statusNoteInput = textarea as HTMLTextAreaElement;
+  statusNoteInput.value = value;
+  statusNoteInput.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
 describe("dashboardOrderStatusController", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     document.body.innerHTML = "";
   });
 
-  it("renders the status-change confirmation with Vue and preserves the update flow", async () => {
+  it("renders the status-change confirmation with Vue and updates without opening LINE Flex preview", async () => {
     const deps = createDeps({
       Swal: {
         fire: vi.fn(async (options) => {
@@ -51,9 +58,12 @@ describe("dashboardOrderStatusController", () => {
           expect(popup.textContent).toContain("#O-STATUS-1");
           expect(popup.textContent).toContain("待處理");
           expect(popup.textContent).toContain("處理中");
+          expect(popup.textContent).toContain("給消費者的狀態備註");
+          setStatusNote("  已放在管理室冰箱裡  ");
+          const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
-          return { isConfirmed: true };
+          return { isConfirmed: true, value };
         }),
       },
     });
@@ -71,6 +81,7 @@ describe("dashboardOrderStatusController", () => {
           userId: "admin-user",
           orderId: "O-STATUS-1",
           status: "processing",
+          statusNote: "已放在管理室冰箱裡",
           cancelReason: "",
         }),
       }),
@@ -80,12 +91,8 @@ describe("dashboardOrderStatusController", () => {
       title: "狀態已更新",
     });
     expect(deps.loadOrders).toHaveBeenCalled();
-    expect(deps.previewOrderStatusNotification).toHaveBeenCalledWith(
-      expect.objectContaining({
-        orderId: "O-STATUS-1",
-        status: "processing",
-      }),
-      "processing",
+    expect(deps.Swal.fire).not.toHaveBeenCalledWith(
+      expect.objectContaining({ title: "LINE Flex Message" }),
     );
   });
 });

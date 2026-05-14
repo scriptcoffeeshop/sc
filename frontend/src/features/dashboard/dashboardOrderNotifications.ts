@@ -23,8 +23,6 @@ export function createOrderNotificationsController(
   });
 
   return {
-    previewOrderStatusNotification:
-      orderFlexController.previewOrderStatusNotification,
     showFlexHistory: orderFlexController.showFlexHistory,
     sendOrderFlexByOrderId: orderFlexController.sendOrderFlexByOrderId,
     sendOrderEmailByOrderId: orderEmailController.sendOrderEmailByOrderId,
