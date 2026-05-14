@@ -83,7 +83,7 @@ test.describe("smoke / dashboard core", () => {
     await expect(page.locator("#pm-title")).toHaveText("編輯商品");
   });
 
-  test("dashboard status change and manual LINE notification do not open LINE Flex preview", async ({ page }) => {
+  test("dashboard status change and manual LINE notification confirm before sending without Flex preview", async ({ page }) => {
     let updateStatusCalls = 0;
     let lineFlexCalls = 0;
     page.on("request", (request) => {
@@ -131,6 +131,11 @@ test.describe("smoke / dashboard core", () => {
     expect(lineFlexCalls).toBe(0);
 
     await orderRow.getByRole("button", { name: "LINE通知" }).click();
+    await expect(page.locator(".swal2-popup:not(.swal2-toast) .swal2-title"))
+      .toHaveText("確認發送 LINE 通知");
+    expect(lineFlexCalls).toBe(0);
+    await expect(page.locator(".swal2-title", { hasText: "LINE Flex Message" })).toHaveCount(0);
+    await page.locator(".swal2-confirm").click();
     await expect.poll(() => lineFlexCalls).toBe(1);
     await page.waitForTimeout(300);
     await expect(page.locator(".swal2-title", { hasText: "LINE Flex Message" })).toHaveCount(0);

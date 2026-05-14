@@ -71,7 +71,7 @@ describe("dashboardOrderFlexController", () => {
     document.body.innerHTML = "";
   });
 
-  it("sends Flex directly without opening the preview popup", async () => {
+  it("asks for confirmation before sending Flex without opening the preview popup", async () => {
     const flexMessage = {
       type: "flex" as const,
       altText: "訂單通知",
@@ -83,12 +83,26 @@ describe("dashboardOrderFlexController", () => {
           orderId: "O-1001",
           timestamp: "2026-04-25T00:00:00.000Z",
           lineUserId: "line-user-1",
+          lineName: "LINE 買家",
           status: "shipped",
         },
       ],
       buildLineFlexMessage: vi.fn(() => flexMessage),
       Swal: {
-        fire: vi.fn(async () => ({})),
+        fire: vi.fn(async (options) => {
+          expect(options.title).toBe("確認發送 LINE 通知");
+          expect(options.title).not.toBe("LINE Flex Message");
+          expect(options.html).toBeInstanceOf(HTMLElement);
+          const popup = document.createElement("div");
+          document.body.appendChild(popup);
+          options.didOpen?.(popup);
+          expect(popup.textContent).toContain("#O-1001");
+          expect(popup.textContent).toContain("LINE 買家");
+          expect(popup.textContent).toContain("目前狀態：已出貨");
+          options.willClose?.();
+          popup.remove();
+          return { isConfirmed: true };
+        }),
       },
     });
     const controller = createOrderFlexController(deps);
@@ -114,13 +128,44 @@ describe("dashboardOrderFlexController", () => {
       icon: "success",
       title: "LINE 訊息已發送",
     });
-    expect(deps.Swal.fire).not.toHaveBeenCalled();
+    expect(deps.Swal.fire).toHaveBeenCalledTimes(1);
     const history = localStorage.getItem("coffee_flex_message_history");
     expect(JSON.parse(history || "[]")[0])
       .toMatchObject({
         orderId: "O-1001",
         statusLabel: "已出貨",
       });
+  });
+
+  it("does not send or save Flex history when LINE confirmation is cancelled", async () => {
+    const deps = createBaseDeps({
+      getOrders: () => [
+        {
+          orderId: "O-1002",
+          timestamp: "2026-04-25T00:00:00.000Z",
+          lineUserId: "line-user-2",
+          status: "pending",
+        },
+      ],
+      buildLineFlexMessage: vi.fn(() => ({
+        type: "flex" as const,
+        altText: "訂單通知",
+        contents: { type: "bubble" as const },
+      })),
+      Swal: {
+        fire: vi.fn(async (options) => {
+          expect(options.title).toBe("確認發送 LINE 通知");
+          return { isConfirmed: false };
+        }),
+      },
+    });
+    const controller = createOrderFlexController(deps);
+
+    await controller.sendOrderFlexByOrderId("O-1002");
+
+    expect(deps.buildLineFlexMessage).not.toHaveBeenCalled();
+    expect(deps.authFetch).not.toHaveBeenCalled();
+    expect(localStorage.getItem("coffee_flex_message_history")).toBeNull();
   });
 
   it("renders Flex history through Vue actions for copy and clear", async () => {

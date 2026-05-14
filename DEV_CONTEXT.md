@@ -49,7 +49,7 @@
 - Hono routing + action map 已落地，公開/登入/admin action 定義已依 domain 拆到 `routing/actions/`，POST schema 驗證樣板集中於 routing helper。
 - `orders.ts`、`payments.ts`、settings、quote、stores、payment expiry/JKO sync 等核心流程已拆分；`order-submit.ts` 與 `quote.ts` 仍偏大。
 - JSON 解析集中於 `utils/json.ts`，訂單/付款/配送 label、Email asset、tracking URL、Email/Flex 文案 helper 已共用。
-- 訂單狀態變更可在單一後台訂單卡片寫入 `coffee_orders.status_note` 作為最新狀態通知備註；Email 通知、LINE Flex 通知與前台我的訂單會顯示同一份內容。批次狀態更新不提供消費者狀態備註欄位。狀態更新成功後只保存狀態與備註，不會自動推送消費者 Email 或 LINE Flex，也不會開啟前端 LINE Flex 一鍵發送視窗；手動 LINE 通知仍會直接送出並以 toast 回報。
+- 訂單狀態變更可在單一後台訂單卡片寫入 `coffee_orders.status_note` 作為最新狀態通知備註；Email 通知、LINE Flex 通知與前台我的訂單會顯示同一份內容。批次狀態更新不提供消費者狀態備註欄位。狀態更新成功後只保存狀態與備註，不會自動推送消費者 Email 或 LINE Flex，也不會開啟前端 LINE Flex 一鍵發送視窗；手動 LINE 通知會先跳一般確認視窗，確認後才送出並以 toast 回報。
 - LINE Pay 與街口支付固定走正式環境；線上付款逾期會轉 `status=failed`、`payment_status=expired`。
 - Rate limiter 預設使用記憶體 store；若設定 Upstash Redis REST env，可切換為分散式配額儲存。
 
@@ -79,7 +79,7 @@
 
 ### 2026-05-14
 
-- 訂單狀態變更新增單一卡片「給消費者的狀態備註」欄位，逐筆更新會保存到 `status_note`，既有的手動 Email 與 LINE Flex 通知會讀取更新後的訂單備註，前台我的訂單也會顯示最新狀態備註；批次工具列不顯示備註欄位，狀態更新與手動 LINE 通知都不再跳出 LINE Flex 預覽視窗。
+- 訂單狀態變更新增單一卡片「給消費者的狀態備註」欄位，逐筆更新會保存到 `status_note`，既有的手動 Email 與 LINE Flex 通知會讀取更新後的訂單備註，前台我的訂單也會顯示最新狀態備註；批次工具列不顯示備註欄位，狀態更新與手動 LINE 通知都不再跳出 LINE Flex 預覽視窗，手動 LINE 通知仍保留發送前確認。
 
 ### 2026-05-05
 
