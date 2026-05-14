@@ -1,5 +1,6 @@
 import { createApp, type App } from "vue";
 import DashboardOrderEmailConfirm from "./DashboardOrderEmailConfirm.vue";
+import DashboardOrderLineConfirm from "./DashboardOrderLineConfirm.vue";
 import DashboardOrderStatusChangeConfirm, {
   type DashboardOrderStatusChangeConfirmExpose,
   type DashboardOrderStatusChangeValues,
@@ -42,6 +43,39 @@ export async function openDashboardOrderEmailConfirmDialog(options: {
         orderId: options.orderId,
         emailTypeLabel: options.emailTypeLabel,
         targetEmail: options.targetEmail,
+        statusLabel: options.statusLabel,
+      });
+      app.mount(root);
+    },
+    willClose: () => {
+      app?.unmount();
+      app = null;
+    },
+  }) as DashboardSwalResult;
+}
+
+export async function openDashboardOrderLineConfirmDialog(options: {
+  Swal: DashboardSwal;
+  orderId: string;
+  targetLine: string;
+  statusLabel: string;
+}): Promise<DashboardSwalResult> {
+  const root = document.createElement("div");
+  let app: App<Element> | null = null;
+
+  return await options.Swal.fire({
+    title: "確認發送 LINE 通知",
+    html: root,
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "發送 LINE",
+    cancelButtonText: "取消",
+    confirmButtonColor: "#268BD2",
+    didOpen: (popup: unknown) => {
+      attachRoot(root, popup);
+      app = createApp(DashboardOrderLineConfirm, {
+        orderId: options.orderId,
+        targetLine: options.targetLine,
         statusLabel: options.statusLabel,
       });
       app.mount(root);

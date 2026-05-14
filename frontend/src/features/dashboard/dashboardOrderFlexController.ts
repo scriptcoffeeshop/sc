@@ -2,6 +2,7 @@ import { createApp, type App } from "vue";
 import { formatDateTimeText } from "../../lib/dateTime.ts";
 import { tryParseJsonArray } from "../../lib/jsonUtils.ts";
 import { createLogger } from "../../lib/logger.ts";
+import { openDashboardOrderLineConfirmDialog } from "./dashboardOrderConfirmDialogs.ts";
 import { getDashboardErrorMessage } from "./dashboardErrors.ts";
 import type { DashboardOrderRecord } from "./dashboardOrderTypes";
 import type {
@@ -181,9 +182,23 @@ export function createOrderFlexController(deps: DashboardOrderFlexControllerDeps
       deps.Swal.fire("錯誤", "找不到訂單資料，請先重整列表", "error");
       return;
     }
+    const lineUserId = deps.resolveOrderLineUserId(targetOrder);
+    if (!lineUserId) {
+      deps.Swal.fire("提醒", "此訂單缺少 LINE 使用者 ID，無法一鍵發送", "warning");
+      return;
+    }
 
     const nextStatus = targetOrder.status || "pending";
     const statusLabel = deps.orderStatusLabel[nextStatus] || nextStatus;
+    const targetLine = String(targetOrder.lineName || lineUserId).trim();
+    const confirmation = await openDashboardOrderLineConfirmDialog({
+      Swal: deps.Swal,
+      orderId,
+      targetLine,
+      statusLabel,
+    });
+    if (!confirmation.isConfirmed) return;
+
     const flexMsg = deps.buildLineFlexMessage(targetOrder, nextStatus);
     saveFlexToHistory(flexMsg, orderId, statusLabel);
     await sendFlexMessageToLine(targetOrder, flexMsg);
