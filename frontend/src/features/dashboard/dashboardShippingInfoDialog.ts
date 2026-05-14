@@ -15,6 +15,7 @@ interface DashboardShippingInfoDialogOptions {
   initialValues?: DashboardShippingInfoValues;
   idPrefix?: string;
   shared?: boolean;
+  showStatusNote?: boolean;
 }
 
 export type DashboardShippingInfoDialogResult = DashboardSwalResult & {
@@ -48,6 +49,7 @@ export async function openDashboardShippingInfoDialog(
         initialValues: options.initialValues || {},
         idPrefix: options.idPrefix || "swal",
         shared: Boolean(options.shared),
+        showStatusNote: options.showStatusNote !== false,
       });
       formRef = formApp.mount(root) as unknown as DashboardShippingInfoFormExpose;
     },

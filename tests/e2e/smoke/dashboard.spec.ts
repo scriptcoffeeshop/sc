@@ -114,8 +114,7 @@ test.describe("smoke / dashboard core", () => {
     const orderRow = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD001" });
     await expect(orderRow.locator(".order-card__status-note")).toBeVisible();
     await expect(orderRow.locator(".order-card__status-note")).toBeDisabled();
-    await expect(page.locator("#batch-status-note")).toBeVisible();
-    await expect(page.locator("#batch-status-note")).toBeDisabled();
+    await expect(page.locator("#batch-status-note")).toHaveCount(0);
     await orderRow.locator("select").selectOption("delivered");
     await expect(orderRow.locator(".order-card__status-note")).toBeEnabled();
     await orderRow.locator(".order-card__status-note").fill("已放在管理室冰箱裡");

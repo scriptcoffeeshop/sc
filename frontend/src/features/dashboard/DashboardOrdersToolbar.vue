@@ -163,20 +163,6 @@
         <option value="refunded">已退款</option>
         <option value="">清空付款狀態</option>
       </select>
-      <label
-        class="dashboard-orders-toolbar__status-note"
-        :class="{ 'dashboard-orders-toolbar__status-note--disabled': !batchForm.status }"
-      >
-        <span>給消費者的狀態備註</span>
-        <textarea
-          id="batch-status-note"
-          v-model.trim="batchForm.statusNote"
-          class="input-field text-sm py-1"
-          maxlength="500"
-          :disabled="!batchForm.status"
-          :placeholder="batchForm.status ? '例如：已放在管理室冰箱裡' : '先選擇批次狀態後填寫'"
-        />
-      </label>
       <button
         type="button"
         @click="handleBatchUpdateOrders"
@@ -310,30 +296,6 @@ function handleExportSelectedOrdersCsv() {
 .dashboard-orders-toolbar__action:hover svg,
 .dashboard-orders-toolbar__action:hover .ui-icon-inline {
   opacity: 1;
-}
-
-.dashboard-orders-toolbar__status-note {
-  color: #586e75;
-  display: grid;
-  flex: 1 1 240px;
-  font-size: 0.78rem;
-  font-weight: 700;
-  gap: 4px;
-  min-width: 240px;
-}
-
-.dashboard-orders-toolbar__status-note textarea {
-  min-height: 58px;
-  resize: vertical;
-}
-
-.dashboard-orders-toolbar__status-note--disabled {
-  opacity: 0.62;
-}
-
-.dashboard-orders-toolbar__status-note textarea:disabled {
-  background: #f5f0e6;
-  cursor: not-allowed;
 }
 
 .dashboard-orders-toolbar__action:active {
