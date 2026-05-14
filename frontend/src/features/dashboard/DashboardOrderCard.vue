@@ -132,82 +132,86 @@
     </div>
 
     <div class="order-card__footer">
-      <span class="font-bold" style="color:var(--accent)">${{ order.total }}</span>
-      <div class="dashboard-card-actions">
-        <button
-          v-if="order.showSendLineButton"
-          type="button"
-          @click="handleSendOrderFlex(order.orderId)"
-          class="dashboard-action dashboard-action--success"
-        >
-          LINE通知
-        </button>
-        <button
-          v-if="order.showSendEmailButton"
-          type="button"
-          @click="handleSendOrderEmail(order.orderId)"
-          class="dashboard-action"
-        >
-          發送信件
-        </button>
-        <button
-          v-if="order.showRefundButton"
-          type="button"
-          @click="handleRefundOrder(order.orderId, order.paymentMethod)"
-          class="dashboard-action tab-with-icon"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-15-6l-3 2" /></svg>{{ order.refundButtonText || "退款" }}
-        </button>
-        <button
-          v-if="order.showConfirmTransferButton"
-          type="button"
-          @click="handleConfirmTransferPayment(order.orderId)"
-          class="dashboard-action dashboard-action--success"
-        >
-          確認已收款
-        </button>
-        <select
-          class="order-card__status-select"
-          :value="order.selectedStatus"
-          @change="handleOrderStatusChange(order.orderId, $event)"
-        >
-          <option
-            v-for="status in ordersStatusOptions"
-            :key="`${order.orderId}-${status}`"
-            :value="status"
+      <span class="order-card__total">${{ order.total }}</span>
+      <div class="order-card__footer-actions">
+        <div class="order-card__quick-actions">
+          <button
+            v-if="order.showSendLineButton"
+            type="button"
+            @click="handleSendOrderFlex(order.orderId)"
+            class="dashboard-action dashboard-action--success"
           >
-            {{ orderStatusText(status) }}
-          </option>
-        </select>
-        <label
-          class="order-card__status-note-wrap"
-          :class="{ 'order-card__status-note-wrap--disabled': !order.showPendingStatusNoteInput }"
-        >
-          <span>給消費者的狀態備註</span>
-          <textarea
-            class="order-card__status-note"
-            :value="order.pendingStatusNote"
-            maxlength="500"
-            :disabled="!order.showPendingStatusNoteInput"
-            :placeholder="order.showPendingStatusNoteInput ? '例如：已放在管理室冰箱裡' : '先選擇新狀態後填寫'"
-            @input="handleStatusNoteInput(order.orderId, $event)"
-          />
-        </label>
-        <button
-          v-if="order.showConfirmStatusButton"
-          type="button"
-          @click="handleConfirmOrderStatus(order.orderId)"
-          class="confirm-status-btn dashboard-action dashboard-action--primary"
-        >
-          確認
-        </button>
-        <button
-          type="button"
-          @click="handleDeleteOrder(order.orderId)"
-          class="dashboard-action dashboard-action--danger"
-        >
-          刪除
-        </button>
+            LINE通知
+          </button>
+          <button
+            v-if="order.showSendEmailButton"
+            type="button"
+            @click="handleSendOrderEmail(order.orderId)"
+            class="dashboard-action"
+          >
+            發送信件
+          </button>
+          <button
+            v-if="order.showRefundButton"
+            type="button"
+            @click="handleRefundOrder(order.orderId, order.paymentMethod)"
+            class="dashboard-action tab-with-icon"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6" /><path d="M21 17a9 9 0 0 0-15-6l-3 2" /></svg>{{ order.refundButtonText || "退款" }}
+          </button>
+          <button
+            v-if="order.showConfirmTransferButton"
+            type="button"
+            @click="handleConfirmTransferPayment(order.orderId)"
+            class="dashboard-action dashboard-action--success"
+          >
+            確認已收款
+          </button>
+          <button
+            type="button"
+            @click="handleDeleteOrder(order.orderId)"
+            class="dashboard-action dashboard-action--danger"
+          >
+            刪除
+          </button>
+        </div>
+        <div class="order-card__status-controls">
+          <select
+            class="order-card__status-select"
+            :value="order.selectedStatus"
+            @change="handleOrderStatusChange(order.orderId, $event)"
+          >
+            <option
+              v-for="status in ordersStatusOptions"
+              :key="`${order.orderId}-${status}`"
+              :value="status"
+            >
+              {{ orderStatusText(status) }}
+            </option>
+          </select>
+          <label
+            class="order-card__status-note-wrap"
+            :class="{ 'order-card__status-note-wrap--disabled': !order.showPendingStatusNoteInput }"
+          >
+            <span>給消費者的狀態備註</span>
+            <textarea
+              class="order-card__status-note"
+              :value="order.pendingStatusNote"
+              maxlength="500"
+              :disabled="!order.showPendingStatusNoteInput"
+              :placeholder="order.showPendingStatusNoteInput ? '例如：已放在管理室冰箱裡' : '先選擇新狀態後填寫'"
+              @input="handleStatusNoteInput(order.orderId, $event)"
+            />
+          </label>
+          <button
+            v-if="order.showConfirmStatusButton"
+            type="button"
+            @click="handleConfirmOrderStatus(order.orderId)"
+            class="confirm-status-btn dashboard-action dashboard-action--primary"
+          >
+            確認
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -285,7 +289,7 @@ function handleDeleteOrder(orderId: string) {
 .order-card__header,
 .order-card__footer {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.85rem;
 }
@@ -321,7 +325,7 @@ function handleDeleteOrder(orderId: string) {
 
 .order-card__status-select {
   min-height: 2.15rem;
-  max-width: 9rem;
+  width: 8.4rem;
   border: 1px solid #d8cfb8;
   border-radius: 8px;
   background: #fffdf7;
@@ -331,14 +335,42 @@ function handleDeleteOrder(orderId: string) {
   font-weight: 700;
 }
 
+.order-card__total {
+  color: var(--accent);
+  font-weight: 800;
+  line-height: 2.15rem;
+  white-space: nowrap;
+}
+
+.order-card__footer-actions {
+  display: grid;
+  flex: 1;
+  gap: 0.5rem;
+  justify-items: end;
+  min-width: 0;
+}
+
+.order-card__quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.order-card__status-controls {
+  align-items: end;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: auto minmax(240px, 320px) auto;
+}
+
 .order-card__status-note-wrap {
   color: #586e75;
   display: grid;
-  flex: 1 1 220px;
   font-size: 0.78rem;
   font-weight: 700;
   gap: 4px;
-  min-width: 220px;
+  min-width: 0;
 }
 
 .order-card__status-note {
@@ -349,7 +381,7 @@ function handleDeleteOrder(orderId: string) {
   font-size: 0.82rem;
   font-weight: 500;
   line-height: 1.45;
-  min-height: 58px;
+  min-height: 46px;
   padding: 0.45rem 0.55rem;
   resize: vertical;
   width: 100%;
@@ -368,6 +400,20 @@ function handleDeleteOrder(orderId: string) {
   .order-card__header,
   .order-card__footer {
     display: grid;
+  }
+
+  .order-card__footer-actions,
+  .order-card__quick-actions {
+    justify-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .order-card__status-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .order-card__quick-actions .dashboard-action {
+    flex: 1 1 auto;
   }
 
   .order-card__info-grid {

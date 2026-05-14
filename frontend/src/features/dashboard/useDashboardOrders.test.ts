@@ -253,7 +253,6 @@ describe("useDashboardOrders", () => {
     module.dashboardOrdersActions.toggleOrderSelection("O-2002", true);
     dashboard.batchForm.status = "processing";
     dashboard.batchForm.paymentStatus = "paid";
-    dashboard.batchForm.statusNote = "批次狀態備註";
 
     await module.dashboardOrdersActions.batchUpdateOrders();
 
@@ -262,8 +261,8 @@ describe("useDashboardOrders", () => {
       orderIds: ["O-2001", "O-2002"],
       status: "processing",
       paymentStatus: "paid",
-      statusNote: "批次狀態備註",
     });
+    expect(batchPayload).not.toHaveProperty("statusNote");
   });
 
   it("blocks shipped batch updates when the tracking url is invalid", async () => {
@@ -358,7 +357,7 @@ describe("useDashboardOrders", () => {
             "swal-batch-tracking-url",
             "https://tracking.example/JP-5001",
           );
-          setControlValue("swal-batch-status-note", "批次配送備註");
+          expect(document.getElementById("swal-batch-status-note")).toBeNull();
           const value = options.preConfirm?.();
           options.willClose?.();
           popup.remove();
@@ -391,8 +390,8 @@ describe("useDashboardOrders", () => {
       trackingNumber: "JP-5001",
       shippingProvider: "黑貓宅急便",
       trackingUrl: "https://tracking.example/JP-5001",
-      statusNote: "批次配送備註",
     });
+    expect(batchPayload).not.toHaveProperty("statusNote");
     expect(batchPayload).not.toHaveProperty("paymentStatus");
   });
 });

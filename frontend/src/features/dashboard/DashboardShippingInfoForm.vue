@@ -64,16 +64,18 @@
       disabled
     >
 
-    <label class="dashboard-shipping-info-form__label" :for="statusNoteId">
-      給消費者的狀態備註（選填）
-    </label>
-    <textarea
-      :id="statusNoteId"
-      v-model.trim="formValues.statusNote"
-      class="swal2-textarea dashboard-shipping-info-form__control dashboard-shipping-info-form__textarea"
-      maxlength="500"
-      placeholder="例如：已放在管理室冰箱裡"
-    />
+    <template v-if="showStatusNote">
+      <label class="dashboard-shipping-info-form__label" :for="statusNoteId">
+        給消費者的狀態備註（選填）
+      </label>
+      <textarea
+        :id="statusNoteId"
+        v-model.trim="formValues.statusNote"
+        class="swal2-textarea dashboard-shipping-info-form__control dashboard-shipping-info-form__textarea"
+        maxlength="500"
+        placeholder="例如：已放在管理室冰箱裡"
+      />
+    </template>
   </div>
 </template>
 
@@ -102,11 +104,13 @@ const props = withDefaults(
     initialValues?: DashboardShippingInfoValues;
     idPrefix?: string;
     shared?: boolean;
+    showStatusNote?: boolean;
   }>(),
   {
     initialValues: () => ({}),
     idPrefix: "swal",
     shared: false,
+    showStatusNote: true,
   },
 );
 
@@ -187,7 +191,7 @@ defineExpose<DashboardShippingInfoFormExpose>({
     shippingProvider: selectedPreset.value?.label ||
       formValues.shippingProvider,
     trackingUrl: selectedPreset.value?.url || formValues.trackingUrl,
-    statusNote: formValues.statusNote,
+    statusNote: props.showStatusNote ? formValues.statusNote : "",
   }),
 });
 </script>

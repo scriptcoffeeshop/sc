@@ -48,7 +48,6 @@ const filters = reactive({
 const batchForm = reactive({
   status: "",
   paymentStatus: "__keep__",
-  statusNote: "",
 });
 
 let services: DashboardOrderServices | null = null;
