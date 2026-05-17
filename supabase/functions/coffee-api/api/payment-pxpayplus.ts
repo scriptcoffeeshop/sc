@@ -97,7 +97,7 @@ async function findPxPayPlusOrderByTransactionId(
   transactionId: string,
 ): Promise<{ order: JsonRecord | null; error: string }> {
   const selectColumns =
-    "id, total, status, line_user_id, payment_method, payment_status, payment_id, payment_confirmed_at, payment_provider_transaction_id, payment_provider_trade_no, payment_provider_status_code";
+    "id, total, status, line_user_id, payment_method, payment_status, payment_id, payment_expires_at, payment_confirmed_at, payment_last_checked_at, payment_provider_transaction_id, payment_provider_trade_no, payment_provider_status_code";
   const normalizedTransactionId = String(transactionId || "").trim();
   if (!normalizedTransactionId) return { order: null, error: "" };
 
@@ -137,7 +137,7 @@ async function findPxPayPlusOrderByMerchantTradeNo(
 
   const { data: order, error } = await supabase.from("coffee_orders")
     .select(
-      "id, total, status, line_user_id, payment_method, payment_status, payment_id, payment_confirmed_at, payment_provider_transaction_id, payment_provider_trade_no, payment_provider_status_code",
+      "id, total, status, line_user_id, payment_method, payment_status, payment_id, payment_expires_at, payment_confirmed_at, payment_last_checked_at, payment_provider_transaction_id, payment_provider_trade_no, payment_provider_status_code",
     )
     .eq("id", normalizedMerTradeNo)
     .maybeSingle();
@@ -228,6 +228,8 @@ async function persistPxPayPlusSnapshot(
   paymentStatus: string;
   previousPaymentStatus: string;
   statusChanged: boolean;
+  paymentConfirmedAt: string;
+  paymentLastCheckedAt: string;
   error?: string;
 }> {
   const orderId = String(order.id || "").trim();
@@ -259,6 +261,11 @@ async function persistPxPayPlusSnapshot(
 
   const statusChanged = String(updates.payment_status || "") !==
     previousPaymentStatus;
+  const paymentConfirmedAt =
+    String(updates.payment_confirmed_at || "").trim() ||
+    String(order.payment_confirmed_at || "").trim();
+  const paymentLastCheckedAt = String(updates.payment_last_checked_at || "")
+    .trim() || String(order.payment_last_checked_at || "").trim();
   const { error } = await supabase.from("coffee_orders").update(updates).eq(
     "id",
     orderId,
@@ -270,6 +277,8 @@ async function persistPxPayPlusSnapshot(
       paymentStatus: previousPaymentStatus,
       previousPaymentStatus,
       statusChanged: false,
+      paymentConfirmedAt: String(order.payment_confirmed_at || "").trim(),
+      paymentLastCheckedAt: String(order.payment_last_checked_at || "").trim(),
       error: error.message,
     };
   }
@@ -280,6 +289,8 @@ async function persistPxPayPlusSnapshot(
     paymentStatus: String(updates.payment_status || nextPaymentStatus),
     previousPaymentStatus,
     statusChanged,
+    paymentConfirmedAt,
+    paymentLastCheckedAt,
   };
 }
 
@@ -409,7 +420,7 @@ export async function pxPayPlusInquiry(
     "coffee_orders",
   )
     .select(
-      "id, line_user_id, total, payment_method, payment_status, payment_id, payment_confirmed_at, payment_provider_transaction_id, payment_provider_trade_no, payment_provider_status_code",
+      "id, line_user_id, total, payment_method, payment_status, payment_id, payment_expires_at, payment_confirmed_at, payment_last_checked_at, payment_provider_transaction_id, payment_provider_trade_no, payment_provider_status_code",
     )
     .eq("id", orderId)
     .maybeSingle();
@@ -480,6 +491,9 @@ export async function pxPayPlusInquiry(
       statusCode,
       transactionId: snapshot.transactionId || transactionId,
       pxTradeNo: snapshot.pxTradeNo || "",
+      paymentExpiresAt: String(order.payment_expires_at || "").trim(),
+      paymentConfirmedAt: syncResult.paymentConfirmedAt,
+      paymentLastCheckedAt: syncResult.paymentLastCheckedAt,
       inquiry: inquiryResponse,
       error: syncResult.error,
     };

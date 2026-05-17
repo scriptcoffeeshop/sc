@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import {
+  pxPayPlusInquiry,
   pxPayPlusOrderStatus,
   pxPayPlusPaymentNotify,
   pxPayPlusRefund,
@@ -265,6 +266,93 @@ t("全支付 PaymentNotify - 金額不一致時拒絕更新付款狀態", async 
       assertEquals(tables.coffee_orders[0].payment_id, "");
       assertEquals(tables.coffee_orders[0].payment_provider_trade_no, "");
     });
+  });
+});
+
+t("全支付 Inquiry - 成功查詢會回傳付款時間、同步時間與付款期限", async () => {
+  await withPxPayPlusApiEnv(async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.includes("/CheckStatus/PX-INQUIRY-0001/")) {
+        const headers = new Headers(init?.headers);
+        assertEquals(init?.method || "GET", "GET");
+        assertEquals(headers.get("PX-MerCode"), "M0002278");
+        assertEquals(String(headers.get("PX-SignValue") || "").length, 64);
+        return new Response(
+          JSON.stringify({
+            status_code: "0000",
+            status_message: "成功",
+            trade_info: {
+              mer_trade_no: "C20260517-PX-INQUIRY",
+              transaction_id: "PX-INQUIRY-0001",
+              px_trade_no: "PXO-INQUIRY-0001",
+              pay_status: 1,
+              trade_time: "20260517153030",
+              amount: 420,
+              trade_amount: 420,
+              discount_amount: 0,
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      return await originalFetch(input, init);
+    };
+
+    try {
+      await withMockedSupabaseTables({
+        coffee_users: [{
+          line_user_id: "admin-pxpayplus-inquiry",
+          role: "ADMIN",
+          status: "ACTIVE",
+        }],
+        coffee_orders: [{
+          id: "C20260517-PX-INQUIRY",
+          line_user_id: "",
+          total: 420,
+          payment_method: "pxpayplus",
+          payment_status: "pending",
+          payment_id: "PX-INQUIRY-0001",
+          payment_expires_at: "2026-05-18T03:30:00.000Z",
+          payment_confirmed_at: "",
+          payment_last_checked_at: "",
+          payment_provider_transaction_id: "PX-INQUIRY-0001",
+          payment_provider_trade_no: "",
+          payment_provider_status_code: "",
+        }],
+      }, async (tables) => {
+        const token = await signJwt({ userId: "admin-pxpayplus-inquiry" });
+        const result = await pxPayPlusInquiry(
+          { orderId: "C20260517-PX-INQUIRY" },
+          new Request("https://example.com/?action=pxPayPlusInquiry", {
+            headers: { authorization: `Bearer ${token}` },
+          }),
+        ) as JsonRecord;
+
+        assertEquals(result.success, true);
+        assertEquals(result.paymentStatus, "paid");
+        assertEquals(result.paymentExpiresAt, "2026-05-18T03:30:00.000Z");
+        assertEquals(typeof result.paymentConfirmedAt, "string");
+        assertEquals(typeof result.paymentLastCheckedAt, "string");
+        assertEquals(Boolean(result.paymentConfirmedAt), true);
+        assertEquals(Boolean(result.paymentLastCheckedAt), true);
+
+        const order = tables.coffee_orders[0];
+        assertEquals(order.payment_status, "paid");
+        assertEquals(result.paymentConfirmedAt, order.payment_confirmed_at);
+        assertEquals(
+          result.paymentLastCheckedAt,
+          order.payment_last_checked_at,
+        );
+        assertEquals(order.payment_provider_trade_no, "PXO-INQUIRY-0001");
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 
