@@ -59,8 +59,9 @@ test.describe("smoke / dashboard settings", () => {
       )
     ).toBe(true);
     const paymentCards = page.locator("#payment-options-table .payment-option-card");
-    await expect(paymentCards).toHaveCount(4);
+    await expect(paymentCards).toHaveCount(5);
     await expect(page.locator("#payment-options-table")).toContainText("linepay");
+    await expect(page.locator("#payment-options-table")).toContainText("pxpayplus");
     const linePayCard = paymentCards.filter({ hasText: "linepay" }).first();
     await expect(linePayCard.locator(".payment-display-card-item__media")).toBeVisible();
     await expect(linePayCard.locator(".icon-upload-file")).toBeHidden();
