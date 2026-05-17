@@ -1,5 +1,9 @@
 import { getMyOrders, submitOrder } from "../../api/orders.ts";
-import { jkoPayInquiry, updateTransferInfo } from "../../api/payments.ts";
+import {
+  jkoPayInquiry,
+  pxPayPlusInquiry,
+  updateTransferInfo,
+} from "../../api/payments.ts";
 import { getUserProfile, updateUserProfile } from "../../api/profile.ts";
 import { transferInfoSchema } from "../../schemas/auth.ts";
 import { submitOrderSchema } from "../../schemas/order.ts";
@@ -38,6 +42,10 @@ export const authenticatedActions: Record<string, ActionConfig> = {
   ),
   jkoPayInquiry: authenticatedAction(
     async (data, req) => await jkoPayInquiry(data, req),
+    { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
+  ),
+  pxPayPlusInquiry: authenticatedAction(
+    async (data, req) => await pxPayPlusInquiry(data, req),
     { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
   ),
   verifyAdmin: authenticatedAction(async (_data, req) => {

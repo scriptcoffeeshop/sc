@@ -11,4 +11,10 @@ export {
   linePayRefund,
 } from "./payment-linepay.ts";
 export { jkoPayInquiry, jkoPayRefund, jkoPayResult } from "./payment-jkopay.ts";
+export {
+  pxPayPlusInquiry,
+  pxPayPlusOrderStatus,
+  pxPayPlusPaymentNotify,
+  pxPayPlusRefund,
+} from "./payment-pxpayplus.ts";
 export { updateTransferInfo } from "./payment-transfer.ts";

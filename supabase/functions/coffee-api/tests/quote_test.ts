@@ -196,14 +196,57 @@ Deno.test("Quote Engine - Delivery Settings Resolver Builds Standard Config", ()
     cod: true,
     linepay: true,
     jkopay: true,
+    pxpayplus: false,
     transfer: true,
   });
   assertEquals(result[3].payment, {
     cod: true,
     linepay: false,
     jkopay: false,
+    pxpayplus: false,
     transfer: false,
   });
+});
+
+Deno.test("Quote Engine - PxPayPlus Availability Requires Explicit Routing", () => {
+  const defaultConfig = resolveDeliveryConfigFromSettings({
+    deliveryConfig: [],
+    paymentRoutingConfig: null,
+    linePayEnabled: true,
+    transferEnabled: true,
+  });
+  assertEquals(
+    defaultConfig.find((option) => option.id === "delivery")?.payment
+      ?.pxpayplus,
+    false,
+  );
+
+  const enabledDeliveryConfig = [
+    {
+      ...MOCK_DELIVERY_CONFIG[0],
+      payment: {
+        cod: true,
+        transfer: true,
+        linepay: true,
+        jkopay: true,
+        pxpayplus: true,
+      },
+    },
+  ];
+  const result = computeOrderQuote({
+    cartItems: [{ productId: 1, qty: 1 }],
+    requestedDeliveryMethod: "delivery",
+    requestedPaymentMethod: "pxpayplus",
+    products: MOCK_PRODUCTS,
+    deliveryConfig: enabledDeliveryConfig,
+    activePromos: [],
+    promoNow: DEFAULT_PROMO_NOW,
+  });
+
+  assertEquals(result.success, true);
+  if (result.success) {
+    assertEquals(result.quote.availablePaymentMethods.pxpayplus, true);
+  }
 });
 
 Deno.test("Quote Engine - Delivery Settings Resolver Keeps Explicit Config", () => {

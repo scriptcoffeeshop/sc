@@ -29,6 +29,7 @@ const EMAIL_PAYMENT_METHOD_LABEL: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
   jkopay: "街口支付",
+  pxpayplus: "全支付",
   transfer: "銀行轉帳",
 };
 
@@ -36,6 +37,7 @@ const FLEX_PAYMENT_METHOD_LABEL: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
   jkopay: "街口支付",
+  pxpayplus: "全支付",
   transfer: "轉帳",
 };
 

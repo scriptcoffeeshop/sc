@@ -154,6 +154,7 @@ function parseNotifyTargets(raw: string): string[] {
 function getPaymentMethodLabel(paymentMethod: string): string {
   if (paymentMethod === "linepay") return "LINE Pay";
   if (paymentMethod === "jkopay") return "街口支付";
+  if (paymentMethod === "pxpayplus") return "全支付";
   if (paymentMethod === "transfer") return "線上轉帳";
   if (paymentMethod === "cod") return "貨到付款";
   return paymentMethod || "未知付款方式";

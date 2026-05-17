@@ -55,7 +55,7 @@ export const submitOrderSchema = z.object({
     "family_mart",
     "in_store",
   ]),
-  paymentMethod: z.enum(["cod", "linepay", "jkopay", "transfer"]),
+  paymentMethod: z.enum(["cod", "linepay", "jkopay", "pxpayplus", "transfer"]),
   city: z.string().optional(),
   district: z.string().optional(),
   address: z.string().optional(),
@@ -82,7 +82,8 @@ export const quoteOrderSchema = z.object({
     "family_mart",
     "in_store",
   ]).optional(),
-  paymentMethod: z.enum(["cod", "linepay", "jkopay", "transfer"]).optional(),
+  paymentMethod: z.enum(["cod", "linepay", "jkopay", "pxpayplus", "transfer"])
+    .optional(),
 });
 
 export const updateOrderStatusSchema = z.object({
