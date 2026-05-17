@@ -52,6 +52,7 @@ export function createMainRouteState(options: MainRouteOptions): MainRouteState 
     jkopay: paymentSource.jkopay === undefined
       ? Boolean(paymentSource.linepay)
       : Boolean(paymentSource.jkopay),
+    pxpayplus: Boolean(paymentSource.pxpayplus),
     transfer: Boolean(paymentSource.transfer),
   };
 

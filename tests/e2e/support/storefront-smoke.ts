@@ -14,8 +14,8 @@ export async function gotoStorefront(page: Page, path = "/main.html") {
   await page.goto(path, { waitUntil: "domcontentloaded" });
 }
 
-export async function gotoStorefrontReady(page: Page) {
-  await gotoStorefront(page);
+export async function gotoStorefrontReady(page: Page, path = "/main.html") {
+  await gotoStorefront(page, path);
   await expect(page.locator("#products-container")).toBeVisible();
 }
 

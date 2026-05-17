@@ -77,7 +77,10 @@ export async function handleDashboardOrdersRoutes(
     return true;
   }
 
-  if (action === "linePayRefund" || action === "jkoPayRefund") {
+  if (
+    action === "linePayRefund" || action === "jkoPayRefund" ||
+    action === "pxPayPlusRefund"
+  ) {
     const body = getRequestBody(request);
     state.orders = state.orders.map((order) =>
       String(order.orderId) === asString(body.orderId)

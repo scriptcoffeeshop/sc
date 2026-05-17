@@ -49,6 +49,11 @@
         "name": "街口支付",
         "description": "街口支付線上付款"
       },
+      "pxpayplus": {
+        "icon_url": "",
+        "name": "全支付",
+        "description": "全支付線上付款"
+      },
       "transfer": {
         "icon_url": "",
         "name": "線上轉帳",

@@ -125,6 +125,107 @@ test.describe("smoke / storefront online payments", () => {
     await expect(page).not.toHaveURL(/jkopay_redirect=1/);
   });
 
+  test("storefront submit order FullPay prompt shows deadline and next steps", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      payment: {
+        cod: true,
+        linepay: false,
+        jkopay: false,
+        pxpayplus: true,
+        transfer: false,
+      },
+    });
+
+    let submitOrderCalls = 0;
+    let submitBody: SubmitOrderBody | null = null;
+    await page.route(`${API_URL}?action=submitOrder**`, async (route) => {
+      submitOrderCalls += 1;
+      submitBody = route.request().postDataJSON() as SubmitOrderBody;
+      await fulfillJson(route, {
+        success: true,
+        orderId: "SO-PXPAYPLUS-1",
+        total: 220,
+        paymentUrl: "/main.html?pxpayplus_redirect=1",
+        paymentExpiresAt: "2026-05-17T12:34:00.000Z",
+      });
+    });
+
+    await installStorefrontSwalRecorder(page, {
+      confirmTitleIncludes: ["確認訂單"],
+    });
+    await installStorefrontUser(page);
+    await gotoStorefrontReady(page);
+
+    await page.locator('.delivery-option[data-id="delivery"]').click();
+    await page.selectOption("#delivery-city", "新竹市");
+    await page.selectOption("#delivery-district", "東區");
+    await page.fill("#delivery-detail-address", "測試路 18 號");
+    await page.locator("#products-container .spec-btn-add").first().click();
+    await page.locator("#pxpayplus-option").click();
+    await page.check("#policy-agree");
+
+    await page.locator('.bottom-bar button:has-text("購物車")').click();
+    await page.locator("#cart-submit-btn").click();
+
+    await expect.poll(() => submitOrderCalls).toBe(1);
+    expect(submitBody?.paymentMethod).toBe("pxpayplus");
+
+    await expect.poll(() => hasStorefrontSwalCall(page, "全支付"))
+      .toBe(true);
+
+    const promptSummary = await getStorefrontSwalCall(page, "全支付");
+
+    expect(promptSummary?.title).toContain("全支付");
+    expect(promptSummary?.html).toContain("付款期限");
+    expect(promptSummary?.html).toContain("待付款");
+    expect(promptSummary?.html).toContain(
+      "請儘快完成全支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
+    );
+    expect(promptSummary?.html).toContain("SO-PXPAYPLUS-1");
+    await expect(page).not.toHaveURL(/pxpayplus_redirect=1/);
+  });
+
+  test("storefront FullPay return queries payment status", async ({ page }) => {
+    await installGlobalStubs(page);
+    await installMainRoutes(page, {
+      payment: {
+        cod: true,
+        linepay: false,
+        jkopay: false,
+        pxpayplus: true,
+        transfer: false,
+      },
+    });
+
+    let inquiryCalls = 0;
+    await page.route(`${API_URL}?action=pxPayPlusInquiry**`, async (route) => {
+      inquiryCalls += 1;
+      expect(new URL(route.request().url()).searchParams.get("orderId"))
+        .toBe("PX-RETURN-1");
+      await fulfillJson(route, {
+        success: true,
+        paymentStatus: "paid",
+        paymentConfirmedAt: "2026-05-17T12:40:00.000Z",
+        paymentLastCheckedAt: "2026-05-17T12:41:00.000Z",
+      });
+    });
+
+    await installStorefrontSwalRecorder(page);
+    await installStorefrontUser(page);
+    await gotoStorefrontReady(
+      page,
+      "/main.html?pxpayplusOrderId=PX-RETURN-1&pxpayplusReturn=confirm",
+    );
+
+    await expect.poll(() => inquiryCalls).toBe(1);
+    const statusSummary = await getStorefrontSwalCall(page, "全支付");
+
+    expect(statusSummary?.title).toContain("全支付已完成");
+    expect(statusSummary?.html).toContain("PX-RETURN-1");
+    expect(statusSummary?.html).toContain("已付款");
+  });
+
   test("storefront my orders shows online pay resume links without jkopay refresh action", async ({ page }) => {
     await installGlobalStubs(page);
     await installMainRoutes(page, {
@@ -159,6 +260,21 @@ test.describe("smoke / storefront online payments", () => {
         paymentExpiresAt: "2026-04-21T12:34:00.000Z",
         paymentLastCheckedAt: "2026-04-21T01:10:00.000Z",
         paymentUrl: "https://pay.example/jko/JKO-PENDING-1",
+      },
+      {
+        orderId: "PX-PENDING-1",
+        timestamp: "2026-04-21T00:30:00.000Z",
+        deliveryMethod: "delivery",
+        status: "pending",
+        city: "新竹市",
+        address: "測試路 6 號",
+        items: "全支付測試豆 x1",
+        total: 220,
+        paymentMethod: "pxpayplus",
+        paymentStatus: "pending",
+        paymentExpiresAt: "2026-04-21T12:34:00.000Z",
+        paymentLastCheckedAt: "2026-04-21T01:20:00.000Z",
+        paymentUrl: "https://pay.example/pxpayplus/PX-PENDING-1",
       },
       {
         orderId: "JKO-FAILED-1",
@@ -231,11 +347,18 @@ test.describe("smoke / storefront online payments", () => {
       "請儘快完成街口支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
     );
     await expect(ordersList).toContainText("街口支付付款失敗");
+    await expect(ordersList).toContainText("付款方式：全支付");
+    await expect(ordersList).toContainText(
+      "這筆訂單尚未完成全支付，請點下方「前往全支付付款」繼續；付款後狀態會自動同步。",
+    );
     await expect(ordersList).toContainText("您已取消街口支付付款流程");
     await expect(ordersList).toContainText("付款期限已過");
     await expect(
       page.getByRole("link", { name: "前往街口付款" }),
     ).toHaveAttribute("href", "https://pay.example/jko/JKO-PENDING-1");
+    await expect(
+      page.getByRole("link", { name: "前往全支付付款" }),
+    ).toHaveAttribute("href", "https://pay.example/pxpayplus/PX-PENDING-1");
     await expect(
       page.getByRole("button", { name: "重新整理街口付款狀態" }),
     ).toHaveCount(0);

@@ -109,6 +109,23 @@ test.describe("smoke / dashboard controls", () => {
           paymentMethod: "linepay",
           paymentStatus: "paid",
         },
+        {
+          orderId: "ORD004",
+          timestamp: "2026-03-05T00:00:00.000Z",
+          deliveryMethod: "home_delivery",
+          status: "processing",
+          lineUserId: "customer-line-4",
+          lineName: "全支付客戶",
+          phone: "0933000000",
+          email: "pxpayplus@example.com",
+          city: "台北市",
+          district: "大安區",
+          address: "測試路 4 號",
+          items: "全支付測試商品 x1",
+          total: 420,
+          paymentMethod: "pxpayplus",
+          paymentStatus: "paid",
+        },
       ],
     });
 
@@ -117,6 +134,7 @@ test.describe("smoke / dashboard controls", () => {
         { title: "確認變更訂單狀態", response: { isConfirmed: true } },
         { title: "確認收款", response: { isConfirmed: true } },
         { title: "LINE Pay 退款", response: { isConfirmed: true } },
+        { title: "全支付退款", response: { isConfirmed: true } },
         { title: "刪除訂單？", response: { isConfirmed: true } },
       ],
     });
@@ -128,9 +146,10 @@ test.describe("smoke / dashboard controls", () => {
     await expect(page.locator("#orders-list")).toContainText("#ORD001");
     await expect(page.locator("#orders-list")).toContainText("#ORD002");
     await expect(page.locator("#orders-list")).toContainText("#ORD003");
+    await expect(page.locator("#orders-list")).toContainText("#ORD004");
 
     await selectAllCheckbox.check();
-    await expect(selectedCount).toHaveText("已選 3 筆");
+    await expect(selectedCount).toHaveText("已選 4 筆");
 
     const order1 = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD001" });
     await order1.locator("select").selectOption("processing");
@@ -149,6 +168,11 @@ test.describe("smoke / dashboard controls", () => {
     const order3 = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD003" });
     await order3.getByRole("button", { name: /退款/ }).click();
     await expect(order3).toContainText("已退款");
+
+    const order4 = page.locator("#orders-list > .order-card").filter({ hasText: "#ORD004" });
+    await expect(order4).toContainText("全支付");
+    await order4.getByRole("button", { name: "全支付退款" }).click();
+    await expect(order4).toContainText("已退款");
 
     await order1.getByRole("button", { name: "刪除" }).click();
     await expect(page.locator("#orders-list")).not.toContainText("#ORD001");
