@@ -26,7 +26,11 @@ import {
   sendOrderEmail,
   updateOrderStatus,
 } from "../../api/orders.ts";
-import { jkoPayRefund, linePayRefund } from "../../api/payments.ts";
+import {
+  jkoPayRefund,
+  linePayRefund,
+  pxPayPlusRefund,
+} from "../../api/payments.ts";
 import {
   addProduct,
   deleteProduct,
@@ -247,6 +251,14 @@ export const adminActions: Record<string, ActionConfig> = {
   ),
   jkoPayRefund: adminAction(
     async (data, req) => await jkoPayRefund(data, req),
+    {
+      methods: POST_ONLY,
+      rateLimit: PAYMENT_ACTION_RATE_LIMIT,
+      permission: "orders",
+    },
+  ),
+  pxPayPlusRefund: adminAction(
+    async (data, req) => await pxPayPlusRefund(data, req),
     {
       methods: POST_ONLY,
       rateLimit: PAYMENT_ACTION_RATE_LIMIT,

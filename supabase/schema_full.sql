@@ -59,6 +59,14 @@ CREATE TABLE IF NOT EXISTS coffee_orders (
   payment_confirmed_at TIMESTAMPTZ,
   payment_last_checked_at TIMESTAMPTZ,
   payment_provider_status_code TEXT DEFAULT '',
+  payment_provider_transaction_id TEXT DEFAULT '',
+  payment_provider_trade_no TEXT DEFAULT '',
+  payment_provider_trade_time TEXT DEFAULT '',
+  payment_trade_amount INT,
+  payment_discount_amount INT DEFAULT 0,
+  payment_invo_carrier TEXT DEFAULT '',
+  payment_provider_payload JSONB DEFAULT '{}'::jsonb,
+  payment_refund_records JSONB DEFAULT '[]'::jsonb,
   payment_method TEXT DEFAULT 'cod',
   transfer_account_last5 TEXT DEFAULT '',
   tracking_number TEXT DEFAULT '',
@@ -197,6 +205,8 @@ CREATE INDEX IF NOT EXISTS idx_coffee_orders_created_at ON coffee_orders(created
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_status ON coffee_orders(status);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_status ON coffee_orders(payment_status);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_expires_at ON coffee_orders(payment_expires_at);
+CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_provider_transaction_id ON coffee_orders(payment_provider_transaction_id);
+CREATE INDEX IF NOT EXISTS idx_coffee_orders_payment_provider_trade_no ON coffee_orders(payment_provider_trade_no);
 CREATE INDEX IF NOT EXISTS idx_coffee_orders_delivery ON coffee_orders(delivery_method);
 CREATE INDEX IF NOT EXISTS idx_store_selections_created ON coffee_store_selections(created_at);
 

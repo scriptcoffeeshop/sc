@@ -67,6 +67,7 @@
 - `JKOPAY_API_KEY`
 - `JKOPAY_SECRET_KEY`
 - `JKOPAY_BASE_URL`
+- `JKOPAY_PROXY_URL`
 
 操作：
 
@@ -76,6 +77,30 @@
 4. 重新部署 `coffee-api`。
 5. 建立一筆低金額測試訂單，確認建立付款、result/inquiry 同步、逾期處理與訂單狀態正常。
 6. 撤銷舊 key / secret。
+
+## 全支付
+
+主要項目：
+
+- `PXPAYPLUS_MERCHANT_CODE`
+- `PXPAYPLUS_MERCHANT_EN_NAME`
+- `PXPAYPLUS_SECRET_KEY`
+- `PXPAYPLUS_BASE_URL`
+- `PXPAYPLUS_PROXY_URL`
+
+固定出口：
+
+- Fixie profile: `scriptcoffee_px`
+- Outbound IPs: `52.5.155.132`, `52.87.82.133`
+
+操作：
+
+1. 到全支付申請文件或商戶後台確認測試/正式環境 API 白名單包含上述 Fixie outbound IPs。
+2. 到 Fixie 重設 proxy credential 時，同步更新 Supabase Edge Function secret `PXPAYPLUS_PROXY_URL`；proxy URL 不寫入 repo、文件或測試 fixture。
+3. 到全支付商戶後台或申請窗口重設商戶代號 / Secret Key 時，同步更新 Supabase Edge Function secrets。
+4. 重新部署 `coffee-api`。
+5. 以 UAT 測試建立付款、OrderStatus、PaymentNotify、CheckStatus/inquiry 與退款流程。
+6. 撤銷舊 key / proxy credential。
 
 ## SMTP
 

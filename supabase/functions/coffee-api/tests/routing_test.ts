@@ -177,6 +177,7 @@ Deno.test({
         { action: "addBankAccount", method: "POST" as const },
         { action: "linePayRefund", method: "POST" as const },
         { action: "jkoPayRefund", method: "POST" as const },
+        { action: "pxPayPlusRefund", method: "POST" as const },
         { action: "updateSettings", method: "POST" as const },
       ];
 
@@ -613,6 +614,192 @@ Deno.test({
 });
 
 Deno.test({
+  name: "Routing Integration - submitOrder creates hidden PxPayPlus payment",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    const previousEnv = {
+      merchantCode: Deno.env.get("PXPAYPLUS_MERCHANT_CODE"),
+      merchantEnName: Deno.env.get("PXPAYPLUS_MERCHANT_EN_NAME"),
+      secretKey: Deno.env.get("PXPAYPLUS_SECRET_KEY"),
+      baseUrl: Deno.env.get("PXPAYPLUS_BASE_URL"),
+      proxyUrl: Deno.env.get("PXPAYPLUS_PROXY_URL"),
+    };
+    const originalFetch = globalThis.fetch;
+    const pxRequests: JsonRecord[] = [];
+
+    Deno.env.set("PXPAYPLUS_MERCHANT_CODE", "M0002278");
+    Deno.env.set("PXPAYPLUS_MERCHANT_EN_NAME", "scriptcoffee");
+    Deno.env.set(
+      "PXPAYPLUS_SECRET_KEY",
+      "541AA5BE3ABFC734785020541B0D83E4BB608B5E383FF3041E213C1AB647D518",
+    );
+    Deno.env.set("PXPAYPLUS_BASE_URL", "https://pxpay.example/px-ec");
+    Deno.env.delete("PXPAYPLUS_PROXY_URL");
+
+    globalThis.fetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if (url.startsWith("https://pxpay.example/px-ec/CreateOrder")) {
+        const headers = new Headers(init?.headers);
+        const requestBody = JSON.parse(String(init?.body || "{}"));
+        pxRequests.push({
+          url,
+          method: init?.method || "GET",
+          merCode: headers.get("PX-MerCode"),
+          merEnName: headers.get("PX-MerEnName"),
+          signValue: headers.get("PX-SignValue"),
+          body: requestBody,
+        });
+        return new Response(
+          JSON.stringify({
+            status_code: "0000",
+            status_message: "成功",
+            transaction_id: "PX-TX-0001",
+            payment_url: "https://pay.example/pxpayplus/PX-TX-0001",
+            qrcode: "PX-QR-CODE",
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      }
+      if (url.startsWith("https://api.line.me/")) {
+        return new Response("{}", { status: 200 });
+      }
+      return await originalFetch(input, init);
+    };
+
+    try {
+      await withMockedSupabaseTables({
+        coffee_users: [{
+          line_user_id: "user-submit-pxpayplus",
+          role: "USER",
+          status: "ACTIVE",
+        }],
+        coffee_products: [{
+          id: 203,
+          name: "全支付測試豆",
+          price: 420,
+          specs: "",
+          enabled: true,
+        }],
+        coffee_settings: [{
+          key: "payment_routing_config",
+          value: JSON.stringify({
+            in_store: {
+              cod: true,
+              transfer: false,
+              linepay: false,
+              jkopay: false,
+              pxpayplus: true,
+            },
+          }),
+        }],
+        coffee_promotions: [],
+        coffee_orders: [],
+        coffee_form_fields: [],
+      }, async (tables) => {
+        const token = await signJwt({ userId: "user-submit-pxpayplus" });
+        const response = await app.fetch(
+          buildActionRequest("submitOrder", {
+            method: "POST",
+            headers: {
+              authorization: `Bearer ${token}`,
+              "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)",
+              "x-real-ip": `pxpayplus-${crypto.randomUUID()}`,
+            },
+            body: {
+              lineName: "全支付顧客",
+              phone: "0911222333",
+              items: [{ productId: 203, qty: 1 }],
+              deliveryMethod: "in_store",
+              paymentMethod: "pxpayplus",
+            },
+          }),
+        );
+        const payload = await response.json();
+
+        assertEquals(response.status, 200);
+        assertEquals(payload.success, true);
+        assertEquals(payload.total, 420);
+        assertEquals(
+          payload.paymentUrl,
+          "https://pay.example/pxpayplus/PX-TX-0001",
+        );
+        assertEquals(payload.transactionId, "PX-TX-0001");
+        assertEquals(payload.qrcode, "PX-QR-CODE");
+        assertEquals(typeof payload.paymentExpiresAt, "string");
+        assertEquals(pxRequests.length, 1);
+
+        const pxRequest = pxRequests[0];
+        assertEquals(pxRequest.method, "POST");
+        assertEquals(pxRequest.merCode, "M0002278");
+        assertEquals(pxRequest.merEnName, "scriptcoffee");
+        assertEquals(String(pxRequest.signValue || "").length, 64);
+        const requestBody = pxRequest.body as JsonRecord;
+        assertEquals(requestBody.mer_trade_no, payload.orderId);
+        assertEquals(requestBody.amount, 420);
+        assertEquals(requestBody.device_type, 2);
+        assertEquals(requestBody.order_type, 1);
+        assertEquals(
+          new URL(String(requestBody.order_status_url)).searchParams.get(
+            "action",
+          ),
+          "pxPayPlusOrderStatus",
+        );
+        assertEquals(
+          new URL(String(requestBody.payment_notify_url)).searchParams.get(
+            "action",
+          ),
+          "pxPayPlusPaymentNotify",
+        );
+        assertEquals(
+          new URL(String(requestBody.web_confirm_url)).searchParams.get(
+            "pxpayplusReturn",
+          ),
+          "confirm",
+        );
+
+        assertEquals(tables.coffee_orders.length, 1);
+        const order = tables.coffee_orders[0];
+        assertEquals(order.id, payload.orderId);
+        assertEquals(order.payment_method, "pxpayplus");
+        assertEquals(order.payment_status, "pending");
+        assertEquals(order.payment_id, "PX-TX-0001");
+        assertEquals(order.payment_provider_transaction_id, "PX-TX-0001");
+        assertEquals(order.payment_provider_status_code, "0000");
+        assertEquals(
+          order.payment_redirect_url,
+          "https://pay.example/pxpayplus/PX-TX-0001",
+        );
+        assertEquals(
+          (order.payment_provider_payload as JsonRecord)?.status_code,
+          "0000",
+        );
+      });
+    } finally {
+      globalThis.fetch = originalFetch;
+      for (
+        const [key, value] of [
+          ["PXPAYPLUS_MERCHANT_CODE", previousEnv.merchantCode],
+          ["PXPAYPLUS_MERCHANT_EN_NAME", previousEnv.merchantEnName],
+          ["PXPAYPLUS_SECRET_KEY", previousEnv.secretKey],
+          ["PXPAYPLUS_BASE_URL", previousEnv.baseUrl],
+          ["PXPAYPLUS_PROXY_URL", previousEnv.proxyUrl],
+        ] as const
+      ) {
+        if (value === undefined) {
+          Deno.env.delete(key);
+        } else {
+          Deno.env.set(key, value);
+        }
+      }
+    }
+  },
+});
+
+Deno.test({
   name: "Routing Integration - updateSettings round-trips key configs",
   sanitizeOps: false,
   sanitizeResources: false,
@@ -775,7 +962,7 @@ Deno.test({
 
 Deno.test({
   name:
-    "Routing Integration - getMyOrders auto-cancels overdue LINE Pay and JKO orders",
+    "Routing Integration - getMyOrders auto-cancels overdue online payments",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -813,6 +1000,24 @@ Deno.test({
           cancel_reason: "",
           payment_expires_at: "2026-04-18T11:50:00.000Z",
           payment_redirect_url: "https://pay.example/jko/JKO-EXPIRED-1",
+        },
+        {
+          id: "PXPAYPLUS-EXPIRED-1",
+          line_user_id: "user-expired-payments",
+          created_at: "2026-04-18T11:10:00.000Z",
+          items: "全支付測試豆 x1",
+          items_json: [],
+          total: 220,
+          delivery_method: "delivery",
+          status: "pending",
+          city: "新竹市",
+          address: "測試路 10 號",
+          payment_method: "pxpayplus",
+          payment_status: "pending",
+          cancel_reason: "",
+          payment_expires_at: "2026-04-18T11:55:00.000Z",
+          payment_redirect_url:
+            "https://pay.example/pxpayplus/PXPAYPLUS-EXPIRED-1",
         },
       ],
     }, async (tables) => {
@@ -864,11 +1069,22 @@ Deno.test({
           orderById["JKO-EXPIRED-1"].cancelReason,
           "付款期限已過，自動設為失敗訂單",
         );
+        assertEquals(orderById["PXPAYPLUS-EXPIRED-1"].status, "failed");
+        assertEquals(
+          orderById["PXPAYPLUS-EXPIRED-1"].paymentStatus,
+          "expired",
+        );
+        assertEquals(
+          orderById["PXPAYPLUS-EXPIRED-1"].cancelReason,
+          "付款期限已過，自動設為失敗訂單",
+        );
 
         assertEquals(tables.coffee_orders[0].status, "failed");
         assertEquals(tables.coffee_orders[0].payment_status, "expired");
         assertEquals(tables.coffee_orders[1].status, "failed");
         assertEquals(tables.coffee_orders[1].payment_status, "expired");
+        assertEquals(tables.coffee_orders[2].status, "failed");
+        assertEquals(tables.coffee_orders[2].payment_status, "expired");
       } finally {
         globalThis.Date = realDate;
       }

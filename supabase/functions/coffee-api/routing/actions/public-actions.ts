@@ -22,6 +22,8 @@ import {
   jkoPayResult,
   linePayCancel,
   linePayConfirm,
+  pxPayPlusOrderStatus,
+  pxPayPlusPaymentNotify,
 } from "../../api/payments.ts";
 import { lineLoginSchema } from "../../schemas/auth.ts";
 import { quoteOrderSchema } from "../../schemas/order.ts";
@@ -33,6 +35,7 @@ import {
 import {
   type ActionConfig,
   MAP_SESSION_METHODS,
+  POST_ONLY,
   publicAction,
   publicPost,
 } from "../action-config.ts";
@@ -105,5 +108,13 @@ export const publicActions: Record<string, ActionConfig> = {
   jkoPayResult: publicAction(
     async (data, req) => await jkoPayResult(data, req),
     { rateLimit: PAYMENT_ACTION_RATE_LIMIT },
+  ),
+  pxPayPlusOrderStatus: publicAction(
+    async (data, req) => await pxPayPlusOrderStatus(data, req),
+    { methods: ["GET"], rateLimit: PAYMENT_ACTION_RATE_LIMIT },
+  ),
+  pxPayPlusPaymentNotify: publicAction(
+    async (data, req) => await pxPayPlusPaymentNotify(data, req),
+    { methods: POST_ONLY, rateLimit: PAYMENT_ACTION_RATE_LIMIT },
   ),
 };

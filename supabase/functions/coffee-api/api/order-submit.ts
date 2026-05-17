@@ -16,6 +16,7 @@ import {
   resolveJkoPaymentExpiresAtIso,
   resolveLinePayPaymentExpiresAtIso,
   resolveMainPageUrlWithQuery,
+  resolvePxPayPlusPaymentExpiresAtIso,
   sendAdminOrderCreatedFlexNotification,
   sendCustomerOrderCreatedFlexNotification,
   trimLineNotifyError,
@@ -26,6 +27,7 @@ import { sendEmail } from "../utils/email.ts";
 import { buildOrderConfirmationHtml } from "../utils/email-templates.ts";
 import { requestJkoPayEntry } from "../utils/jkopay.ts";
 import { requestLinePayAPI } from "../utils/linepay.ts";
+import { requestPxPayPlusCreateOrder } from "../utils/pxpayplus.ts";
 import { asJsonRecord } from "../utils/json.ts";
 import type { JsonRecord } from "../utils/json.ts";
 import { createLogger } from "../utils/logger.ts";
@@ -135,6 +137,22 @@ function resolveStoreType(deliveryMethod: string): string {
   if (deliveryMethod === "seven_eleven") return "7-11";
   if (deliveryMethod === "family_mart") return "全家";
   return "";
+}
+
+function resolvePxPayPlusDeviceType(req: Request): 1 | 2 {
+  const userAgent = req.headers.get("user-agent") || "";
+  return /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent) ? 2 : 1;
+}
+
+function buildPxPayPlusCallbackUrl(
+  callbackBase: string,
+  action: string,
+  orderId: string,
+): string {
+  const url = new URL(callbackBase);
+  url.searchParams.set("action", action);
+  url.searchParams.set("orderId", orderId);
+  return url.toString();
 }
 
 async function markPaymentRequestFailed(
@@ -623,6 +641,105 @@ export async function submitOrder(data: JsonRecord, req: Request) {
       const failureReason = "街口支付建單失敗: " + String(e);
       await markPaymentRequestFailed(orderId, {}, {
         paymentMethod: "jkopay",
+        reason: failureReason,
+      });
+      return {
+        success: false,
+        error: failureReason,
+        orderId,
+      };
+    }
+  }
+
+  if (paymentMethod === "pxpayplus") {
+    try {
+      const callbackBase = resolveApiCallbackBase(req);
+      const orderStatusUrl = buildPxPayPlusCallbackUrl(
+        callbackBase,
+        "pxPayPlusOrderStatus",
+        orderId,
+      );
+      const paymentNotifyUrl = buildPxPayPlusCallbackUrl(
+        callbackBase,
+        "pxPayPlusPaymentNotify",
+        orderId,
+      );
+      const webConfirmUrl = resolveMainPageUrlWithQuery(
+        new URLSearchParams({
+          pxpayplusOrderId: orderId,
+          pxpayplusReturn: "confirm",
+        }),
+      );
+      const webCancelUrl = resolveMainPageUrlWithQuery(
+        new URLSearchParams({
+          pxpayplusOrderId: orderId,
+          pxpayplusReturn: "cancel",
+        }),
+      );
+      const createRes = await requestPxPayPlusCreateOrder({
+        merTradeNo: orderId,
+        amount: total,
+        deviceType: resolvePxPayPlusDeviceType(req),
+        webConfirmUrl,
+        webCancelUrl,
+        orderStatusUrl,
+        paymentNotifyUrl,
+        orderType: 1,
+      });
+
+      const statusCode = String(createRes.status_code || "").trim();
+      const statusMessage = String(createRes.status_message || "").trim();
+      const transactionId = String(createRes.transaction_id || "").trim();
+      const paymentUrl = String(createRes.payment_url || "").trim();
+      const qrcode = String(createRes.qrcode || "").trim();
+      const paymentExpiresAt = resolvePxPayPlusPaymentExpiresAtIso();
+
+      if (statusCode === "0000" && transactionId && paymentUrl) {
+        await supabase.from("coffee_orders").update({
+          payment_id: transactionId,
+          payment_provider_transaction_id: transactionId,
+          payment_provider_status_code: statusCode,
+          payment_redirect_url: paymentUrl,
+          payment_expires_at: paymentExpiresAt,
+          payment_last_checked_at: new Date().toISOString(),
+          payment_provider_payload: createRes,
+        }).eq("id", orderId);
+        return {
+          success: true,
+          orderId,
+          total,
+          paymentUrl,
+          transactionId,
+          qrcode,
+          paymentExpiresAt,
+        };
+      }
+
+      const failureReason = `全支付建單失敗: ${
+        statusMessage || statusCode || "未知錯誤"
+      }`;
+      await markPaymentRequestFailed(orderId, {
+        payment_provider_status_code: statusCode,
+        payment_provider_payload: createRes,
+      }, {
+        paymentMethod: "pxpayplus",
+        reason: failureReason,
+        providerStatusCode: statusCode,
+      });
+      logger.error("PxPayPlus create order failed", {
+        orderId,
+        statusCode,
+        statusMessage,
+      });
+      return {
+        success: false,
+        error: failureReason,
+        orderId,
+      };
+    } catch (e) {
+      const failureReason = "全支付建單失敗: " + String(e);
+      await markPaymentRequestFailed(orderId, {}, {
+        paymentMethod: "pxpayplus",
         reason: failureReason,
       });
       return {

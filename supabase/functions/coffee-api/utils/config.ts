@@ -32,6 +32,15 @@ export const JKOPAY_SECRET_KEY = Deno.env.get("JKOPAY_SECRET_KEY") || "";
 export const JKOPAY_BASE_URL = Deno.env.get("JKOPAY_BASE_URL") || "";
 export const JKOPAY_PROXY_URL = Deno.env.get("JKOPAY_PROXY_URL") || "";
 
+export const PXPAYPLUS_MERCHANT_CODE =
+  Deno.env.get("PXPAYPLUS_MERCHANT_CODE") || "";
+export const PXPAYPLUS_MERCHANT_EN_NAME =
+  Deno.env.get("PXPAYPLUS_MERCHANT_EN_NAME") || "";
+export const PXPAYPLUS_SECRET_KEY = Deno.env.get("PXPAYPLUS_SECRET_KEY") ||
+  "";
+export const PXPAYPLUS_BASE_URL = Deno.env.get("PXPAYPLUS_BASE_URL") || "";
+export const PXPAYPLUS_PROXY_URL = Deno.env.get("PXPAYPLUS_PROXY_URL") || "";
+
 export const LINE_MESSAGING_CHANNEL_ACCESS_TOKEN =
   Deno.env.get("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN") ||
   Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") ||

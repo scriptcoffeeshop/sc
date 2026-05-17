@@ -33,6 +33,7 @@ export type QuotePayload = {
     cod: boolean;
     linepay: boolean;
     jkopay: boolean;
+    pxpayplus: boolean;
     transfer: boolean;
   };
   items: QuoteLineItem[];
@@ -47,7 +48,12 @@ export type QuotePayload = {
   ordersText: string;
 };
 
-export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
+export type PaymentMethod =
+  | "cod"
+  | "linepay"
+  | "jkopay"
+  | "pxpayplus"
+  | "transfer";
 
 type PaymentAvailability = Record<PaymentMethod, boolean>;
 type QuoteProductRow = JsonRecord;
@@ -70,6 +76,7 @@ const VALID_PAYMENT_METHODS: PaymentMethod[] = [
   "cod",
   "linepay",
   "jkopay",
+  "pxpayplus",
   "transfer",
 ];
 
@@ -85,6 +92,7 @@ const COD_ONLY_PAYMENT: PaymentAvailability = {
   cod: true,
   linepay: false,
   jkopay: false,
+  pxpayplus: false,
   transfer: false,
 };
 
@@ -113,6 +121,7 @@ function toPaymentAvailability(
     jkopay: hasJkoPayInConfig
       ? source.jkopay === true || source.jkopay === "true"
       : linepayEnabled,
+    pxpayplus: source.pxpayplus === true || source.pxpayplus === "true",
     transfer: source.transfer === true || source.transfer === "true",
   };
 }
@@ -137,6 +146,7 @@ function buildDefaultPaymentRouting(
           cod: true,
           linepay: linePayEnabled,
           jkopay: linePayEnabled,
+          pxpayplus: false,
           transfer: transferEnabled,
         },
       ];

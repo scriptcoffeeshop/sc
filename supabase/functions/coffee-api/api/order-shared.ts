@@ -393,3 +393,9 @@ export function resolveLinePayPaymentExpiresAtIso(
 ): string {
   return new Date(now.getTime() + 20 * 60 * 1000).toISOString();
 }
+
+export function resolvePxPayPlusPaymentExpiresAtIso(
+  now: Date = new Date(),
+): string {
+  return new Date(now.getTime() + 20 * 60 * 1000).toISOString();
+}

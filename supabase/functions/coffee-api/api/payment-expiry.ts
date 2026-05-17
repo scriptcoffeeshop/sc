@@ -53,7 +53,7 @@ export function buildExpiredOnlinePaymentUpdates(
 ): JsonRecord | null {
   if (!order) return null;
   const paymentMethod = String(order.payment_method || "").trim();
-  if (!["linepay", "jkopay"].includes(paymentMethod)) return null;
+  if (!["linepay", "jkopay", "pxpayplus"].includes(paymentMethod)) return null;
 
   const paymentStatus = normalizePaymentStatus(order.payment_status);
   const orderStatus = String(order.status || "pending").trim() || "pending";
