@@ -62,6 +62,8 @@ export async function initMainApp() {
   const stateParam = urlParams.get("state");
   const lpAction = urlParams.get("lpAction");
   const jkoOrderId = String(urlParams.get("jkoOrderId") || "").trim();
+  const pxPayPlusOrderId = String(urlParams.get("pxpayplusOrderId") || "")
+    .trim();
 
   if (lpAction) {
     history.replaceState({}, "", "main.html");
@@ -71,6 +73,11 @@ export async function initMainApp() {
   if (jkoOrderId) {
     history.replaceState({}, "", "main.html");
     await returnActions.handleJkoPayReturn(jkoOrderId);
+  }
+
+  if (pxPayPlusOrderId) {
+    history.replaceState({}, "", "main.html");
+    await returnActions.handlePxPayPlusReturn(pxPayPlusOrderId);
   }
 
   if (code) {

@@ -565,7 +565,10 @@ export async function submitOrder(): Promise<void> {
       // 線上支付: 依付款方式顯示對應跳轉文案
       if (result.paymentUrl) {
         resetOrderDraft();
-        if (paymentMethod === "jkopay" || paymentMethod === "linepay") {
+        if (
+          paymentMethod === "jkopay" || paymentMethod === "linepay" ||
+          paymentMethod === "pxpayplus"
+        ) {
           Swal.fire(
             buildPaymentLaunchDialogOptions({
               orderId: result.orderId,

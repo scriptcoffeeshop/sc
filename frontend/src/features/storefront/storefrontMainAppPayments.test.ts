@@ -46,7 +46,13 @@ describe("createStorefrontMainAppPayments", () => {
         name: "配送到府",
         description: "配送",
         enabled: true,
-        payment: { cod: false, linepay: true, jkopay: true, transfer: true },
+        payment: {
+          cod: false,
+          linepay: true,
+          jkopay: true,
+          pxpayplus: false,
+          transfer: true,
+        },
       },
       quote: {
         deliveryMethod: "seven_eleven",
@@ -54,6 +60,7 @@ describe("createStorefrontMainAppPayments", () => {
           cod: true,
           linepay: false,
           jkopay: false,
+          pxpayplus: false,
           transfer: false,
         },
       },
@@ -61,6 +68,7 @@ describe("createStorefrontMainAppPayments", () => {
       cod: false,
       linepay: true,
       jkopay: true,
+      pxpayplus: false,
       transfer: true,
     });
   });
@@ -75,7 +83,13 @@ describe("createStorefrontMainAppPayments", () => {
         name: "配送到府",
         description: "配送",
         enabled: true,
-        payment: { cod: true, linepay: true, jkopay: true, transfer: true },
+        payment: {
+          cod: true,
+          linepay: true,
+          jkopay: true,
+          pxpayplus: true,
+          transfer: true,
+        },
       },
       quote: {
         deliveryMethod: "delivery",
@@ -83,6 +97,7 @@ describe("createStorefrontMainAppPayments", () => {
           cod: false,
           linepay: false,
           jkopay: true,
+          pxpayplus: false,
           transfer: false,
         },
       },
@@ -90,6 +105,7 @@ describe("createStorefrontMainAppPayments", () => {
       cod: false,
       linepay: false,
       jkopay: true,
+      pxpayplus: false,
       transfer: false,
     });
   });
@@ -99,12 +115,21 @@ describe("createStorefrontMainAppPayments", () => {
       cod: false,
       linepay: false,
       jkopay: true,
+      pxpayplus: true,
       transfer: true,
     })).toBe("jkopay");
     expect(selectFirstAvailablePayment({
       cod: false,
       linepay: false,
       jkopay: false,
+      pxpayplus: true,
+      transfer: true,
+    })).toBe("pxpayplus");
+    expect(selectFirstAvailablePayment({
+      cod: false,
+      linepay: false,
+      jkopay: false,
+      pxpayplus: false,
       transfer: false,
     })).toBe("");
   });

@@ -95,4 +95,31 @@ describe("dashboardOrderStatusController", () => {
       expect.objectContaining({ title: "LINE Flex Message" }),
     );
   });
+
+  it("routes FullPay refunds to the FullPay admin action", async () => {
+    const deps = createDeps();
+
+    await createOrderStatusController(deps).refundOnlinePayOrder(
+      "O-PX-PAID-1",
+      "pxpayplus",
+    );
+
+    expect(deps.Swal.fire).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "全支付退款",
+        text: "確定要對訂單 #O-PX-PAID-1 進行退款嗎？",
+      }),
+    );
+    expect(deps.authFetch).toHaveBeenCalledWith(
+      "https://api.example?action=pxPayPlusRefund",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          userId: "admin-user",
+          orderId: "O-PX-PAID-1",
+        }),
+      }),
+    );
+    expect(deps.loadOrders).toHaveBeenCalled();
+  });
 });

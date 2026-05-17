@@ -6,7 +6,12 @@ import {
 } from "./storefrontModels.ts";
 
 export type StorefrontQuoteRefreshOptions = { silent?: boolean };
-export type StorefrontPaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
+export type StorefrontPaymentMethod =
+  | "cod"
+  | "linepay"
+  | "jkopay"
+  | "pxpayplus"
+  | "transfer";
 export type StorefrontPaymentAvailability = Record<StorefrontPaymentMethod, boolean>;
 
 export type StorefrontQuoteRefreshResult = {
@@ -47,6 +52,7 @@ export const storefrontRuntime: StorefrontRuntime = {
     cod: true,
     linepay: false,
     jkopay: false,
+    pxpayplus: false,
     transfer: false,
   },
   selectPayment: null,
@@ -83,6 +89,7 @@ export function setStorefrontAvailablePaymentMethods(
     cod: Boolean(availability?.cod),
     linepay: Boolean(availability?.linepay),
     jkopay: Boolean(availability?.jkopay),
+    pxpayplus: Boolean(availability?.pxpayplus),
     transfer: Boolean(availability?.transfer),
   };
 }

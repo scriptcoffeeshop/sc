@@ -49,6 +49,7 @@ export interface StorefrontPaymentConfig {
   cod: boolean;
   linepay: boolean;
   jkopay: boolean;
+  pxpayplus: boolean;
   transfer: boolean;
 }
 
@@ -127,6 +128,7 @@ export function normalizeDeliveryPaymentConfig(
     cod: Boolean(source["cod"]),
     linepay: Boolean(source["linepay"]),
     jkopay: hasJkoPay ? Boolean(source["jkopay"]) : Boolean(source["linepay"]),
+    pxpayplus: Boolean(source["pxpayplus"]),
     transfer: Boolean(source["transfer"]),
   };
 }
@@ -171,30 +173,35 @@ export function normalizeStorefrontDeliveryConfig(
         cod: true,
         linepay: linePayEnabled,
         jkopay: linePayEnabled,
+        pxpayplus: false,
         transfer: transferEnabled,
       },
       delivery: {
         cod: true,
         linepay: linePayEnabled,
         jkopay: linePayEnabled,
+        pxpayplus: false,
         transfer: transferEnabled,
       },
       home_delivery: {
         cod: true,
         linepay: linePayEnabled,
         jkopay: linePayEnabled,
+        pxpayplus: false,
         transfer: transferEnabled,
       },
       seven_eleven: {
         cod: true,
         linepay: false,
         jkopay: false,
+        pxpayplus: false,
         transfer: false,
       },
       family_mart: {
         cod: true,
         linepay: false,
         jkopay: false,
+        pxpayplus: false,
         transfer: false,
       },
     };

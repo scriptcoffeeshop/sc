@@ -35,6 +35,29 @@ describe("storefrontPaymentDisplay", () => {
     expect(display.guideDescription).not.toContain("可到「我的訂單」");
   });
 
+  it("supports FullPay resume labels and launch dialog copy", () => {
+    const display = getCustomerPaymentDisplay(
+      {
+        paymentMethod: "pxpayplus",
+        paymentStatus: "pending",
+        paymentUrl: "https://pay.example/pxpayplus/PX-001",
+      },
+      { context: "orderHistory" },
+    );
+    const dialog = buildPaymentLaunchDialogOptions({
+      orderId: "PX-001",
+      paymentMethod: "pxpayplus",
+      total: 420,
+    });
+
+    expect(display.methodLabel).toBe("全支付");
+    expect(display.canResumePayment).toBe(true);
+    expect(display.resumePaymentLabel).toBe("前往全支付付款");
+    expect(display.guideDescription).toContain("這筆訂單尚未完成全支付");
+    expect(dialog.title).toBe("前往全支付");
+    expect(dialog.confirmButtonText).toBe("前往全支付");
+  });
+
   it("keeps status dialog links sanitized and status-specific", () => {
     const dialog = buildPaymentStatusDialogOptions({
       orderId: "<script>alert(1)</script>",

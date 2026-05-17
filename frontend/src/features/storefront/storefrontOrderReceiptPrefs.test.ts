@@ -32,6 +32,7 @@ describe("storefrontOrderReceiptPrefs", () => {
       cod: false,
       linepay: false,
       jkopay: false,
+      pxpayplus: false,
       transfer: true,
     };
     storefrontRuntime.selectPayment = vi.fn();

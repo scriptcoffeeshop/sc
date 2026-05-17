@@ -32,27 +32,57 @@ describe("useStorefrontDelivery", () => {
       {
         id: "in_store",
         enabled: true,
-        payment: { cod: true, linepay: true, jkopay: true, transfer: false },
+        payment: {
+          cod: true,
+          linepay: true,
+          jkopay: true,
+          pxpayplus: false,
+          transfer: false,
+        },
       },
       {
         id: "delivery",
         enabled: true,
-        payment: { cod: true, linepay: true, jkopay: true, transfer: false },
+        payment: {
+          cod: true,
+          linepay: true,
+          jkopay: true,
+          pxpayplus: false,
+          transfer: false,
+        },
       },
       {
         id: "home_delivery",
         enabled: true,
-        payment: { cod: true, linepay: true, jkopay: true, transfer: false },
+        payment: {
+          cod: true,
+          linepay: true,
+          jkopay: true,
+          pxpayplus: false,
+          transfer: false,
+        },
       },
       {
         id: "seven_eleven",
         enabled: true,
-        payment: { cod: true, linepay: false, jkopay: false, transfer: false },
+        payment: {
+          cod: true,
+          linepay: false,
+          jkopay: false,
+          pxpayplus: false,
+          transfer: false,
+        },
       },
       {
         id: "family_mart",
         enabled: true,
-        payment: { cod: true, linepay: false, jkopay: false, transfer: false },
+        payment: {
+          cod: true,
+          linepay: false,
+          jkopay: false,
+          pxpayplus: false,
+          transfer: false,
+        },
       },
     ]);
   });
@@ -72,6 +102,7 @@ describe("useStorefrontDelivery", () => {
               cod: false,
               linepay: false,
               jkopay: false,
+              pxpayplus: false,
               transfer: false,
             },
           },
@@ -86,6 +117,7 @@ describe("useStorefrontDelivery", () => {
               cod: false,
               linepay: false,
               jkopay: false,
+              pxpayplus: false,
               transfer: false,
             },
           },
@@ -108,7 +140,13 @@ describe("useStorefrontDelivery", () => {
         name: "宅配",
         enabled: true,
         label: "宅配",
-        payment: { cod: false, linepay: false, jkopay: false, transfer: false },
+        payment: {
+          cod: false,
+          linepay: false,
+          jkopay: false,
+          pxpayplus: false,
+          transfer: false,
+        },
       },
     ]);
     expect(deps.selectDelivery).toHaveBeenCalledWith("delivery");

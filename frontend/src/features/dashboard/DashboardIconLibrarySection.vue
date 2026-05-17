@@ -36,6 +36,7 @@
             <option value="cod">付款：貨到/取貨付款</option>
             <option value="linepay">付款：LINE Pay</option>
             <option value="jkopay">付款：街口支付</option>
+            <option value="pxpayplus">付款：全支付</option>
             <option value="transfer">付款：線上轉帳</option>
           </UiSelect>
         </div>

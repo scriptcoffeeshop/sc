@@ -74,19 +74,25 @@ export function createStorefrontMainAppReturns(
     }
   }
 
-  async function handleJkoPayReturn(orderId: string) {
+  async function handleOnlinePaymentReturn(
+    orderId: string,
+    paymentMethod: "jkopay" | "pxpayplus",
+  ) {
     if (!orderId) return;
     showLoading("確認付款狀態中...");
+    const action = paymentMethod === "pxpayplus"
+      ? "pxPayPlusInquiry"
+      : "jkoPayInquiry";
 
     try {
       const response = await authFetch(
-        `${API_URL}?action=jkoPayInquiry&orderId=${encodeURIComponent(orderId)}`,
+        `${API_URL}?action=${action}&orderId=${encodeURIComponent(orderId)}`,
       );
       const result = await response.json();
       if (result.success) {
         const dialogOptions = buildPaymentStatusDialogOptions({
           orderId,
-          paymentMethod: "jkopay",
+          paymentMethod,
           paymentStatus: result.paymentStatus,
           paymentExpiresAt: result.paymentExpiresAt,
           paymentConfirmedAt: result.paymentConfirmedAt,
@@ -106,7 +112,7 @@ export function createStorefrontMainAppReturns(
     await showDialog(
       buildPaymentStatusDialogOptions({
         orderId,
-        paymentMethod: "jkopay",
+        paymentMethod,
         paymentStatus: "processing",
         paymentLastCheckedAt: new Date().toISOString(),
       }),
@@ -114,7 +120,10 @@ export function createStorefrontMainAppReturns(
   }
 
   return {
-    handleJkoPayReturn,
+    handleJkoPayReturn: (orderId: string) =>
+      handleOnlinePaymentReturn(orderId, "jkopay"),
     handleLinePayCallback,
+    handlePxPayPlusReturn: (orderId: string) =>
+      handleOnlinePaymentReturn(orderId, "pxpayplus"),
   };
 }

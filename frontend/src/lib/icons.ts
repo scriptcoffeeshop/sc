@@ -27,6 +27,7 @@ export const ICON_FILE_MAP: Record<string, string> = {
   cod: "icons/payment-cash.png",
   linepay: "icons/payment-linepay.png",
   jkopay: "icons/payment-jkopay.png",
+  pxpayplus: "icons/payment-card.png",
   transfer: "icons/payment-bank.png",
   cart: "icons/cart-bag.png",
   announcement: "icons/announcement-bell.png",
@@ -77,6 +78,7 @@ const ICON_META_MAP: Record<string, { label: string; category: string }> = {
   cod: { label: "取貨付款", category: "金流" },
   linepay: { label: "LINE Pay", category: "金流" },
   jkopay: { label: "街口支付", category: "金流" },
+  pxpayplus: { label: "全支付", category: "金流" },
   transfer: { label: "轉帳", category: "金流" },
   cart: { label: "購物車", category: "商店" },
   notes: { label: "備註", category: "商店" },
@@ -251,6 +253,8 @@ export function getDeliveryIconFallbackKey(deliveryId = "") {
 
 export function getPaymentIconFallbackKey(method = "") {
   const key = String(method || "").trim();
-  if (["cod", "linepay", "jkopay", "transfer"].includes(key)) return key;
+  if (["cod", "linepay", "jkopay", "pxpayplus", "transfer"].includes(key)) {
+    return key;
+  }
   return "payment";
 }

@@ -152,12 +152,14 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
 
   async function refundOnlinePayOrder(orderId: string, paymentMethod = "linepay") {
     const normalizedMethod = String(paymentMethod || "").trim().toLowerCase();
-    const isJkoPay = normalizedMethod === "jkopay";
-    const action = isJkoPay ? "jkoPayRefund" : "linePayRefund";
-    const title = isJkoPay ? "街口支付退款" : "LINE Pay 退款";
+    const refundConfig = normalizedMethod === "jkopay"
+      ? { action: "jkoPayRefund", label: "街口支付", loadingLabel: "街口" }
+      : normalizedMethod === "pxpayplus"
+      ? { action: "pxPayPlusRefund", label: "全支付", loadingLabel: "全支付" }
+      : { action: "linePayRefund", label: "LINE Pay", loadingLabel: "LINE Pay" };
 
     const confirmation = await deps.Swal.fire({
-      title,
+      title: `${refundConfig.label}退款`,
       text: `確定要對訂單 #${orderId} 進行退款嗎？`,
       icon: "warning",
       showCancelButton: true,
@@ -168,12 +170,12 @@ export function createOrderStatusController(deps: OrderStatusControllerDeps) {
     if (!confirmation.isConfirmed) return;
 
     deps.Swal.fire({
-      title: `${isJkoPay ? "街口" : "LINE Pay"} 退款處理中...`,
+      title: `${refundConfig.loadingLabel} 退款處理中...`,
       allowOutsideClick: false,
       didOpen: () => deps.Swal.showLoading?.(),
     });
     try {
-      const response = await deps.authFetch(`${deps.API_URL}?action=${action}`, {
+      const response = await deps.authFetch(`${deps.API_URL}?action=${refundConfig.action}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: deps.getAuthUserId(), orderId }),

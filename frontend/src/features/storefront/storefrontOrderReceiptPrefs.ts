@@ -87,7 +87,9 @@ export function applySavedOrderFormPrefs(): void {
   });
 
   const paymentMethod = String(u["defaultPaymentMethod"] || "").trim() as PaymentMethod;
-  if (!["cod", "linepay", "jkopay", "transfer"].includes(paymentMethod)) return;
+  if (!["cod", "linepay", "jkopay", "pxpayplus", "transfer"].includes(paymentMethod)) {
+    return;
+  }
 
   if (!storefrontRuntime.availablePaymentMethods[paymentMethod]) return;
   if (storefrontRuntime.selectPayment) {

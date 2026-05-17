@@ -9,7 +9,13 @@ import type {
   DashboardPaymentRouting,
 } from "./dashboardSettingsShared.ts";
 
-export const PAYMENT_METHOD_ORDER = ["cod", "linepay", "jkopay", "transfer"] as const;
+export const PAYMENT_METHOD_ORDER = [
+  "cod",
+  "linepay",
+  "jkopay",
+  "pxpayplus",
+  "transfer",
+] as const;
 export const SECTION_TITLE_ORDER = ["products", "delivery", "notes"] as const;
 export const DEFAULT_DASHBOARD_TITLE = "咖啡訂購後台";
 
@@ -104,30 +110,35 @@ function buildLegacyRoutingConfig(
       cod: true,
       linepay: linePayEnabled,
       jkopay: linePayEnabled,
+      pxpayplus: false,
       transfer: transferEnabled,
     },
     delivery: {
       cod: true,
       linepay: linePayEnabled,
       jkopay: linePayEnabled,
+      pxpayplus: false,
       transfer: transferEnabled,
     },
     home_delivery: {
       cod: true,
       linepay: linePayEnabled,
       jkopay: linePayEnabled,
+      pxpayplus: false,
       transfer: transferEnabled,
     },
     seven_eleven: {
       cod: true,
       linepay: false,
       jkopay: false,
+      pxpayplus: false,
       transfer: false,
     },
     family_mart: {
       cod: true,
       linepay: false,
       jkopay: false,
+      pxpayplus: false,
       transfer: false,
     },
   };
@@ -138,6 +149,7 @@ export function createEmptyPaymentOptions(): DashboardPaymentOptionsMap {
     cod: { icon_url: "", name: "", description: "" },
     linepay: { icon_url: "", name: "", description: "" },
     jkopay: { icon_url: "", name: "", description: "" },
+    pxpayplus: { icon_url: "", name: "", description: "" },
     transfer: { icon_url: "", name: "", description: "" },
   };
 }
@@ -251,6 +263,7 @@ export function migrateLegacyDeliveryConfig(
         cod: true,
         linepay: false,
         jkopay: false,
+        pxpayplus: false,
         transfer: false,
       },
       fee: 0,
@@ -270,7 +283,13 @@ export function createCustomDeliveryOption(
     enabled: true,
     fee: 0,
     free_threshold: 0,
-    payment: { cod: true, linepay: false, jkopay: false, transfer: false },
+    payment: {
+      cod: true,
+      linepay: false,
+      jkopay: false,
+      pxpayplus: false,
+      transfer: false,
+    },
   });
 }
 

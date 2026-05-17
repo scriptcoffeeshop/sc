@@ -9,6 +9,7 @@ export const PAYMENT_METHOD_TEXT: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
   jkopay: "街口支付",
+  pxpayplus: "全支付",
   transfer: "線上轉帳",
 };
 
@@ -100,6 +101,43 @@ export const PAYMENT_ACTION_GUIDES: Record<string, PaymentGuideByStatus> = {
       title: "LINE Pay 待付款",
       description:
         "請儘快完成 LINE Pay；若稍後付款，可到「我的訂單」重新打開付款連結。",
+    },
+  },
+  pxpayplus: {
+    paid: {
+      tone: "success",
+      title: "全支付已完成",
+      description: "付款已完成，店家會依訂單狀態安排備貨與出貨。",
+    },
+    processing: {
+      tone: "info",
+      title: "全支付確認中",
+      description: "您已返回商店，系統正在同步全支付付款結果，通常 1 到 2 分鐘內會更新。",
+    },
+    failed: {
+      tone: "danger",
+      title: "全支付付款失敗",
+      description: "全支付未完成扣款。若您已看到扣款畫面，請先保留截圖並聯繫店家協助確認。",
+    },
+    cancelled: {
+      tone: "danger",
+      title: "全支付已取消",
+      description: "您已取消全支付付款流程；若仍需此商品，請重新下單。",
+    },
+    expired: {
+      tone: "warning",
+      title: "全支付已逾期",
+      description: "付款期限已過，此筆全支付已失效；若仍需此商品，請重新下單。",
+    },
+    refunded: {
+      tone: "success",
+      title: "全支付已退款",
+      description: "此筆全支付付款已退款完成，若款項未入帳請再聯繫店家確認。",
+    },
+    default: {
+      tone: "warning",
+      title: "全支付待付款",
+      description: "請儘快完成全支付；若稍後付款，可到「我的訂單」重新打開付款連結。",
     },
   },
   transfer: {

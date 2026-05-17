@@ -83,4 +83,26 @@ describe("dashboardOrdersView", () => {
       trackingLinkUrl: "",
     });
   });
+
+  it("shows FullPay refund action for paid online payment orders", () => {
+    const view = buildOrderViewModel(
+      {
+        orderId: "O-PX-PAID-1",
+        status: "processing",
+        timestamp: "2026-05-17T08:00:00.000Z",
+        deliveryMethod: "delivery",
+        paymentMethod: "pxpayplus",
+        paymentStatus: "paid",
+      },
+      "",
+      "",
+      false,
+    );
+
+    expect(view).toMatchObject({
+      paymentMethodLabel: "全支付",
+      showRefundButton: true,
+      refundButtonText: "全支付退款",
+    });
+  });
 });

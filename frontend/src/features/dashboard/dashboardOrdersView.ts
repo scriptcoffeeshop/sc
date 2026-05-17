@@ -231,9 +231,13 @@ export function buildOrderViewModel(
     showSendLineButton: Boolean(order.lineUserId),
     showSendEmailButton: Boolean(order.email),
     showRefundButton:
-      (paymentMethod === "linepay" || paymentMethod === "jkopay") &&
+      ["linepay", "jkopay", "pxpayplus"].includes(paymentMethod) &&
       paymentStatus === "paid",
-    refundButtonText: paymentMethod === "jkopay" ? "街口退款" : "LINE退款",
+    refundButtonText: paymentMethod === "jkopay"
+      ? "街口退款"
+      : paymentMethod === "pxpayplus"
+      ? "全支付退款"
+      : "LINE退款",
     showConfirmTransferButton:
       paymentMethod === "transfer" && paymentStatus === "pending",
   };

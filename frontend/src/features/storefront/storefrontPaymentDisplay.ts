@@ -63,6 +63,7 @@ function normalizePaymentLaunchUrl(url: unknown): string {
 function getPaymentLaunchActionLabel(paymentMethod: string): string {
   if (paymentMethod === "linepay") return "前往 LINE Pay 付款";
   if (paymentMethod === "jkopay") return "前往街口付款";
+  if (paymentMethod === "pxpayplus") return "前往全支付付款";
   return "前往付款";
 }
 
@@ -113,7 +114,7 @@ function getOrderHistoryPaymentGuideDescription(params: {
   const paymentStatus = params?.paymentStatus;
   const resumePaymentLabel = params?.resumePaymentLabel;
   if (
-    !["linepay", "jkopay"].includes(paymentMethod) ||
+    !["linepay", "jkopay", "pxpayplus"].includes(paymentMethod) ||
     !["pending", "processing"].includes(paymentStatus)
   ) {
     return "";
@@ -165,7 +166,7 @@ export function getCustomerPaymentDisplay(
   const paymentUrl = normalizePaymentLaunchUrl(order?.paymentUrl);
   const showPaymentDeadline = Boolean(paymentExpiresAtText) &&
     ["pending", "processing", "expired"].includes(paymentStatus);
-  const canResumePayment = ["linepay", "jkopay"].includes(paymentMethod) &&
+  const canResumePayment = ["linepay", "jkopay", "pxpayplus"].includes(paymentMethod) &&
     ["pending", "processing"].includes(paymentStatus) &&
     Boolean(paymentUrl);
   const resumePaymentLabel = canResumePayment

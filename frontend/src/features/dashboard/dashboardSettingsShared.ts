@@ -9,6 +9,7 @@ export interface DashboardPaymentRouting {
   cod: boolean;
   linepay: boolean;
   jkopay: boolean;
+  pxpayplus: boolean;
   transfer: boolean;
 }
 
@@ -91,6 +92,11 @@ export const DEFAULT_PAYMENT_OPTIONS: Record<string, DashboardPaymentOption> = {
     name: "街口支付",
     description: "街口支付線上付款",
   },
+  pxpayplus: {
+    icon_url: getDefaultIconUrl("pxpayplus"),
+    name: "全支付",
+    description: "全支付線上付款",
+  },
   transfer: {
     icon_url: getDefaultIconUrl("transfer"),
     name: "線上轉帳",
@@ -137,6 +143,7 @@ export function normalizeDeliveryOption(
       cod: payment["cod"] !== false,
       linepay: !!payment["linepay"],
       jkopay: inferredJkoPay,
+      pxpayplus: !!payment["pxpayplus"],
       transfer: !!payment["transfer"],
     },
   };

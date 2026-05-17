@@ -63,6 +63,7 @@ const PAYMENT_METHODS: StorefrontPaymentMethod[] = [
   "cod",
   "linepay",
   "jkopay",
+  "pxpayplus",
   "transfer",
 ];
 
@@ -85,6 +86,11 @@ const DEFAULT_PAYMENT_OPTIONS: Record<
     description: "街口支付線上付款",
     nameClass: "text-orange-600",
   },
+  pxpayplus: {
+    name: "全支付",
+    description: "全支付線上付款",
+    nameClass: "text-emerald-700",
+  },
   transfer: {
     name: "線上轉帳",
     description: "ATM / 網銀匯款",
@@ -99,6 +105,7 @@ function normalizePaymentAvailability(
     cod: Boolean(value?.cod),
     linepay: Boolean(value?.linepay),
     jkopay: Boolean(value?.jkopay),
+    pxpayplus: Boolean(value?.pxpayplus),
     transfer: Boolean(value?.transfer),
   };
 }
@@ -112,6 +119,7 @@ export function useStorefrontPayment(deps: StorefrontPaymentDeps = {}) {
     cod: true,
     linepay: false,
     jkopay: false,
+    pxpayplus: false,
     transfer: false,
   });
   const paymentOptionConfig = ref<StorefrontPaymentOptionConfig>({});

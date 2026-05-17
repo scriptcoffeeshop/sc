@@ -53,6 +53,7 @@ const routingPaymentMethods: Array<{
   { key: "cod", label: "取貨付款" },
   { key: "linepay", label: "LINE Pay" },
   { key: "jkopay", label: "街口支付" },
+  { key: "pxpayplus", label: "全支付" },
   { key: "transfer", label: "線上轉帳" },
 ];
 

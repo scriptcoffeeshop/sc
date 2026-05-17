@@ -13,6 +13,7 @@ describe("useStorefrontPayment", () => {
           cod: false,
           linepay: true,
           jkopay: false,
+          pxpayplus: false,
           transfer: true,
         },
         settings: {
@@ -42,6 +43,7 @@ describe("useStorefrontPayment", () => {
       cod: false,
       linepay: true,
       jkopay: false,
+      pxpayplus: false,
       transfer: true,
     });
     expect(payment.paymentOptions.value.find((item) => item.method === "transfer"))

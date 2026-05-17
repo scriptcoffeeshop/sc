@@ -5,7 +5,12 @@ export type DeliveryMethod =
   | "family_mart"
   | "in_store";
 
-export type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
+export type PaymentMethod =
+  | "cod"
+  | "linepay"
+  | "jkopay"
+  | "pxpayplus"
+  | "transfer";
 
 export type OrderStatus =
   | "pending"

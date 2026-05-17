@@ -157,6 +157,7 @@ withDefaults(
       cod: true,
       linepay: false,
       jkopay: false,
+      pxpayplus: false,
       transfer: false,
     }),
     paymentOptions: () => [],

@@ -204,6 +204,7 @@ function ensureDeliveryPayment(
       cod: false,
       linepay: false,
       jkopay: false,
+      pxpayplus: false,
       transfer: false,
     };
   }

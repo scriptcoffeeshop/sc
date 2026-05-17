@@ -12,7 +12,7 @@ import { sectionIconSettingKey } from "./dashboardSettingsShared.ts";
 import { useDashboardSettings } from "./useDashboardSettings.ts";
 
 type SectionKey = "products" | "delivery" | "notes";
-type PaymentMethod = "cod" | "linepay" | "jkopay" | "transfer";
+type PaymentMethod = "cod" | "linepay" | "jkopay" | "pxpayplus" | "transfer";
 type DeliveryIconPreviewMap = Record<string, string>;
 
 interface DashboardSettingsIconServices {
@@ -46,6 +46,7 @@ const paymentIconPreviewOverrides = ref<Record<PaymentMethod, string>>({
   cod: "",
   linepay: "",
   jkopay: "",
+  pxpayplus: "",
   transfer: "",
 });
 const deliveryIconPreviewOverrides = ref<DeliveryIconPreviewMap>({});
@@ -57,7 +58,7 @@ function isSectionKey(value: string): value is SectionKey {
 }
 
 function isPaymentMethod(value: string): value is PaymentMethod {
-  return ["cod", "linepay", "jkopay", "transfer"].includes(value);
+  return ["cod", "linepay", "jkopay", "pxpayplus", "transfer"].includes(value);
 }
 
 function getServices(): DashboardSettingsIconServices {

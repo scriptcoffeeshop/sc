@@ -41,6 +41,7 @@ async function loadSettingsIconsModule() {
       cod: { icon_url: "" },
       linepay: { icon_url: "" },
       jkopay: { icon_url: "" },
+      pxpayplus: { icon_url: "" },
       transfer: { icon_url: "" },
     }),
   };

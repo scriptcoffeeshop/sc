@@ -61,6 +61,7 @@ describe("getStorefrontUiSnapshot", () => {
           cod: false,
           linepay: false,
           jkopay: false,
+          pxpayplus: false,
           transfer: false,
         },
       },

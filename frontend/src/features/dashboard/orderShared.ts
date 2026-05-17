@@ -25,6 +25,7 @@ export const orderPayMethodLabel: Record<string, string> = {
   cod: "貨到付款",
   linepay: "LINE Pay",
   jkopay: "街口支付",
+  pxpayplus: "全支付",
   transfer: "轉帳",
 };
 

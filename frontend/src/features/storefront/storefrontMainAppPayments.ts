@@ -32,6 +32,7 @@ const DEFAULT_PAYMENT_AVAILABILITY: StorefrontPaymentAvailability = {
   cod: true,
   linepay: false,
   jkopay: false,
+  pxpayplus: false,
   transfer: false,
 };
 
@@ -42,6 +43,7 @@ function normalizeQuotePaymentAvailability(
     cod: Boolean(payment?.["cod"]),
     linepay: Boolean(payment?.["linepay"]),
     jkopay: Boolean(payment?.["jkopay"]),
+    pxpayplus: Boolean(payment?.["pxpayplus"]),
     transfer: Boolean(payment?.["transfer"]),
   };
 }
@@ -75,6 +77,7 @@ export function selectFirstAvailablePayment(
   if (availability.cod) return "cod";
   if (availability.linepay) return "linepay";
   if (availability.jkopay) return "jkopay";
+  if (availability.pxpayplus) return "pxpayplus";
   if (availability.transfer) return "transfer";
   return "";
 }
