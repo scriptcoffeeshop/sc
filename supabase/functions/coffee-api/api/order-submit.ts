@@ -682,6 +682,8 @@ export async function submitOrder(data: JsonRecord, req: Request) {
         deviceType: resolvePxPayPlusDeviceType(req),
         webConfirmUrl,
         webCancelUrl,
+        appConfirmUrl: webConfirmUrl,
+        appCancelUrl: webCancelUrl,
         orderStatusUrl,
         paymentNotifyUrl,
         orderType: 1,

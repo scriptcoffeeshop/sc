@@ -2,7 +2,7 @@
 
 本文件是交接版專案快照，目標是在 3-5 分鐘內讓下一位接手者掌握規則、現況與風險。更早的變更摘要移到 `docs/changelog.md`；完整紀錄以 git history 為準。
 
-最後更新：2026-05-14
+最後更新：2026-05-18
 
 ---
 
@@ -51,6 +51,7 @@
 - JSON 解析集中於 `utils/json.ts`，訂單/付款/配送 label、Email asset、tracking URL、Email/Flex 文案 helper 已共用。
 - 訂單狀態變更可在單一後台訂單卡片寫入 `coffee_orders.status_note` 作為最新狀態通知備註；Email 通知、LINE Flex 通知與前台我的訂單會顯示同一份內容。批次狀態更新不提供消費者狀態備註欄位。狀態更新成功後只保存狀態與備註，不會自動推送消費者 Email 或 LINE Flex，也不會開啟前端 LINE Flex 一鍵發送視窗；手動 LINE 通知會先跳一般確認視窗，確認後才送出並以 toast 回報。
 - LINE Pay 與街口支付固定走正式環境；線上付款逾期會轉 `status=failed`、`payment_status=expired`。
+- 全支付 EC 串接使用 `PXPAYPLUS_MERCHANT_CODE`、`PXPAYPLUS_MERCHANT_EN_NAME`、`PXPAYPLUS_SECRET_KEY`、`PXPAYPLUS_BASE_URL`、`PXPAYPLUS_PROXY_URL`；若全支付另提供特店門市店號，設定選填 `PXPAYPLUS_STORE_ID` 後 CreateOrder 會帶入 `store_id` 並納入簽章。
 - Rate limiter 預設使用記憶體 store；若設定 Upstash Redis REST env，可切換為分散式配額儲存。
 
 ### 測試與守門
@@ -76,6 +77,10 @@
 ---
 
 ## 5) 最近有效變更
+
+### 2026-05-18
+
+- 全支付檔案檢視後補齊 CreateOrder 的 `app_confirm_url` / `app_cancel_url`，保留既有 web callback；新增選填 `PXPAYPLUS_STORE_ID` 支援特店門市店號。Fixie 代理需使用正確 credential，白名單出口為 `52.5.155.132`、`52.87.82.133`。目前 UAT 建單仍回 `EC6001 店家不存在`，需全支付確認 `M0002278` 的 EC 開通、正確 `PX-MerEnName` 與白名單狀態。
 
 ### 2026-05-14
 

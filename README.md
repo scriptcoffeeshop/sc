@@ -17,6 +17,7 @@
     - `SUPABASE_ACCESS_TOKEN`
     - `SUPABASE_DB_PASSWORD`
   - 若上述 secrets 尚未設定，Supabase 部署 job 會以 warning 跳過後端部署；前端 GitHub Pages 部署仍會繼續。
+  - Edge Function 金流 secrets 以 `.env.staging.example` 與 `docs/key-rotation-runbook.md` 為準；全支付若提供特店門市店號，需額外設定選填 `PXPAYPLUS_STORE_ID`。
   - 若需要手動重跑正式部署，可直接在 `.github/workflows/ci.yml` 的 `workflow_dispatch` 執行；預設 `deploy=true`，在 `main/master` 會連同前端與 Supabase deploy jobs 一起跑。若要在 CI 內跑 Supabase local golden path，手動觸發時將 `run_integration=true`。
 - **檔案版號與快取**：**不可輕忽的手機 Cache**。正式站入口應為根目錄 `/`、`/main.html`、`/dashboard.html`，並由 GitHub Pages `workflow` 模式直接提供 Vite build 產物；若線上又出現 `/frontend/main.html` 或 `/frontend/dashboard.html`，代表 Pages source 漂回 `legacy`，應先檢查 repo 的 GitHub Pages 設定。Vite 產出的 JS/CSS 檔名需保留 content hash；部署腳本只為非 hash asset 參照補 commit SHA 或 `.frontend-version`，降低 push 後 HTML 與 asset 快取短暫失配造成的按鈕失效。
 - **特殊檔案保護**：`google6cb7aa3783369937.html` 為 Google 商品驗證檔案，**嚴禁刪除或修改**。未來進行專案清理（Cleanup）時，必須將此檔案排除在刪除清單外。

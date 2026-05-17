@@ -624,6 +624,7 @@ Deno.test({
       secretKey: Deno.env.get("PXPAYPLUS_SECRET_KEY"),
       baseUrl: Deno.env.get("PXPAYPLUS_BASE_URL"),
       proxyUrl: Deno.env.get("PXPAYPLUS_PROXY_URL"),
+      storeId: Deno.env.get("PXPAYPLUS_STORE_ID"),
     };
     const originalFetch = globalThis.fetch;
     const pxRequests: JsonRecord[] = [];
@@ -636,6 +637,7 @@ Deno.test({
     );
     Deno.env.set("PXPAYPLUS_BASE_URL", "https://pxpay.example/px-ec");
     Deno.env.delete("PXPAYPLUS_PROXY_URL");
+    Deno.env.delete("PXPAYPLUS_STORE_ID");
 
     globalThis.fetch = async (
       input: RequestInfo | URL,
@@ -760,6 +762,14 @@ Deno.test({
           ),
           "confirm",
         );
+        assertEquals(
+          new URL(String(requestBody.web_cancel_url)).searchParams.get(
+            "pxpayplusReturn",
+          ),
+          "cancel",
+        );
+        assertEquals(requestBody.app_confirm_url, requestBody.web_confirm_url);
+        assertEquals(requestBody.app_cancel_url, requestBody.web_cancel_url);
 
         assertEquals(tables.coffee_orders.length, 1);
         const order = tables.coffee_orders[0];
@@ -787,6 +797,7 @@ Deno.test({
           ["PXPAYPLUS_SECRET_KEY", previousEnv.secretKey],
           ["PXPAYPLUS_BASE_URL", previousEnv.baseUrl],
           ["PXPAYPLUS_PROXY_URL", previousEnv.proxyUrl],
+          ["PXPAYPLUS_STORE_ID", previousEnv.storeId],
         ] as const
       ) {
         if (value === undefined) {

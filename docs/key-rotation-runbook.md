@@ -87,6 +87,7 @@
 - `PXPAYPLUS_SECRET_KEY`
 - `PXPAYPLUS_BASE_URL`
 - `PXPAYPLUS_PROXY_URL`
+- `PXPAYPLUS_STORE_ID`（全支付若另外提供特店門市店號才需設定）
 
 固定出口：
 
@@ -97,7 +98,7 @@
 
 1. 到全支付申請文件或商戶後台確認測試/正式環境 API 白名單包含上述 Fixie outbound IPs。
 2. 到 Fixie 重設 proxy credential 時，同步更新 Supabase Edge Function secret `PXPAYPLUS_PROXY_URL`；proxy URL 不寫入 repo、文件或測試 fixture。
-3. 到全支付商戶後台或申請窗口重設商戶代號 / Secret Key 時，同步更新 Supabase Edge Function secrets。
+3. 到全支付商戶後台或申請窗口重設商戶代號 / Secret Key / 特店門市店號時，同步更新 Supabase Edge Function secrets。
 4. 重新部署 `coffee-api`。
 5. 以 UAT 測試建立付款、OrderStatus、PaymentNotify、CheckStatus/inquiry 與退款流程。
 6. 撤銷舊 key / proxy credential。

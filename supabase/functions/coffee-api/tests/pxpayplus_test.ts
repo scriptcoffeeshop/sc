@@ -10,6 +10,7 @@ import {
   hmacSha256UpperHexWithHexKey,
   mapPxPayPlusPayStatusToPaymentStatus,
   parsePxPayPlusPayStatus,
+  resolvePxPayPlusProxyOptions,
 } from "../utils/pxpayplus.ts";
 
 Deno.test("PxPayPlus HMAC uses hex secret bytes and upper-case output", async () => {
@@ -57,6 +58,19 @@ Deno.test("PxPayPlus request time formats in Taiwan timezone", () => {
     formatPxPayPlusReqTime(new Date("2026-05-17T01:02:03.000Z")),
     "20260517090203",
   );
+});
+
+Deno.test("PxPayPlus proxy URL extracts proxy basic auth", () => {
+  assertEquals(
+    resolvePxPayPlusProxyOptions("http://fixie:p%40ss@example.com:8080"),
+    {
+      url: "http://example.com:8080/",
+      basicAuth: { username: "fixie", password: "p@ss" },
+    },
+  );
+  assertEquals(resolvePxPayPlusProxyOptions("http://example.com:8080"), {
+    url: "http://example.com:8080/",
+  });
 });
 
 Deno.test("PxPayPlus sign payload builders follow the EC spec order", () => {

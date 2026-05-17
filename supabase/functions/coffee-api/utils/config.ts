@@ -40,6 +40,7 @@ export const PXPAYPLUS_SECRET_KEY = Deno.env.get("PXPAYPLUS_SECRET_KEY") ||
   "";
 export const PXPAYPLUS_BASE_URL = Deno.env.get("PXPAYPLUS_BASE_URL") || "";
 export const PXPAYPLUS_PROXY_URL = Deno.env.get("PXPAYPLUS_PROXY_URL") || "";
+export const PXPAYPLUS_STORE_ID = Deno.env.get("PXPAYPLUS_STORE_ID") || "";
 
 export const LINE_MESSAGING_CHANNEL_ACCESS_TOKEN =
   Deno.env.get("LINE_MESSAGING_CHANNEL_ACCESS_TOKEN") ||

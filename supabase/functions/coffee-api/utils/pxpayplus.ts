@@ -4,6 +4,7 @@ import {
   PXPAYPLUS_MERCHANT_EN_NAME,
   PXPAYPLUS_PROXY_URL,
   PXPAYPLUS_SECRET_KEY,
+  PXPAYPLUS_STORE_ID,
 } from "./config.ts";
 import { tryParseJsonRecord } from "./json.ts";
 import type { JsonRecord } from "./json.ts";
@@ -20,6 +21,7 @@ interface PxPayPlusRuntimeConfig {
   secretKey: string;
   baseUrl: string;
   proxyUrl: string;
+  storeId: string;
 }
 
 export interface PxPayPlusCreateOrderRequest {
@@ -330,6 +332,9 @@ function resolvePxPayPlusRuntimeConfig(): PxPayPlusRuntimeConfig {
   const proxyUrl = String(
     Deno.env.get("PXPAYPLUS_PROXY_URL") || PXPAYPLUS_PROXY_URL || "",
   ).trim();
+  const storeId = String(
+    Deno.env.get("PXPAYPLUS_STORE_ID") || PXPAYPLUS_STORE_ID || "",
+  ).trim();
 
   const missingKeys: string[] = [];
   if (!merchantCode) missingKeys.push("PXPAYPLUS_MERCHANT_CODE");
@@ -338,7 +343,14 @@ function resolvePxPayPlusRuntimeConfig(): PxPayPlusRuntimeConfig {
     throw new Error(`全支付設定缺失：${missingKeys.join(", ")}`);
   }
 
-  return { merchantCode, merchantEnName, secretKey, baseUrl, proxyUrl };
+  return {
+    merchantCode,
+    merchantEnName,
+    secretKey,
+    baseUrl,
+    proxyUrl,
+    storeId,
+  };
 }
 
 function buildAbsoluteUrl(baseUrl: string, path: string): string {
@@ -350,12 +362,35 @@ function buildAbsoluteUrl(baseUrl: string, path: string): string {
   }${normalizedPath}`;
 }
 
-function createProxyClient(proxyUrl: string): Deno.HttpClient | null {
+export function resolvePxPayPlusProxyOptions(
+  proxyUrl: string,
+): Deno.Proxy | null {
   const raw = String(proxyUrl || "").trim();
   if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    const username = parsed.username ? decodeURIComponent(parsed.username) : "";
+    const password = parsed.password ? decodeURIComponent(parsed.password) : "";
+    if (username || password) {
+      parsed.username = "";
+      parsed.password = "";
+      return {
+        url: parsed.toString(),
+        basicAuth: { username, password },
+      };
+    }
+    return { url: parsed.toString() };
+  } catch (_error) {
+    return { url: raw };
+  }
+}
+
+function createProxyClient(proxyUrl: string): Deno.HttpClient | null {
+  const proxy = resolvePxPayPlusProxyOptions(proxyUrl);
+  if (!proxy) return null;
   if (typeof Deno.createHttpClient !== "function") return null;
   try {
-    return Deno.createHttpClient({ proxy: { url: raw } });
+    return Deno.createHttpClient({ proxy });
   } catch (error) {
     logger.warn("Create proxy client failed", error);
     return null;
@@ -433,6 +468,7 @@ async function callPxPayPlusApi(params: {
 export async function requestPxPayPlusCreateOrder(
   request: PxPayPlusCreateOrderRequest,
 ): Promise<JsonRecord> {
+  const config = resolvePxPayPlusRuntimeConfig();
   const reqTime = String(request.reqTime || "").trim() ||
     formatPxPayPlusReqTime();
   const body: JsonRecord = {
@@ -444,7 +480,8 @@ export async function requestPxPayPlusCreateOrder(
     app_confirm_url: String(request.appConfirmUrl || "").trim() || undefined,
     app_cancel_url: String(request.appCancelUrl || "").trim() || undefined,
     req_time: reqTime,
-    store_id: String(request.storeId || "").trim() || undefined,
+    store_id: String(request.storeId || config.storeId || "").trim() ||
+      undefined,
     order_status_url: String(request.orderStatusUrl || "").trim() || undefined,
     payment_notify_url: String(request.paymentNotifyUrl || "").trim() ||
       undefined,
